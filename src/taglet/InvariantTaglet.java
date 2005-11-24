@@ -1,11 +1,11 @@
-package aux.taglet;
+package taglet;
 
 import java.util.EnumSet;
 import java.util.Map;
 
 import com.sun.tools.doclets.Taglet;
 
-import static aux.taglet.SpecTaglet.Usage.*;
+import static taglet.SpecTaglet.Usage.*;
 
 /**
  * Represents the </code>@invariant</code> tag.  The

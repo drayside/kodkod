@@ -2,7 +2,7 @@
  * BooleanMatrixTest.java
  * Created on Jul 12, 2005
  */
-package aux.tests;
+package tests;
 
 import static relcalc.core.bool.BooleanConstant.FALSE;
 import static relcalc.core.bool.BooleanConstant.TRUE;

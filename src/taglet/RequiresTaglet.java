@@ -1,6 +1,6 @@
-package aux.taglet;
+package taglet;
 
-import static aux.taglet.SpecTaglet.Usage.*;
+import static taglet.SpecTaglet.Usage.*;
 
 import java.util.EnumSet;
 import java.util.Map;

@@ -1,4 +1,4 @@
-package aux.tests;
+package tests;
 
 import static relcalc.core.bool.BooleanConstant.FALSE;
 import static relcalc.core.bool.BooleanConstant.TRUE;

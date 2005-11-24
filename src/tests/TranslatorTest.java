@@ -2,9 +2,7 @@
  * TranslatorTest.java
  * Created on Jul 6, 2005
  */
-package aux.tests;
-
-
+package tests;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -2,8 +2,7 @@
  * InstanceCreator.java
  * Created on Jun 21, 2005
  */
-package aux.tests;
-
+package tests;
 
 import java.io.File;
 import java.io.IOException;

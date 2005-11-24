@@ -2,7 +2,7 @@
  * EvaluatorTest.java
  * Created on Jun 21, 2005
  */
-package aux.tests;
+package tests;
 
 import java.util.HashMap;
 import java.util.HashSet;

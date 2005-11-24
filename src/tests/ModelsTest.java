@@ -1,4 +1,4 @@
-package aux.tests;
+package tests;
 
 import java.util.LinkedList;
 import java.util.List;
