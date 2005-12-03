@@ -30,7 +30,7 @@ import relcalc.instance.Universe;
  * @author Emina Torlak 
  */
 public class EvaluatorTest extends TestCase {
-    private final String SOLUTION = "src/relcalc/tests/handshake.xml";
+    private final String SOLUTION = "src/tests/handshake.xml";
     private final String PATH = "examples/puzzles/handshake/";
     private final String UNIV_PATH = "alloy/lang/univ/";
     

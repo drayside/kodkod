@@ -271,12 +271,12 @@ public class TranslatorTest extends TestCase {
 		final Bounds b = new Bounds(u);
 		
 		b.bound(param0, t.allOf(1));
-		b.boundExact(one, t.setOf(t.tuple("1")));
-		b.boundExact(ints, t.allOf(1));
-		b.boundExact(inc, t.setOf(t.tuple("-1","0"), t.tuple("0","1")));
+		b.boundExactly(one, t.setOf(t.tuple("1")));
+		b.boundExactly(ints, t.allOf(1));
+		b.boundExactly(inc, t.setOf(t.tuple("-1","0"), t.tuple("0","1")));
 		// [1, 1, -1], [1, -1, 0], [1, 0, 1], [-1, 1, 0], [-1, -1, 1],
 		// [-1, 0, -1], [0, 1, 1], [0, -1, -1], [0, 0, 0]]
-		b.boundExact(add, t.setOf(t.tuple("1","1","-1"), t.tuple("1","-1","0"), t.tuple("1","0","1"), 
+		b.boundExactly(add, t.setOf(t.tuple("1","1","-1"), t.tuple("1","-1","0"), t.tuple("1","0","1"), 
 				                  t.tuple("-1","1","0"), t.tuple("-1","-1","1"), t.tuple("-1","0","-1"), 
 				                  t.tuple("0","1","1"), t.tuple("0","-1","-1"), t.tuple("0","0","0")));
 		

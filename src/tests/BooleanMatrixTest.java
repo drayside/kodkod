@@ -18,8 +18,8 @@ import relcalc.core.bool.BooleanValue;
 import relcalc.core.bool.BooleanVariable;
 import relcalc.core.bool.CircuitFactory;
 import relcalc.util.Dimensions;
-import relcalc.util.ints.IntRange;
-import relcalc.util.sparseseq.IndexedEntry;
+import relcalc.util.IndexedEntry;
+import relcalc.util.IntRange;
 
 /** 
  * Tests {@link aux.veryold.bool.BooleanMatrix relcalc.core.fol2sat.BooleanMatrix}.
