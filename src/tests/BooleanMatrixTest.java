@@ -16,10 +16,11 @@ import junit.framework.TestCase;
 import relcalc.core.bool.BooleanMatrix;
 import relcalc.core.bool.BooleanValue;
 import relcalc.core.bool.BooleanVariable;
-import relcalc.core.bool.CircuitFactory;
-import relcalc.util.Dimensions;
+import relcalc.core.bool.BooleanFactory;
+import relcalc.core.bool.Dimensions;
 import relcalc.util.IndexedEntry;
 import relcalc.util.IntRange;
+import relcalc.util.Ints;
 
 /** 
  * Tests {@link aux.veryold.bool.BooleanMatrix relcalc.core.fol2sat.BooleanMatrix}.
@@ -28,7 +29,7 @@ import relcalc.util.IntRange;
  */
 public class BooleanMatrixTest extends TestCase {
     private static final int NUM_VARS = 30;
-    private final CircuitFactory f;
+    private final BooleanFactory f;
     private final BooleanVariable[] vars;
     private final Dimensions dim324, dim43, dim4; 
     private final IntRange[] mR;
@@ -39,7 +40,7 @@ public class BooleanMatrixTest extends TestCase {
     
     public BooleanMatrixTest(String arg0) {
         super(arg0);
-        f = CircuitFactory.factory(NUM_VARS);
+        f = BooleanFactory.factory(NUM_VARS);
         vars = new BooleanVariable[NUM_VARS];
         for (int i = 0; i < NUM_VARS; i++) { vars[i] = f.variable(i+1); }
         final int[] dims324 = { 3, 2, 4 }, dims43 = {4, 3}, dims4 = {4};
@@ -59,10 +60,10 @@ public class BooleanMatrixTest extends TestCase {
      */
     protected void setUp() throws Exception {
         super.setUp();   
-        mT324 = BooleanMatrix.make(dim324, f, TRUE);
-        mF324 = BooleanMatrix.make(dim324, f, FALSE); 
-        mF43 = BooleanMatrix.make(dim43, f, FALSE);
-        mF4 = BooleanMatrix.make(dim4, f, FALSE);
+        mT324 = f.matrix(dim324, TRUE);
+        mF324 = f.matrix(dim324, FALSE); 
+        mF43 = f.matrix(dim43, FALSE);
+        mF4 = f.matrix(dim4, FALSE);
         Arrays.fill(mCells, FALSE);
     }
 
@@ -143,7 +144,7 @@ public class BooleanMatrixTest extends TestCase {
     }
     
     private static final IntRange range(int min, int max) {
-        return IntRange.fromTo(min, max);
+        return Ints.range(min, max);
     }
    
     private void assertEquals(IntRange range, Iterator<IndexedEntry<BooleanValue>> indexIter) {
@@ -159,7 +160,7 @@ public class BooleanMatrixTest extends TestCase {
         
         // check that the dense regions in the matrix are [4..14] and [16..23]
         Iterator<IndexedEntry<BooleanValue>> indeces = mF324.iterator();
-        assertEquals(mR[1].merge(mR[2]).merge(mR[3]), indeces);
+        assertEquals(Ints.merge(Ints.merge(mR[1], mR[2]), mR[3]), indeces);
         assertEquals(mR[5], indeces);
                 
         // wipe out 4, 14, 23, and 10
@@ -169,7 +170,7 @@ public class BooleanMatrixTest extends TestCase {
         // add 4 again
         fill(mF324, mCells, range(mR[1].min(),mR[1].min()));
         indeces = mF324.iterator();
-        assertEquals(range(mR[1].min(), mR[1].max()).merge(range(mR[2].min(), mR[2].max()-1)), indeces);
+        assertEquals(Ints.merge(range(mR[1].min(), mR[1].max()), range(mR[2].min(), mR[2].max()-1)), indeces);
         assertEquals(range(mR[2].max()+1, mR[3].max()-1), indeces);
         assertEquals(range(mR[5].min(), mR[5].max()-1), indeces);
         
@@ -313,7 +314,7 @@ public class BooleanMatrixTest extends TestCase {
     }
     
     public final void testCrossProduct() {
-        final BooleanMatrix mT43 = BooleanMatrix.make(dim43, f, TRUE);
+        final BooleanMatrix mT43 = f.matrix(dim43, TRUE);
         
         fill(mT43, range(0, dim43.capacity()-1));
         fill(mF4, range(0, dim4.capacity()-1));
@@ -381,7 +382,7 @@ public class BooleanMatrixTest extends TestCase {
     }
     
     public final void testClosure() {
-        BooleanMatrix mF44 =  BooleanMatrix.make(Dimensions.square(2,4), f, FALSE);
+        BooleanMatrix mF44 =  f.matrix(Dimensions.square(2,4), FALSE);
         assertTrue(equivalent(mF44, mF44.closure()));
         
         mF44.set(0, vars[0]);

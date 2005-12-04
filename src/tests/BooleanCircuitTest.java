@@ -14,13 +14,13 @@ import relcalc.core.bool.BooleanConstant;
 import relcalc.core.bool.BooleanFormula;
 import relcalc.core.bool.BooleanValue;
 import relcalc.core.bool.BooleanVariable;
-import relcalc.core.bool.CircuitFactory;
+import relcalc.core.bool.BooleanFactory;
 import relcalc.core.bool.MultiGate.Operator;
 import relcalc.util.ArrayIterator;
 
 
 public class BooleanCircuitTest extends TestCase {
-	private CircuitFactory f;
+	private BooleanFactory f;
 	private BooleanVariable[] v;
 	private final int size = 20;
 	
@@ -30,7 +30,7 @@ public class BooleanCircuitTest extends TestCase {
 	}
 	
 	private void init() {
-		f = CircuitFactory.factory(size);
+		f = BooleanFactory.factory(size);
 		v = new BooleanVariable[size];
 		for(int i = 0; i < size; i++) {
 			v[i] = f.variable(i+1);
