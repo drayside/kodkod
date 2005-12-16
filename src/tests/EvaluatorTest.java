@@ -177,6 +177,16 @@ public class EvaluatorTest extends TestCase {
         
     }
     
+    public final void testEvalOverride() {
+    		// Hilary ++ Hilary = Hilary
+    		assertEquals(eval(hilary.override(hilary)), value(hilary));
+    		// Hilary ++ Jocelyn = Hilary + Jocelyn
+    		assertEquals(eval(hilary.override(jocelyn)), eval(hilary.union(jocelyn)));
+    		// spouse ++ shaken = shaken + (spouse - (shaken.Person)->Person)
+    		assertEquals(eval(spouse.override(shaken)), 
+                     eval(shaken.union(spouse.difference(shaken.join(person).product(person)))));
+    }
+    
     public final void testEvalTranspose() {
         // ~spouse = spouse
         assertEquals(eval(spouse.transpose()), value(spouse));
@@ -222,7 +232,11 @@ public class EvaluatorTest extends TestCase {
             }
         }
         assertEquals((new Evaluator(instance)).evaluate(r.closure()), result);
-        
+        // value(*r) = value(^r) + u[0]->u[0] + u[1]->u[1] + u[2]->u[2] + u[3]->u[3]
+        for(int i = 0; i < 4; i++) {
+        		result.add(f.tuple(u.atom(i), u.atom(i)));
+        }
+        assertEquals((new Evaluator(instance)).evaluate(r.reflexiveClosure()), result);
     }
     
     public final void testEvalSubset() {

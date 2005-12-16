@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Set;
 
 import junit.framework.TestCase;
+import relcalc.ast.Expression;
 import relcalc.ast.Formula;
 import relcalc.ast.MultiplicityFormula;
 import relcalc.ast.QuantifiedFormula;
@@ -21,6 +22,7 @@ import relcalc.instance.Bounds;
 import relcalc.instance.Instance;
 import relcalc.instance.Tuple;
 import relcalc.instance.TupleFactory;
+import relcalc.instance.TupleSet;
 import relcalc.instance.Universe;
 
 
@@ -40,7 +42,7 @@ public class TranslatorTest extends TestCase {
 	
 	public TranslatorTest(String arg0) {
 		super(arg0);
-		this.solver = new Solver(Solver.SATSolverName.MiniSAT);
+		this.solver = new Solver(Solver.SATSolverName.Mini3SAT);
 		List<Integer> atoms = new ArrayList<Integer>(10);
 		for (int i = 0; i < 10; i++) {
 			atoms.add(i);
@@ -211,6 +213,8 @@ public class TranslatorTest extends TestCase {
 		// r21.r13 in r11
 		assertTrue(isSatisfiable(r2[1].join(r1[3]).in(r1[1])));
 		
+		// *r22 in r21
+		assertTrue(isSatisfiable(r2[2].reflexiveClosure().in(r2[1])));
 	}
 	
 	private final void testTranslateQuantifiedFormula(QuantifiedFormula.Quantifier quant) {
@@ -291,12 +295,112 @@ public class TranslatorTest extends TestCase {
 		} catch (TimeoutException te) {
 			fail("Timed out solving " + f);
 		}
-		
-		
-		
-		
 	}
 	
+	public final void testFlattening() {
+		final List<String> atoms = new ArrayList<String>(9);
+		atoms.add("-1"); atoms.add("0"); atoms.add("1"); atoms.add("null");
+		for(int i = 0; i < 5; i++) {
+			atoms.add("m"+i);
+		}
+		final Universe u = new Universe(atoms);
+		final TupleFactory t = u.factory();
+		
+		final Relation[] m = new Relation[5];
+		for(int i = 0; i < 5; i++) {
+			m[i] = Relation.unary("m"+i);
+		}
+		
+		final Relation univ = Relation.unary("univ"), none = Relation.unary("none"),
+		               iden = Relation.binary("inden"), mutant = Relation.unary("mutant"),
+		               inc = Relation.binary("inc"), add = Relation.ternary("add"), 
+		               i0 = Relation.unary("i0"),
+		               zero = Relation.unary("0"), 
+		               one = Relation.unary("1"), 
+		               ints = Relation.unary("int");
+		
+		final Bounds b = new Bounds(u);
+				
+		b.boundExactly(univ, t.allOf(1));
+		b.boundExactly(none, t.noneOf(1));
+		TupleSet idenSet = t.noneOf(2);
+		for(String atom : atoms) {
+			idenSet.add(t.tuple(atom,atom));
+		}
+		b.boundExactly(iden, idenSet);
+		
+		b.bound(mutant, t.range(t.tuple("m0"), t.tuple("m4")));
+		for(int i = 0; i < 5; i++) {
+			b.boundExactly(m[i], t.setOf("m"+i));
+		}
+		
+		b.bound(i0, t.range(t.tuple("-1"), t.tuple("1")));
+		b.boundExactly(zero, t.setOf(t.tuple("0")));
+		b.boundExactly(one, t.setOf(t.tuple("1")));
+		b.boundExactly(ints, t.allOf(1));
+		b.boundExactly(inc, t.setOf(t.tuple("-1","0"), t.tuple("0","1")));
+		
+		// [1, 1, -1], [1, -1, 0], [1, 0, 1], [-1, 1, 0], [-1, -1, 1],
+		// [-1, 0, -1], [0, 1, 1], [0, -1, -1], [0, 0, 0]]
+		b.boundExactly(add, t.setOf(t.tuple("1","1","-1"), t.tuple("1","-1","0"), t.tuple("1","0","1"), 
+				                  t.tuple("-1","1","0"), t.tuple("-1","-1","1"), t.tuple("-1","0","-1"), 
+				                  t.tuple("0","1","1"), t.tuple("0","-1","-1"), t.tuple("0","0","0")));
+		
+		/*
+		((one i0 && one mutant) && 
+		!((if (i0 in (0 . ^~inc)) then ((add . 0) . i0) else i0) = 
+		  (if !((if (mutant in m4) then 
+		            (if (i0 in 0) then 1 else 0) else 
+		                (if (mutant in m3) then 
+		                    (if ((i0 = 0) || (i0 in (0 . ^~inc))) then 1 else 0) else 
+		                    (if (mutant in m2) then 
+		                        (if (i0 in (0 . ^inc)) then 1 else 0) else 
+		                        (if (mutant in m1) then 
+		                            (if ((i0 = 0) || (i0 in (0 . ^inc))) then 1 else 0) else 
+		                            (if (mutant in m0) then 
+		                                (if !(i0 in 0) then 1 else 0) else 
+		                                (if (i0 in (0 . ^~inc)) then 1 else 0)))))) 
+		       in 0) then 
+		       ((add . 0) . i0) else 
+		       i0)))
+        */
+		
+		final Formula[] cm = new Formula[5];
+		for (int i = 0; i < 5; i++) {
+			cm[i] = mutant.in(m[i]);
+		}
+		
+		// (i0 in (0 . ^~inc))
+		final Formula fs0 = i0.in(zero.join(inc.transpose().closure()));
+		// (i0 in (0 . ^inc))
+		final Formula fs1 = i0.in(zero.join(inc.closure()));
+		// (i0 = 0)
+		final Formula fs2 = i0.eq(zero);
+		
+		final Expression em0 = cm[0].thenElse(i0.in(zero).not().thenElse(one,zero), 
+				                                fs0.thenElse(one,zero));
+		final Expression em1 = cm[1].thenElse((fs2.or(fs1)).thenElse(one, zero), em0);
+		final Expression em2 = cm[2].thenElse(fs1.thenElse(one, zero), em1);
+		final Expression em3 = cm[3].thenElse(fs2.or(fs0).thenElse(one,zero), em2);
+		final Expression em4 = cm[4].thenElse(i0.in(zero).thenElse(one,zero), em3);
+		
+		final Expression es1 = add.join(zero).join(i0);
+		final Expression expr2 = em4.in(zero).not().thenElse(es1, i0);
+		final Expression expr1 = fs0.thenElse(es1, i0);
+		
+		
+		final Formula f = i0.one().and(mutant.one()).and(expr1.eq(expr2).not());
+		
+		try {
+			final Instance instance = solver.solve(f, b);
+			assertNotNull(instance);
+			
+//			System.out.println(instance);
+		} catch (TimeoutException te) {
+			fail("Timed out solving " + f);
+		}
+		
+	}	
 	
 	
 }
