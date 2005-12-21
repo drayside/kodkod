@@ -12,6 +12,7 @@ public class AllTests {
 		suite.addTestSuite(TranslatorTest.class);
 		suite.addTestSuite(EvaluatorTest.class);
 		suite.addTestSuite(BooleanCircuitTest.class);
+		suite.addTestSuite(SymmetryBreakingTest.class);
 		suite.addTestSuite(ModelsTest.class);
 		//$JUnit-END$
 		return suite;
