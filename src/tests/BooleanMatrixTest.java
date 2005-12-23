@@ -23,7 +23,7 @@ import relcalc.util.IntRange;
 import relcalc.util.Ints;
 
 /** 
- * Tests {@link aux.veryold.bool.BooleanMatrix relcalc.core.fol2sat.BooleanMatrix}.
+ * Tests {@link relcalc.core.bool.BooleanMatrix BooleanMatrix}.
  *
  * @author Emina Torlak 
  */
