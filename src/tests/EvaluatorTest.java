@@ -236,6 +236,7 @@ public class EvaluatorTest extends TestCase {
         for(int i = 0; i < 4; i++) {
         		result.add(f.tuple(u.atom(i), u.atom(i)));
         }
+        
         assertEquals((new Evaluator(instance)).evaluate(r.reflexiveClosure()), result);
     }
     
