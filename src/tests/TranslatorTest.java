@@ -15,7 +15,6 @@ import relcalc.ast.MultiplicityFormula;
 import relcalc.ast.QuantifiedFormula;
 import relcalc.ast.Relation;
 import relcalc.ast.Variable;
-import relcalc.engine.Evaluator;
 import relcalc.engine.Solver;
 import relcalc.engine.TimeoutException;
 import relcalc.instance.Bounds;
@@ -263,43 +262,6 @@ public class TranslatorTest extends TestCase {
 		
 	}
 	
-	public final void testGreg_11232005() {
-		final List<String> atoms = new ArrayList<String>(3);
-		atoms.add("-1"); atoms.add("0"); atoms.add("1");
-		final Universe u = new Universe(atoms);
-		final TupleFactory t = u.factory();
-		
-		final Relation inc = Relation.binary("inc"), add = Relation.ternary("add"), 
-		               one = Relation.unary("1"), param0 = Relation.unary("param0"), 
-		               ints = Relation.unary("int");
-		
-		// (one param0 && ((1 . (param0 . add)) in (param0 . ^inc)))
-		final Formula f = param0.one().and((one.join(param0.join(add))).in(param0.join(inc.closure())));
-		
-		final Bounds b = new Bounds(u);
-		
-		b.bound(param0, t.allOf(1));
-		b.boundExactly(one, t.setOf(t.tuple("1")));
-		b.boundExactly(ints, t.allOf(1));
-		b.boundExactly(inc, t.setOf(t.tuple("-1","0"), t.tuple("0","1")));
-		// [1, 1, -1], [1, -1, 0], [1, 0, 1], [-1, 1, 0], [-1, -1, 1],
-		// [-1, 0, -1], [0, 1, 1], [0, -1, -1], [0, 0, 0]]
-		b.boundExactly(add, t.setOf(t.tuple("1","1","-1"), t.tuple("1","-1","0"), t.tuple("1","0","1"), 
-				                  t.tuple("-1","1","0"), t.tuple("-1","-1","1"), t.tuple("-1","0","-1"), 
-				                  t.tuple("0","1","1"), t.tuple("0","-1","-1"), t.tuple("0","0","0")));
-		
-//		System.out.println(f);
-//		System.out.println(b);
-		
-		try {
-			final Instance instance = solver.solve(f, b);
-			assertTrue((new Evaluator(instance)).evaluate(f));
-//			System.out.println(instance);
-//			System.out.println((new Evaluator(instance)).evaluate(f  ));
-		} catch (TimeoutException te) {
-			fail("Timed out solving " + f);
-		}
-	}
 	
 	public final void testFlattening() {
 		final List<String> atoms = new ArrayList<String>(9);
