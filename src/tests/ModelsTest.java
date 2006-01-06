@@ -1,5 +1,6 @@
 package tests;
 
+import java.util.EnumSet;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -71,8 +72,8 @@ public class ModelsTest extends TestCase {
 		final Relation man = Relation.unary("Man");
 		
 		// fields
-		final Relation ceiling = Relation.binary("ceiling");
-		final Relation floor = Relation.binary("floor");
+		final Relation ceiling = Relation.binary("ceiling", EnumSet.of(Relation.Property.FUNCTION));
+		final Relation floor = Relation.binary("floor", EnumSet.of(Relation.Property.FUNCTION));
 		
 		final Variable m = Variable.unary("m"), n = Variable.unary("n");
 		
@@ -90,8 +91,6 @@ public class ModelsTest extends TestCase {
 		Bounds bounds = ceilingsAndFloorsInstance(platform,2, man, 2,ceiling,floor);
 		
 		System.out.println(solve(model.and(belowToo.not()), bounds));
-
-		
 		
 		// all m : Man | m.ceiling != m.floor
 		final Formula geometry = (m.join(ceiling).eq(m.join(floor)).not()).forAll(m.oneOf(man));
@@ -100,22 +99,13 @@ public class ModelsTest extends TestCase {
 		
 		System.out.println(solve(model.and(geometry.implies(belowToo).not()), bounds));
 		
-		
 		// all m, n: Man | !(m = n) => !(m.floor = n.floor || m.ceiling = n.ceiling) 
 		final Formula body = (m.join(floor).eq(n.join(floor))).or(m.join(ceiling).eq(n.join(ceiling)));
 		final Formula noSharing = (m.eq(n).not().implies(body.not())).forAll(m.oneOf(man).and(n.oneOf(man)));
 		
 		bounds = ceilingsAndFloorsInstance(platform, 4, man, 4, ceiling, floor);
-		
-		System.out.println(solve(model.and(noSharing.implies(belowToo).not()), bounds));
-		
-		
-//		instance = ceilingsAndFloorsInstance(platform, 10, man, 10, ceiling, floor);
-//		System.out.println(solve(model.and(noSharing.implies(belowToo).not()), instance));
-	}
 	
-	public static void main(String[] args) {
-		(new ModelsTest("")).testCeilingsAndFloors();
+		System.out.println(solve(model.and(noSharing.implies(belowToo).not()), bounds));
+		System.out.println((solver.numberOfPrimaryVariables() +  solver.numberOfIntermediateVariables()) + " " + solver.numberOfClauses());
 	}
-
 }

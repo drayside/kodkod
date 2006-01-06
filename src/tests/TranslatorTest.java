@@ -67,7 +67,7 @@ public class TranslatorTest extends TestCase {
 		bounds = new Bounds(universe);
 		
 		bounds.bound(r1[0],	factory.allOf(1));
-		bounds.bound(r1[1],	factory.range(factory.tuple(2), t112));
+		bounds.bound(r1[1],	factory.range(factory.tuple(2),  t112));
 		bounds.bound(r1[2],	factory.range(t112, t112));
 		bounds.bound(r1[3],	factory.range(factory.tuple(5),factory.tuple(8)));
 		
@@ -205,8 +205,12 @@ public class TranslatorTest extends TestCase {
 		// some rx0 && (rx1 + rx2 + rx3 in rx0)
 		assertTrue(isSatisfiable(r1[0].some().and(r1[1].union(r1[2]).union(r1[3]).in(r1[0]))));
 		assertTrue(isSatisfiable(r2[0].some().and(r2[1].union(r2[2]).union(r2[3]).in(r2[0]))));
-//		assertTrue(isSatisfiable(r3[0].some().and(r3[1].union(r3[2]).union(r3[3]).in(r3[0]))));
+		assertTrue(isSatisfiable(r3[0].some().and(r3[1].union(r3[2]).union(r3[3]).in(r3[0]))));
 		
+//		System.out.println("-----------------");
+//		System.out.println(bounds.upperBound(r1[1]));
+//		System.out.println(bounds.upperBound(r1[3]));
+//		System.out.println(bounds.upperBound(r2[1]));
 		// some r11 && some r13 && r11->r13 = r21
 		assertTrue(isSatisfiable(r1[1].some().and(r1[3].some()).and(r1[1].product(r1[3]).eq(r2[1]))));
 		
