@@ -1,7 +1,6 @@
 package tests;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import junit.framework.TestCase;
@@ -13,9 +12,8 @@ import relcalc.engine.TimeoutException;
 import relcalc.instance.Bounds;
 import relcalc.instance.Instance;
 import relcalc.instance.TupleFactory;
+import relcalc.instance.TupleSet;
 import relcalc.instance.Universe;
-import relcalc.util.IndexedEntry;
-import relcalc.util.TreeSequence;
 
 /**
  * Test cases that record reported crashes. 
@@ -65,23 +63,71 @@ public class CrashesTest extends TestCase {
 	
 	public final void testGreg_01052006() {
 		
-		final TreeSequence<Integer> t = new TreeSequence<Integer>();
-		final int[] elts = {31, 86, 72, 6, 23, 119, 131};
-		for(int i = 0; i < elts.length - 1; i++) {
-			t.put(elts[i], 0);
+//		final TreeSequence<Integer> t = new TreeSequence<Integer>();
+//		final int[] elts = {107, 31, 86, 72, 6, 119, 23, 131};
+//		for(int i = 0; i < elts.length; i++) {
+//			t.put(elts[i], 0);
+//		}
+//		final int[] sorted = new int[elts.length];
+//		System.arraycopy(elts, 0, sorted, 0, elts.length);
+//		Arrays.sort(sorted);
+//		int count = 0;
+//		for(IndexedEntry<Integer> e : t) {
+//			assertEquals(sorted[count++], e.index());
+//		}
+//		t.remove(72);
+//		t.put(72,0);
+//		count = 0;
+//		for(IndexedEntry<Integer> e : t) {
+//			assertEquals(sorted[count++], e.index());
+//		}
+		
+		final List<Object> atoms = new ArrayList<Object>(12);
+		atoms.add(2);
+		atoms.add(4);
+		atoms.add(-2);
+		atoms.add("null"); 
+		atoms.add("array0");
+		atoms.add(6);
+		atoms.add(1);
+		atoms.add(-1);
+		atoms.add(-3);
+		atoms.add(3);
+		atoms.add(5);
+		atoms.add(0);
+		
+		final Universe u = new Universe(atoms);
+		final TupleFactory f = u.factory();
+		
+		final TupleSet tdiv = f.noneOf(3);
+		
+		for(int i = -3; i <=6; i ++) {
+			for(int j = -3; j <=6; j++) {
+				if (j != 0) {
+					int divij = i/j;
+					if (-3 <= divij && divij <= 6 )
+						tdiv.add(f.tuple(i,j,divij));
+					else 
+						tdiv.add(f.tuple(i,j,(10+divij)%10));
+				}
+			}
 		}
-		Arrays.sort(elts);
-		int count = 0;
-		for(IndexedEntry<Integer> e : t) {
-			assertEquals(elts[count++], e.index());
+		
+		final TupleSet tdivcopy = tdiv.copy();
+		for(int i = -3; i <=6; i ++) {
+			for(int j = -3; j <=6; j++) {
+				if (j != 0) {
+					int divij = i/j;
+					if (-3 <= divij && divij <= 6 )
+						assertTrue(tdivcopy.contains(f.tuple(i,j,divij)));
+					else 
+						assertTrue(tdivcopy.contains(f.tuple(i,j,(10+divij)%10)));
+				}
+			}
 		}
-		t.remove(72);
-		t.put(72,0);
-		count = 0;
-		for(IndexedEntry<Integer> e : t) {
-			assertEquals(elts[count++], e.index());
-		}
-	
+		
+		
+		
 	}
 	
 	
