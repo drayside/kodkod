@@ -11,7 +11,7 @@ import java.util.Set;
 import junit.framework.TestCase;
 import relcalc.ast.Expression;
 import relcalc.ast.Formula;
-import relcalc.ast.MultiplicityFormula;
+import relcalc.ast.Multiplicity;
 import relcalc.ast.QuantifiedFormula;
 import relcalc.ast.Relation;
 import relcalc.ast.Variable;
@@ -104,7 +104,7 @@ public class TranslatorTest extends TestCase {
 	
 	
 	
-	private final void testIntersectionMultiplicity(MultiplicityFormula.Multiplicity mult, Relation p, Relation q, Tuple intersection) {
+	private final void testIntersectionMultiplicity(Multiplicity mult, Relation p, Relation q, Tuple intersection) {
 		final Instance m = solve(p.intersection(q).apply(mult));
 		assertNotNull(m);
 		final Set<Tuple> ps = m.tuples(p), qs = m.tuples(q); 
@@ -114,7 +114,7 @@ public class TranslatorTest extends TestCase {
 		assertTrue(qs.contains(intersection));
 	}
 	
-	private final void testTranslateNonEmptyMultiplicity(MultiplicityFormula.Multiplicity mult) {
+	private final void testTranslateNonEmptyMultiplicity(Multiplicity mult) {
 		
 		testTranslateMultiplicity(mult, true, false);
 		testIntersectionMultiplicity(mult, r1[1], r1[2], t112);
@@ -122,7 +122,7 @@ public class TranslatorTest extends TestCase {
 		testIntersectionMultiplicity(mult, r3[1], r3[2], t312);
 	}
 	
-	private final void testTranslateMultiplicity(MultiplicityFormula.Multiplicity mult, boolean trueTest, boolean falseTest) {
+	private final void testTranslateMultiplicity(Multiplicity mult, boolean trueTest, boolean falseTest) {
 		for (int i = 0; i < 4; i++) {
 			assertTrue(isSatisfiable(r1[i].apply(mult)));
 			assertTrue(isSatisfiable(r2[i].apply(mult)));
@@ -161,12 +161,12 @@ public class TranslatorTest extends TestCase {
 	}
 	
 	public final void testTranslateMultiplicityFormula_NO() {
-		testTranslateMultiplicity(MultiplicityFormula.Multiplicity.NO, true, true);
+		testTranslateMultiplicity(Multiplicity.NO, true, true);
 	}
 	
 	public  final void testTranslateMultiplicityFormula_LONE() {
 //		testTranslateMultiplicity(MultiplicityFormula.Multiplicity.LONE, true, true);
-		assertEquals(true, isSatisfiable(r3[1].union(r3[3]).apply(MultiplicityFormula.Multiplicity.LONE)));
+		assertEquals(true, isSatisfiable(r3[1].union(r3[3]).apply(Multiplicity.LONE)));
 //		assertEquals(true, isSatisfiable(r3[3].difference(r3[1]).apply(MultiplicityFormula.Multiplicity.LONE)));
 	}
 	
@@ -176,7 +176,7 @@ public class TranslatorTest extends TestCase {
 	}
 	
 	public  final void testTranslateMultiplicityFormula_SOME() {
-		testTranslateNonEmptyMultiplicity(MultiplicityFormula.Multiplicity.SOME);
+		testTranslateNonEmptyMultiplicity(Multiplicity.SOME);
 	}	
 	
 	public final void testTranslateComparisonFormula() {

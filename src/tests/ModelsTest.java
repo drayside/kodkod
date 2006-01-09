@@ -1,11 +1,11 @@
 package tests;
 
-import java.util.EnumSet;
 import java.util.LinkedList;
 import java.util.List;
 
 import junit.framework.TestCase;
 import relcalc.ast.Formula;
+import relcalc.ast.Multiplicity;
 import relcalc.ast.Relation;
 import relcalc.ast.Variable;
 import relcalc.engine.Solver;
@@ -72,8 +72,8 @@ public class ModelsTest extends TestCase {
 		final Relation man = Relation.unary("Man");
 		
 		// fields
-		final Relation ceiling = Relation.binary("ceiling", EnumSet.of(Relation.Property.FUNCTION));
-		final Relation floor = Relation.binary("floor", EnumSet.of(Relation.Property.FUNCTION));
+		final Relation ceiling = Relation.binary("ceiling", Multiplicity.ONE);
+		final Relation floor = Relation.binary("floor", Multiplicity.ONE);
 		
 		final Variable m = Variable.unary("m"), n = Variable.unary("n");
 		

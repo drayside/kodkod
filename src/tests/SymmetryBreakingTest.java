@@ -1,14 +1,11 @@
 package tests;
 
-import static relcalc.ast.Relation.Property.ACYCLIC;
-import static relcalc.ast.Relation.Property.TOTALLY_ORDERED;
-
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.List;
 
 import junit.framework.TestCase;
 import relcalc.ast.Formula;
+import relcalc.ast.Multiplicity;
 import relcalc.ast.Relation;
 import relcalc.engine.Solver;
 import relcalc.engine.TimeoutException;
@@ -27,7 +24,7 @@ public class SymmetryBreakingTest extends TestCase {
 	private static final int USIZE = 10;
 	private final TupleFactory factory;
 	private final Solver solver;
-	private final Relation to1, to2, to3, ac1, ac2, ac3, r1, r2;
+	private final Relation to1, first1, last1, to2, first2, last2, to3, first3, last3, ac1, ac2, ac3, r1, r2;
 	private Bounds bounds;
 	
 	public SymmetryBreakingTest(String arg0) {
@@ -41,12 +38,18 @@ public class SymmetryBreakingTest extends TestCase {
 		final Universe universe = new Universe(atoms);
 		this.factory = universe.factory();
 		
-		to1 = Relation.binary("to1", EnumSet.of(TOTALLY_ORDERED));
-		to2 = Relation.binary("to2", EnumSet.of(TOTALLY_ORDERED));
-		to3 = Relation.binary("to3", EnumSet.of(TOTALLY_ORDERED));
-		ac1 = Relation.binary("ac1", EnumSet.of(ACYCLIC));
-		ac2 = Relation.binary("ac2", EnumSet.of(ACYCLIC));
-		ac3 = Relation.binary("ac3", EnumSet.of(ACYCLIC));
+		first1 = Relation.unary("first1", Multiplicity.ONE);
+		last1 = Relation.unary("last1", Multiplicity.ONE);
+		first2 = Relation.unary("first2", Multiplicity.ONE);
+		last2 = Relation.unary("last2", Multiplicity.ONE);
+		first3 = Relation.unary("first3", Multiplicity.ONE);
+		last3 = Relation.unary("last3", Multiplicity.ONE);
+		to1 = Relation.totalOrder("to1", first1, last1);
+		to2 = Relation.totalOrder("to2", first2, last2);
+		to3 = Relation.totalOrder("to3", first3, last3);
+		ac1 = Relation.acyclic("ac1");
+		ac2 = Relation.acyclic("ac2");
+		ac3 = Relation.acyclic("ac3");
 		r1 = Relation.unary("r1");
 		r2 = Relation.binary("r2");
 		
