@@ -25,7 +25,6 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import relcalc.ast.Multiplicity;
 import relcalc.ast.Relation;
 import relcalc.instance.Instance;
 import relcalc.instance.TupleFactory;
@@ -141,8 +140,7 @@ final class InstanceCreator {
     private void processField(Element module, Element field) {
         try {
             final Relation fieldRelation = Relation.nary(getName(module)+"/"+getName(field), 
-                                                        Integer.parseInt(field.getAttribute(ARITY)),
-                                                        Multiplicity.SET);
+                                                        Integer.parseInt(field.getAttribute(ARITY)));
             final Set<List<String>> tuples = new LinkedHashSet<List<String>>();
             for (Iterator<Element> t = getChildrenByTag(field, TUPLE); t.hasNext();) {
                 tuples.add(getNames(getChildrenByTag(t.next(), ATOM)));

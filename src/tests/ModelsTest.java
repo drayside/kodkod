@@ -5,7 +5,6 @@ import java.util.List;
 
 import junit.framework.TestCase;
 import relcalc.ast.Formula;
-import relcalc.ast.Multiplicity;
 import relcalc.ast.Relation;
 import relcalc.ast.Variable;
 import relcalc.engine.Solver;
@@ -72,14 +71,13 @@ public class ModelsTest extends TestCase {
 		final Relation man = Relation.unary("Man");
 		
 		// fields
-		final Relation ceiling = Relation.binary("ceiling", Multiplicity.ONE);
-		final Relation floor = Relation.binary("floor", Multiplicity.ONE);
+		final Relation ceiling = Relation.binary("ceiling");
+		final Relation floor = Relation.binary("floor");
 		
 		final Variable m = Variable.unary("m"), n = Variable.unary("n");
 		
-		// Man.floor in Platform && Man.ceiling in Platform && (all m: Man | one m.ceiling && one m.floor)
-		Formula fieldConstraints = (m.join(ceiling).one().and(m.join(floor).one()).forAll(m.oneOf(man)));
-		fieldConstraints = fieldConstraints.and(man.join(floor).in(platform).and(man.join(ceiling).in(platform)));
+		// ceiling and floor are functions from Man to Platform
+		final Formula fieldConstraints = ceiling.function(man,platform).and(floor.function(man,platform));
 		
 		// all m: Man | some n: Man | n.floor = m.ceiling
 		final Formula paulSimon = ((n.join(floor).eq(m.join(ceiling))).forSome(n.oneOf(man)).forAll(m.oneOf(man)));

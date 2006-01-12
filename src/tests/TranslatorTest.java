@@ -172,7 +172,7 @@ public class TranslatorTest extends TestCase {
 	
 	
 	public  final void testTranslateMultiplicityFormula_ONE() {
-//		testTranslateNonEmptyMultiplicity(MultiplicityFormula.Multiplicity.ONE);
+		testTranslateNonEmptyMultiplicity(Multiplicity.ONE);
 	}
 	
 	public  final void testTranslateMultiplicityFormula_SOME() {
