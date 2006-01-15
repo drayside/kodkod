@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import junit.framework.TestCase;
+import relcalc.ast.Expression;
 import relcalc.ast.Formula;
 import relcalc.ast.Relation;
 import relcalc.engine.Evaluator;
@@ -22,6 +23,52 @@ import relcalc.instance.Universe;
  */
 public class CrashesTest extends TestCase {
 	private final Solver solver = new Solver(Solver.SATSolverName.Mini3SAT);
+	
+	public final void testMana_01132006() {
+//		r0=[[], [[null], [DblLinkedList0]]], 
+//		null=[[[null]], [[null]]], 
+//		head=[[], [[DblLinkedList0, null], [DblLinkedList0, DblLinkedListElem0]]], 
+//		next=[[], [[DblLinkedListElem0, null], [DblLinkedListElem0, DblLinkedListElem0]]],
+//		univ=[[[null], [DblLinkedList0], [1], [DblLinkedListElem0], [0]], [[null], [DblLinkedList0], [1], [DblLinkedListElem0], [0]]]
+//		r1=[[], [[null], [DblLinkedListElem0]]],
+		final List<String> atoms = new ArrayList<String>(5);
+		atoms.add("null"); atoms.add("DblLinkedList0"); atoms.add("1");
+		atoms.add("DblLinkedListElem0"); atoms.add("0");
+		final Universe u = new Universe(atoms);
+		final TupleFactory t = u.factory();
+		
+		//!((head . univ) in ((if (r1 in null) then (head ++ (r0 -> (r1 . next))) else head) . univ))
+
+		final Relation head = Relation.binary("head"), univ = Relation.unary("univ"),
+		               r0 = Relation.unary("r0"), r1 = Relation.unary("r1"),
+		               next = Relation.binary("next"), nil = Relation.unary("null"),
+		               none = Relation.unary("none");
+		
+		final Expression override = head.override(r0.product(r1.join(next)));
+		final Expression ifElse = r1.in(nil).thenElse(override, head);
+		final Formula f = head.join(univ).in(ifElse.join(univ)).not();
+		
+		final Bounds b = new Bounds(u);
+		b.bound(r0, t.setOf("null", "DblLinkedList0"));
+		b.bound(r1, t.setOf("null", "DblLinkedListElem0"));
+		b.bound(head, t.setOf("DblLinkedList0").product(b.upperBound(r1)));
+		
+		b.bound(next, t.setOf(t.tuple("DblLinkedListElem0","null"), t.tuple("DblLinkedListElem0","DblLinkedListElem0")));
+		b.boundExactly(univ, t.allOf(1));
+		b.boundExactly(nil, t.setOf("null"));
+		b.boundExactly(none, t.noneOf(1));
+		
+//		System.out.println(f);
+//		System.out.println(b);
+		
+		try {
+			final Instance instance = solver.solve(f, b);
+			assertNull(instance);
+		} catch (TimeoutException te) {
+			fail("Timed out solving " + f);
+		}
+	}
+	
 	
 	public final void testGreg_11232005() {
 		final List<String> atoms = new ArrayList<String>(3);
@@ -124,10 +171,7 @@ public class CrashesTest extends TestCase {
 						assertTrue(tdivcopy.contains(f.tuple(i,j,(10+divij)%10)));
 				}
 			}
-		}
-		
-		
-		
+		}	
 	}
 	
 	

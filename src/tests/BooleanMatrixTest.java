@@ -410,9 +410,14 @@ public class BooleanMatrixTest extends TestCase {
         assertTrue(equivalent(mF44.closure(), result));
         
         //System.out.println(mF44.closure());
-        
-        
     }
     
-  
+    public final void testOverride() {
+    		assertTrue(equivalent(mT324.override(mT324), mT324));
+    		assertTrue(equivalent(mT324.override(mF324), mT324));
+    		assertTrue(equivalent(mF324.override(mT324), mT324));
+    		assertTrue(equivalent(mF324.override(mF324), mF324));
+    		// TODO:  more tests!
+    }
+    
 }
