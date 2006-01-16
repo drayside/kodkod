@@ -13,11 +13,14 @@ import java.util.Arrays;
 import java.util.Iterator;
 
 import junit.framework.TestCase;
+import relcalc.core.bool.BooleanConstant;
+import relcalc.core.bool.BooleanFactory;
 import relcalc.core.bool.BooleanMatrix;
 import relcalc.core.bool.BooleanValue;
 import relcalc.core.bool.BooleanVariable;
-import relcalc.core.bool.BooleanFactory;
 import relcalc.core.bool.Dimensions;
+import relcalc.core.bool.MultiGate;
+import relcalc.core.bool.MutableMultiGate;
 import relcalc.util.IndexedEntry;
 import relcalc.util.IntRange;
 import relcalc.util.Ints;
@@ -417,7 +420,81 @@ public class BooleanMatrixTest extends TestCase {
     		assertTrue(equivalent(mT324.override(mF324), mT324));
     		assertTrue(equivalent(mF324.override(mT324), mT324));
     		assertTrue(equivalent(mF324.override(mF324), mF324));
-    		// TODO:  more tests!
+   
+    		
+    		final BooleanMatrix mF324c = mF324.copy(), mT324c = mT324.copy();
+    		
+    		mF324.set(3, vars[3]);
+    		mF324.set(17, vars[17]);
+    		mF324.set(22, vars[22]);
+    		assertTrue(equivalent(mF324.override(mF324c), mF324));
+    		assertTrue(equivalent(mF324.override(mT324), mT324));
+    		
+    		mF324c.set(9, vars[9]);
+    		assertTrue(equivalent(mF324.override(mF324c), mF324.or(mF324c)));
+    	
+    		mT324.set(0, BooleanConstant.FALSE);
+    		assertTrue(equivalent(mF324.override(mT324), mT324));
+    		assertTrue(equivalent(mT324.override(mT324c), mT324c));
+    		assertTrue(equivalent(mT324c.override(mT324), mT324));
+    	
+    		final BooleanMatrix mFoF = f.matrix(dim324, BooleanConstant.FALSE);
+    		mF324.set(10, vars[10]);
+    		mF324c.set(3, vars[4]);
+    		mF324c.set(20, vars[20]);
+    		mF324c.set(19, vars[19]);
+    		
+    		mFoF.set(3, f.or(vars[4], f.and(vars[3], f.not(vars[4]))));
+    		mFoF.set(9, vars[9]);
+    		mFoF.set(10, f.and(vars[10], f.not(vars[9])));
+    		mFoF.set(17, f.and(vars[17], f.and(f.not(vars[19]), f.not(vars[20]))));
+    		mFoF.set(22, f.and(vars[22], f.and(f.not(vars[19]), f.not(vars[20]))));
+    		mFoF.set(20, vars[20]);
+    		mFoF.set(19, vars[19]);
+     		
+    		assertTrue(equivalent(mF324.override(mF324c), mFoF));
+    		
+    		mT324.set(3, vars[4]);
+    		mT324.set(11, vars[11]);
+    		for(int i = 16; i < 24; i++)
+    			mT324.set(i, vars[i-16]);
+    		
+    		
+    		final BooleanMatrix mFoT = f.matrix(dim324, BooleanConstant.TRUE);
+    		for(int i = 0; i < 16; i++)
+    			mFoT.set(i, mT324.get(i));
+    		
+    		final MutableMultiGate g = MutableMultiGate.treeGate(MultiGate.Operator.AND);
+    		for(int i = 0; i < 8; i++)
+    			g.addInput(f.not(vars[i]));
+    		final BooleanValue v3 = f.toImmutableValue(g);
+    		
+    		for(int i = 16; i < 24; i++)
+    			mFoT.set(i, f.or(f.and(v3, mF324.get(i)), mT324.get(i)));
+    		
+    		assertTrue(equivalent(mF324.override(mT324), mFoT));
+    		
+    		final BooleanMatrix mToF = f.matrix(dim324, BooleanConstant.TRUE);
+    		for(int i = 0; i < 8; i++) 
+    			mToF.set(i, f.or(mF324.get(i), f.and(mT324.get(i), f.not(vars[3]))));
+    		for(int i = 8; i < 16; i++) 
+    			mToF.set(i, f.or(mF324.get(i), f.and(mT324.get(i), f.not(vars[10]))));
+    		for(int i = 16; i < 24; i++) 
+    			mToF.set(i, f.or(mF324.get(i), f.and(mT324.get(i), f.and(f.not(vars[17]), f.not(vars[22])))));
+    		
+    		assertTrue(equivalent(mT324.override(mF324), mToF));
+    		
+    		final BooleanMatrix mToT = f.matrix(dim324, BooleanConstant.TRUE);
+    		mT324c.set(11, vars[12]);
+    		mT324c.set(12, vars[13]);
+    		mT324c.set(18, vars[18]);
+    		for(int i = 0; i < 16; i++) 
+    			mToT.set(i, mT324.get(i));
+    		for(int i = 16; i < 24; i++) 
+    			mToT.set(i, f.or(mT324.get(i), f.and(mT324c.get(i), v3)));
+    		
+    		assertTrue(equivalent(mT324c.override(mT324), mToT));
+    		
     }
     
 }
