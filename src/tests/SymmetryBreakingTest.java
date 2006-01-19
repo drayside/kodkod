@@ -11,7 +11,6 @@ import relcalc.engine.TimeoutException;
 import relcalc.instance.Bounds;
 import relcalc.instance.Instance;
 import relcalc.instance.TupleFactory;
-import relcalc.instance.TupleSet;
 import relcalc.instance.Universe;
 
 /** 
@@ -23,6 +22,7 @@ public class SymmetryBreakingTest extends TestCase {
 	private static final int USIZE = 10;
 	private final TupleFactory factory;
 	private final Solver solver;
+	@SuppressWarnings("unused")
 	private final Relation to1, first1, last1, to2, first2, last2, to3, first3, last3, ac1, ac2, ac3, r1, r2;
 	private Bounds bounds;
 	
@@ -70,18 +70,22 @@ public class SymmetryBreakingTest extends TestCase {
 		}
 	}
 	
+	@SuppressWarnings("unused")
 	private Instance solve(Formula f) {
 		return solve(f, bounds);
 	}
 		
+	@SuppressWarnings("unused")
 	private void assertPrimVarNum(int primVars) {
 		assertEquals(primVars, solver.numberOfPrimaryVariables());
 	}
 	
+	@SuppressWarnings("unused")
 	private void assertAuxVarNum(int auxVars) {
 		assertEquals(auxVars, solver.numberOfIntermediateVariables());
 	}
 	
+	@SuppressWarnings("unused")
 	private void assertClauseNum(int clauses) {
 		assertEquals(clauses, solver.numberOfClauses());
 	}
