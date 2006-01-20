@@ -1,28 +1,113 @@
 package tests;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import junit.framework.TestCase;
 import relcalc.ast.Expression;
 import relcalc.ast.Formula;
 import relcalc.ast.Relation;
+import relcalc.ast.Variable;
 import relcalc.engine.Evaluator;
 import relcalc.engine.Solver;
 import relcalc.engine.TimeoutException;
 import relcalc.instance.Bounds;
 import relcalc.instance.Instance;
+import relcalc.instance.Tuple;
 import relcalc.instance.TupleFactory;
 import relcalc.instance.TupleSet;
 import relcalc.instance.Universe;
 
 /**
- * Test cases that record reported crashes. 
+ * Test cases that record reported bugs. 
  * 
  * @author Emina Torlak
  */
-public class CrashesTest extends TestCase {
+public class BugTests extends TestCase {
 	private final Solver solver = new Solver(Solver.SATSolverName.Mini3SAT);
+	
+	
+	public final void testGreg_01192006() {
+//		 circular linked list
+		Relation Entry = Relation.unary("Entry");
+		Relation head = Relation.unary("head");
+		Relation next = Relation.binary("next");
+		Formula nextFun = next.function(Entry, Entry);
+
+//		 bijection between indices and entries in linked list
+		Relation Index = Relation.unary("Index");
+		Relation index2Entry = Relation.binary("index2Entry");
+		Expression entries = head.join(next.closure());
+		Variable e = Variable.unary("e");
+		Expression preImage = index2Entry.join(e);
+		Formula index2EntryBij = e.in(entries).implies(preImage.one()).and(
+				e.in(entries).not().implies(preImage.no())).forAll(e.oneOf(Entry));
+
+//		 try to force list to have three distinct entries
+		Variable e1 = Variable.unary("e1");
+		Variable e2 = Variable.unary("e2");
+		Variable e3 = Variable.unary("e3");
+		Formula threeEntries =
+		e1.eq(e2).not().and(e1.eq(e3).not()).and(e2.eq(e3).not()).
+			forSome(e1.oneOf(entries).and(e2.oneOf(entries).and(e3.oneOf(entries))));
+		Formula simulate = head.one().and(nextFun).and(index2EntryBij).and(threeEntries);
+
+		Object Entry0 = "Entry0";
+		Object Entry1 = "Entry1";
+		Object Entry2 = "Entry2";
+		Object Entry3 = "Entry3";
+		Object Index0 = "Index0";
+		Object Index1 = "Index1";
+		Object Index2 = "Index2";
+		Object Index3 = "Index3";
+
+		Universe univ = new Universe(
+				Arrays.asList(Entry0, Entry1, Entry2, Entry3,
+						Index0, Index1, Index2, Index3));
+		TupleFactory factory = univ.factory();
+		TupleSet entryTuples = factory.setOf(Entry0, Entry1, Entry2, Entry3);
+		TupleSet indexTuples = factory.setOf(Index0, Index1, Index2, Index3);
+
+		Instance instance = new Instance(univ);
+		instance.add(Entry, entryTuples);
+		instance.add(head, factory.setOf(Entry0));
+		instance.add(Index, indexTuples);
+
+		Tuple next0 = factory.tuple(Entry0, Entry1);
+		Tuple next1 = factory.tuple(Entry1, Entry2);
+		Tuple next2 = factory.tuple(Entry2, Entry3);
+		Tuple next3 = factory.tuple(Entry3, Entry0);
+		instance.add(next, factory.setOf(next0, next1, next2, next3));
+
+		Tuple i2e0 = factory.tuple(Index0, Entry0);
+		Tuple i2e1 = factory.tuple(Index1, Entry1);
+		Tuple i2e2 = factory.tuple(Index2, Entry2);
+		Tuple i2e3 = factory.tuple(Index3, Entry3);
+		instance.add(index2Entry, factory.setOf(i2e0, i2e1, i2e2, i2e3));
+
+		Evaluator eval = new Evaluator(instance);
+		assertTrue(eval.evaluate(simulate));
+
+		Bounds bounds = new Bounds(univ);
+		bounds.boundExactly(Entry, entryTuples);
+		bounds.bound(head, entryTuples);
+		bounds.bound(next, entryTuples.product(entryTuples));
+		bounds.bound(Index, indexTuples);
+		bounds.bound(index2Entry, indexTuples.product(entryTuples));
+//		Solver solver = new Solver(SATSolverName.Default);
+		try {
+//			System.out.println(simulate);
+//			System.out.println(bounds);
+//			System.out.println(instance);
+			instance = solver.solve(simulate, bounds);
+//			System.out.println(instance);
+			assertNotNull(instance);
+		} catch (TimeoutException e4) {
+			// TODO Auto-generated catch block
+			e4.printStackTrace();
+		}
+	}
 	
 	public final void testMana_01132006() {
 //		r0=[[], [[null], [DblLinkedList0]]], 

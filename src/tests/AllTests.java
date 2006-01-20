@@ -14,7 +14,7 @@ public class AllTests {
 		suite.addTestSuite(BooleanCircuitTest.class);
 		suite.addTestSuite(SymmetryBreakingTest.class);
 		suite.addTestSuite(ModelsTest.class);
-		suite.addTestSuite(CrashesTest.class);
+		suite.addTestSuite(BugTests.class);
 		//$JUnit-END$
 		return suite;
 	}
