@@ -18,6 +18,8 @@ import relcalc.instance.Tuple;
 import relcalc.instance.TupleFactory;
 import relcalc.instance.TupleSet;
 import relcalc.instance.Universe;
+import relcalc.util.IntBitSet;
+import relcalc.util.IntIterator;
 
 /**
  * Test cases that record reported bugs. 
@@ -27,6 +29,31 @@ import relcalc.instance.Universe;
 public class BugTests extends TestCase {
 	private final Solver solver = new Solver(Solver.SATSolverName.Mini3SAT);
 	
+	public final void testEmina_01192006() {
+		IntBitSet s = new IntBitSet(64);
+		for(int i = 4; i < 8; i++) {
+			for(int j = 0; j < 4; j++) {
+				s.add(i*8+j);
+			}
+		}
+//		System.out.println(s);
+		for(int i = 4; i < 8; i++) {
+			assertTrue(s.iterator(i*8, (i+1)*8-1).hasNext());
+			int count = 0;
+			for(IntIterator iter = s.iterator(i*8, (i+1)*8-1); iter.hasNext(); ) {
+				count += iter.nextInt() % 8;
+			}
+			assertEquals(count, 6);
+		}
+		for(int i = 4; i < 8; i++) {
+			assertTrue(s.iterator((i+1)*8-1, i*8).hasNext());
+			int count = 0;
+			for(IntIterator iter = s.iterator((i+1)*8-1, i*8); iter.hasNext(); ) {
+				count += iter.nextInt() % 8;
+			}
+			assertEquals(count, 6);
+		}
+	}
 	
 	public final void testGreg_01192006() {
 //		 circular linked list
