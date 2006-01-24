@@ -11,10 +11,12 @@ import relcalc.engine.TimeoutException;
 import relcalc.instance.Bounds;
 import relcalc.instance.Instance;
 import relcalc.instance.TupleFactory;
+import relcalc.instance.TupleSet;
 import relcalc.instance.Universe;
 
 /** 
- * Tests symmetry breaking code.
+ * Tests symmetry breaking code for total orderings and 
+ * acyclic relations.
  *
  * @author Emina Torlak 
  */
@@ -22,8 +24,10 @@ public class SymmetryBreakingTest extends TestCase {
 	private static final int USIZE = 10;
 	private final TupleFactory factory;
 	private final Solver solver;
-	@SuppressWarnings("unused")
-	private final Relation to1, first1, last1, to2, first2, last2, to3, first3, last3, ac1, ac2, ac3, r1, r2;
+	private final Relation to1, ord1, first1, last1, 
+	                       to2, ord2, first2, last2, 
+	                       to3, ord3, first3, last3, 
+	                       ac1, ac2, ac3, r1, r2;
 	private Bounds bounds;
 	
 	public SymmetryBreakingTest(String arg0) {
@@ -37,22 +41,27 @@ public class SymmetryBreakingTest extends TestCase {
 		final Universe universe = new Universe(atoms);
 		this.factory = universe.factory();
 		
+		to1 = Relation.binary("to1");
+		ord1 = Relation.unary("ord1");
 		first1 = Relation.unary("first1");
 		last1 = Relation.unary("last1");
+		
+		to2 = Relation.binary("to2");
+		ord2 = Relation.unary("ord2");
 		first2 = Relation.unary("first2");
 		last2 = Relation.unary("last2");
+		
+		to3 = Relation.binary("to3");
+		ord3 = Relation.unary("ord3");
 		first3 = Relation.unary("first3");
 		last3 = Relation.unary("last3");
-		to1 = Relation.binary("to1");
-		to2 = Relation.binary("to2");
-		to3 = Relation.binary("to3");
+	
 		ac1 = Relation.binary("ac1");
 		ac2 = Relation.binary("ac2");
 		ac3 = Relation.binary("ac3");
+		
 		r1 = Relation.unary("r1");
 		r2 = Relation.binary("r2");
-		
-		
 	}
 	
 	protected void setUp() throws Exception {
@@ -91,56 +100,75 @@ public class SymmetryBreakingTest extends TestCase {
 	}
 	
 	public void testTotalOrdering() {
-//		bounds.bound(to1, factory.area(factory.tuple("0","0"), factory.tuple("4","4")));
-//		assertNotNull(solve(to1.some()));
-//		assertPrimVarNum(0); assertAuxVarNum(0); assertClauseNum(0);
-//		
-//		bounds.bound(r1, factory.range(factory.tuple("0"), factory.tuple("4")));
-//		assertNotNull(solve(to1.join(r1).some()));
-//		assertPrimVarNum(bounds.upperBound(r1).size());
-//		
-//		bounds.bound(to2, factory.setOf(factory.tuple("5","7"),factory.tuple("5","6"), factory.tuple("7","8"), 
-//				                        factory.tuple("7","8"), factory.tuple("8","9")));
-//		assertNotNull(solve(to1.difference(to2).some()));
-//		assertPrimVarNum(0); assertAuxVarNum(0); assertClauseNum(0);
-//		
-//		bounds.bound(to3, factory.allOf(2));
-//		assertNotNull(solve(to3.product(to1).some()));
-//		assertPrimVarNum(bounds.upperBound(to1).size());
-//		
-//		assertNotNull(solve(to3.union(to1).join(to2).some()));
-//		assertPrimVarNum(bounds.upperBound(to1).size() + bounds.upperBound(to2).size());
+		bounds.bound(to1, factory.area(factory.tuple("0","0"), factory.tuple("4","4")));
+		bounds.bound(ord1, factory.setOf("0","1","2","3", "4"));
+		bounds.bound(first1, bounds.upperBound(ord1));
+		bounds.bound(last1, bounds.upperBound(ord1));
+		final Formula ordered1 = to1.totalOrder(ord1,first1,last1);
+		assertNotNull(solve(to1.some().and(ordered1)));
+		assertPrimVarNum(0); assertAuxVarNum(0); assertClauseNum(0);
+		
+		bounds.bound(r1, factory.range(factory.tuple("0"), factory.tuple("4")));
+		assertNotNull(solve(to1.join(r1).some().and(ordered1)));
+		assertPrimVarNum(bounds.upperBound(r1).size());
+		
+		bounds.boundExactly(r1, bounds.upperBound(r1));
+		assertNotNull(solve(to1.join(r1).some().and(ordered1)));
+		assertPrimVarNum(0);
+		
+		bounds.bound(to2, factory.setOf("5","6","7","8","9").product(factory.setOf("5","7","8")));
+		bounds.bound(ord2, factory.setOf("5","7","8"));
+		bounds.bound(first2, bounds.upperBound(ord2));
+		bounds.bound(last2, bounds.upperBound(ord2));
+		final Formula ordered2 = to2.totalOrder(ord2,first2,last2);
+		assertNotNull(solve(to1.difference(to2).some().and(ordered2).and(ordered1)));
+		assertPrimVarNum(0); assertAuxVarNum(0); assertClauseNum(0);
+		
+		bounds.bound(to3, factory.allOf(2));
+		bounds.bound(ord3, factory.allOf(1));
+		bounds.bound(first3, factory.setOf("9"));
+		bounds.bound(last3, factory.setOf("8"));
+		final Formula ordered3 = to3.totalOrder(ord3,first3,last3);
+		assertNotNull(solve(to3.product(to1).some().and(ordered1).and(ordered3)));
+		assertPrimVarNum(bounds.upperBound(to3).size() + bounds.upperBound(ord3).size() + 2);	
+		
+		// SAT solver takes a while
+//		bounds.boundExactly(r2, factory.setOf(factory.tuple("9","8")));
+//		assertNotNull(solve(r2.in(to3).and(ordered3)));
 	}
 	
 	public void testAcyclic() {
-//		bounds.bound(ac1, factory.area(factory.tuple("0","0"), factory.tuple("4","4")));
-//		assertNotNull(solve(ac1.some()));
-//		assertPrimVarNum(10);
-//		
-//		bounds.bound(r1, factory.range(factory.tuple("1"), factory.tuple("3")));
-//		assertNotNull(solve(ac1.join(r1).some()));
-//		assertPrimVarNum(10 + bounds.upperBound(r1).size());
-//		
-//		bounds.bound(r2, factory.setOf(factory.tuple("2", "3")), factory.allOf(2));
-//		
-//		bounds.bound(ac2, factory.setOf(factory.tuple("5","6"),factory.tuple("6","5"), factory.tuple("7","8"), 
-//                                        factory.tuple("8","7"), factory.tuple("8","9"), factory.tuple("9", "8")));
-//		assertNotNull(solve(ac1.difference(ac2).some()));
-//		assertPrimVarNum(10 + 3);
-//		
-//		assertNotNull(solve(ac1.difference(ac2).join(r2).some()));
-//		assertPrimVarNum(bounds.upperBound(ac1).size() + bounds.upperBound(r2).size() - 1 + 3);
-//		
-//		final TupleSet ac3Bound = factory.allOf(2);
-//		ac3Bound.remove(factory.tuple("9", "8"));
-//		bounds.bound(ac3, ac3Bound);
-//		
-//		assertNotNull(solve(ac1.difference(ac2).union(ac3).some()));
-//		assertPrimVarNum(ac3Bound.size() + 10 + 3);
-//		
-//		bounds.bound(to3, factory.allOf(2));
-//		assertNotNull(solve(to3.product(ac1).some()));
-//		assertPrimVarNum(bounds.upperBound(ac1).size());
+		bounds.bound(ac1, factory.area(factory.tuple("0","0"), factory.tuple("4","4")));
+		assertNotNull(solve(ac1.some().and(ac1.acyclic())));
+		assertPrimVarNum(10);
+		
+		bounds.bound(r1, factory.range(factory.tuple("0"), factory.tuple("4")));
+		assertNotNull(solve(ac1.join(r1).some().and(ac1.acyclic())));
+		assertPrimVarNum(10 + bounds.upperBound(r1).size());
+		
+		
+		TupleSet ac2b = factory.setOf("5","6","7","8");
+		ac2b = ac2b.product(ac2b);
+		bounds.bound(ac2, ac2b);
+		assertNotNull(solve(ac1.difference(ac2).some().and(ac1.acyclic()).and(ac2.acyclic())));
+		assertPrimVarNum(10 + 6);
+		
+		bounds.boundExactly(r2, factory.setOf(factory.tuple("5", "6")));
+		assertNotNull(solve(ac2.join(r2).some().and(ac2.acyclic())));
+		
+		final TupleSet ac3Bound = factory.allOf(2);
+		ac3Bound.remove(factory.tuple("9", "8"));
+		bounds.bound(ac3, ac3Bound);
+		
+		assertNotNull(solve(ac1.difference(ac2).union(ac3).some().and(ac1.acyclic()).and(ac2.acyclic())));
+		assertPrimVarNum(ac3Bound.size() + 10 + 6);
+		
+		bounds.bound(to3, factory.allOf(2));
+		bounds.bound(ord3, factory.setOf("0","1","2"));
+		bounds.bound(first3, bounds.upperBound(ord3));
+		bounds.bound(last3, bounds.upperBound(ord3));
+		assertNotNull(solve(to3.product(ac1).some().and(ac1.acyclic()).and(to3.totalOrder(ord3,first3,last3))));
+		assertPrimVarNum(bounds.upperBound(ac1).size());
 	}
 	
 }
