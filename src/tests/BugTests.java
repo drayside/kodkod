@@ -29,6 +29,37 @@ import relcalc.util.IntIterator;
 public class BugTests extends TestCase {
 	private final Solver solver = new Solver(Solver.SATSolverName.Mini3SAT);
 	
+	public final void testEmina_01232006() {
+		final List<String> atoms = new ArrayList<String>(5);
+		for(int i = 0; i < 5; i++) 
+			atoms.add("a"+i);
+		final Universe u = new Universe(atoms);
+		final TupleFactory tf = u.factory();
+		
+		final Relation r1 = Relation.unary("r1"), 
+		               r2 = Relation.binary("r2"), 
+		               r3 = Relation.ternary("r3");
+		final Bounds b = new Bounds(u);
+		final TupleSet r2Bound = tf.noneOf(2);
+		for(int i = 0; i < 4; i++)
+			r2Bound.add(tf.tuple(atoms.get(i), atoms.get(i)));
+		r2Bound.add(tf.tuple("a4", "a1"));
+		r2Bound.add(tf.tuple("a4", "a2"));
+		b.bound(r2, r2Bound);
+		b.bound(r1, tf.setOf("a0", "a3"), tf.setOf("a0", "a3", "a4"));
+		b.bound(r3, tf.setOf(tf.tuple("a0","a0","a0"), tf.tuple("a3","a3","a3")));
+		final Formula f = r1.product(r2).in(r3);
+		
+		try {
+			final Instance instance = solver.solve(f, b);
+			assertTrue((new Evaluator(instance)).evaluate(f));
+//			System.out.println(instance);
+//			System.out.println((new Evaluator(instance)).evaluate(f  ));
+		} catch (TimeoutException te) {
+			fail("Timed out solving " + f);
+		}
+	}
+	
 	public final void testEmina_01192006() {
 		IntBitSet s = new IntBitSet(64);
 		for(int i = 4; i < 8; i++) {
