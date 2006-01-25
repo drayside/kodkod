@@ -216,8 +216,8 @@ public class TranslatorTest extends TestCase {
 		// r21.r13 in r11
 		assertTrue(isSatisfiable(r2[1].join(r1[3]).in(r1[1])));
 		
-		// *r22 in r21
-		assertTrue(isSatisfiable(r2[2].reflexiveClosure().in(r2[1])));
+		// *r22 in r21 + iden
+		assertTrue(isSatisfiable(r2[2].reflexiveClosure().in(r2[1].union(Expression.IDEN))));
 	}
 	
 	private final void testTranslateQuantifiedFormula(QuantifiedFormula.Quantifier quant) {

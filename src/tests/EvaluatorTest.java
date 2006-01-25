@@ -232,8 +232,8 @@ public class EvaluatorTest extends TestCase {
             }
         }
         assertEquals((new Evaluator(instance)).evaluate(r.closure()), result);
-        // value(*r) = value(^r) + u[0]->u[0] + u[1]->u[1] + u[2]->u[2] + u[3]->u[3]
-        for(int i = 0; i < 4; i++) {
+        // value(*r) = value(^r) + iden
+        for(int i = 0; i < 10; i++) {
         		result.add(f.tuple(u.atom(i), u.atom(i)));
         }
         
