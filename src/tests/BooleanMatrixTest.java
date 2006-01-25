@@ -4,29 +4,29 @@
  */
 package tests;
 
-import static relcalc.core.bool.BooleanConstant.FALSE;
-import static relcalc.core.bool.BooleanConstant.TRUE;
-import static relcalc.core.bool.MultiGate.Operator.AND;
-import static relcalc.core.bool.MultiGate.Operator.OR;
+import static kodkod.core.bool.BooleanConstant.FALSE;
+import static kodkod.core.bool.BooleanConstant.TRUE;
+import static kodkod.core.bool.MultiGate.Operator.AND;
+import static kodkod.core.bool.MultiGate.Operator.OR;
 
 import java.util.Arrays;
 import java.util.Iterator;
 
 import junit.framework.TestCase;
-import relcalc.core.bool.BooleanConstant;
-import relcalc.core.bool.BooleanFactory;
-import relcalc.core.bool.BooleanMatrix;
-import relcalc.core.bool.BooleanValue;
-import relcalc.core.bool.BooleanVariable;
-import relcalc.core.bool.Dimensions;
-import relcalc.core.bool.MultiGate;
-import relcalc.core.bool.MutableMultiGate;
-import relcalc.util.IndexedEntry;
-import relcalc.util.IntRange;
-import relcalc.util.Ints;
+import kodkod.core.bool.BooleanConstant;
+import kodkod.core.bool.BooleanFactory;
+import kodkod.core.bool.BooleanMatrix;
+import kodkod.core.bool.BooleanValue;
+import kodkod.core.bool.BooleanVariable;
+import kodkod.core.bool.Dimensions;
+import kodkod.core.bool.MultiGate;
+import kodkod.core.bool.MutableMultiGate;
+import kodkod.util.IndexedEntry;
+import kodkod.util.IntRange;
+import kodkod.util.Ints;
 
 /** 
- * Tests {@link relcalc.core.bool.BooleanMatrix BooleanMatrix}.
+ * Tests {@link kodkod.core.bool.BooleanMatrix BooleanMatrix}.
  *
  * @author Emina Torlak 
  */

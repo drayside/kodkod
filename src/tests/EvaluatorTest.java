@@ -10,21 +10,21 @@ import java.util.Map;
 import java.util.Set;
 
 import junit.framework.TestCase;
-import relcalc.ast.Decl;
-import relcalc.ast.Decls;
-import relcalc.ast.Expression;
-import relcalc.ast.Formula;
-import relcalc.ast.Relation;
-import relcalc.ast.Variable;
-import relcalc.engine.Evaluator;
-import relcalc.instance.Instance;
-import relcalc.instance.Tuple;
-import relcalc.instance.TupleFactory;
-import relcalc.instance.TupleSet;
-import relcalc.instance.Universe;
+import kodkod.ast.Decl;
+import kodkod.ast.Decls;
+import kodkod.ast.Expression;
+import kodkod.ast.Formula;
+import kodkod.ast.Relation;
+import kodkod.ast.Variable;
+import kodkod.engine.Evaluator;
+import kodkod.instance.Instance;
+import kodkod.instance.Tuple;
+import kodkod.instance.TupleFactory;
+import kodkod.instance.TupleSet;
+import kodkod.instance.Universe;
 
 /** 
- * Tests relcalc.engine.Evaluator using the instance produced by running
+ * Tests kodkod.engine.Evaluator using the instance produced by running
  * the AlloyAnalyzer on examples/puzzles/handshake.als
  *
  * @author Emina Torlak 

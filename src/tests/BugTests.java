@@ -5,21 +5,21 @@ import java.util.Arrays;
 import java.util.List;
 
 import junit.framework.TestCase;
-import relcalc.ast.Expression;
-import relcalc.ast.Formula;
-import relcalc.ast.Relation;
-import relcalc.ast.Variable;
-import relcalc.engine.Evaluator;
-import relcalc.engine.Solver;
-import relcalc.engine.TimeoutException;
-import relcalc.instance.Bounds;
-import relcalc.instance.Instance;
-import relcalc.instance.Tuple;
-import relcalc.instance.TupleFactory;
-import relcalc.instance.TupleSet;
-import relcalc.instance.Universe;
-import relcalc.util.IntBitSet;
-import relcalc.util.IntIterator;
+import kodkod.ast.Expression;
+import kodkod.ast.Formula;
+import kodkod.ast.Relation;
+import kodkod.ast.Variable;
+import kodkod.engine.Evaluator;
+import kodkod.engine.Solver;
+import kodkod.engine.TimeoutException;
+import kodkod.instance.Bounds;
+import kodkod.instance.Instance;
+import kodkod.instance.Tuple;
+import kodkod.instance.TupleFactory;
+import kodkod.instance.TupleSet;
+import kodkod.instance.Universe;
+import kodkod.util.IntBitSet;
+import kodkod.util.IntIterator;
 
 /**
  * Test cases that record reported bugs. 

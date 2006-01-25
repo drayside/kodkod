@@ -1,5 +1,5 @@
 package taglet;
-//package relcalc.util;
+//package kodkod.util;
 
 /*
  * Copyright 2002 Sun Microsystems, Inc. All  Rights Reserved.

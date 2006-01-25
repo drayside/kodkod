@@ -9,25 +9,25 @@ import java.util.List;
 import java.util.Set;
 
 import junit.framework.TestCase;
-import relcalc.ast.Expression;
-import relcalc.ast.Formula;
-import relcalc.ast.Multiplicity;
-import relcalc.ast.QuantifiedFormula;
-import relcalc.ast.Relation;
-import relcalc.ast.Variable;
-import relcalc.engine.Solver;
-import relcalc.engine.TimeoutException;
-import relcalc.instance.Bounds;
-import relcalc.instance.Instance;
-import relcalc.instance.Tuple;
-import relcalc.instance.TupleFactory;
-import relcalc.instance.TupleSet;
-import relcalc.instance.Universe;
+import kodkod.ast.Expression;
+import kodkod.ast.Formula;
+import kodkod.ast.Multiplicity;
+import kodkod.ast.QuantifiedFormula;
+import kodkod.ast.Relation;
+import kodkod.ast.Variable;
+import kodkod.engine.Solver;
+import kodkod.engine.TimeoutException;
+import kodkod.instance.Bounds;
+import kodkod.instance.Instance;
+import kodkod.instance.Tuple;
+import kodkod.instance.TupleFactory;
+import kodkod.instance.TupleSet;
+import kodkod.instance.Universe;
 
 
 /** 
- * Tests {@link relcalc.core.fol2sat.Fol2SatTranslator FOL to SAT translation} and
- * {@link relcalc.core.sat2cnf.Sat2CnfTranslator SAT to CNF translation}.
+ * Tests {@link kodkod.core.fol2sat.Fol2SatTranslator FOL to SAT translation} and
+ * {@link kodkod.core.sat2cnf.Sat2CnfTranslator SAT to CNF translation}.
  *
  * @author Emina Torlak 
  */

@@ -4,15 +4,15 @@ import java.util.LinkedList;
 import java.util.List;
 
 import junit.framework.TestCase;
-import relcalc.ast.Formula;
-import relcalc.ast.Relation;
-import relcalc.ast.Variable;
-import relcalc.engine.Solver;
-import relcalc.engine.TimeoutException;
-import relcalc.instance.Bounds;
-import relcalc.instance.Instance;
-import relcalc.instance.TupleFactory;
-import relcalc.instance.Universe;
+import kodkod.ast.Formula;
+import kodkod.ast.Relation;
+import kodkod.ast.Variable;
+import kodkod.engine.Solver;
+import kodkod.engine.TimeoutException;
+import kodkod.instance.Bounds;
+import kodkod.instance.Instance;
+import kodkod.instance.TupleFactory;
+import kodkod.instance.Universe;
 
 public class ModelsTest extends TestCase {
 

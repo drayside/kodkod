@@ -1,22 +1,22 @@
 package tests;
 
-import static relcalc.core.bool.BooleanConstant.FALSE;
-import static relcalc.core.bool.BooleanConstant.TRUE;
-import static relcalc.core.bool.MultiGate.Operator.AND;
-import static relcalc.core.bool.MultiGate.Operator.OR;
+import static kodkod.core.bool.BooleanConstant.FALSE;
+import static kodkod.core.bool.BooleanConstant.TRUE;
+import static kodkod.core.bool.MultiGate.Operator.AND;
+import static kodkod.core.bool.MultiGate.Operator.OR;
 
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
 import junit.framework.TestCase;
-import relcalc.core.bool.BooleanConstant;
-import relcalc.core.bool.BooleanFormula;
-import relcalc.core.bool.BooleanValue;
-import relcalc.core.bool.BooleanVariable;
-import relcalc.core.bool.BooleanFactory;
-import relcalc.core.bool.MultiGate.Operator;
-import relcalc.util.ArrayIterator;
+import kodkod.core.bool.BooleanConstant;
+import kodkod.core.bool.BooleanFactory;
+import kodkod.core.bool.BooleanFormula;
+import kodkod.core.bool.BooleanValue;
+import kodkod.core.bool.BooleanVariable;
+import kodkod.core.bool.MultiGate.Operator;
+import kodkod.util.ArrayIterator;
 
 
 public class BooleanCircuitTest extends TestCase {
