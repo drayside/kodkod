@@ -1,0 +1,7 @@
+kodkod.ast
+kodkod.core.bool
+kodkod.core.fol2sat
+kodkod.core.sat2cnf
+kodkod.engine
+kodkod.instance
+kodkod.util
