@@ -135,6 +135,17 @@ public class SymmetryBreakingTest extends TestCase {
 		// SAT solver takes a while
 //		bounds.boundExactly(r2, factory.setOf(factory.tuple("9","8")));
 //		assertNotNull(solve(r2.in(to3).and(ordered3)));
+		bounds.bound(to3, factory.allOf(2));
+		bounds.bound(ord3, factory.setOf("3"));
+		bounds.bound(first3, factory.allOf(1));
+		bounds.bound(last3, factory.allOf(1));
+		
+		Instance instance = solve(ordered3);
+		assertNotNull(instance);
+		assertTrue(instance.tuples(to3).isEmpty());
+		assertTrue(instance.tuples(ord3).equals(bounds.upperBound(ord3)));
+		assertTrue(instance.tuples(first3).equals(bounds.upperBound(ord3)));
+		assertTrue(instance.tuples(last3).equals(bounds.upperBound(ord3)));
 	}
 	
 	public void testAcyclic() {

@@ -233,7 +233,7 @@ public final class Solver {
 //			System.out.println(formula);
 //			System.out.println(sat);
 			if (sat.value() == BooleanConstant.TRUE) {
-				return toInstance(bounds);
+				return padInstance(toInstance(sat.bounds()), bounds);
 			} else if (sat.value() == BooleanConstant.FALSE) { 
 				return null;	
 			} else {
