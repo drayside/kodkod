@@ -9,7 +9,7 @@ package kodkod.ast;
  * Represents a negation of a {@link kodkod.ast.Formula formula}
  * 
  * @specfield formula: Formula
- * 
+ * @invariant children = formula
  * @author Emina Torlak
  */
 public final class NotFormula extends Formula {

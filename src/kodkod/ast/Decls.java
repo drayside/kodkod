@@ -16,7 +16,7 @@ import java.util.List;
  * @specfield size: int
  * @specfield declarations: [0..size) -> one Decl
  * @invariant size > 0
- *
+ * @invariant children = declarations[int]
  * @author Emina Torlak 
  */
 public class Decls implements Node, Iterable<Decl> {

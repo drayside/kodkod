@@ -9,6 +9,7 @@ package kodkod.ast;
 /** 
  * A boolean literal {@link kodkod.ast.Formula formula}, true or false.
  *
+ * @invariant no children
  * @author Emina Torlak 
  */
 public abstract class ConstantFormula extends Formula {

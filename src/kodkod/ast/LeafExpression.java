@@ -15,7 +15,7 @@ package kodkod.ast;
  * 
  * @specfield name: String
  * @specfield arity: int
- *
+ * @specfield no children
  * @author Emina Torlak 
  */
 public abstract class LeafExpression extends Expression {

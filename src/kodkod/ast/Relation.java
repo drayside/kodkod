@@ -22,6 +22,7 @@ package kodkod.ast;
  * 
  * @specfield name: String
  * @specfield arity: int
+ * @invariant no children
  * @author Emina Torlak 
  */
 public class Relation extends LeafExpression {

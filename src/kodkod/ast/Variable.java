@@ -16,7 +16,7 @@ package kodkod.ast;
  * 
  * @specfield name: String
  * @specfield arity: int
- *
+ * @invariant no children
  * @author Emina Torlak 
  */
 public final class Variable extends LeafExpression {

@@ -12,7 +12,7 @@ package kodkod.ast;
  * @specfield left: Formula
  * @specfield right: Formula
  * @specfield op: AbstractOperator
- *
+ * @invariant children = left + right
  * @author Emina Torlak 
  */
 public final class BinaryFormula extends Formula {

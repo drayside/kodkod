@@ -14,7 +14,7 @@ package kodkod.ast;
  * @specfield variable: Variable
  * @specfield expression: Expression
  * @invariant variable.arity = expression.arity
- *
+ * @invariant children = variable + expression
  * @author Emina Torlak 
  */
 public final class Decl extends Decls {

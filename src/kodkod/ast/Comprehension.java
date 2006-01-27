@@ -12,7 +12,7 @@ package kodkod.ast;
  * @specfield declarations: Declarations
  * @specfield formula: Formula
  * @invariant arity = sum(declarations.declarations().arity)
- *
+ * @invariant children = declarations + formula
  * @author Emina Torlak 
  */
 public final class Comprehension extends Expression  {

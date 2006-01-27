@@ -11,7 +11,7 @@ package kodkod.ast;
  * @specfield declarations: Declarations
  * @specfield formula: Formula
  * @specfield quantifier: Quantifier
- *
+ * @invariant children = declarations + formula
  * @author Emina Torlak 
  */
 public final class QuantifiedFormula extends Formula  {

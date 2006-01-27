@@ -3,6 +3,7 @@ package kodkod.ast;
 /**
  * Represents a constant valued expression.
  * 
+ * @invariant no children
  * @author Emina Torlak
  */
 public final class ConstantExpression extends LeafExpression {

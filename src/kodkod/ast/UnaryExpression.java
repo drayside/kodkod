@@ -9,7 +9,7 @@ package kodkod.ast;
  * 
  * @specfield expression: Expression
  * @specfield op: Operator
- *
+ * @invariant children = expression
  * @author Emina Torlak 
  */
 public final class UnaryExpression extends Expression {

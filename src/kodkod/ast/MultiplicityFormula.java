@@ -10,7 +10,7 @@ package kodkod.ast;
  * 
  * @specfield expression: Expression
  * @specfield multiplicity: (ONE + LONE + SOME + NO)
- *
+ * @invariant children = expression
  * @author Emina Torlak 
  */
 public final class MultiplicityFormula extends Formula {

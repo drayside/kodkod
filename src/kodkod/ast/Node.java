@@ -7,8 +7,9 @@ package kodkod.ast;
 
 /**
  * Represents a node in the abstract syntax tree.  A node
- * can accept a Visitor.
+ * can accept a Visitor and have zero or more children.
  * 
+ * @specfield children: set Node
  * @author Emina Torlak
  */
 public interface Node {

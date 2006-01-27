@@ -11,7 +11,7 @@ package kodkod.ast;
  * @specfield left: Expression
  * @specfield right: Expression
  * @specfield op: Operator
- *
+ * @invariant children = left + right
  * @author Emina Torlak 
  */
 public final class BinaryExpression extends Expression {

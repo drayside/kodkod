@@ -11,7 +11,7 @@ package kodkod.ast;
  * @specfield condition: Formula
  * @specfield thenExpr: Expression
  * @specfield elseExpr: Expression
- * 
+ * @invariant children = condition + thenExpr + elseExpr
  * @author Greg Dennis (gdennis@mit.edu)
  */
 public final class IfExpression extends Expression {

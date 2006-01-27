@@ -84,6 +84,7 @@ public abstract class RelationPredicate extends Formula {
 	 * the given <code>relation</code> is acyclic.
 	 * @specfield relation: Relation
 	 * @invariant name = ACYCLIC
+	 * @invariant children = relation
 	 * @author Emina Torlak
 	 */
 	public static final class Acyclic extends RelationPredicate {
@@ -130,6 +131,7 @@ public abstract class RelationPredicate extends Formula {
 	 * @specfield targetMult: ONE + LONE
 	 * @invariant name = FUNCTION
 	 * @invariant domain.arity = range.arity = 1
+	 * @invariant children = relation + domain + range
 	 * @author Emina Torlak
 	 */
 	public static final class Function extends RelationPredicate {
@@ -241,6 +243,7 @@ public abstract class RelationPredicate extends Formula {
 	 * @specfield ordered, first, last: Relation 
 	 * @invariant name = TOTAL_ORDERING
 	 * @invariant ordered.arity = first.arity = last.arity = 1
+	 * @invariant children = relation + ordered + first + last
 	 */
 	public static final class TotalOrdering extends RelationPredicate {
 		private final Relation first, last, ordered;
