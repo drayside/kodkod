@@ -1,5 +1,5 @@
 /*
- * DepthFirstReturnVisitor.java
+ * DepthFirstVisitor.java
  * Created on May 20, 2005
  */
 package kodkod.ast;
@@ -14,9 +14,9 @@ package kodkod.ast;
  *
  * @author Emina Torlak 
  */
-public abstract class DepthFirstReturnVisitor<E, F, D> implements Visitor<E, F, D> {
+public abstract class DepthFirstVisitor<E, F, D> implements Visitor<E, F, D> {
 	
-	protected DepthFirstReturnVisitor() { }
+	protected DepthFirstVisitor() { }
 	
 	/**
 	 * Visits all the children of the given declarations node, and returns null.
