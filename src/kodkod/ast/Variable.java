@@ -4,6 +4,9 @@
  */
 package kodkod.ast;
 
+import kodkod.ast.visitor.ReturnVisitor;
+import kodkod.ast.visitor.VoidVisitor;
+
 
 /** 
  * Represents a variable in a quantified formula or a comprehension expression,
@@ -53,8 +56,16 @@ public final class Variable extends LeafExpression {
      * same tree structure as this.
      * @return o.op.equals(this.op) && o.left.equals(this.left) && o.right.equals(this.right) 
      */
-    public <E, F, D> E accept(Visitor<E, F, D> visitor) {
+    public <E, F, D> E accept(ReturnVisitor<E, F, D> visitor) {
         return visitor.visit(this);
+    }
+    
+    /**
+     * Accepts the given visitor.
+     * @see kodkod.ast.Node#accept(kodkod.ast.visitor.VoidVisitor)
+     */
+    public void accept(VoidVisitor visitor) {
+        visitor.visit(this);
     }
    
 

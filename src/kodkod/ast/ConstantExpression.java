@@ -1,5 +1,8 @@
 package kodkod.ast;
 
+import kodkod.ast.visitor.ReturnVisitor;
+import kodkod.ast.visitor.VoidVisitor;
+
 /**
  * Represents a constant valued expression.
  * 
@@ -23,10 +26,18 @@ public final class ConstantExpression extends LeafExpression {
 
 	/**
      * Accepts the given visitor and returns the result.
-     * @see kodkod.ast.Node#accept(kodkod.ast.Visitor)
+     * @see kodkod.ast.Node#accept(kodkod.ast.visitor.ReturnVisitor)
      */
 	@Override
-	public <E, F, D> E accept(Visitor<E, F, D> visitor) {
+	public <E, F, D> E accept(ReturnVisitor<E, F, D> visitor) {
 		return visitor.visit(this);
 	}
+	
+	/**
+     * Accepts the given visitor.
+     * @see kodkod.ast.Node#accept(kodkod.ast.visitor.VoidVisitor)
+     */
+    public void accept(VoidVisitor visitor) {
+        visitor.visit(this);
+    }
 }

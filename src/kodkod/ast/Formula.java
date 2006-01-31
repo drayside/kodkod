@@ -4,6 +4,8 @@
  */
 package kodkod.ast;
 
+import kodkod.ast.visitor.ReturnVisitor;
+
 
 
 /**
@@ -132,7 +134,7 @@ public abstract class Formula implements Node {
     
     /**
      * Accepts the given visitor and returns the result.
-     * @see kodkod.ast.Node#accept(kodkod.ast.Visitor)
+     * @see kodkod.ast.Node#accept(kodkod.ast.visitor.ReturnVisitor)
      */
-    public abstract <E, F, D> F accept(Visitor<E, F, D> visitor);
+    public abstract <E, F, D> F accept(ReturnVisitor<E, F, D> visitor);
 }

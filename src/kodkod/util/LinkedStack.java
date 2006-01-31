@@ -93,25 +93,34 @@ public final class LinkedStack<T> extends  Stack<T> {
 	/**
 	 * Iterates over the items in this LinkedStack, starting
 	 * at the top of the stack and working its way down.
-	 * The returned iterator cannot be used to modify the stack.
 	 * @return iterator over the elements in this stack.
 	 */
 	public Iterator<T> iterator() {
 		return new Iterator<T>() {
-			private StackEntry<T> cursor = head;
+			private StackEntry<T> cursor = head, prev = null, pprev = null;
 			public boolean hasNext() {
 				return cursor != null;
 			}
 
 			public T next() {
 				if (cursor==null) throw new NoSuchElementException();
-				final T elem = cursor.data;
+				pprev = prev;
+				prev = cursor;
 				cursor = cursor.next;
-				return elem;
+				return prev.data;
 			}
 
 			public void remove() {
-				throw new UnsupportedOperationException();
+				if (prev==pprev) {
+					throw new UnsupportedOperationException();
+				} else if (prev==head) {
+					head = cursor;
+				} else {
+					pprev.next = cursor;
+					prev.next = null;
+				}
+				prev = pprev;
+				size--;
 			}
 			
 		};

@@ -1,5 +1,8 @@
 package kodkod.ast;
 
+import kodkod.ast.visitor.ReturnVisitor;
+import kodkod.ast.visitor.VoidVisitor;
+
 /**
  * Represents common predicates on relations; e.g.
  * predicates stating that a relation is a total function,
@@ -46,9 +49,16 @@ public abstract class RelationPredicate extends Formula {
 	public abstract Formula toConstraints(); 
 	
 	@Override
-	public <E, F, D> F accept(Visitor<E, F, D> visitor) {
+	public <E, F, D> F accept(ReturnVisitor<E, F, D> visitor) {
 		return visitor.visit(this);
 	}
+	/**
+     * Accepts the given visitor.
+     * @see kodkod.ast.Node#accept(kodkod.ast.visitor.VoidVisitor)
+     */
+    public void accept(VoidVisitor visitor) {
+        visitor.visit(this);
+    }
 	
 	/**
 	 * Returns true iff o is an instance of RelationPredicate and 

@@ -116,11 +116,12 @@ public class ArrayStack<T> extends Stack<T> {
 	}
 
 	/**
+	 * {@inheritDoc}
 	 * @see kodkod.util.Stack#iterator()
 	 */
 	public Iterator<T> iterator() {
 		return new Iterator<T>()  {
-			int cursor = size - 1;
+			int cursor = size - 1, lastReturned = -1;
 			
 			public boolean hasNext() {
 				return cursor >= 0;
@@ -129,11 +130,17 @@ public class ArrayStack<T> extends Stack<T> {
 			public T next() {
 				if (cursor < 0)
 					throw new NoSuchElementException();
+				lastReturned = cursor;
 				return elems[cursor--];
 			}
 
 			public void remove() {
-				throw new UnsupportedOperationException();
+				if (lastReturned < 0)
+					throw new UnsupportedOperationException();
+				size--;
+				System.arraycopy(elems, lastReturned+1, elems, lastReturned, size - lastReturned);
+				elems[size] = null;
+				lastReturned = -1;
 			}
 			
 		};

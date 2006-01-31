@@ -71,7 +71,6 @@ public abstract class Stack<T> implements Iterable<T> {
 	/**
 	 * Iterates over the items in this LinkedStack, starting
 	 * at the top of the stack and working its way down.
-	 * The returned iterator cannot be used to modify the stack.
 	 * @return iterator over the elements in this stack.
 	 */
 	public abstract Iterator<T> iterator();

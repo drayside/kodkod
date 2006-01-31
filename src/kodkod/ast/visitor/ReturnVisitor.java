@@ -1,8 +1,25 @@
 /*
- * Visitor.java
+ * ReturnVisitor.java
  * Created on May 20, 2005
  */
-package kodkod.ast;
+package kodkod.ast.visitor;
+
+import kodkod.ast.BinaryExpression;
+import kodkod.ast.BinaryFormula;
+import kodkod.ast.ComparisonFormula;
+import kodkod.ast.Comprehension;
+import kodkod.ast.ConstantExpression;
+import kodkod.ast.ConstantFormula;
+import kodkod.ast.Decl;
+import kodkod.ast.Decls;
+import kodkod.ast.IfExpression;
+import kodkod.ast.MultiplicityFormula;
+import kodkod.ast.NotFormula;
+import kodkod.ast.QuantifiedFormula;
+import kodkod.ast.Relation;
+import kodkod.ast.RelationPredicate;
+import kodkod.ast.UnaryExpression;
+import kodkod.ast.Variable;
 
 
 /** 
@@ -13,7 +30,7 @@ package kodkod.ast;
  *
  * @author Emina Torlak  
  */
-public interface Visitor<E, F, D> {
+public interface ReturnVisitor<E, F, D> {
     
 	/** 
 	 * Visits the given sequence of declarations and returns the result.

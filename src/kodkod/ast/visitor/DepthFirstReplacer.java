@@ -2,7 +2,28 @@
  * DepthFirstReplacer.java
  * Created on Aug 24, 2005
  */
-package kodkod.ast;
+package kodkod.ast.visitor;
+
+import kodkod.ast.BinaryExpression;
+import kodkod.ast.BinaryFormula;
+import kodkod.ast.ComparisonFormula;
+import kodkod.ast.Comprehension;
+import kodkod.ast.ConstantExpression;
+import kodkod.ast.ConstantFormula;
+import kodkod.ast.Decl;
+import kodkod.ast.Decls;
+import kodkod.ast.Expression;
+import kodkod.ast.Formula;
+import kodkod.ast.IfExpression;
+import kodkod.ast.Multiplicity;
+import kodkod.ast.MultiplicityFormula;
+import kodkod.ast.Node;
+import kodkod.ast.NotFormula;
+import kodkod.ast.QuantifiedFormula;
+import kodkod.ast.Relation;
+import kodkod.ast.RelationPredicate;
+import kodkod.ast.UnaryExpression;
+import kodkod.ast.Variable;
 
 
 
@@ -18,7 +39,7 @@ package kodkod.ast;
  * @specfield cache: Node lone->lone Node
  * @author Emina Torlak 
  */
-public abstract class DepthFirstReplacer implements Visitor<Expression, Formula, Decls> {
+public abstract class DepthFirstReplacer implements ReturnVisitor<Expression, Formula, Decls> {
 	
 	protected DepthFirstReplacer() { }
 	
@@ -85,7 +106,7 @@ public abstract class DepthFirstReplacer implements Visitor<Expression, Formula,
 			final Variable variable = (Variable) decl.variable().accept(this);
 			final Expression expression = decl.expression().accept(this);
 			ret = (variable==decl.variable() && expression==decl.expression()) ?
-				  decl : new Decl(variable, expression); 
+				  decl : variable.oneOf(expression); 
 		}
 		return cache(decl,ret);
 	}
@@ -137,7 +158,7 @@ public abstract class DepthFirstReplacer implements Visitor<Expression, Formula,
 			final Expression left  = binExpr.left().accept(this);
 			final Expression right = binExpr.right().accept(this);
 			ret = (left==binExpr.left() && right==binExpr.right()) ?
-				  binExpr : new BinaryExpression(left, binExpr.op(), right);
+				  binExpr : left.compose(binExpr.op(), right);
 		}
 		return cache(binExpr,ret);
 	}
@@ -154,7 +175,7 @@ public abstract class DepthFirstReplacer implements Visitor<Expression, Formula,
 		if (ret==null) {
 			final Expression child = unaryExpr.expression().accept(this);
 			ret = (child==unaryExpr.expression()) ? 
-				  unaryExpr : new UnaryExpression(unaryExpr.op(), child);
+				  unaryExpr : child.apply(unaryExpr.op());
 		}
 		return cache(unaryExpr,ret);
 	}
@@ -173,7 +194,7 @@ public abstract class DepthFirstReplacer implements Visitor<Expression, Formula,
 			final Decls decls = (Decls)comprehension.declarations().accept(this);
 			final Formula formula = comprehension.formula().accept(this);
 			ret = (decls==comprehension.declarations() && formula==comprehension.formula()) ? 
-				  comprehension : new Comprehension(decls, formula); 
+				  comprehension : formula.comprehension(decls); 
 		}
 		return cache(comprehension,ret);
 	}
@@ -196,7 +217,7 @@ public abstract class DepthFirstReplacer implements Visitor<Expression, Formula,
 			final Expression elseExpr = ifExpr.elseExpr().accept(this);
 			ret = (condition==ifExpr.condition() && thenExpr==ifExpr.thenExpr() &&
 				   elseExpr==ifExpr.elseExpr()) ? 
-			      ifExpr : new IfExpression(condition, thenExpr, elseExpr);
+			      ifExpr : condition.thenElse(thenExpr, elseExpr);
 		}
 		return cache(ifExpr,ret);
 	}
@@ -223,7 +244,7 @@ public abstract class DepthFirstReplacer implements Visitor<Expression, Formula,
 			final Decls decls = (Decls)quantFormula.declarations().accept(this);
 			final Formula formula = quantFormula.formula().accept(this);
 			ret = (decls==quantFormula.declarations() && formula==quantFormula.formula()) ? 
-				  quantFormula : new QuantifiedFormula(quantFormula.quantifier(), decls, formula);
+				  quantFormula : formula.quantify(quantFormula.quantifier(), decls);
 		}
 		return cache(quantFormula,ret);
 	}
@@ -242,7 +263,7 @@ public abstract class DepthFirstReplacer implements Visitor<Expression, Formula,
 			final Formula left  = binFormula.left().accept(this);
 			final Formula right = binFormula.right().accept(this);
 			ret = (left==binFormula.left() && right==binFormula.right()) ? 
-				  binFormula : new BinaryFormula(left, binFormula.op(), right);     
+				  binFormula : left.compose(binFormula.op(), right);     
 		}
 		return cache(binFormula,ret);
 	}
@@ -258,7 +279,7 @@ public abstract class DepthFirstReplacer implements Visitor<Expression, Formula,
 		Formula ret = lookup(not);
 		if (ret==null) {
 			final Formula child = not.formula().accept(this);
-			ret = (child==not.formula()) ? not : new NotFormula(child);
+			ret = (child==not.formula()) ? not : child.not();
 		}
 		return cache(not,ret);
 	}
@@ -278,7 +299,7 @@ public abstract class DepthFirstReplacer implements Visitor<Expression, Formula,
 			final Expression left  = compFormula.left().accept(this);
 			final Expression right = compFormula.right().accept(this);
 			ret =  (left==compFormula.left() && right==compFormula.right()) ? 
-				   compFormula : new ComparisonFormula(left, compFormula.op(), right);
+				   compFormula : left.compose(compFormula.op(), right);
 		}
 		return cache(compFormula,ret);
 	}
@@ -296,7 +317,7 @@ public abstract class DepthFirstReplacer implements Visitor<Expression, Formula,
 		if (ret==null) {
 			final Expression expression = multFormula.expression().accept(this);
 			ret = (expression==multFormula.expression()) ? 
-				  multFormula : new MultiplicityFormula(multFormula.multiplicity(), expression);
+				  multFormula : expression.apply(multFormula.multiplicity());
 		}
 		return cache(multFormula,ret);
 	}
@@ -320,14 +341,15 @@ public abstract class DepthFirstReplacer implements Visitor<Expression, Formula,
 			final Relation r = (Relation)pred.relation().accept(this);
 			switch(pred.name()) {
 			case ACYCLIC :  
-				ret = (r==pred.relation()) ? pred : new RelationPredicate.Acyclic(r); 
+				ret = (r==pred.relation()) ? pred : r.acyclic(); 
 				break;
 			case FUNCTION :
 				final RelationPredicate.Function fp = (RelationPredicate.Function) pred;
 				final Expression domain = fp.domain().accept(this);
 				final Expression range = fp.range().accept(this);
 				ret = (r==fp.relation() && domain==fp.domain() && range==fp.range()) ?
-						fp : new RelationPredicate.Function(r, domain, fp.targetMult(), range);
+						fp : 
+						(fp.targetMult()==Multiplicity.ONE ? r.function(domain, range) : r.functional(domain,range));
 				break;
 			case TOTAL_ORDERING : 
 				final RelationPredicate.TotalOrdering tp = (RelationPredicate.TotalOrdering) pred;
@@ -335,7 +357,7 @@ public abstract class DepthFirstReplacer implements Visitor<Expression, Formula,
 				final Relation first = (Relation)tp.first().accept(this);
 				final Relation last = (Relation)tp.last().accept(this);
 				ret = (r==tp.relation() && ordered==tp.ordered() && first==tp.first() && last==tp.last()) ? 
-						tp : new RelationPredicate.TotalOrdering(r, ordered, first, last);
+						tp : r.totalOrder(ordered, first, last);
 				break;
 			default :
 				throw new IllegalArgumentException("unknown relation predicate: " + pred.name());
