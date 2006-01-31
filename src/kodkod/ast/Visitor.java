@@ -11,7 +11,6 @@ package kodkod.ast;
  * {@link kodkod.ast.Formula formula}, and {@link kodkod.ast.Decls declarations}
  * return values of types E, F, and D, respectively. 
  *
- *
  * @author Emina Torlak  
  */
 public interface Visitor<E, F, D> {

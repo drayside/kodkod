@@ -95,7 +95,7 @@ public class ModelsTest extends TestCase {
 		
 		bounds = ceilingsAndFloorsInstance(platform, 3, man, 3, ceiling, floor);
 		
-		System.out.println(solve(model.and(geometry.implies(belowToo).not()), bounds));
+		System.out.println(solve(((model.and(geometry)).implies(belowToo)).not(), bounds));
 		
 		// all m, n: Man | !(m = n) => !(m.floor = n.floor || m.ceiling = n.ceiling) 
 		final Formula body = (m.join(floor).eq(n.join(floor))).or(m.join(ceiling).eq(n.join(ceiling)));
@@ -103,7 +103,8 @@ public class ModelsTest extends TestCase {
 		
 		bounds = ceilingsAndFloorsInstance(platform, 4, man, 4, ceiling, floor);
 	
-		System.out.println(solve(model.and(noSharing.implies(belowToo).not()), bounds));
+		System.out.println(solve(((model.and(noSharing)).implies(belowToo)).not(), bounds));
+//		System.out.println(solve(model.and(noSharing).and(belowToo.not()), bounds));
 		System.out.println((solver.numberOfPrimaryVariables() +  solver.numberOfIntermediateVariables()) + " " + solver.numberOfClauses());
 	}
 }

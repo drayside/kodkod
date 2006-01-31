@@ -4,8 +4,6 @@
  */
 package kodkod.ast;
 
-import java.util.Iterator;
-import java.util.List;
 
 
 
@@ -58,15 +56,17 @@ public abstract class DepthFirstReplacer implements Visitor<Expression, Formula,
 	 */
 	public Decls visit(Decls decls) { 
 		Decls ret = lookup(decls);
-		if (ret==null) {
-			final List<Decl> dlist = decls.declarations();
-			final Iterator<Decl> diter = dlist.iterator();
-			Decls visitedDecls = diter.next().accept(this);
-			while (diter.hasNext()) {
-				visitedDecls = visitedDecls.and(diter.next().accept(this));
+		if (ret==null) {	
+			Decls visitedDecls = null;
+			boolean allSame = true;
+			for(Decl decl : decls) {
+				Decls newDecl = visit(decl);
+				if (newDecl != decl) 
+					allSame = false;
+				visitedDecls = (visitedDecls==null) ? newDecl : visitedDecls.and(newDecl);
 			}
 			
-			ret = (dlist==visitedDecls.declarations()) ? decls : visitedDecls;
+			ret = allSame ? decls : visitedDecls;
 		}
 		return cache(decls, ret);
 	}
@@ -319,16 +319,23 @@ public abstract class DepthFirstReplacer implements Visitor<Expression, Formula,
 		if (ret==null) {
 			final Relation r = (Relation)pred.relation().accept(this);
 			switch(pred.name()) {
-			case ACYCLIC :  ret = new RelationPredicate.Acyclic(r); break;
+			case ACYCLIC :  
+				ret = (r==pred.relation()) ? pred : new RelationPredicate.Acyclic(r); 
+				break;
 			case FUNCTION :
 				final RelationPredicate.Function fp = (RelationPredicate.Function) pred;
-				ret = new RelationPredicate.Function(r, fp.domain().accept(this), 
-						                                fp.targetMult(), fp.range().accept(this));
+				final Expression domain = fp.domain().accept(this);
+				final Expression range = fp.range().accept(this);
+				ret = (r==fp.relation() && domain==fp.domain() && range==fp.range()) ?
+						fp : new RelationPredicate.Function(r, domain, fp.targetMult(), range);
 				break;
 			case TOTAL_ORDERING : 
 				final RelationPredicate.TotalOrdering tp = (RelationPredicate.TotalOrdering) pred;
-				ret = new RelationPredicate.TotalOrdering(r, (Relation)tp.ordered().accept(this), 
-						(Relation)tp.first().accept(this), (Relation)tp.last().accept(this));
+				final Relation ordered = (Relation) tp.ordered().accept(this);
+				final Relation first = (Relation)tp.first().accept(this);
+				final Relation last = (Relation)tp.last().accept(this);
+				ret = (r==tp.relation() && ordered==tp.ordered() && first==tp.first() && last==tp.last()) ? 
+						tp : new RelationPredicate.TotalOrdering(r, ordered, first, last);
 				break;
 			default :
 				throw new IllegalArgumentException("unknown relation predicate: " + pred.name());

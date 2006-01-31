@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 import kodkod.ast.Relation;
 
@@ -59,11 +60,19 @@ public final class Instance implements Iterable<Relation> {
 	}
 	
 	/**
+	 * Returns the relations mapped by this instance.
+	 * @return this.relations
+	 */
+	public Set<Relation> relations() {
+		return Collections.unmodifiableSet(tuples.keySet());
+	}
+	
+	/**
 	 * Returns an iterator over the Relations in this instance.
 	 * @return an iterator over this.relations
 	 */
 	public Iterator<Relation> iterator() {
-		return Collections.unmodifiableSet(tuples.keySet()).iterator();
+		return relations().iterator();
 	}
 	
 	/**
