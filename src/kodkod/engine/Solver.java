@@ -9,16 +9,15 @@ import kodkod.ast.Relation;
 import kodkod.core.bool.BooleanConstant;
 import kodkod.core.fol2sat.AnnotatedBooleanValue;
 import kodkod.core.fol2sat.Fol2SatTranslator;
-import kodkod.core.sat2cnf.ContradictionException;
 import kodkod.core.sat2cnf.Sat2CnfTranslator;
+import kodkod.core.solvers.MiniSAT;
+import kodkod.core.solvers.SATSolver;
 import kodkod.instance.Bounds;
 import kodkod.instance.Instance;
 import kodkod.util.IntSet;
-import kodkod.util.Ints;
 
 import org.sat4j.core.ASolverFactory;
 import org.sat4j.minisat.SolverFactory;
-import org.sat4j.specs.ISolver;
 import org.sat4j.specs.TimeoutException;
 
 
@@ -149,28 +148,13 @@ public final class Solver {
 	public int numberOfClauses() { return numClauses; }
 	
 	/**
-	 * Returns an int set view of the solution produced
-	 * by the given solver to the given formula.
-	 */
-	private static IntSet getModel(ISolver solver, AnnotatedBooleanValue formula) {
-		final int primaryVars = formula.numPrimaryVariables();
-		final IntSet s = Ints.bestSet(1,primaryVars);
-		final int model[] = solver.model();
-		for(int i : model) {
-			if (i > 0 && i <= primaryVars) s.add(i);
-			else if (i > primaryVars || -i > primaryVars) break;
-		}
-		return s;
-	}
-	
-	/**
 	 * Converts the model returned by the solver into an instance using the annotations
 	 * of the given formula.
 	 * @return an Instance constructed from the information in the solver
 	 * and the given formula
 	 */
-	private static Instance getInstance(AnnotatedBooleanValue formula, ISolver solver) {
-		final IntSet model = getModel(solver, formula);
+	private static Instance getInstance(AnnotatedBooleanValue formula, SATSolver solver) {
+		final IntSet model = solver.trueVariables(1, StrictMath.min(formula.numPrimaryVariables(), solver.numberOfVariables()));
 		final Bounds bounds = formula.bounds();
 		final Instance instance = new Instance(bounds.universe());
 		for(Relation r: bounds) {
@@ -209,7 +193,6 @@ public final class Solver {
 		return instance;
 	}
 	
-	
 	/**
 	 * Attempts to satisfy the given formula with respect to the specified instance.
 	 * If the operation is successful, the method returns a Model of the formula (in 
@@ -237,20 +220,18 @@ public final class Solver {
 			} else if (sat.value() == BooleanConstant.FALSE) { 
 				return null;	
 			} else {
-				ISolver solver = (solverName==SATSolverName.Default ? 
-						          factory.defaultSolver() : factory.createSolverByName(solverName.name()));
+				SATSolver solver = new MiniSAT(solverName==SATSolverName.Default ? 
+						                      factory.defaultSolver() : factory.createSolverByName(solverName.name()));
 				if (timeout > 0) solver.setTimeout(timeout);
 				Sat2CnfTranslator.translate(sat, solver);
 				numPrimaryVars = sat.numPrimaryVariables();
-				numIntermediateVars = solver.nVars() - numPrimaryVars;
-				numClauses = solver.nConstraints();
-				return (solver.isSatisfiable() ? padInstance(getInstance(sat, solver), bounds) : null);				
+				numIntermediateVars = solver.numberOfVariables() - numPrimaryVars;
+				numClauses = solver.numberOfClauses();
+				return (solver.solve() ? padInstance(getInstance(sat, solver), bounds) : null);				
 			}		
-		} catch (TimeoutException to) {
+		} catch (kodkod.core.solvers.TimeoutException to) {
 			throw new kodkod.engine.TimeoutException(to.getMessage(), to);
-		} catch (ContradictionException ce) {
-			return null;
-		}		
+		} 	
 	}
 	
 	public String toString() {

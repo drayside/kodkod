@@ -30,7 +30,7 @@ public class SolverTest extends TestCase {
 			for(int i: vars) clause.push(i);
 			solver.addClause(clause);
 		} catch (ContradictionException ce) {
-			fail();
+			System.out.println("contradiction");
 		}
 	}
 	
@@ -41,8 +41,22 @@ public class SolverTest extends TestCase {
 		addClause(4);
 		try {
 			if (solver.isSatisfiable()) {
-				System.out.print(Arrays.toString(solver.model()));
+				System.out.println(Arrays.toString(solver.model()));
 			}
+		} catch (TimeoutException e) {
+			fail();
+		}
+	}
+	
+	public final void testContradiction() {
+		addClause(1, -2);
+		addClause(-1);
+		addClause(2);
+		
+		try {
+			if (solver.isSatisfiable()) {
+				System.out.println(Arrays.toString(solver.model()));
+			} 
 		} catch (TimeoutException e) {
 			fail();
 		}
