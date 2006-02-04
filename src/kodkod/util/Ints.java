@@ -225,7 +225,12 @@ public final class Ints {
 			};
 		}
 		public IntSet copy() { return s.copy(); }
-		public boolean equals(Object o) { return s.equals(o); 	}
+		public boolean equals(Object o) {
+			if (this==o) return true;
+			else if (o instanceof UnmodifiableIntSet) {
+				return s.equals(((UnmodifiableIntSet) o).s);
+			} else return s.equals(o); 	
+		}
 		public int hashCode() { 	return s.hashCode();	}	
 	}
 	
