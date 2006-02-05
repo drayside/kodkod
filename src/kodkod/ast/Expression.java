@@ -154,7 +154,7 @@ public abstract class Expression implements Node {
      * @return {f : Formula | f <=> this in expr}
      */
     public final Formula in(Expression expr) {
-    	return (this == expr) ? ConstantFormula.TRUE :
+    	return (this == expr || expr == UNIV) ? ConstantFormula.TRUE :
     		compose(ComparisonFormula.Operator.SUBSET, expr);
     }
     
