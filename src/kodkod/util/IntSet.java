@@ -1,6 +1,7 @@
 package kodkod.util;
 
 import java.util.Collection;
+import java.util.NoSuchElementException;
 import java.util.Set;
 
 /**
@@ -32,6 +33,24 @@ public interface IntSet extends Set<Integer> {
 	 * @throws java.util.NoSuchElementException - no this.ints
 	 */
 	public abstract int max();
+	
+	/**
+	 * Returns the largest element in this set that 
+	 * is smaller than i.  If this is emtpy or i is less than this.min(),
+	 * NoSuchElementException is thrown.
+	 * @return {j: this.ints | j < i && no k: this.ints - j | k > j && k < i}
+	 * @throws NoSuchElementException - no this.ints || i <= this.min()
+	 */
+	public abstract int predecessor(int i);
+	
+	/**
+	 * Returns the smallest element in this set that 
+	 * is greater than i.  If this is emtpy or i is greater than this.max(),
+	 * NoSuchElementException is thrown.
+	 * @return {j: this.ints | j > i && no k: this.ints - j | k < j && k > i}
+	 * @throws NoSuchElementException - no this.ints || i >= this.max()
+	 */
+	public abstract int successor(int i);
 	
 	/**
 	 * Returns an iterator over the integers in this set,

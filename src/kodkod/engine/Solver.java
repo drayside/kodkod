@@ -10,8 +10,8 @@ import kodkod.core.bool.BooleanConstant;
 import kodkod.core.fol2sat.AnnotatedBooleanValue;
 import kodkod.core.fol2sat.Fol2SatTranslator;
 import kodkod.core.sat2cnf.Sat2CnfTranslator;
-import kodkod.core.solvers.MiniSAT;
-import kodkod.core.solvers.SATSolver;
+import kodkod.core.satlab.MiniSAT;
+import kodkod.core.satlab.SATSolver;
 import kodkod.instance.Bounds;
 import kodkod.instance.Instance;
 import kodkod.util.IntSet;
@@ -229,7 +229,7 @@ public final class Solver {
 				numClauses = solver.numberOfClauses();
 				return (solver.solve() ? padInstance(getInstance(sat, solver), bounds) : null);				
 			}		
-		} catch (kodkod.core.solvers.TimeoutException to) {
+		} catch (kodkod.core.satlab.TimeoutException to) {
 			throw new kodkod.engine.TimeoutException(to.getMessage(), to);
 		} 	
 	}

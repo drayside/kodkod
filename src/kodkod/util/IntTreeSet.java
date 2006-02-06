@@ -23,7 +23,7 @@ public final class IntTreeSet extends AbstractIntSet {
 	 *            all e': ints.entries - e | e'.value < e.index - 1 ||
 	 *                                       e'.index > e.value + 1
 	 */
-	private final TreeSequence<Integer> ints;
+	private final TreeSequence<MutableInteger> ints;
 	private int size;
 	
 	/**
@@ -31,7 +31,7 @@ public final class IntTreeSet extends AbstractIntSet {
 	 * @effects no this.ints'
 	 */
 	public IntTreeSet() {
-		this.ints = new TreeSequence<Integer>();
+		this.ints = new TreeSequence<MutableInteger>();
 		this.size = 0;
 	}
 	
@@ -69,8 +69,8 @@ public final class IntTreeSet extends AbstractIntSet {
 	 * @see kodkod.util.IntSet#contains(int)
 	 */
 	public boolean contains(int i) {
-		final IndexedEntry<Integer> range = ints.floor(i);
-		return (range != null && i <= range.value());
+		final Entry<MutableInteger> range = ints.floor(i);
+		return (range != null && i <= range.value.intValue);
 	}
 	
 	/**
@@ -88,9 +88,48 @@ public final class IntTreeSet extends AbstractIntSet {
 	 */
 	public int max() {
 		checkNonEmpty();
-		return ints.max(ints.root()).value;
+		return ints.max(ints.root()).value.intValue;
 	}
 
+	/**
+	 * Returns the smallest element in this set that 
+	 * is greater than i.  If this is emtpy or i is greater than this.max(),
+	 * NoSuchElementException is thrown.
+	 * @return {j: this.ints | j > i && no k: this.ints - j | k < j && k > i}
+	 * @throws NoSuchElementException - no this.ints || i >= this.max()
+	 * @see kodkod.util.IntSet#successor(int)
+	 */
+	public int successor(int i) {
+		Entry<MutableInteger> e = ints.floor(i);
+		if (e==null) 
+			return min();
+		else if (i >= e.value.intValue) {
+			e = ints.successor(e);
+			if (e==null)
+				throw new NoSuchElementException();
+			return e.index;
+		}
+		return i+1;
+	}
+	
+	/**
+	 * Returns the largest element in this set that 
+	 * is smaller than i.  If this is emtpy or i is less than this.min(),
+	 * NoSuchElementException is thrown.
+	 * @return {j: this.ints | j < i && no k: this.ints - j | k > j && k < i}
+	 * @throws NoSuchElementException - no this.ints || i <= this.min()
+	 * @see kodkod.util.IntSet#predecessor(int)
+	 */
+	public int predecessor(int i) {
+		Entry<MutableInteger> e = ints.floor(i);
+		if (e != null && i==e.index) {
+			e = ints.predecessor(e);
+		}
+		if (e==null)
+			throw new NoSuchElementException();
+		return e.value.intValue < i ? e.value.intValue : i-1;
+	}
+	
 	/**
 	 * {@inheritDoc}
 	 */
@@ -125,21 +164,21 @@ public final class IntTreeSet extends AbstractIntSet {
 	 * @see kodkod.util.IntSet#add(int)
 	 */
 	public boolean add(int i) {
-		final Entry<Integer> floor = ints.floor(i);
+		final Entry<MutableInteger> floor = ints.floor(i);
 
-		if (floor==null || floor.value() < i) {
-			final Entry<Integer> ceil = ints.ceil(i);
+		if (floor==null || floor.value.intValue < i) {
+			final Entry<MutableInteger> ceil = ints.ceil(i);
 			int key = i, value = i;
 			
-			if (floor != null && floor.value() == i - 1)  {
-				key = floor.index();
+			if (floor != null && floor.value.intValue == i - 1)  {
+				key = floor.index;
 			} 		
-			if (ceil != null && ceil.index() == i + 1) {
-				value = ints.remove(ceil.index());
+			if (ceil != null && ceil.index == i + 1) {
+				value = ints.remove(ceil.index).intValue;
 			} 
 		
-			if (key != i) floor.setValue(value);
-			else ints.put(key, value);
+			if (key != i) floor.value.intValue = value;
+			else ints.put(key, new MutableInteger(value));
 
 			size++;
 			return true;
@@ -154,17 +193,18 @@ public final class IntTreeSet extends AbstractIntSet {
 	 * @see kodkod.util.IntSet#remove(int)
 	 */
 	public boolean remove(int i) {
-		final Entry<Integer> floor = ints.floor(i);
+		final Entry<MutableInteger> floor = ints.floor(i);
 		
-		if (floor!=null && i <= floor.value()) {
-			if (floor.index()==floor.value()) {
-				ints.remove(floor.index());
-			} else if (i==floor.index()) {
-				ints.put(i+1, ints.remove(floor.index()));
-			} else if (i==floor.value()) {
-				floor.setValue(i-1);
+		if (floor!=null && i <= floor.value.intValue) {
+			if (floor.index==floor.value.intValue) {
+				ints.remove(floor.index);
+			} else if (i==floor.index) {
+				ints.put(i+1, ints.remove(floor.index));
+			} else if (i==floor.value.intValue) {
+				floor.value.intValue = i-1;
 			} else {
-				ints.put(i+1, floor.setValue(i-1));
+				ints.put(i+1, new MutableInteger(floor.value.intValue));
+				floor.value.intValue = i-1;
 			}
 			size--;
 			return true;
@@ -183,9 +223,9 @@ public final class IntTreeSet extends AbstractIntSet {
 		if (c instanceof IntTreeSet) {
 			IntTreeSet s = (IntTreeSet) c;
 			if (size>=s.size) {
-				for(IndexedEntry<Integer> srange : s.ints) {
-					IndexedEntry<Integer> floor = ints.floor(srange.index());
-					if (floor==null || floor.value()<srange.value()) return false;
+				for(IndexedEntry<MutableInteger> srange : s.ints) {
+					Entry<MutableInteger> floor = ints.floor(srange.index());
+					if (floor==null || floor.value.intValue<srange.value().intValue) return false;
 				}
 				return true;
 			}
@@ -200,34 +240,36 @@ public final class IntTreeSet extends AbstractIntSet {
 	 * @effects this.ints' = this.ints + {i: int |  min<=t.index()<=max }
 	 */
 	private void addRange(int min, int max) {
-		final Entry<Integer> minFloor = ints.floor(min);
+		final Entry<MutableInteger> minFloor = ints.floor(min);
 		
-		if (minFloor==null || minFloor.value() < max) {
+		if (minFloor==null || minFloor.value.intValue < max) {
 			
 			int key = min, value = max, sizeDelta = value - key + 1;
 			
-			if (minFloor != null && min <= minFloor.value() + 1) {
-				key = minFloor.index();
-				sizeDelta -= (minFloor.value() - min + 1);
+			if (minFloor != null && min <= minFloor.value.intValue + 1) {
+				key = minFloor.index;
+				sizeDelta -= (minFloor.value.intValue - min + 1);
 			}
 			
-			Entry<Integer> succ = ints.successor(key);
+			Entry<MutableInteger> succ = ints.successor(key);
 			if (succ!=null) {
-				while(succ!=ints.NIL && succ.value() < max) {
-					ints.remove(succ.index());
-					sizeDelta -= (succ.value() - succ.index() + 1);
+				while(succ!=ints.NIL && succ.value.intValue < max) {
+					ints.remove(succ.index);
+					sizeDelta -= (succ.value.intValue - succ.index + 1);
 					succ = ints.successor(succ);
 				}
 				
-				if (succ!=ints.NIL && succ.index() <= max + 1) {
-					value = succ.value();
-					sizeDelta -= (max - succ.index() + 1);
-					ints.remove(succ.index());
+				if (succ!=ints.NIL && succ.index <= max + 1) {
+					value = succ.value.intValue;
+					sizeDelta -= (max - succ.index + 1);
+					ints.remove(succ.index);
 				}	
 			}
 			
-			if (minFloor!=null && minFloor.index==key) minFloor.setValue(value);
-			else ints.put(key, value);		
+			if (minFloor!=null && minFloor.index==key) 
+				minFloor.value.intValue=value;
+			else 
+				ints.put(key, new MutableInteger(value));		
 			size += sizeDelta;
 		}	
 		
@@ -239,7 +281,7 @@ public final class IntTreeSet extends AbstractIntSet {
 	 * @return all t: Tuple | t in this.ints => t.index() < min(s.ints.index())
 	 */
 	private boolean precedes(IntTreeSet s) {
-		return ints.last().value() < s.ints.first().index();
+		return ints.last().value.intValue < s.ints.first().index;
 	}
 	
 	/**
@@ -261,8 +303,8 @@ public final class IntTreeSet extends AbstractIntSet {
 					return true;
 				} else {
 					final int oldSize = size;
-					for(IndexedEntry<Integer> srange : s.ints) {
-						addRange(srange.index(), srange.value());
+					for(IndexedEntry<MutableInteger> srange : s.ints) {
+						addRange(srange.index(), srange.value().intValue);
 					}
 					return oldSize != size;
 				}
@@ -292,16 +334,16 @@ public final class IntTreeSet extends AbstractIntSet {
 					return true;
 				} else {
 					final int oldSize = size;
-					final IndexedEntry<Integer> first = s.ints.first();
-					int lastMax = first.index()==Integer.MIN_VALUE ? 
-							      first.value() + 1 : Integer.MIN_VALUE;
-					for(Iterator<IndexedEntry<Integer>> sIter = s.ints.iterator(lastMax, Integer.MAX_VALUE); 
+					final Entry<MutableInteger> first = s.ints.first();
+					int lastMax = first.index==Integer.MIN_VALUE ? 
+							      first.value.intValue + 1 : Integer.MIN_VALUE;
+					for(Iterator<IndexedEntry<MutableInteger>> sIter = s.ints.iterator(lastMax, Integer.MAX_VALUE); 
 					    sIter.hasNext();) {
-						IndexedEntry<Integer> srange = sIter.next();
+						IndexedEntry<MutableInteger> srange = sIter.next();
 						removeRange(lastMax, srange.index()-1);
-						lastMax = srange.value() + 1;
+						lastMax = srange.value().intValue + 1;
 					}
-					if (s.ints.last().value() < Integer.MAX_VALUE) 
+					if (s.ints.last().value.intValue < Integer.MAX_VALUE) 
 						removeRange(lastMax, Integer.MAX_VALUE);
 					return oldSize != size;
 				}
@@ -319,27 +361,27 @@ public final class IntTreeSet extends AbstractIntSet {
 	private void removeRange(int min, int max) {
 		int sizeDelta = 0;
 		
-		final Entry<Integer> minFloor = ints.floor(min);
+		final Entry<MutableInteger> minFloor = ints.floor(min);
 		
-		if (minFloor!=null && min<=minFloor.value()) {
-			sizeDelta += (minFloor.value() - min + 1);
-			if (minFloor.index()==minFloor.value()) 
-				ints.remove(minFloor.index());
+		if (minFloor!=null && min<=minFloor.value.intValue) {
+			sizeDelta += (minFloor.value.intValue - min + 1);
+			if (minFloor.index==minFloor.value.intValue) 
+				ints.remove(minFloor.index);
 			else 
-				minFloor.setValue(min-1);
+				minFloor.value.intValue = min-1;
 		}
 		
-		Entry<Integer> succ = ints.successor(min);
+		Entry<MutableInteger> succ = ints.successor(min);
 		if (succ != null) {
-			while(succ!=ints.NIL && succ.value() <= max) {
-				sizeDelta += (succ.value() - succ.index() + 1);
-				ints.remove(succ.index());
+			while(succ!=ints.NIL && succ.value.intValue <= max) {
+				sizeDelta += (succ.value.intValue - succ.index + 1);
+				ints.remove(succ.index);
 				succ = ints.successor(succ);
 			}
 			
-			if (succ!=ints.NIL && succ.index()<=max) {
-				sizeDelta += (max - succ.index() + 1);
-				ints.put(max + 1, ints.remove(succ.index()));
+			if (succ!=ints.NIL && succ.index<=max) {
+				sizeDelta += (max - succ.index + 1);
+				ints.put(max + 1, ints.remove(succ.index));
 			}
 		}
 		
@@ -362,8 +404,8 @@ public final class IntTreeSet extends AbstractIntSet {
 				if (this.precedes(s) || s.precedes(this)) return false;
 				else {
 					final int oldSize = size;
-					for(IndexedEntry<Integer> srange : s.ints) {
-						removeRange(srange.index(), srange.value());
+					for(IndexedEntry<MutableInteger> srange : s.ints) {
+						removeRange(srange.index(), srange.value().intValue);
 					}
 					return oldSize != size;
 				}
@@ -386,7 +428,7 @@ public final class IntTreeSet extends AbstractIntSet {
 	 * Implementation of an ascending iterator over (a subset of) this set.
 	 */
 	private final class AscendingIterator implements IntIterator {
-		Entry<Integer> next;
+		Entry<MutableInteger> next;
 		final int endIndex;
 		int endpoint, cursor, lastReturned;
 		
@@ -399,9 +441,9 @@ public final class IntTreeSet extends AbstractIntSet {
 			endIndex = to;
 			lastReturned = -1;
 			next = ints.floor(from);
-			if (next != null && from <= next.value()) {
+			if (next != null && from <= next.value.intValue) {
 				cursor = from;
-				endpoint = next.value();
+				endpoint = next.value.intValue;
 				next = ints.successor(next);
 			} else {
 				next = ints.ceil(from);
@@ -414,8 +456,8 @@ public final class IntTreeSet extends AbstractIntSet {
 		public boolean hasNext() {
 			if (cursor > endpoint) {
 				if (next==ints.NIL) return false;
-				this.cursor = next.index();
-				this.endpoint = next.value(); 
+				this.cursor = next.index;
+				this.endpoint = next.value.intValue; 
 				next = ints.successor(next);
 			}
 			return cursor <= endIndex;
@@ -445,7 +487,7 @@ public final class IntTreeSet extends AbstractIntSet {
 	 * Implementation of a descending iterator over (a subset of) this set.
 	 */
 	private final class DescendingIterator implements IntIterator {
-		Entry<Integer> next;
+		Entry<MutableInteger> next;
 		final int endIndex;
 		int endpoint, cursor, lastReturned;
 		
@@ -459,9 +501,9 @@ public final class IntTreeSet extends AbstractIntSet {
 			lastReturned = -1;
 			next = ints.floor(from);
 			if (next==null) next = ints.NIL;
-			else if (from <= next.value()) {
+			else if (from <= next.value.intValue) {
 				cursor = from;
-				endpoint = next.index();
+				endpoint = next.index;
 				next = ints.predecessor(next);
 			} else {
 				cursor = -1;
@@ -472,8 +514,8 @@ public final class IntTreeSet extends AbstractIntSet {
 		public boolean hasNext() {
 			if (cursor < endpoint) {
 				if (next==ints.NIL) return false;
-				this.cursor = next.value();
-				this.endpoint = next.index(); 
+				this.cursor = next.value.intValue;
+				this.endpoint = next.index; 
 				next = ints.predecessor(next);
 			}
 			return cursor >= endIndex;
@@ -497,5 +539,35 @@ public final class IntTreeSet extends AbstractIntSet {
 			lastReturned = -1;
 		}
 		
+	}
+	
+	/**
+	 * A mutable wrapper for a primitive int.
+	 */
+	private static final class MutableInteger {
+		int intValue;
+		
+		/**
+		 * Constructs a mutable wrapper for the given intValue.
+		 */
+		MutableInteger(int i) {
+			intValue = i;
+		}
+		
+		public boolean equals(Object o) {
+			if (o==this) return true;
+			if (o instanceof MutableInteger) {
+				return ((MutableInteger)o).intValue==intValue;
+			}
+			return false;
+		}
+		
+		public int hashCode() {
+			return intValue;
+		}
+		
+		public String toString() {
+			return String.valueOf(intValue);
+		}
 	}
 }

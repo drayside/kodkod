@@ -10,8 +10,8 @@ import java.util.Iterator;
  * negative indeces.  Formally, the following methods specify a partial
  * function from integers to values of type E.
  * 
- * All the mutating operations are optional and may throw an UnsupportedOperationException
- * if the implementing class is unmodifiable.  
+ * All mutating operations are optional and may 
+ * throw an UnsupportedOperationException.  
  * 
  * @specfield entries: int -> lone V
  * 
@@ -44,6 +44,10 @@ public interface SparseSequence<V> extends Iterable<IndexedEntry<V>> {
 	 *
 	 * @effects this.entries' = this.entries + index->value
 	 * @return this.entries[index]
+	 * @throws IndexOutOfBoundsException - the given index
+	 * is not valid for this sequence.
+	 * @throws IllegalArgumentException - the given value cannot 
+	 * be stored in this sequence.
 	 */
 	public abstract V put(int index, V value);
 	
@@ -53,6 +57,10 @@ public interface SparseSequence<V> extends Iterable<IndexedEntry<V>> {
 	 * calling put(e.index, e.value) on this sequence once for each entry 
      * e in the specified sequence. 
      * @effects this.entries' = this.entries ++ s.entries
+     * @throws IndexOutOfBoundsException - s contains indeces that are
+     * not valid for this sequence.
+     * @throws IllegalArgumentException - s contains a value that cannot
+     * be stored in this sequence.
 	 */
 	public abstract void putAll(SparseSequence<? extends V> s);
 	

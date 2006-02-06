@@ -9,11 +9,11 @@ import kodkod.util.IntRange.TwoPointRange;
 
 /**
  * This class contains various utility methods for working with
- * integers. This class also contains a factory methods that return
- * wrappers for integer sets.
+ * integers, {@link kodkod.util.IntRange IntRanges}, and 
+ * {@link kodkod.util.IntSet IntSets}.
  * 
  * The methods in this class all throw a NullPointerException if 
- * given a null reference.
+ * given a null reference unless otherwise specified.
  * 
  * @author Emina Torlak
  */
@@ -24,6 +24,8 @@ public final class Ints {
 			public boolean contains(int i) { return false; }
 			public int min() { throw new NoSuchElementException(); }
 			public int max() { throw new NoSuchElementException(); }
+			public int predecessor(int i) { throw new NoSuchElementException(); }
+			public int successor(int i) { throw new NoSuchElementException(); }
 			public IntIterator iterator(int from, int to) {	
 				return new IntIterator() {
 					public boolean hasNext() { return false; }
@@ -212,6 +214,8 @@ public final class Ints {
 		public boolean contains(int i) { return s.contains(i); }
 		public int min() { return s.min();	}
 		public int max() { return s.max();	}
+		public int predecessor(int i) { return s.predecessor(i); }
+		public int successor(int i) { return s.successor(i); }
 		public boolean containsAll(Collection<?> c) { return s.containsAll(c); }	
 		public IntIterator iterator(final int from, final int to) { 	
 			return new IntIterator() {

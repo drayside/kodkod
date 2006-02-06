@@ -16,7 +16,7 @@ import kodkod.core.bool.BooleanFormula;
 import kodkod.core.bool.BooleanValue;
 import kodkod.core.bool.BooleanVariable;
 import kodkod.core.bool.MultiGate.Operator;
-import kodkod.util.ArrayIterator;
+import kodkod.util.Iterators;
 
 
 public class BooleanCircuitTest extends TestCase {
@@ -313,7 +313,7 @@ public class BooleanCircuitTest extends TestCase {
 		
 		assertEquals(f.compose(op.complement(), v15, v36).toString(), f.flatten(f.compose(op.complement(), v15, v36)).toString());
 		assertSame(op.shortCircuit(), f.flatten(f.compose(op, v36, f.compose(op, v15, v26))));
-		assertTrue(hasInputs((BooleanFormula) f.flatten(f.compose(op, v15, v47)), ArrayIterator.iterate(f.not(v[7]), f.not(v[4]), v[1], v[5])));
+		assertTrue(hasInputs((BooleanFormula) f.flatten(f.compose(op, v15, v47)), Iterators.iterate(f.not(v[7]), f.not(v[4]), v[1], v[5])));
 	}
 	
 	public final void testFlattening() {

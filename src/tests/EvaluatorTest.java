@@ -203,16 +203,16 @@ public class EvaluatorTest extends TestCase {
     }
     
     public final void testEvalTransitiveClosure() {
-        // ^(Hilary->Jocelyn) = Hilary->Jocelyn
-        assertEquals(eval(hilary.product(jocelyn).closure()), eval(hilary.product(jocelyn)));
-        // ^spouse = spouse + spouse.spouse
-        assertEquals(eval(spouse.closure()), eval(spouse.union(spouse.join(spouse))));
-        // Hilary.^shaken = univ - (univ - Person.shaken)
-        assertEquals(eval(hilary.join(shaken.closure())), eval(univ.difference(univ.difference(person.join(shaken)))));
-        try {
-            eval(person.closure());
-            fail("Expected IllegalArgumentException");
-        } catch (IllegalArgumentException iae) {}
+//        // ^(Hilary->Jocelyn) = Hilary->Jocelyn
+//        assertEquals(eval(hilary.product(jocelyn).closure()), eval(hilary.product(jocelyn)));
+//        // ^spouse = spouse + spouse.spouse
+//        assertEquals(eval(spouse.closure()), eval(spouse.union(spouse.join(spouse))));
+//        // Hilary.^shaken = univ - (univ - Person.shaken)
+//        assertEquals(eval(hilary.join(shaken.closure())), eval(univ.difference(univ.difference(person.join(shaken)))));
+//        try {
+//            eval(person.closure());
+//            fail("Expected IllegalArgumentException");
+//        } catch (IllegalArgumentException iae) {}
         
         //  ^r = value(^r)
         final Relation r = Relation.binary("r");

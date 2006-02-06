@@ -64,6 +64,56 @@ public final class IntBitSet extends AbstractIntSet {
 	}
 
 	/**
+	 * Returns the smallest element in this set that 
+	 * is greater than i.  If this is emtpy or i is greater than this.max(),
+	 * NoSuchElementException is thrown.
+	 * @return {j: this.ints | j > i && no k: this.ints - j | k < j && k > i}
+	 * @throws NoSuchElementException - no this.ints || i >= this.max()
+	 * @see kodkod.util.IntSet#successor(int)
+	 */
+	public int successor(int i) {
+		if (i < 0) 
+			return min();
+		int wordIndex = wordIndex(i);
+		long word = 0;
+		if (wordIndex < elements.length && bitMask(i) > Long.MIN_VALUE) {
+			word = (extendedMask(i+1) & elements[wordIndex]);
+		}
+		while(word==0 && wordIndex < elements.length-1) {
+			word = elements[++wordIndex];
+		}
+		if (word==0)
+			throw new NoSuchElementException();
+		else 
+			return (wordIndex << 6) + Long.numberOfTrailingZeros(word);
+	}
+	
+	/**
+	 * Returns the largest element in this set that 
+	 * is smaller than i.  If this is emtpy or i is less than this.min(),
+	 * NoSuchElementException is thrown.
+	 * @return {j: this.ints | j < i && no k: this.ints - j | k > j && k < i}
+	 * @throws NoSuchElementException - no this.ints || i <= this.min()
+	 * @see kodkod.util.IntSet#predecessor(int)
+	 */
+	public int predecessor(int i) {
+		if (i < 0)
+			throw new NoSuchElementException();
+		int wordIndex = wordIndex(i);
+		long word = 0;
+		if (wordIndex < elements.length && bitMask(i) != 1) {
+			word = ((~extendedMask(i)) & elements[wordIndex]);
+		}
+		while(word==0 && wordIndex > 0) {
+			word = elements[--wordIndex];
+		}
+		if (word==0)
+			throw new NoSuchElementException();
+		else 
+			return (wordIndex << 6) + 63 - Long.numberOfLeadingZeros(word);
+	}
+	
+	/**
 	 * {@inheritDoc}
 	 * @see kodkod.util.IntSet#iterator()
 	 */
