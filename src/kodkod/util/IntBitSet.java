@@ -71,22 +71,22 @@ public final class IntBitSet extends AbstractIntSet {
 	 * @throws NoSuchElementException - no this.ints || i >= this.max()
 	 * @see kodkod.util.IntSet#successor(int)
 	 */
-	public int successor(int i) {
-		if (i < 0) 
-			return min();
-		int wordIndex = wordIndex(i);
-		long word = 0;
-		if (wordIndex < elements.length && bitMask(i) > Long.MIN_VALUE) {
-			word = (extendedMask(i+1) & elements[wordIndex]);
-		}
-		while(word==0 && wordIndex < elements.length-1) {
-			word = elements[++wordIndex];
-		}
-		if (word==0)
-			throw new NoSuchElementException();
-		else 
-			return (wordIndex << 6) + Long.numberOfTrailingZeros(word);
-	}
+//	public int successor(int i) {
+//		if (i < 0) 
+//			return min();
+//		int wordIndex = wordIndex(i);
+//		long word = 0;
+//		if (wordIndex < elements.length && bitMask(i) > Long.MIN_VALUE) {
+//			word = (extendedMask(i+1) & elements[wordIndex]);
+//		}
+//		while(word==0 && wordIndex < elements.length-1) {
+//			word = elements[++wordIndex];
+//		}
+//		if (word==0)
+//			throw new NoSuchElementException();
+//		else 
+//			return (wordIndex << 6) + Long.numberOfTrailingZeros(word);
+//	}
 	
 	/**
 	 * Returns the largest element in this set that 
@@ -96,22 +96,22 @@ public final class IntBitSet extends AbstractIntSet {
 	 * @throws NoSuchElementException - no this.ints || i <= this.min()
 	 * @see kodkod.util.IntSet#predecessor(int)
 	 */
-	public int predecessor(int i) {
-		if (i < 0)
-			throw new NoSuchElementException();
-		int wordIndex = wordIndex(i);
-		long word = 0;
-		if (wordIndex < elements.length && bitMask(i) != 1) {
-			word = ((~extendedMask(i)) & elements[wordIndex]);
-		}
-		while(word==0 && wordIndex > 0) {
-			word = elements[--wordIndex];
-		}
-		if (word==0)
-			throw new NoSuchElementException();
-		else 
-			return (wordIndex << 6) + 63 - Long.numberOfLeadingZeros(word);
-	}
+//	public int predecessor(int i) {
+//		if (i < 0)
+//			throw new NoSuchElementException();
+//		int wordIndex = wordIndex(i);
+//		long word = 0;
+//		if (wordIndex < elements.length && bitMask(i) != 1) {
+//			word = ((~extendedMask(i)) & elements[wordIndex]);
+//		}
+//		while(word==0 && wordIndex > 0) {
+//			word = elements[--wordIndex];
+//		}
+//		if (word==0)
+//			throw new NoSuchElementException();
+//		else 
+//			return (wordIndex << 6) + 63 - Long.numberOfLeadingZeros(word);
+//	}
 	
 	/**
 	 * {@inheritDoc}

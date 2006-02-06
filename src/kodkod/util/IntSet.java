@@ -1,7 +1,6 @@
 package kodkod.util;
 
 import java.util.Collection;
-import java.util.NoSuchElementException;
 import java.util.Set;
 
 /**
@@ -41,7 +40,7 @@ public interface IntSet extends Set<Integer> {
 	 * @return {j: this.ints | j < i && no k: this.ints - j | k > j && k < i}
 	 * @throws NoSuchElementException - no this.ints || i <= this.min()
 	 */
-	public abstract int predecessor(int i);
+//	public abstract int predecessor(int i);
 	
 	/**
 	 * Returns the smallest element in this set that 
@@ -50,7 +49,7 @@ public interface IntSet extends Set<Integer> {
 	 * @return {j: this.ints | j > i && no k: this.ints - j | k < j && k > i}
 	 * @throws NoSuchElementException - no this.ints || i >= this.max()
 	 */
-	public abstract int successor(int i);
+//	public abstract int successor(int i);
 	
 	/**
 	 * Returns an iterator over the integers in this set,

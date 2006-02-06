@@ -99,18 +99,18 @@ public final class IntTreeSet extends AbstractIntSet {
 	 * @throws NoSuchElementException - no this.ints || i >= this.max()
 	 * @see kodkod.util.IntSet#successor(int)
 	 */
-	public int successor(int i) {
-		Entry<MutableInteger> e = ints.floor(i);
-		if (e==null) 
-			return min();
-		else if (i >= e.value.intValue) {
-			e = ints.successor(e);
-			if (e==null)
-				throw new NoSuchElementException();
-			return e.index;
-		}
-		return i+1;
-	}
+//	public int successor(int i) {
+//		Entry<MutableInteger> e = ints.floor(i);
+//		if (e==null) 
+//			return min();
+//		else if (i >= e.value.intValue) {
+//			e = ints.successor(e);
+//			if (e==null)
+//				throw new NoSuchElementException();
+//			return e.index;
+//		}
+//		return i+1;
+//	}
 	
 	/**
 	 * Returns the largest element in this set that 
@@ -120,15 +120,15 @@ public final class IntTreeSet extends AbstractIntSet {
 	 * @throws NoSuchElementException - no this.ints || i <= this.min()
 	 * @see kodkod.util.IntSet#predecessor(int)
 	 */
-	public int predecessor(int i) {
-		Entry<MutableInteger> e = ints.floor(i);
-		if (e != null && i==e.index) {
-			e = ints.predecessor(e);
-		}
-		if (e==null)
-			throw new NoSuchElementException();
-		return e.value.intValue < i ? e.value.intValue : i-1;
-	}
+//	public int predecessor(int i) {
+//		Entry<MutableInteger> e = ints.floor(i);
+//		if (e != null && i==e.index) {
+//			e = ints.predecessor(e);
+//		}
+//		if (e==null)
+//			throw new NoSuchElementException();
+//		return e.value.intValue < i ? e.value.intValue : i-1;
+//	}
 	
 	/**
 	 * {@inheritDoc}

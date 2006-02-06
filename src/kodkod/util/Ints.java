@@ -24,8 +24,8 @@ public final class Ints {
 			public boolean contains(int i) { return false; }
 			public int min() { throw new NoSuchElementException(); }
 			public int max() { throw new NoSuchElementException(); }
-			public int predecessor(int i) { throw new NoSuchElementException(); }
-			public int successor(int i) { throw new NoSuchElementException(); }
+//			public int predecessor(int i) { throw new NoSuchElementException(); }
+//			public int successor(int i) { throw new NoSuchElementException(); }
 			public IntIterator iterator(int from, int to) {	
 				return new IntIterator() {
 					public boolean hasNext() { return false; }
@@ -214,8 +214,8 @@ public final class Ints {
 		public boolean contains(int i) { return s.contains(i); }
 		public int min() { return s.min();	}
 		public int max() { return s.max();	}
-		public int predecessor(int i) { return s.predecessor(i); }
-		public int successor(int i) { return s.successor(i); }
+//		public int predecessor(int i) { return s.predecessor(i); }
+//		public int successor(int i) { return s.successor(i); }
 		public boolean containsAll(Collection<?> c) { return s.containsAll(c); }	
 		public IntIterator iterator(final int from, final int to) { 	
 			return new IntIterator() {

@@ -80,18 +80,18 @@ public abstract class AbstractIntSet extends AbstractSet<Integer> implements Int
 	 * @return {j: this.ints | j < i && no k: this.ints - j | k > j && k < i}
 	 * @throws NoSuchElementException - no this.ints || i <= this.min()
 	 */
-	public int predecessor(int i) {
-		return iterator(i-1, Integer.MIN_VALUE).nextInt();
-	}
+//	public int predecessor(int i) {
+//		return iterator(i-1, Integer.MIN_VALUE).nextInt();
+//	}
 	
 	/**
 	 * Returns the first element returned by this.iterator(i+1, Integer.MAX_VALUE).
 	 * @return {j: this.ints | j > i && no k: this.ints - j | k < j && k > i}
 	 * @throws NoSuchElementException - no this.ints || i >= this.max()
 	 */
-	public int successor(int i) {
-		return iterator(i+i, Integer.MAX_VALUE).nextInt();
-	}
+//	public int successor(int i) {
+//		return iterator(i+i, Integer.MAX_VALUE).nextInt();
+//	}
 	
 	/**
 	 * Throws an UnsupportedOperationException.
