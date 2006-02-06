@@ -1,7 +1,9 @@
 kodkod.ast
+kodkod.ast.visitor
 kodkod.core.bool
 kodkod.core.fol2sat
 kodkod.core.sat2cnf
+kodkod.core.satlab
 kodkod.engine
 kodkod.instance
 kodkod.util
