@@ -1,22 +1,19 @@
 package tests;
 
-import static kodkod.core.bool.BooleanConstant.FALSE;
-import static kodkod.core.bool.BooleanConstant.TRUE;
-import static kodkod.core.bool.MultiGate.Operator.AND;
-import static kodkod.core.bool.MultiGate.Operator.OR;
+import static kodkod.engine.bool.BooleanConstant.FALSE;
+import static kodkod.engine.bool.BooleanConstant.TRUE;
+import static kodkod.engine.bool.MultiGate.Operator.AND;
+import static kodkod.engine.bool.MultiGate.Operator.OR;
 
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
 import junit.framework.TestCase;
-import kodkod.core.bool.BooleanConstant;
-import kodkod.core.bool.BooleanFactory;
-import kodkod.core.bool.BooleanFormula;
-import kodkod.core.bool.BooleanValue;
-import kodkod.core.bool.BooleanVariable;
-import kodkod.core.bool.MultiGate.Operator;
-import kodkod.util.Iterators;
+import kodkod.engine.bool.BooleanConstant;
+import kodkod.engine.bool.BooleanFactory;
+import kodkod.engine.bool.BooleanValue;
+import kodkod.engine.bool.BooleanVariable;
+import kodkod.engine.bool.MultiGate.Operator;
 
 
 public class BooleanCircuitTest extends TestCase {
@@ -287,48 +284,7 @@ public class BooleanCircuitTest extends TestCase {
 		testMultiGate(OR);
 	}
 	
-	private boolean hasInputs(BooleanFormula f, Iterator<BooleanValue> ins) {
-		final Iterator<BooleanValue> fins = f.inputs();
-		while(fins.hasNext()&&ins.hasNext()) {
-			if (fins.next()!=ins.next()) return false;
-		}
-		return true;
-	}
 	
-	private final void testMultiGateFlattening(Operator op) {
-		final BooleanFormula v15 = (BooleanFormula) f.compose(op, v[1], v[5]);
-		final BooleanFormula v26 = (BooleanFormula) f.compose(op, f.not(v[2]), v[6]);
-		final BooleanFormula v36 = (BooleanFormula) f.compose(op, v[2], f.not(v[6]));
-		final BooleanFormula v47 = (BooleanFormula) f.compose(op, f.not(v[4]), f.not(v[7]));
-		
-		assertEquals(v15.toString(), f.flatten(v15).toString());
-		assertEquals(v26.toString(), f.flatten(v26).toString());
-		assertEquals(v36.toString(), f.flatten(v36).toString());
-		assertEquals(v47.toString(), f.flatten(v47).toString());
-		
-		assertEquals(f.not(v15).toString(), f.flatten(f.not(v15)).toString());
-		assertEquals(f.not(v26).toString(), f.flatten(f.not(v26)).toString());
-		assertEquals(f.not(v36).toString(), f.flatten(f.not(v36)).toString());
-		assertEquals(f.not(v47).toString(), f.flatten(f.not(v47)).toString());
-		
-		assertEquals(f.compose(op.complement(), v15, v36).toString(), f.flatten(f.compose(op.complement(), v15, v36)).toString());
-		assertSame(op.shortCircuit(), f.flatten(f.compose(op, v36, f.compose(op, v15, v26))));
-		assertTrue(hasInputs((BooleanFormula) f.flatten(f.compose(op, v15, v47)), Iterators.iterate(f.not(v[7]), f.not(v[4]), v[1], v[5])));
-	}
-	
-	public final void testFlattening() {
-		// flatten constants
-		assertSame(TRUE, f.flatten(TRUE));
-		assertSame(FALSE, f.flatten(FALSE));
-		
-		// flatten variables and their negations
-		assertSame(v[10], f.flatten(v[10]));
-		assertSame(f.not(v[10]), f.flatten(f.not(v[10])));
-		
-		// flatten multigates and their negations
-		testMultiGateFlattening(AND);
-		testMultiGateFlattening(OR);
-	}
 
 
 }

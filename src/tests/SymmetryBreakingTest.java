@@ -32,7 +32,7 @@ public class SymmetryBreakingTest extends TestCase {
 	
 	public SymmetryBreakingTest(String arg0) {
 		super(arg0);
-		this.solver = new Solver(Solver.SATSolverName.Mini3SAT);
+		this.solver = new Solver();
 		
 		List<String> atoms = new ArrayList<String>(USIZE);
 		for (int i = 0; i < USIZE; i++) {

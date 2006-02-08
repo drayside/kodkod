@@ -26,8 +26,8 @@ import kodkod.instance.Universe;
 
 
 /** 
- * Tests {@link kodkod.core.fol2sat.Fol2SatTranslator FOL to SAT translation} and
- * {@link kodkod.core.sat2cnf.Sat2CnfTranslator SAT to CNF translation}.
+ * Tests {@link kodkod.engine.fol2sat.Fol2SatTranslator FOL to SAT translation} and
+ * {@link kodkod.engine.fol2sat.Sat2CnfTranslator SAT to CNF translation}.
  *
  * @author Emina Torlak 
  */
@@ -41,7 +41,7 @@ public class TranslatorTest extends TestCase {
 	
 	public TranslatorTest(String arg0) {
 		super(arg0);
-		this.solver = new Solver(Solver.SATSolverName.Mini3SAT);
+		this.solver = new Solver();
 		List<Integer> atoms = new ArrayList<Integer>(10);
 		for (int i = 0; i < 10; i++) {
 			atoms.add(i);

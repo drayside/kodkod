@@ -6,18 +6,11 @@ package kodkod.engine;
 
 import kodkod.ast.Formula;
 import kodkod.ast.Relation;
-import kodkod.core.bool.BooleanConstant;
-import kodkod.core.fol2sat.AnnotatedBooleanValue;
-import kodkod.core.fol2sat.Fol2SatTranslator;
-import kodkod.core.sat2cnf.Sat2CnfTranslator;
-import kodkod.core.satlab.MiniSAT;
-import kodkod.core.satlab.SATSolver;
+import kodkod.engine.fol2sat.Fol2SatTranslator;
+import kodkod.engine.fol2sat.Translation;
 import kodkod.instance.Bounds;
 import kodkod.instance.Instance;
-import kodkod.util.IntSet;
 
-import org.sat4j.core.ASolverFactory;
-import org.sat4j.minisat.SolverFactory;
 import org.sat4j.specs.TimeoutException;
 
 
@@ -28,94 +21,40 @@ import org.sat4j.specs.TimeoutException;
  * 
  * @specfield solverName: SATSolverName // name of the SAT solver used by this solver
  * @specfield timeout: int // timeout for the solver, in seconds
- *
+ * @specfield options: Options 
  * @author Emina Torlak 
  */
 public final class Solver {
-	
-	public static enum SATSolverName {
-		Default,
-		
-		MiniLearning, MiniLearningPure,  MiniLearningNoRestarts, MiniLearningHeap, 
-		MiniLearningEZSimp, MiniLearningHeapEZSimp, 
-		MiniLearning2, MiniLearning2Heap, MiniLearning23, 
-		MiniLearningCB, MiniLearningCBWL, MiniLearningCBWLPure,  MiniLearning2NewOrder, ActiveLearning, 
-		
-		MiniSAT, MiniSATNoRestarts,  MiniSATHeap, 
-		MiniSAT2, MiniSAT2Heap,  MiniSAT23, MiniSAT23Heap, 
-		Mini3SAT, Mini3SATb, 
-		
-		MinimalOPBMax, MiniOPBMax, 
-		MinimalOPBMin, MiniOPBMin, 
-		MiniCard, Relsat, Backjumping
-	}
-	
-	
-	private final ASolverFactory factory;
-	private final SATSolverName solverName;
-	private final int timeout;
 	private int numPrimaryVars, numIntermediateVars, numClauses;
+	private final Options options;
 	
 	/**
-	 * Constructs a new Solver, that will use the SAT solver with the given 
-	 * name and abort computation within the specified number of seconds, if necessary.
-	 * If timeout is 0, then calls to solve will be allowed to run as long as necessary
-	 * to obtain a solution
-	 * @effects this.solverName' = solverName && this.timeout' = timeout
-	 * @throws NullPointerException - solver = null
-	 * @throws IllegalArgumentException - timeout < 0
-	 */
-	public Solver(final SATSolverName solverName, final int timeout) {
-		if (solverName==null) throw new NullPointerException("solverName=null");
-		if (timeout < 0) throw new IllegalArgumentException("timeout < 0");
-		this.timeout = timeout;
-		this.factory = new SolverFactory();
-		this.solverName = solverName;
-		this.numPrimaryVars = this.numIntermediateVars = this.numClauses = -1;
-	}
-	
-	/**
-	 * Constructs a new Solver, that will use the SAT solver with the given 
-	 * name and allow calls to this.solve to run as long as necessary
-	 * to obtain a solution
-	 * @effects this.solverName' = solverName && this.timeout' = 0
-	 * @throws NullPointerException - solver = null
-	 * @throws IllegalArgumentException - solver with the given name is not available
-	 */
-	public Solver(final SATSolverName solverName) {
-		this(solverName, 0);
-	}
-	
-	/**
-	 * Constructs a new Solver that will use the default SAT solver with the 
-	 * and abort computation within the specified number of seconds, if necessary.
-	 * @effects  this.solverName' = Default && this.timeout' = timeout
-	 * @throws IllegalArgumentException - timeout < 0
-	 */
-	public Solver(final int timeout) {
-		this(SATSolverName.Default, timeout);
-	}
-	
-	/**
-	 * Constructs a new Solver, that will use the default SAT solver and allow calls to 
-	 * this.solve to run as long as necessary to obtain a solution.
-	 * @effects this.solverName' = Default && this.timeout' = 0
+	 * Constructs a new Solver with the default options.
+	 * @effects this.options' = new Options()
 	 */
 	public Solver() {
-		this(SATSolverName.Default,0);
+		this.options = new Options();
 	}
 	
 	/**
-	 * Returns the name of the SAT solver used by this Solver.
-	 * @return this.solverName
+	 * Constructs a new Solver with the given options.
+	 * @effects this.options' = options
+	 * @throws NullPointerException - options = null
 	 */
-	public SATSolverName solverName() { return solverName; }
-	
+	public Solver(Options options) {
+		if (options==null)
+			throw new NullPointerException();
+		this.options = options;
+	}
 	/**
-	 * Returns the timeout of this Solver (in seconds).
-	 * @return this.timeout
+	 * Returns the Options object used by this Solver
+	 * to guide translation of formulas from first-order
+	 * logic to cnf.
+	 * @return this.options
 	 */
-	public int timeout() { return timeout; }
+	public Options options() {
+		return options;
+	}
 	
 	/**
 	 * Returns the number of primary CNF variables generated while
@@ -147,21 +86,6 @@ public final class Solver {
 	 */
 	public int numberOfClauses() { return numClauses; }
 	
-	/**
-	 * Converts the model returned by the solver into an instance using the annotations
-	 * of the given formula.
-	 * @return an Instance constructed from the information in the solver
-	 * and the given formula
-	 */
-	private static Instance getInstance(AnnotatedBooleanValue formula, SATSolver solver) {
-		final IntSet model = solver.trueVariables(1, StrictMath.min(formula.numPrimaryVariables(), solver.numberOfVariables()));
-		final Bounds bounds = formula.bounds();
-		final Instance instance = new Instance(bounds.universe());
-		for(Relation r: bounds) {
-			instance.add(r, formula.interpret(r, model));
-		}
-		return instance;
-	}
 	
 	/**
 	 * "Pads" the argument instance with the mappings that occur in bounds.lowerBound
@@ -195,13 +119,13 @@ public final class Solver {
 	
 	/**
 	 * Attempts to satisfy the given formula with respect to the specified instance.
-	 * If the operation is successful, the method returns a Model of the formula (in 
-	 * conjunction with constraints implied by the instance).  If the formula and 
+	 * If the operation is successful, the method returns an Instance of the formula (in 
+	 * conjunction with constraints implied by the bounds).  If the formula and 
 	 * the instance constraints cannot be satisfied, null is returned.
 	 * 
 	 * If the solver runs out of time, a TimeoutException is thrown.  
 	 * 
-	 * @return Model of the formula if it is satisfiable with respect to the instance; null otherwise.
+	 * @return Instance of the formula if it is satisfiable with respect to the given bounds; null otherwise.
 	 * @throws NullPointerException - formula = null || bounds = null
 	 * @throws IllegalArgumentException - the formula contains an unbound variable
 	 * @throws IllegalArgumentException - the formula contains a relation not mapped by the given bounds object
@@ -210,32 +134,27 @@ public final class Solver {
 	public Instance solve(Formula formula, Bounds bounds) throws kodkod.engine.TimeoutException {
 		numPrimaryVars = numIntermediateVars = numClauses = 0;
 		
-		try {	
-			final AnnotatedBooleanValue sat = Fol2SatTranslator.translate(formula, bounds);
+		try {
+			final Translation translation = Fol2SatTranslator.translate(formula, bounds, options);
+			numPrimaryVars = translation.numberOfPrimaryVariables();
+			numIntermediateVars = translation.cnf().numberOfVariables() - numPrimaryVars;
+			numClauses = translation.cnf().numberOfClauses();
 			
-//			System.out.println(formula);
-//			System.out.println(sat);
-			if (sat.value() == BooleanConstant.TRUE) {
-				return padInstance(toInstance(sat.bounds()), bounds);
-			} else if (sat.value() == BooleanConstant.FALSE) { 
-				return null;	
-			} else {
-				SATSolver solver = new MiniSAT(solverName==SATSolverName.Default ? 
-						                      factory.defaultSolver() : factory.createSolverByName(solverName.name()));
-				if (timeout > 0) solver.setTimeout(timeout);
-				Sat2CnfTranslator.translate(sat, solver);
-				numPrimaryVars = sat.numPrimaryVariables();
-				numIntermediateVars = solver.numberOfVariables() - numPrimaryVars;
-				numClauses = solver.numberOfClauses();
-				return (solver.solve() ? padInstance(getInstance(sat, solver), bounds) : null);				
-			}		
-		} catch (kodkod.core.satlab.TimeoutException to) {
-			throw new kodkod.engine.TimeoutException(to.getMessage(), to);
-		} 	
+			if (translation.cnf().solve()) {
+				return padInstance(translation.interpret(), bounds);
+			}
+			
+		} catch (TrivialFormulaException trivial) {
+			if (trivial.formulaValue().booleanValue()) {
+				return padInstance(toInstance(trivial.bounds()), bounds);
+			} 
+		}
+		
+		return null;
 	}
 	
 	public String toString() {
-		return "[SAT solver: " + solverName + ", timeout: " + timeout + "]";
+		return options.toString();
 	}
 
 }

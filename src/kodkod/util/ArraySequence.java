@@ -114,7 +114,7 @@ public final class ArraySequence<V> extends AbstractSparseSequence<V> {
 	 * @effects this.entries' = this.entries + index->value
 	 * @return this.entries[index]
 	 * @throws IndexOutOfBoundsException - index !in this.indeces
-	 * @see kodkod.util.SparseSequence#put(int, V)
+	 * @see kodkod.util.SparseSequence#put(int, Object)
 	 */
 	public V put(int index, V value) {
 		final int position = search(index);

@@ -6,9 +6,9 @@ package kodkod.engine;
 
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
-import kodkod.core.bool.BooleanMatrix;
-import kodkod.core.bool.BooleanValue;
-import kodkod.core.fol2sat.Fol2SatTranslator;
+import kodkod.engine.bool.BooleanMatrix;
+import kodkod.engine.bool.BooleanValue;
+import kodkod.engine.fol2sat.Fol2SatTranslator;
 import kodkod.instance.Instance;
 import kodkod.instance.TupleFactory;
 import kodkod.instance.TupleSet;

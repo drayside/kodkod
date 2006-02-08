@@ -4,29 +4,29 @@
  */
 package tests;
 
-import static kodkod.core.bool.BooleanConstant.FALSE;
-import static kodkod.core.bool.BooleanConstant.TRUE;
-import static kodkod.core.bool.MultiGate.Operator.AND;
-import static kodkod.core.bool.MultiGate.Operator.OR;
+import static kodkod.engine.bool.BooleanConstant.FALSE;
+import static kodkod.engine.bool.BooleanConstant.TRUE;
+import static kodkod.engine.bool.MultiGate.Operator.AND;
+import static kodkod.engine.bool.MultiGate.Operator.OR;
 
 import java.util.Arrays;
 import java.util.Iterator;
 
 import junit.framework.TestCase;
-import kodkod.core.bool.BooleanConstant;
-import kodkod.core.bool.BooleanFactory;
-import kodkod.core.bool.BooleanMatrix;
-import kodkod.core.bool.BooleanValue;
-import kodkod.core.bool.BooleanVariable;
-import kodkod.core.bool.Dimensions;
-import kodkod.core.bool.MultiGate;
-import kodkod.core.bool.MutableMultiGate;
+import kodkod.engine.bool.BooleanConstant;
+import kodkod.engine.bool.BooleanFactory;
+import kodkod.engine.bool.BooleanMatrix;
+import kodkod.engine.bool.BooleanValue;
+import kodkod.engine.bool.BooleanVariable;
+import kodkod.engine.bool.Dimensions;
+import kodkod.engine.bool.MultiGate;
+import kodkod.engine.bool.MutableMultiGate;
 import kodkod.util.IndexedEntry;
 import kodkod.util.IntRange;
 import kodkod.util.Ints;
 
 /** 
- * Tests {@link kodkod.core.bool.BooleanMatrix BooleanMatrix}.
+ * Tests {@link kodkod.engine.bool.BooleanMatrix BooleanMatrix}.
  *
  * @author Emina Torlak 
  */

@@ -27,7 +27,7 @@ import kodkod.util.IntIterator;
  * @author Emina Torlak
  */
 public class BugTests extends TestCase {
-	private final Solver solver = new Solver(Solver.SATSolverName.Mini3SAT);
+	private final Solver solver = new Solver();
 	
 	public final void testEmina_01232006() {
 		final List<String> atoms = new ArrayList<String>(5);
