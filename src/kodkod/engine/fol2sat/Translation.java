@@ -75,16 +75,18 @@ public final class Translation {
 		final Instance instance = new Instance(bounds.universe());
 //		System.out.println(rel2lit);
 		final IntSet model = solver.variablesThatAre(true, 1, StrictMath.min(maxLit, solver.numberOfVariables()));
-		for(Map.Entry<Relation, IntRange> e : rel2lit.entrySet()) {
-			Relation r = e.getKey();
-			TupleSet upper = bounds.upperBound(r);
-			IntSet indeces = Ints.bestSet(upper.capacity());
-			indeces.addAll(bounds.lowerBound(r).indexView());
-			int lit = e.getValue().min();
-			for(IntIterator iter = upper.indexView().iterator(); iter.hasNext();) {
-				final int index = iter.nextInt();
-				if (!indeces.contains(index) && model.contains(lit++)) 
-					indeces.add(index);
+		for(Relation r : bounds) {
+			TupleSet lower = bounds.lowerBound(r);
+			IntSet indeces = Ints.bestSet(lower.capacity());
+			indeces.addAll(lower.indexView());
+			IntRange vars = rel2lit.get(r);
+			if (vars!=null) {
+				int lit = vars.min();
+				for(IntIterator iter = bounds.upperBound(r).indexView().iterator(); iter.hasNext();) {
+					final int index = iter.nextInt();
+					if (!indeces.contains(index) && model.contains(lit++)) 
+						indeces.add(index);
+				}
 			}
 			instance.add(r, f.setOf(r.arity(), indeces));
 		}

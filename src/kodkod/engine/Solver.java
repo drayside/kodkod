@@ -135,11 +135,13 @@ public final class Solver {
 		numPrimaryVars = numIntermediateVars = numClauses = 0;
 		
 		try {
+//			System.out.println("translating...");
 			final Translation translation = Fol2SatTranslator.translate(formula, bounds, options);
+			
 			numPrimaryVars = translation.numberOfPrimaryVariables();
 			numIntermediateVars = translation.cnf().numberOfVariables() - numPrimaryVars;
 			numClauses = translation.cnf().numberOfClauses();
-			
+//			System.out.println("p cnf " + translation.cnf().numberOfVariables() + " " + translation.cnf().numberOfClauses());
 			if (translation.cnf().solve()) {
 				return padInstance(translation.interpret(), bounds);
 			}

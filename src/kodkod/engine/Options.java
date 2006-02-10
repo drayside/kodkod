@@ -7,8 +7,7 @@ import org.sat4j.minisat.SolverFactory;
 /**
  * This class stores information about various
  * user-level translation options.  It can be
- * used to choose the SAT solver, set skolemization
- * depth, etc.
+ * used to choose the SAT solver, set the timeout, etc.
  * 
  * @specfield solver: SATSolver // SAT solver to use
  * @specfield seed: long // random seed to be used by the SAT solver
@@ -247,9 +246,9 @@ public final class Options {
 	public String toString() {
 		StringBuilder b = new StringBuilder();
 		b.append("Options:");
-		b.append("\n  solver: ");
+		b.append("\n solver: ");
 		b.append(solver);
-		b.append("\n  seed: ");
+		b.append("\n seed: ");
 		b.append(seed);
 		b.append("\n timeout: ");
 		b.append(timeout);

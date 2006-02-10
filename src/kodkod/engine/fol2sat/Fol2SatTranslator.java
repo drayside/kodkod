@@ -69,13 +69,17 @@ public final class Fol2SatTranslator {
 	 *                                   relation not mapped by the given bounds.
 	 */
 	public static Translation translate(Formula formula, Bounds bounds, Options options) throws TrivialFormulaException {
+//		System.out.println("getting formula structure...");
 		final NodeAnalyzer.FormulaAnnotations notes = NodeAnalyzer.annotate(formula);
 		final Bounds optimalBounds = bounds.copy();
+//		System.out.println("optimizing bounds...");
 		final Set<IntSet> symmetricParts = 
 			BoundsOptimizer.optimize(optimalBounds, notes.relations(), 
 					                 notes.topLevelOrders(), notes.topLevelAcyclics());
 
+		
 		if (options.skolemize()) {
+//			System.out.println("skolemizing...");
 			formula = Skolemizer.skolemize(formula, notes.sharedNodes(), optimalBounds);
 		}
 		
@@ -83,6 +87,7 @@ public final class Fol2SatTranslator {
 		final BooleanFactory factory = allocator.factory();
 		final int numPrimaryVariables = allocator.numAllocatedVariables();
 		
+//		System.out.println("fol2sat...");
 		BooleanValue sat = formula.accept(new Translator(allocator, notes.sharedNodes()));
 		if (sat==BooleanConstant.TRUE || sat==BooleanConstant.FALSE) {
 			throw new TrivialFormulaException(formula, optimalBounds, (BooleanConstant)sat);
@@ -91,10 +96,12 @@ public final class Fol2SatTranslator {
 		final boolean symmetricSolver = options.solver().isSymmetryDriven();
 		
 		if (!symmetricSolver) {
+//			System.out.println("generating sbp...");
 			sat = factory.and(sat, SymmetryBreaker.generateSBP(symmetricParts, allocator, options));
 		}
 		
 		if (options.flatten()) {
+//			System.out.println("flattening...");
 			// remove everything but the variables from the factory
 			factory.clear(numPrimaryVariables);
 			sat = BooleanFormulaFlattener.flatten(sat, factory);
@@ -107,7 +114,7 @@ public final class Fol2SatTranslator {
 		if (symmetricSolver) {
 			// add symmetry information to the solver
 		}
-		
+//		System.out.println("sat2cnf...");
 		return new Translation(cnf, optimalBounds, allocator.allocationMap(), numPrimaryVariables);
 	}
 	
