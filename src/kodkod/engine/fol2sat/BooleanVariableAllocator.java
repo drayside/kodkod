@@ -46,6 +46,7 @@ final class BooleanVariableAllocator extends BooleanFormulaAllocator {
 	 * that relation.
 	 */
 	private final Map<Relation, IntRange> literals; 
+
 	
 	/* relations that are functions, which can
 	 * therefore be compactly represented.
@@ -101,14 +102,6 @@ final class BooleanVariableAllocator extends BooleanFormulaAllocator {
 	public final BooleanFactory factory() { return factory; }
 	
 	/**
-	 * Returns the literals assigned to the given relation.
-	 * @return the literals assigned to the given relation
-	 */
-	IntRange literalsFor(Relation r) {
-		return literals.get(r);
-	}
-	
-	/**
 	 * Returns a mapping of relations with non-exact bounds to the literals
 	 * assigned to it by this allocator.
 	 * @return a mapping of relations with non-exact bounds to the literals
@@ -154,6 +147,8 @@ final class BooleanVariableAllocator extends BooleanFormulaAllocator {
 	 */
 	public BooleanMatrix allocate(final Relation r) {
 		validate(r);
+
+			
 		int varId = literals.containsKey(r) ? literals.get(r).min() : 0; // no vars allocated to r
 		
 		final IntSet lowerBound = bounds.lowerBound(r).indexView();
@@ -167,14 +162,6 @@ final class BooleanVariableAllocator extends BooleanFormulaAllocator {
 		}
 		
 		return m;
-	}
-	
-	/**
-	 * Returns the number of variables allocated so far.
-	 * @return #formulas[Relation].elements
-	 */
-	public final int numAllocatedVariables() {
-		return factory.maxVariableLiteral();
 	}
 
 }

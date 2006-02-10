@@ -8,7 +8,7 @@ import kodkod.ast.Expression;
 import kodkod.ast.Formula;
 import kodkod.engine.bool.BooleanMatrix;
 import kodkod.engine.bool.BooleanValue;
-import kodkod.engine.fol2sat.Fol2SatTranslator;
+import kodkod.engine.fol2sat.Translator;
 import kodkod.instance.Instance;
 import kodkod.instance.TupleFactory;
 import kodkod.instance.TupleSet;
@@ -49,7 +49,7 @@ public final class Evaluator {
 	 * @return true if formula is true with respect to this.instance; otherwise returns false
 	 */
 	public boolean evaluate(Formula formula){
-		return (Fol2SatTranslator.evaluate(formula, instance)).booleanValue();
+		return (Translator.evaluate(formula, instance)).booleanValue();
 	}
 	
 	/**
@@ -60,7 +60,7 @@ public final class Evaluator {
 	 * mappings in this.instance.
 	 */
 	public TupleSet evaluate(Expression expression){
-		final BooleanMatrix sol = Fol2SatTranslator.evaluate(expression,instance);
+		final BooleanMatrix sol = Translator.evaluate(expression,instance);
 		final TupleFactory factory = instance.universe().factory();
 		final int arity = expression.arity();
 		final TupleSet ret = factory.noneOf(arity);

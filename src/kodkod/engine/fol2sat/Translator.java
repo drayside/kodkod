@@ -1,16 +1,16 @@
 /*
- * Fol2SatTranslator.java
+ * Translator.java
  * Created on Jul 5, 2005
  */
 package kodkod.engine.fol2sat;
 
 import static kodkod.engine.bool.BooleanConstant.FALSE;
 import static kodkod.engine.bool.BooleanConstant.TRUE;
+import static kodkod.engine.bool.MultiGate.Operator.AND;
 
 import java.util.ArrayList;
-import java.util.IdentityHashMap;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import kodkod.ast.BinaryExpression;
@@ -40,23 +40,28 @@ import kodkod.engine.bool.BooleanConstant;
 import kodkod.engine.bool.BooleanFactory;
 import kodkod.engine.bool.BooleanMatrix;
 import kodkod.engine.bool.BooleanValue;
+import kodkod.engine.bool.BooleanVariable;
+import kodkod.engine.bool.BooleanVisitor;
 import kodkod.engine.bool.Dimensions;
+import kodkod.engine.bool.MultiGate;
 import kodkod.engine.bool.MutableMultiGate;
+import kodkod.engine.bool.NotGate;
 import kodkod.engine.bool.MultiGate.Operator;
 import kodkod.engine.satlab.SATSolver;
 import kodkod.instance.Bounds;
 import kodkod.instance.Instance;
 import kodkod.util.IntSet;
+import kodkod.util.Ints;
 
 
 /** 
  * Translates a formula in first order logic, represented as an
  * {@link kodkod.ast.Formula abstract syntax tree}, into a 
- * {@link kodkod.engine.bool.BooleanValue boolean formula}.
+ * {@link kodkod.engine.satlab.SATSolver cnf formula}.
  * @author Emina Torlak 
  */
-public final class Fol2SatTranslator {
-	private Fol2SatTranslator() {}
+public final class Translator {
+	private Translator() {}
 
 	/**
 	 * Translates the given formula using the specified bounds and options.
@@ -85,10 +90,10 @@ public final class Fol2SatTranslator {
 		
 		final BooleanVariableAllocator allocator = new BooleanVariableAllocator(optimalBounds, notes.topLevelFunctions());
 		final BooleanFactory factory = allocator.factory();
-		final int numPrimaryVariables = allocator.numAllocatedVariables();
+		final int numPrimaryVariables = factory.maxVariableLiteral();
 		
 //		System.out.println("fol2sat...");
-		BooleanValue sat = formula.accept(new Translator(allocator, notes.sharedNodes()));
+		BooleanValue sat = formula.accept(new Fol2Sat(allocator, formula, notes.sharedNodes()));
 		if (sat==BooleanConstant.TRUE || sat==BooleanConstant.FALSE) {
 			throw new TrivialFormulaException(formula, optimalBounds, (BooleanConstant)sat);
 		}
@@ -109,12 +114,15 @@ public final class Fol2SatTranslator {
 			factory.clear(0);
 		}
 		
-		final SATSolver cnf = Sat2CnfTranslator.translate(sat, options);
+//		System.out.println("sat2cnf...");
+		final SATSolver cnf = options.solver().instance();
+		cnf.setTimeout(options.timeout());
+		cnf.addClause(sat.accept(new Sat2Cnf(cnf, numPrimaryVariables, StrictMath.abs(sat.literal())),null));
 		
 		if (symmetricSolver) {
 			// add symmetry information to the solver
 		}
-//		System.out.println("sat2cnf...");
+
 		return new Translation(cnf, optimalBounds, allocator.allocationMap(), numPrimaryVariables);
 	}
 	
@@ -127,7 +135,7 @@ public final class Fol2SatTranslator {
 	 */
 	@SuppressWarnings("unchecked")
 	static <T> T evaluate(Node node, BooleanConstantAllocator allocator) {
-		return (T) node.accept(new Translator(allocator, NodeAnalyzer.detectSharing(node)));
+		return (T) node.accept(new Fol2Sat(allocator, node, NodeAnalyzer.detectSharing(node)));
 	}
 	
 	/**
@@ -155,9 +163,9 @@ public final class Fol2SatTranslator {
 	}
 	
 	/**
-	 * The helper class that actually performs the translation.
+	 * Performs translation from FOL to SAT.
 	 */
-	private static final class Translator implements ReturnVisitor<BooleanMatrix, BooleanValue, Object> {
+	private static final class Fol2Sat implements ReturnVisitor<BooleanMatrix, BooleanValue, Object> {
 		
 		private final BooleanFormulaAllocator allocator;
 		
@@ -168,67 +176,27 @@ public final class Fol2SatTranslator {
 		 * environment contains the current values of the enclosing quantified variable(s) */
 		private Environment<BooleanMatrix> env;
 		
-		/* Used for caching translation of AST nodes with more than one parent.  If a node
-		 * has multiple parents and has not yet been visited, it is mapped to a TranslationInfo
-		 * with null translation field.  If it has been visited, the translation field of its 
-		 * TranslationInfo is mapped, along with the bindings for any free variables that the
-		 * node might have.  Unshared nodes are not mapped by the cache. */
-		private final Map<Node,TranslationInfo> cache;
+		private final TranslationCache cache;
 		
 		/**
 		 * Constructs a new translator that will use the given allocator to perform the 
-		 * translation.  The set sharedInternalNodes is used to determine which translations
-		 * should be cached; specifically, the set should contain the shared non-leaf
-		 * descendents of the formula/expression to which this visitor will be applied. 
+		 * translation of the specified node.  The set sharedInternalNodes is used to 
+		 * determine which translations should be cached.
+		 * @requires sharedInternalNodes = {n: Node | #(n.~children & node.*children) > 1 } 
 		 */    
-		Translator(final BooleanFormulaAllocator allocator, Set<Node> sharedInternalNodes) {
+		Fol2Sat(final BooleanFormulaAllocator allocator, Node node, Set<Node> sharedInternalNodes) {
 			if (allocator==null) throw new NullPointerException("allocator==null");
 			this.allocator = allocator;
 			this.env = new Environment<BooleanMatrix>();
-			this.cache = new IdentityHashMap<Node,TranslationInfo>(sharedInternalNodes.size());
-			for(Map.Entry<Node,Set<Variable>> nodeVars : FreeVariableDetector.collectFreeVars(sharedInternalNodes).entrySet()) {
-				Set<Variable> freeVars = nodeVars.getValue();
-				if (freeVars.isEmpty()) 
-					cache.put(nodeVars.getKey(), new NoVarTranslationInfo());
-				else 
-					cache.put(nodeVars.getKey(), new MultiVarTranslationInfo(freeVars));
-			}
+			this.cache = new TranslationCache(node, sharedInternalNodes);
 			this.univSize = allocator.universe().size();
 		}
-		
-		/**
-		 * If the given node has already been visited and its translation
-		 * cached, the cached value is returned.  Otherwise, null is returned.
-		 * @return this.cache[node]
-		 */
-		@SuppressWarnings("unchecked")
-		private <T> T cachedTranslation(Node node) {
-			final TranslationInfo info = cache.get(node);
-			return info==null ? null : (T) info.get(env);
-		}
-		
-		/**
-		 * Caches the given replacement for the specified node, if the node 
-		 * has multiple parents.  Otherwise does nothing.  The method returns
-		 * its second argument.  
-		 * @effects node in this.cache.keySet() => 
-		 *           this.cache' = this.cache ++ node->translation, 
-		 *           this.cache' = this.cache
-		 * @return translation
-		 */
-		private <T> T cache(Node node, T translation) {
-			final TranslationInfo info = cache.get(node);
-			if (info != null) {
-				info.set(translation, env);
-			}
-			return translation;
-		}
-		
+	
 		/**
 		 * @return a list of BooleanMatrices A such that A[i] = decls.declarations[i].expression.accept(this) 
 		 */
 		public List<BooleanMatrix> visit(Decls decls) {
-			List<BooleanMatrix> matrices = cachedTranslation(decls);
+			List<BooleanMatrix> matrices = cache.get(decls, env);
 			if (matrices!=null) return matrices;
 			
 			final List<Decl> dlist = decls.declarations();
@@ -237,15 +205,15 @@ public final class Fol2SatTranslator {
 				matrices.add(visit(decl));
 			}
 			
-			return cache(decls, matrices);
+			return cache.cache(decls, matrices, env);
 		}
 		
 		/**
 		 * @return the BooleanMatrix that is the translation of decl.expression.
 		 */
 		public BooleanMatrix visit(Decl decl) {
-			BooleanMatrix matrix = cachedTranslation(decl);
-			return matrix==null ? cache(decl, decl.expression().accept(this)) : matrix;
+			BooleanMatrix matrix = cache.get(decl, env);
+			return matrix==null ? cache.cache(decl, decl.expression().accept(this), env) : matrix;
 		}
 		
 		/**
@@ -301,7 +269,7 @@ public final class Fol2SatTranslator {
 		 *           binExpr.op = PRODUCT => tLeft.crossProduct(tRight)
 		 */
 		public BooleanMatrix visit(BinaryExpression binExpr) {
-			BooleanMatrix ret = cachedTranslation(binExpr);
+			BooleanMatrix ret = cache.get(binExpr, env);
 			if (ret!=null) return ret;
 
 			final BooleanMatrix left = binExpr.left().accept(this);
@@ -319,7 +287,7 @@ public final class Fol2SatTranslator {
 				throw new IllegalArgumentException("Unknown operator: " + op);
 			}
 			
-			return cache(binExpr, ret);
+			return cache.cache(binExpr, ret, env);
 		}
 		/**
 		 * @return let tChild = translate(unaryExpr.child) |
@@ -327,7 +295,7 @@ public final class Fol2SatTranslator {
 		 *           unaryExpr.op = TRANSITIVE_CLOSURE => tChild.closure() 
 		 */
 		public BooleanMatrix visit(UnaryExpression unaryExpr) {
-			BooleanMatrix ret = cachedTranslation(unaryExpr);
+			BooleanMatrix ret = cache.get(unaryExpr, env);
 			if (ret!=null) return ret;
 			
 			final BooleanMatrix child = unaryExpr.expression().accept(this);
@@ -340,14 +308,14 @@ public final class Fol2SatTranslator {
 			default : 
 				throw new IllegalArgumentException("Unknown operator: " + op);
 			}
-			return cache(unaryExpr,ret);
+			return cache.cache(unaryExpr,ret, env);
 		}
 		
 		/**
 		 * @return { translate(comprehension.declarations) | translate(comprehension.formula) }
 		 */
 		public BooleanMatrix visit(Comprehension comprehension) {
-			BooleanMatrix ret = cachedTranslation(comprehension);
+			BooleanMatrix ret = cache.get(comprehension, env);
 			if (ret!=null) return ret;
 			
 			/* Let comprehension = { a: A, b: B, ..., x: X | F(a, b, ..., x) }.  It
@@ -384,14 +352,14 @@ public final class Fol2SatTranslator {
 			}	
 			env = generator.baseEnvironment();
 			
-			return cache(comprehension,ret);
+			return cache.cache(comprehension,ret, env);
 		}
 		
 		/**
 		 * @return translate(ifExpr.condition) => translate(ifExpr.then), translate(ifExpr.else)
 		 */
 		public BooleanMatrix visit(IfExpression ifExpr) {
-			BooleanMatrix ret = cachedTranslation(ifExpr);
+			BooleanMatrix ret = cache.get(ifExpr, env);
 			if (ret!=null) return ret;
 			
 			final BooleanValue condition = ifExpr.condition().accept(this);
@@ -399,7 +367,7 @@ public final class Fol2SatTranslator {
 			final BooleanMatrix elseExpr = ifExpr.elseExpr().accept(this);
 			ret = thenExpr.choice(condition, elseExpr);
 			
-			return cache(ifExpr,ret);
+			return cache.cache(ifExpr,ret, env);
 		}
 		
 		/**
@@ -494,9 +462,9 @@ public final class Fol2SatTranslator {
 		 *           quant = SOME => translate(F(A_0, B_0, ..., X_0)) || ... || translate(F(A_|A|, B_|B|, ..., X_|X|))
 		 */
 		public BooleanValue visit(QuantifiedFormula quantFormula) {
-			BooleanValue ret = cachedTranslation(quantFormula);
+			BooleanValue ret = cache.get(quantFormula, env);
 			if (ret!=null) return ret;
-			
+
 			final QuantifiedFormula.Quantifier quantifier = quantFormula.quantifier();
 			
 			switch(quantifier) {
@@ -505,8 +473,8 @@ public final class Fol2SatTranslator {
 			default :
 				throw new IllegalArgumentException("Unknown quantifier: " + quantifier);
 			}
-			
-			return cache(quantFormula,ret);
+
+			return cache.cache(quantFormula,ret, env);
 		}
 		
 		/**
@@ -517,7 +485,7 @@ public final class Fol2SatTranslator {
 		 *           binFormula.op = IFF => tLeft.not().or(tRight).and(tRight.not().or(tLeft)),
 		 */
 		public BooleanValue visit(BinaryFormula binFormula) {
-			BooleanValue ret = cachedTranslation(binFormula);
+			BooleanValue ret = cache.get(binFormula, env);
 			if (ret!=null) return ret;
 			
 			final BooleanValue left = binFormula.left().accept(this);
@@ -534,16 +502,16 @@ public final class Fol2SatTranslator {
 				throw new IllegalArgumentException("Unknown operator: " + op);
 			}
 		
-			return cache(binFormula, ret);
+			return cache.cache(binFormula, ret, env);
 		}
 		
 		/**
 		 * @return translate(not.child).not()
 		 */    
 		public BooleanValue visit(NotFormula not) {
-			BooleanValue ret = cachedTranslation(not);
+			BooleanValue ret = cache.get(not, env);
 			return ret==null ? 
-					cache(not, allocator.factory().not(not.formula().accept(this))) : ret;
+					cache.cache(not, allocator.factory().not(not.formula().accept(this)), env) : ret;
 		}
 		
 		/**
@@ -562,7 +530,7 @@ public final class Fol2SatTranslator {
 		 *           tLeft.not().or(tRight).and(tRight.not().or(tLeft)).conjunctiveFold()              
 		 */
 		public BooleanValue visit(ComparisonFormula compFormula) {
-			BooleanValue ret = cachedTranslation(compFormula);
+			BooleanValue ret = cache.get(compFormula, env);
 			if (ret!=null) return ret;
 			
 			final BooleanMatrix left = compFormula.left().accept(this);
@@ -576,7 +544,7 @@ public final class Fol2SatTranslator {
 				throw new IllegalArgumentException("Unknown operator: " + compFormula.op());
 			}
 	
-			return cache(compFormula,ret);
+			return cache.cache(compFormula,ret, env);
 		}
 		
 		/**
@@ -587,7 +555,7 @@ public final class Fol2SatTranslator {
 		 *           multFormula.multiplicity = LONE => child.lone()
 		 */
 		public BooleanValue visit(MultiplicityFormula multFormula) {
-			BooleanValue ret = cachedTranslation(multFormula);
+			BooleanValue ret = cache.get(multFormula, env);
 			if (ret!=null) return ret;
 			
 			final BooleanMatrix child = multFormula.expression().accept(this);
@@ -602,108 +570,91 @@ public final class Fol2SatTranslator {
 				throw new IllegalArgumentException("Unknown multiplicity: " + mult);
 			}
 			
-			return cache(multFormula, ret);
+			return cache.cache(multFormula, ret, env);
 		}
 		
 		/**
 		 * @return translate(pred.toConstraints())
 		 */
 		public BooleanValue visit(RelationPredicate pred) {
-			BooleanValue ret = cachedTranslation(pred);
-			return ret != null ? ret : cache(pred, pred.toConstraints().accept(this));
+			BooleanValue ret = cache.get(pred, env);
+			return ret != null ? ret : cache.cache(pred, pred.toConstraints().accept(this), env);
+		}
+	}
+	
+	/**
+	 * Performs translation from SAT to CNF.
+	 */
+	private static final class Sat2Cnf implements BooleanVisitor<int[], Object> {
+		private final SATSolver solver;
+		private final IntSet visited;
+		private final int[] unaryClause = new int[1];
+				
+		private Sat2Cnf(SATSolver solver, int numPrimaryVars, int maxLiteral) {
+			this.solver = solver;
+			this.solver.addVariables(maxLiteral);
+			final int minGateLiteral = numPrimaryVars+1;
+			this.visited = Ints.bestSet(minGateLiteral, StrictMath.max(minGateLiteral, maxLiteral));
 		}
 		
 		/**
-		 * A container class that stores the translation of a shared node
-		 * (BooleanValue for formulas and BooleanMatrix for expressions)
-		 * and bindings for the node's free variables which were used to 
-		 * generate the translation.
-		 * Storing the bindings is necessary for proper handling of 
-		 * sharing within quantified formulas and comprehensions.
-		 * This implementation assumes that each free variable is 
-		 * mapped to a BooleanMatrix of density one, whose sole entry
-		 * is the BooleanConstant TRUE.
-		 * @specfield varBinding: Variable -> lone int
-		 * @specfield translation: lone Object
+		 * Adds translation clauses to the solver and returns a VecInt containing the
+		 * gate's literal. The CNF clauses are generated according to the standard SAT to CNF translation:
+		 * o = AND(i1, i2, ... ik) ---> (i1 | !o) & (i2 | !o) & ... & (ik | !o) & (!i1 | !i2 | ... | !ik | o),
+		 * o = OR(i1, i2, ... ik)  ---> (!i1 | o) & (!i2 | o) & ... & (!ik | o) & (i1 | i2 | ... | ik | !o).
+		 * @return o: int[] | o.length = 1 && o.[0] = multigate.literal
+		 * @effects if the multigate has not yet been visited, its children are visited
+		 * and the clauses are added to the solver connecting the multigate's literal to
+		 * its input literal, as described above.
 		 */
-		private static abstract class TranslationInfo {
-			Object translation;
-			/**
-			 * Returns this.translation if the given environment
-			 * has the same mappings for the free variables of 
-			 * the translated node as the ones used to generate
-			 * this.translation.  Otherwise returns null.  
-			 * @requires all v: varBinding.int | some e.lookup(v)
-			 * @return all v: varBinding.int | e.lookup(v).get(varBinding[v])=TRUE => this.translation, null
-			 * @throws NullPointerException - e = null
-			 */
-			abstract Object get(Environment<BooleanMatrix> e);
-			
-			/**
-			 * Sets this.translation to the given translation
-			 * and sets the free variable bindings to those 
-			 * given by the specified environment.
-			 * @requires all v: varBinding.int | some env.lookup(v)
-			 * @effects this.translation' = translation && 
-			 *          this.varBinding' = 
-			 *           {v: this.varBinding.int, tupleIndex: int | 
-			 *             tupleIndex = env.lookup(v).iterator().next().index() }
-			 */
-			abstract void set(Object transl, Environment<BooleanMatrix> env);
-		}
-		
-		/**
-		 * A TranslationInfo for a node with one or more free variables. 
-		 */
-		private static final class MultiVarTranslationInfo extends TranslationInfo {
-			final Variable[] vars;
-			final int[] tuples;
-			
-			/**
-			 * Constructs a translation unit for a node which
-			 * has the given set of free variables.
-			 * @effects this.freeVariables' = vars &&
-			 *          no this.translation' 
-			 */
-			MultiVarTranslationInfo(Set<Variable> freeVariables) {
-				this.vars = freeVariables.toArray(new Variable[freeVariables.size()]);
-				this.tuples = new int[freeVariables.size()];
-			}
-			
-			@Override
-			Object get(Environment<BooleanMatrix> e) {
-				if (translation==null) return null;
-				for(int i = 0; i < vars.length; i++) {
-					if (e.lookup(vars[i]).get(tuples[i])!=BooleanConstant.TRUE)
-						return null;
+		public int[] visit(MultiGate multigate, Object arg) {  
+			final int oLit = multigate.literal();
+			if (visited.add(oLit)) { 
+				final int sgn  = (multigate.op()==AND ? 1 : -1);
+				final int[] lastClause = new int[multigate.numInputs()+1];
+				final int[] binaryClause = {0, oLit * -sgn};
+				int i = 0;
+				for(Iterator<BooleanValue> inputs = multigate.inputs(); inputs.hasNext();) {
+					int iLit = inputs.next().accept(this, arg)[0];
+					binaryClause[0] = iLit * sgn;
+					solver.addClause(binaryClause);
+					lastClause[i++] = iLit * -sgn;
 				}
-				return translation;
+				lastClause[i] = oLit * sgn;
+				solver.addClause(lastClause);
 			}
-			
-			@Override
-			void set(Object transl, Environment<BooleanMatrix> env) {
-				translation = transl;
-				for(int i = 0; i < vars.length; i++) {
-					tuples[i] = env.lookup(vars[i]).iterator().next().index();
-				}
-			}
+			unaryClause[0] = oLit;
+			return unaryClause;        
+		}
+		
+		
+		/** 
+		 * Returns the negation of the result of visiting negation.input, wrapped in
+		 * an array.
+		 * @return o: int[] | o.length = 1 && o[0] = - translate(negation.inputs)[0]
+		 *  */
+		public int[] visit(NotGate negation, Object arg) {
+			final int[] o = negation.input().accept(this, arg);
+			assert o.length == 1;
+			o[0] = -o[0];
+			return o;
 		}
 		
 		/**
-		 * A TranslationInfo for a node with no free variables. 
+		 * Returns the variable's literal wrapped in a an array.
+		 * @return o: int[] | o.length = 1 && o[0] = variable.literal
 		 */
-		private static final class NoVarTranslationInfo extends TranslationInfo {
-			
-			@Override
-			Object get(Environment<BooleanMatrix> e) {
-				return translation;
-			}
-			
-			@Override
-			void set(Object transl, Environment<BooleanMatrix> env) {
-				translation = transl;
-			}
-			
-		}		
+		public int[] visit(BooleanVariable variable, Object arg) {
+			unaryClause[0] = variable.literal();
+			return unaryClause;
+		}
+		
+		/**
+		 * Throws an UnsupportedOperationException.
+		 * @throws UnsupportedOperationException
+		 */
+		public int[] visit(BooleanConstant constant, Object arg) {
+			throw new UnsupportedOperationException();
+		}
 	}
 }

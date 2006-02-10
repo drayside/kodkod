@@ -86,13 +86,13 @@ final class Environment<T> {
 	 * each environment chain ends in null.
 	 * @return environment in this.*parent
 	 */
-	public boolean isExtensionOf(Environment<T> environment) {
-		Environment<T> p = this;
-		while (p!=environment && p!=null) {
-			p = p.parent;
-		}
-		return environment == p;
-	}
+//	public boolean isExtensionOf(Environment<T> environment) {
+//		Environment<T> p = this;
+//		while (p!=environment && p!=null) {
+//			p = p.parent;
+//		}
+//		return environment == p;
+//	}
 	
 	/**
 	 * Binds the specified variable to the specified value,

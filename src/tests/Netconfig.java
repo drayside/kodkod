@@ -258,8 +258,8 @@ public class Netconfig {
 		final Variable r2 = Variable.unary("r2");
 		final Variable t = Variable.unary("t");
 		
-		Formula f = addSatelliteLink(r1, r2, t).or(addLineOfSightLink(r1, r2, t));
-		f = f.or(continuedConnection(r1, r2, t)).or(lostConnection(r1, r2, t));
+		final Formula f = addSatelliteLink(r1, r2, t).or(addLineOfSightLink(r1, r2, t)).
+		                  or(continuedConnection(r1, r2, t)).or(lostConnection(r1, r2, t));
 		
 		return f.forAll(r1.oneOf(Router).and(r2.oneOf(Router)).and(t.oneOf(Time)));
 		
@@ -333,9 +333,13 @@ public class Netconfig {
 		final Solver solver = new Solver();
 		try {
 			final Formula show = model.show();
+			long start = System.currentTimeMillis();
 			final Instance sol = solver.solve(show, model.bounds(10,1,10,10));
+			long end = System.currentTimeMillis();
 			//System.out.println(show);
+			System.out.println("time: " + (end-start) + " ms");
 			System.out.println(sol);
+			
 		} catch (TimeoutException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

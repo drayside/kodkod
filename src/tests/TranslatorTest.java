@@ -26,7 +26,7 @@ import kodkod.instance.Universe;
 
 
 /** 
- * Tests {@link kodkod.engine.fol2sat.Fol2SatTranslator FOL to SAT translation} and
+ * Tests {@link kodkod.engine.fol2sat.Translator FOL to SAT translation} and
  * {@link kodkod.engine.fol2sat.Sat2CnfTranslator SAT to CNF translation}.
  *
  * @author Emina Torlak 

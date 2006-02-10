@@ -79,7 +79,7 @@ final class Skolemizer {
 			for(Map.Entry<Decl, Relation> entry : skolemizableDecls.entrySet()) {
 				Relation skolem = entry.getValue();
 				Expression expression = entry.getKey().expression();
-				BooleanMatrix skolemBound = Fol2SatTranslator.evaluate(expression, new BooleanConstantAllocator.Overapproximating(bounds));
+				BooleanMatrix skolemBound = Translator.evaluate(expression, new BooleanConstantAllocator.Overapproximating(bounds));
 				IntSet tuples = Ints.bestSet(usize);
 				for(IndexedEntry<BooleanValue> cell : skolemBound) {
 					tuples.add(cell.index());
@@ -310,7 +310,7 @@ final class Skolemizer {
 		boolean negated, topLevel;
 		
 		EQFDetector(Set<Node> sharedNodes) {
-			this.negated = false;
+		    this.negated = false;
 			this.topLevel = true;
 			this.formulas = new IdentityHashSet<QuantifiedFormula>();
 			this.flagCombos = new Byte[16];

@@ -28,6 +28,7 @@ public final class MiniSAT implements SATSolver {
 	private final ISolver solver;
 	private final ReadOnlyIVecInt wrapper;
 	private Boolean isSatisfiable; 
+	private int vars, clauses;
 //	private  BufferedWriter w;
 	/**
 	 * Constructs a wrapper for the given instance
@@ -40,6 +41,7 @@ public final class MiniSAT implements SATSolver {
 		this.solver = solver;
 		this.wrapper = new ReadOnlyIVecInt();
 		this.isSatisfiable = null;
+		this.vars = this.clauses = 0;
 //		try {
 //			this.w = new BufferedWriter(new FileWriter("/Users/emina/Desktop/solvers/zchaff/output.cnf"));
 //		} catch (IOException e) {
@@ -54,7 +56,7 @@ public final class MiniSAT implements SATSolver {
 	 * @see kodkod.engine.satlab.SATSolver#numberOfVariables()
 	 */
 	public int numberOfVariables() {
-		return solver.nVars();
+		return vars; //solver.nVars();
 	}
 
 	/**
@@ -64,7 +66,7 @@ public final class MiniSAT implements SATSolver {
 	 * @see kodkod.engine.satlab.SATSolver#numberOfClauses()
 	 */
 	public int numberOfClauses() {
-		return solver.nConstraints();
+		return clauses; //solver.nConstraints();
 	}
 
 	/**
@@ -102,8 +104,10 @@ public final class MiniSAT implements SATSolver {
 	public void addVariables(int numVars) {
 		if (numVars < 0)
 			throw new IllegalArgumentException("numVars < 0: " + numVars);
-		else if (numVars > 0)
+		else if (numVars > 0) {
+			vars += numVars;
 			solver.newVar(numVars);
+		}
 	}
 
 	/**
@@ -118,6 +122,7 @@ public final class MiniSAT implements SATSolver {
 	public void addClause(int[] lits) {
 		try {
 			if (isSatisfiable != Boolean.FALSE) {
+				clauses++;
 				solver.addClause(wrapper.wrap(lits));
 //				for(int i : lits) {
 //					try {

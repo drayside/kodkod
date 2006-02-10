@@ -6,7 +6,7 @@ package kodkod.engine;
 
 import kodkod.ast.Formula;
 import kodkod.ast.Relation;
-import kodkod.engine.fol2sat.Fol2SatTranslator;
+import kodkod.engine.fol2sat.Translator;
 import kodkod.engine.fol2sat.Translation;
 import kodkod.instance.Bounds;
 import kodkod.instance.Instance;
@@ -136,7 +136,7 @@ public final class Solver {
 		
 		try {
 //			System.out.println("translating...");
-			final Translation translation = Fol2SatTranslator.translate(formula, bounds, options);
+			final Translation translation = Translator.translate(formula, bounds, options);
 			
 			numPrimaryVars = translation.numberOfPrimaryVariables();
 			numIntermediateVars = translation.cnf().numberOfVariables() - numPrimaryVars;
