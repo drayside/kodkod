@@ -102,6 +102,14 @@ abstract class BooleanConstantAllocator extends BooleanFormulaAllocator {
 			this.instance = instance;
 		}
 		
+		/**
+		 * Returns this.instance.
+		 * @return this.instance
+		 */
+		Instance instance() {
+			return instance;
+		}
+		
 		@Override
 		Universe universe() {
 			return instance.universe();
@@ -133,6 +141,14 @@ abstract class BooleanConstantAllocator extends BooleanFormulaAllocator {
 		Overapproximating(Bounds bounds) {
 			if (bounds==null) throw new NullPointerException("bounds=null");
 			this.bounds = bounds;
+		}
+		
+		/**
+		 * Returns this.bounds. 
+		 * @return this.bounds
+		 */
+		Bounds bounds() {
+			return bounds;
 		}
 		
 		@Override

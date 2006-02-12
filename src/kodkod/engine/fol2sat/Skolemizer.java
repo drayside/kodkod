@@ -31,7 +31,7 @@ import kodkod.ast.visitor.DepthFirstVoidVisitor;
 import kodkod.engine.bool.BooleanMatrix;
 import kodkod.engine.bool.BooleanValue;
 import kodkod.instance.Bounds;
-import kodkod.instance.TupleFactory;
+import kodkod.instance.Universe;
 import kodkod.util.IdentityHashSet;
 import kodkod.util.IndexedEntry;
 import kodkod.util.IntSet;
@@ -68,25 +68,13 @@ final class Skolemizer {
 		final EQFDetector detector = new EQFDetector(sharedNodes);
 		formula.accept(detector);
 //		System.out.println(detector.formulas);
-		final Map<Decl, Relation> skolemizableDecls = skolemizableDecls(detector.formulas);
-		if (skolemizableDecls.isEmpty()) {
+		
+		if (detector.formulas.isEmpty()) {
 			ret = formula;
 		} else {
-			final EQFReplacer replacer = new EQFReplacer(sharedNodes, detector.formulas, skolemizableDecls);
+			final EQFReplacer replacer = new EQFReplacer(detector.formulas, bounds, sharedNodes);
 			ret = formula.accept(replacer);
-			final int usize = bounds.universe().size();
-			final TupleFactory factory = bounds.universe().factory();
-			for(Map.Entry<Decl, Relation> entry : skolemizableDecls.entrySet()) {
-				Relation skolem = entry.getValue();
-				Expression expression = entry.getKey().expression();
-				BooleanMatrix skolemBound = Translator.evaluate(expression, new BooleanConstantAllocator.Overapproximating(bounds));
-				IntSet tuples = Ints.bestSet(usize);
-				for(IndexedEntry<BooleanValue> cell : skolemBound) {
-					tuples.add(cell.index());
-				}
-				bounds.bound(skolem, factory.setOf(1, tuples));
-				ret = ret.and(skolem.in(expression).and(skolem.one()));
-			}
+			ret = ret.and(replacer.skolemFormula);
 //			ret = formula;
 //			System.out.println(formula);
 //			System.out.println(ret);
@@ -96,60 +84,46 @@ final class Skolemizer {
 	}
 	
 	/**
-	 * Returns a map from all skolemizable declarations in formula.declarations to freshly
-	 * allocated skolem constants (relations).  A Decl is skolemizable if it has no free variables.
-	 * @return {m: Decl -> lone Relation | #m.Relation = #Decl.m &&  
-	 *           all d: formulas.^children & Decl | 
-	 *            some m[d] => no d.expression.^children & Variable }         
-	 */
-	private static Map<Decl, Relation> skolemizableDecls(Set<QuantifiedFormula> formulas) {
-		final Map<Decl,Relation> allDecls = new IdentityHashMap<Decl,Relation>(formulas.size());
-		for(QuantifiedFormula formula: formulas) {
-			for (Decl decl: formula.declarations()) {
-				allDecls.put(decl,null);
-			}
-		}
-		FreeVariableDetector.retainBoundNodes(allDecls.keySet());
-		for(Map.Entry<Decl,Relation> entry : allDecls.entrySet()) {
-			entry.setValue(Relation.unary(entry.getKey().variable().name()));
-		}
-		return allDecls;
-	}
-	
-	/**
-	 * Given a set of existentially quantified formulas, s, and a mapping from
-	 * declarations to skolem constants, m, an EQFReplacer replaces the given formulas with
-	 * their skolemizations.  In particular, each given formula f is replaced with a formula f'
-	 * such that f' contains no declaration d that is mapped by m, and all occurences
-	 * of d.variable in f are replaced by m[d] in f'. 
+	 * Given a set of existentially quantified formulas, s, and a Bounds b,
+	 * an EQFReplacer replaces the given formulas with their skolemizations and
+	 * modifies b to include upper bounds for the skolem constants.  Each given formula 
+	 * f is replaced with its body, in which all occurences
+	 * of d.variable are replaced by the skolem constant for d.variable.
 	 * 
 	 * @specfield root: Formula // an EQFReplaces should only be applied to top once
 	 * @specfield eqfs: set QuantifiedFormula 
-	 * @specfield skolems: Decl -> lone Relation
+	 * @specfield bounds: Bounds
 	 * @invariant eqfs = { q: root.*children & QuantifiedFormula | 
 	 *                      all path: children | q in root.*path => 
 	 *                       all q': root.*path | 
 	 *                         (q'.quantifier = SOME => #{root.*path & NotFormula} % 2 = 0) &&
 	 *                         (q'.quantifier = ALL => #{root.*path & NotFormula} % 2 = 1) }
-	 * @invariant (all d: eqfs.^children & Decl | 
-	 *             some skolems[d] <=> no d.expression.^children & Variable) &&
-	 *            #skolems.Relation = #Decl.skolems && 
-	 *            Decl.skolems in Relation - root.^children   
+	 * @invariant Relation & root.^children in bounds.relations   
 	 */
 	private static final class EQFReplacer extends DepthFirstReplacer {
-		final Set<QuantifiedFormula> eqfs;
-		final Map<Decl, Relation> skolems;
-		final Map<Node,Node> cache;
-		Environment<LeafExpression> env;
+		private final Set<QuantifiedFormula> eqfs;
+		private final Map<Node,Node> cache;
+		private Environment<LeafExpression> env;
+		/* the allocator used to determine the upper bounds for skolem constants;
+		 * the upper bounds for skolem constants will be added to allocator.bounds */
+		private final BooleanConstantAllocator.Overapproximating allocator;
+		/* the conjunction that constrains all the skolem constants; i.e.
+		 * for each decl->r in this.skolems, the conjunction contains the formula
+		 * 'r in decl.expression and one r'  */
+		Formula skolemFormula;
 		
 		/**
-		 * Constructs a new EQFReplacer.
-		 * @effects this.eqfs' = eqfs && this.skolems' = skolems && 
-		 *          this.sharedNodes' = {n: Node | #(n.~children & this.root'.*children) > 1 }
+		 * Constructs a new EQFReplacer.  This replacer should only be applied to
+		 * the top-level formula, root.  The given bounds will be modified to include
+		 * upper bounds for the skolem constants generated during replacement.
+		 * @requires sharedNodes = {n: Node | #(n.~children & this.root'.^children) > 1 }
+		 * @requires root.*children & Relation in allocator.bounds.relations
+		 * @effects this.eqfs' = eqfs && this.bounds' = bounds
 		 */
-		EQFReplacer(Set<Node> sharedNodes, Set<QuantifiedFormula> eqfs, Map<Decl, Relation> skolems) {
+		EQFReplacer(Set<QuantifiedFormula> eqfs, Bounds bounds, Set<Node> sharedNodes) {
 			this.eqfs = eqfs;
-			this.skolems = skolems;
+			this.allocator = new BooleanConstantAllocator.Overapproximating(bounds);
+			this.skolemFormula = Formula.TRUE;
 			this.cache = new IdentityHashMap<Node,Node>(sharedNodes.size());
 			for(Node n: sharedNodes) {
 				cache.put(n, null);
@@ -181,6 +155,27 @@ final class Skolemizer {
 				cache.put(node, replacement);
 			}
 			return replacement;
+		}
+		
+		/** 
+		 * Visits the decl's expression.  Note that we must not visit variables 
+		 * in case they are re-used.  For example, consider the formula
+		 * some x: X | all x: Y | F(x).  Since x bound by the existential quantifier
+		 * is going to be skolemized, if we visited the variable in the enclosed
+		 * declaration, we would get the skolem constant as a return value and
+		 * a ClassCastException would be thrown.
+		 * @return { d: Declaration |  d.variable = declaration.variable && 
+		 *                             d.expression = declaration.expression.accept(this) 
+		 */
+		@Override
+		public Decl visit(Decl decl) {
+			Decl ret = lookup(decl);
+			if (ret==null) {
+				final Expression expression = decl.expression().accept(this);
+				ret = (expression==decl.expression()) ?
+					  decl : decl.variable().oneOf(expression); 
+			}
+			return cache(decl,ret);
 		}
 		
 		/** 
@@ -230,6 +225,26 @@ final class Skolemizer {
 			return cache(comprehension,ret);
 		}
 		
+		/**
+		 * Adds the formula 'skolem in decl.expression && one skolem' to 
+		 * this.skolemFormula, computes and adds the upper bound for skolem
+		 * to this.allocator.bounds.
+		 * @effects this.skolemFormula' = this.skolemFormula && skolem in decl.expression
+		 *            && one skolem
+		 * @effects this.allocator.bounds.upperBound' = 
+		 *            this.allocator.bounds.upperBound + skolem->Translator.evaluate(decl.expression, allocator)
+		 */
+		private void updateSkolemInfo(Relation skolem, Decl decl) {
+			final BooleanMatrix skolemBound = Translator.evaluate(decl.expression(), allocator);
+			final Universe universe = allocator.universe();
+			final IntSet tuples = Ints.bestSet(universe.size());
+			for(IndexedEntry<BooleanValue> cell : skolemBound) {
+				tuples.add(cell.index());
+			}
+			allocator.bounds().bound(skolem, universe.factory().setOf(1, tuples));
+			skolemFormula = skolemFormula.and(skolem.in(decl.expression()).and(skolem.one()));
+		}
+		
 		/** 
 		 * Calls lookup(quantFormula) and returns the cached value, if any.  
 		 * If a replacement has not been cached, visits the formula's 
@@ -241,32 +256,23 @@ final class Skolemizer {
 		@Override
 		public Formula visit(QuantifiedFormula quantFormula) {
 			Formula ret = lookup(quantFormula);
-			if (ret==null) {		
-				Decls decls = null;
-				
+			if (ret==null) {			
 				if (eqfs.contains(quantFormula)) { // an existentially quantified formula
 					final Map<Variable,LeafExpression> varMap = new IdentityHashMap<Variable,LeafExpression>(quantFormula.declarations().size());
 					for(Decl decl : quantFormula.declarations()) {
-						Relation skolem = skolems.get(decl);
-						if (skolem == null) { // not skolemizable 
-							decls = (decls==null ? decl : decls.and(decl));
-							varMap.put(decl.variable(), decl.variable());
-						} else { // skolemizable
-							varMap.put(decl.variable(), skolem);
-						}
+						Relation skolem = Relation.unary(decl.variable().name());
+						updateSkolemInfo(skolem, (Decl) decl.accept(this));
+						varMap.put(decl.variable(), skolem);				
 					}
 					env = env.extend(varMap);
-					decls = decls==null ? null : decls.accept(this);
+					ret = quantFormula.formula().accept(this);
 				} else {
 					env = env.extend(identityMapping(quantFormula.declarations()));
-					decls = quantFormula.declarations().accept(this);
-				}
-				
-				final Formula formula = quantFormula.formula().accept(this);
-				ret = decls==null ? formula : 
-					  ((decls==quantFormula.declarations() && formula==quantFormula.formula()) ? 
-					    quantFormula : formula.quantify(quantFormula.quantifier(), decls));
-				
+					final Decls decls = quantFormula.declarations().accept(this);
+					final Formula formula = quantFormula.formula().accept(this);
+					ret = ((decls==quantFormula.declarations() && formula==quantFormula.formula()) ? 
+						    quantFormula : formula.quantify(quantFormula.quantifier(), decls));
+				}			
 				env = env.parent();
 			}
 			return cache(quantFormula,ret);
@@ -294,7 +300,7 @@ final class Skolemizer {
 		 * The members of the power set are, therefore, represented 
 		 * as the bitwise OR of the elements they contain.
 		 */
-		final Byte[] flagCombos;
+		private final Byte[] flagCombos;
 		
 		/* @invariant maps each shared node to a byte, depending on 
 		 * which combination of flags was active when the node was visited.
@@ -303,11 +309,11 @@ final class Skolemizer {
 		 * would map n to flagCombos[2 | 8] = flagCombos[10].  In the beginning,
 		 * all shared nodes are mapped to flagCombos[0].  
 		 */
-		final Map<Node, Byte> visitedNodes;
+		private final Map<Node, Byte> visitedNodes;
 		
 		final Set<QuantifiedFormula> formulas;
 		
-		boolean negated, topLevel;
+		private boolean negated, topLevel;
 		
 		EQFDetector(Set<Node> sharedNodes) {
 		    this.negated = false;

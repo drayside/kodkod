@@ -333,11 +333,8 @@ public class Netconfig {
 		final Solver solver = new Solver();
 		try {
 			final Formula show = model.show();
-			long start = System.currentTimeMillis();
 			final Instance sol = solver.solve(show, model.bounds(10,1,10,10));
-			long end = System.currentTimeMillis();
 			//System.out.println(show);
-			System.out.println("time: " + (end-start) + " ms");
 			System.out.println(sol);
 			
 		} catch (TimeoutException e) {
