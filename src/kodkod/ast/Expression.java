@@ -59,7 +59,8 @@ public abstract class Expression implements Node {
      * @return {e : Expression | e = this + expr}
      */
     public final Expression union(Expression expr) {
-        return compose(BinaryExpression.Operator.UNION,expr);
+    	return (this == expr) ? this :
+        	compose(BinaryExpression.Operator.UNION,expr);
     }
     
     /**
@@ -68,7 +69,8 @@ public abstract class Expression implements Node {
      * @return {e : Expression | e = this - expr}
      */
     public final Expression difference(Expression expr) {
-        return compose(BinaryExpression.Operator.DIFFERENCE,expr);
+    	return this == expr ? NONE :
+        	compose(BinaryExpression.Operator.DIFFERENCE,expr);
     }
     
     /**
@@ -77,7 +79,8 @@ public abstract class Expression implements Node {
      * @return {e : Expression | e = this & expr}
      */
     public final Expression intersection(Expression expr) {
-        return compose(BinaryExpression.Operator.INTERSECTION,expr);
+    	return this == expr ? this :
+        	compose(BinaryExpression.Operator.INTERSECTION,expr);
     }
     
     /**
