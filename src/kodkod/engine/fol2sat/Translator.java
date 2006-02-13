@@ -169,9 +169,6 @@ public final class Translator {
 		
 		private final BooleanFormulaAllocator allocator;
 		
-		/* The size of the universal relation */
-		private final int univSize;
-		
 		/* When visiting the body of a quantified formula or a comprehension, this
 		 * environment contains the current values of the enclosing quantified variable(s) */
 		private Environment<BooleanMatrix> env;
@@ -189,7 +186,6 @@ public final class Translator {
 			this.allocator = allocator;
 			this.env = new Environment<BooleanMatrix>();
 			this.cache = new TranslationCache(node, sharedInternalNodes);
-			this.univSize = allocator.universe().size();
 		}
 	
 		/**
@@ -243,6 +239,7 @@ public final class Translator {
 		 */
 		public BooleanMatrix visit(ConstantExpression constExpr) {
 			final BooleanMatrix ret;
+			final int univSize = allocator.universe().size();
 			if (constExpr==Expression.UNIV) {
 				ret= allocator.factory().matrix(Dimensions.square(1, univSize), TRUE);
 			} else if (constExpr==Expression.IDEN) {

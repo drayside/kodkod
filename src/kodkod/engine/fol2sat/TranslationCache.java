@@ -88,11 +88,13 @@ final class TranslationCache {
 	 * Caches the given translation for the specified node, if the node is
 	 * one for which caching is performed.  Otherwise does nothing.  
 	 * The method returns the specified translation. 
-	 * @requires node in Expression + Decl => translation in BooleanMatrix,
-	 *           node in Decls => translation in List<BooleanMatrix>,
-	 *           node in Formula => translation in BooleanValue 
+	 * @requires freeVariables(node) in env.map.BooleanMatrix && 
+	 *           (node in Expression + Decl => translation in BooleanMatrix,
+	 *            node in Decls => translation in List<BooleanMatrix>,
+	 *            node in Formula => translation in BooleanValue) 
 	 * @effects node in this.cached => 
-	 *           this.cache' = this.cache ++ node->translation, 
+	 *           this.cache' = this.cache ++ 
+	 *            node->translation->{e: Environment | e.map = freeVariables(node)<:env.map }, 
 	 *           this.cache' = this.cache
 	 * @return translation
 	 */

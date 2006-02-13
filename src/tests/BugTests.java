@@ -20,6 +20,8 @@ import kodkod.instance.TupleSet;
 import kodkod.instance.Universe;
 import kodkod.util.IntBitSet;
 import kodkod.util.IntIterator;
+import kodkod.util.IntSet;
+import kodkod.util.IntTreeSet;
 
 /**
  * Test cases that record reported bugs. 
@@ -28,6 +30,49 @@ import kodkod.util.IntIterator;
  */
 public class BugTests extends TestCase {
 	private final Solver solver = new Solver();
+	
+	private final void assertSameContents(IntSet s, int... elts) {
+		assertEquals(elts.length, s.size());
+		for(int i: elts)
+			assertTrue(s.contains(i));
+	}
+	
+	public final void testVincent_02132006() {
+		IntTreeSet set = new IntTreeSet();        
+        for (int i=0; i<2;i++) {
+            set.add(i);
+        }
+
+        IntTreeSet set2 = new IntTreeSet();        
+        for (int i=0; i<2;i++) {
+            set2.add(i);
+        }
+
+        set.removeAll(set2);
+
+        IntIterator setIterator = set.iterator();
+        assertFalse(setIterator.hasNext());
+        assertFalse(setIterator.hasNext());
+      
+        set.addAll(set2);
+        assertSameContents(set, 0, 1);
+        
+        set2.clear();
+        for (int i=3; i<5;i++) {
+            set2.add(i);
+        }
+        
+        set.addAll(set2);
+        assertSameContents(set, 0, 1, 3, 4);
+        
+        set2.clear();
+        for (int i=1; i<4;i++) {
+            set2.add(i);
+        }
+        
+        set.addAll(set2);
+        assertSameContents(set, 0, 1, 2, 3, 4);
+	}
 	
 	public final void testEmina_01232006() {
 		final List<String> atoms = new ArrayList<String>(5);

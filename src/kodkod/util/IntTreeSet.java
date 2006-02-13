@@ -360,14 +360,15 @@ public final class IntTreeSet extends AbstractIntSet {
 	 */
 	private void removeRange(int min, int max) {
 		int sizeDelta = 0;
-		
 		final Entry<MutableInteger> minFloor = ints.floor(min);
 		
 		if (minFloor!=null && min<=minFloor.value.intValue) {
 			sizeDelta += (minFloor.value.intValue - min + 1);
-			if (minFloor.index==minFloor.value.intValue) 
+			if (minFloor.index==min) { 
 				ints.remove(minFloor.index);
-			else 
+				if (max < minFloor.value.intValue)
+					ints.put(max + 1, minFloor.value);
+			} else 
 				minFloor.value.intValue = min-1;
 		}
 		
