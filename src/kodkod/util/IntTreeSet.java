@@ -298,7 +298,10 @@ public final class IntTreeSet extends AbstractIntSet {
 			IntTreeSet s = (IntTreeSet) c;
 			if (!s.isEmpty()) {
 				if (isEmpty() || this.precedes(s) || s.precedes(this)) {
-					ints.putAll(s.ints);
+					// can't use putAll -- must make a deep copy of mutable parts
+					for(IndexedEntry<MutableInteger> e : s.ints) {
+						ints.put(e.index(), new MutableInteger(e.value().intValue));
+					}
 					size += s.size();
 					return true;
 				} else {
@@ -361,7 +364,7 @@ public final class IntTreeSet extends AbstractIntSet {
 	private void removeRange(int min, int max) {
 		int sizeDelta = 0;
 		final Entry<MutableInteger> minFloor = ints.floor(min);
-		
+		//System.out.println(min + ".... "  + max);
 		if (minFloor!=null && min<=minFloor.value.intValue) {
 			
 			if (minFloor.index==min) { 
@@ -373,13 +376,14 @@ public final class IntTreeSet extends AbstractIntSet {
 					sizeDelta += minFloor.value.intValue - min + 1;
 				}
 			} else {
-				minFloor.value.intValue = min-1;
 				if (max < minFloor.value.intValue) {
 					sizeDelta += max - min + 1;
-					ints.put(max + 1, minFloor.value);
+					ints.put(max + 1, new MutableInteger(minFloor.value.intValue));
 				} else {
 					sizeDelta += minFloor.value.intValue - min + 1;
+					//System.out.println("here: " + minFloor.value.intValue);
 				}
+				minFloor.value.intValue = min-1;
 			}
 		}
 		
@@ -396,7 +400,7 @@ public final class IntTreeSet extends AbstractIntSet {
 				ints.put(max + 1, ints.remove(succ.index));
 			}
 		}
-		
+
 		size -= sizeDelta;
 	}
 	
@@ -476,7 +480,10 @@ public final class IntTreeSet extends AbstractIntSet {
 		}
 
 		public int nextInt() {
-			if (!hasNext()) throw new NoSuchElementException();
+			if (!hasNext()) {
+				System.out.println(ints + " : " + size);
+				throw new NoSuchElementException();
+			}
 			lastReturned = cursor++;
 			return lastReturned;
 		}

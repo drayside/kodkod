@@ -69,7 +69,7 @@ final class SymmetryBreaker {
 		
 		this.symmetries = new LinkedList<IntSet>();
 		this.symmetries.addAll(symmetries);
-
+		
 		final Set<Relation> relations = allocator.bounds().relations();
 		this.sortedRels = relations.toArray(new Relation[relations.size()]);
 		this.relSymms = new IdentityHashMap<Relation, Set<IntSet>>(relations.size());

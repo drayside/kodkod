@@ -142,6 +142,7 @@ public final class Solver {
 			numIntermediateVars = translation.cnf().numberOfVariables() - numPrimaryVars;
 			numClauses = translation.cnf().numberOfClauses();
 //			System.out.println("p cnf " + translation.cnf().numberOfVariables() + " " + translation.cnf().numberOfClauses());
+//			System.out.println("solving...");
 			if (translation.cnf().solve()) {
 				return padInstance(translation.interpret(), bounds);
 			}

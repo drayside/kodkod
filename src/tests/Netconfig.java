@@ -22,10 +22,8 @@ import kodkod.instance.Universe;
  * 
  * sig Time {}
  * 
- * sig Site {} 
+ * abstract sig Site {} 
  * sig HQ, Sub extends Site {} 
- * one sig Korat extends HQ {} 
- * one sig Udonthani, Phitsanulok extends Sub {}
  * 
  * sig Router { 
  *  site: Site, 
@@ -79,8 +77,8 @@ import kodkod.instance.Universe;
  *  invariants() && subsConnectedToHQ(tick/last()) &&
  *  connectedSites(Site, tick/last()) && traces() }
  * 
- * --75.03 secs with Berkmin, p cnf 39911 582274 
- * run show for exactly 10 Site, exactly 10 Router, exactly 10 Time
+ * --75.03 secs with Berkmin, p cnf 36512 499783
+ * run show for exactly 1 HQ, exactly 9 Sub, exactly 10 Router, exactly 9 Time
  * </pre>
  * @author Emina Torlak
  */
@@ -320,11 +318,17 @@ public class Netconfig {
 		b.bound(tick, tBound.product(tBound));
 		
 		final TupleSet rBound = f.range(f.tuple("Router0"), f.tuple("Router"+(routerNum-1)));
-		b.boundExactly(Router, rBound);
+		b.boundExactly(Router, rBound);	
 		b.bound(site, rBound.product(sBound));
 		b.bound(satellite, rBound.product(rBound).product(tBound));
 		b.bound(lineOfSight, b.upperBound(satellite));
 		
+//		assert siteNum == routerNum;
+//		final TupleSet siteBound = f.noneOf(2);
+//		for(int i = 0; i < siteNum; i++)
+//			siteBound.add(f.tuple("Router"+i, "Site"+i));
+//		b.boundExactly(site, siteBound);//rBound.product(sBound));
+//		
 		return b;
 	}
 	
@@ -333,13 +337,16 @@ public class Netconfig {
 		final Solver solver = new Solver();
 		try {
 			final Formula show = model.show();
-			final Instance sol = solver.solve(show, model.bounds(10,1,10,10));
-			//System.out.println(show);
+			final Instance sol = solver.solve(show, model.bounds(Integer.parseInt(args[0]),Integer.parseInt(args[1]),Integer.parseInt(args[2]),Integer.parseInt(args[3])));
+//			System.out.println(show);
+			System.out.println("p cnf " + (solver.numberOfIntermediateVariables()+solver.numberOfPrimaryVariables()) + " " + solver.numberOfClauses());
 			System.out.println(sol);
 			
 		} catch (TimeoutException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		} catch (NumberFormatException nfe) {
+			System.out.println("Usage: java tests.Netconfig [# sites] [# hq] [# routers] [# time steps]");
 		}
 	}
 }

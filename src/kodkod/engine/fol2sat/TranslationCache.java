@@ -348,8 +348,9 @@ final class TranslationCache {
 		 * Returns the empty set.
 		 * @return {}
 		 */
+		@SuppressWarnings("unchecked")
 		public Set<Variable> visit(Relation relation) {
-			return Collections.emptySet();
+			return Collections.EMPTY_SET;
 		}
 
 		/**

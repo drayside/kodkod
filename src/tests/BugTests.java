@@ -31,6 +31,62 @@ import kodkod.util.IntTreeSet;
 public class BugTests extends TestCase {
 	private final Solver solver = new Solver();
 	
+	public final void testEmina_02162006() {
+		final IntTreeSet s = new IntTreeSet();
+		for (int i=0; i<5; i++) {
+            s.add(i);
+        }
+		final IntTreeSet s1 = new IntTreeSet();
+		s1.add(0);
+		
+		final IntSet intersection = s.copy();
+		intersection.retainAll(s1);
+		s.removeAll(intersection);
+		
+		assertSameContents(s, 1, 2, 3, 4);
+		assertSameContents(s1, 0);
+		assertSameContents(intersection, 0);		
+	}
+	
+	public final void testVincent_02162006() {
+	    // set ups universe of atoms [1..257]
+        final List<Integer> atoms = new ArrayList<Integer>();
+
+        // change this to 256, and the program works
+        for (int i=0; i<257; i++) {
+            atoms.add(i+1);
+        }
+
+        final Universe universe = new Universe(atoms);
+        final Bounds bounds = new Bounds(universe);
+        final TupleFactory factory = universe.factory();
+
+        // oneRel is bounded to the Integer 1
+        final Relation oneRel = Relation.unary("oneRel");
+
+        // rel can contain anything
+        final Relation rel = Relation.unary("rel");
+
+        bounds.bound(oneRel, factory.setOf(factory.tuple(atoms.get(0))),
+        				factory.setOf(factory.tuple(atoms.get(0))));
+        bounds.bound(rel, factory.allOf(1));
+
+        // constraint: oneRel in rel
+        Formula formula = oneRel.in(rel);
+
+        // solve      
+		try {
+			final Instance instance = solver.solve(formula, bounds);
+			assertNotNull(instance);
+			//System.out.println(instance);
+		} catch (TimeoutException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}        
+      
+
+	}
+	
 	private final void assertSameContents(IntSet s, int... elts) {
 		assertEquals(elts.length, s.size());
 		for(int i: elts)
@@ -49,7 +105,6 @@ public class BugTests extends TestCase {
         }
 
         set.removeAll(set2);
-
         IntIterator setIterator = set.iterator();
         assertFalse(setIterator.hasNext());
         assertFalse(setIterator.hasNext());
