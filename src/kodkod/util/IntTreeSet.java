@@ -364,7 +364,7 @@ public final class IntTreeSet extends AbstractIntSet {
 	private void removeRange(int min, int max) {
 		int sizeDelta = 0;
 		final Entry<MutableInteger> minFloor = ints.floor(min);
-		//System.out.println(min + ".... "  + max);
+//		System.out.println(min + ".... "  + max + " " + ints + " " + minFloor);
 		if (minFloor!=null && min<=minFloor.value.intValue) {
 			
 			if (minFloor.index==min) { 
@@ -381,7 +381,6 @@ public final class IntTreeSet extends AbstractIntSet {
 					ints.put(max + 1, new MutableInteger(minFloor.value.intValue));
 				} else {
 					sizeDelta += minFloor.value.intValue - min + 1;
-					//System.out.println("here: " + minFloor.value.intValue);
 				}
 				minFloor.value.intValue = min-1;
 			}
@@ -392,7 +391,7 @@ public final class IntTreeSet extends AbstractIntSet {
 			while(succ!=ints.NIL && succ.value.intValue <= max) {
 				sizeDelta += (succ.value.intValue - succ.index + 1);
 				ints.remove(succ.index);
-				succ = ints.successor(succ);
+				succ = ints.successor(succ.index);
 			}
 			
 			if (succ!=ints.NIL && succ.index<=max) {

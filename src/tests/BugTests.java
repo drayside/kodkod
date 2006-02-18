@@ -31,9 +31,14 @@ import kodkod.util.IntTreeSet;
 public class BugTests extends TestCase {
 	private final Solver solver = new Solver();
 	
+//	public final void testStuff() {
+//		final Properties p = System.getProperties();
+//		for(Map.Entry e: p.entrySet())
+//			System.out.println(e); 
+//	}
+	
 	public final void testVincent_02172006() {
-		
-//		 set ups universe of atoms [1..257]
+        // set ups universe of atoms [1..257]
         final List<Integer> atoms = new ArrayList<Integer>();
 
         // change this to 256, and the program works
@@ -45,13 +50,18 @@ public class BugTests extends TestCase {
         final Bounds bounds = new Bounds(universe);
         final TupleFactory factory = universe.factory();
 
-        final Relation oneRel = Relation.unary("oneRel");        
-        final Relation twoRel = Relation.unary("twoRel");        
-        final Relation binaryRel = Relation.binary("binaryRel");       
+        final Relation oneRel = Relation.unary("oneRel");
+        final Relation pCourses = Relation.binary("pCourses");
+        final Relation prev = Relation.binary("prev");
+        final Relation sCourses = Relation.binary("sCourses");
+        final Relation prereqs = Relation.binary("prereqs");
         final Relation rel = Relation.unary("rel");
 
+        bounds.bound(oneRel, factory.setOf(factory.tuple(atoms.get(0))),
+factory.setOf(factory.tuple(atoms.get(0))));        
+        bounds.bound(rel, factory.allOf(1));
 
-        // list1 and list2 are temp lists for creating bounds for binaryRel below
+        // list1 and list2 are temp lists for creating bounds for binary relations below
         // list1 = [1, 2]
         // list2 = [3, 2]
         // ts = [ [1, 2], [2, 2], [3, 2] ]
@@ -64,31 +74,26 @@ public class BugTests extends TestCase {
         TupleSet ts = factory.area(factory.tuple(list1),
 factory.tuple(list2));
 
-        // UNCOMMENT this line and the program does NOT crash...
-        //System.out.println(ts);
-
-        // ************************************************************
-        // ... or you can move the bound(binaryRel) statement here 
-        // up relative to the other 3, and it won't crash
-        bounds.bound(oneRel, factory.setOf(factory.tuple(atoms.get(0))),
-factory.setOf(factory.tuple(atoms.get(0))));        
-        bounds.bound(twoRel, factory.setOf(factory.tuple(atoms.get(1))),
-factory.setOf(factory.tuple(atoms.get(1))));
-        bounds.bound(rel, factory.allOf(1));       
-        bounds.bound(binaryRel, ts);
-        // ************************************************************
+        bounds.bound(pCourses, ts);
+        bounds.bound(prev, ts);
+        bounds.bound(sCourses, ts);
+        bounds.bound(prereqs, ts);                       
 
 
-        // constraint: oneRel in rel
-        Variable v = Variable.unary("v");                
+        // all s: futureSemesters | all c: s.courses | no c.prereqs or some p: c.prereqs | p.courses in s.prev^.courses 
+        final Variable s = Variable.unary("s"), c = Variable.unary("c"), p =
+        	Variable.unary("p");        
+        Formula formula = 
+            (p.join(pCourses).in(s.join(prev.closure()).join(sCourses)).
+            forAll(p.oneOf(c.join(prereqs)))).
+                forAll(c.oneOf(s.join(sCourses))).
+                    forAll(s.oneOf(rel));
 
-        Formula formula =
-v.join(binaryRel).in(rel).forAll(v.oneOf(rel)).and(oneRel.in(rel)).and(twoRel.in(rel));
-
-        // solve
+//        System.out.println(formula);
+        // solve   
 		try {
 			final Instance instance = solver.solve(formula, bounds);
-			System.out.println(instance);
+			assertNotNull(instance);
 		} catch (TimeoutException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
