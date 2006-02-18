@@ -37,6 +37,100 @@ public class BugTests extends TestCase {
 //			System.out.println(e); 
 //	}
 	
+	public final void testVincent_02182006() {
+//		 set ups universe of atoms [1..257]
+        final List<Integer> atoms = new ArrayList<Integer>();
+
+        // change this to 256, and the program works
+        for (int i=0; i<257; i++) {
+            atoms.add(i+1);
+        }
+
+        final Universe universe = new Universe(atoms);
+        final Bounds bounds = new Bounds(universe);
+        final TupleFactory factory = universe.factory();
+
+        final Relation oneRel = Relation.unary("oneRel");
+        final Relation pCourses = Relation.binary("pCourses");
+        final Relation prev = Relation.binary("prev");
+        final Relation sCourses = Relation.binary("sCourses");
+        final Relation prereqs = Relation.binary("prereqs");
+        final Relation semester = Relation.unary("Semester");
+        final Relation course = Relation.unary("Course");
+        final Relation prereqset = Relation.unary("PrereqSet");
+
+        final int courseIndex = 0;
+        final int courseScope = 254;
+        final int semesterIndex = 254;
+        final int semesterScope = 2;
+        final int prereqsetIndex = 256;
+        final int prereqsetScope = 1;
+
+        bounds.bound(course, 
+                factory.range(factory.tuple(atoms.get(courseIndex)),
+factory.tuple(atoms.get(courseIndex+courseScope-1))));
+        bounds.bound(semester, 
+                factory.range(factory.tuple(atoms.get(semesterIndex)),
+factory.tuple(atoms.get(semesterIndex+semesterScope-1))));
+        bounds.bound(prereqset, 
+                factory.range(factory.tuple(atoms.get(prereqsetIndex)),
+factory.tuple(atoms.get(prereqsetIndex+prereqsetScope-1))));      
+
+        bounds.bound(oneRel, factory.setOf(factory.tuple(atoms.get(0))),
+factory.setOf(factory.tuple(atoms.get(0))));        
+
+        // list1 = [256, 2]
+        // list2 = [256, 3]
+        // pCoursesTS = [ [256, 2], [256, 3] ]
+        List<Integer> list1 = new ArrayList<Integer>();
+        list1.add(atoms.get(256));
+        list1.add(atoms.get(1));                  
+        List<Integer> list2 = new ArrayList<Integer>();
+        list2.add(atoms.get(256));
+        list2.add(atoms.get(2));                
+        TupleSet pCoursesTS = factory.setOf(factory.tuple(list1),
+factory.tuple(list2));        
+        bounds.bound(pCourses, pCoursesTS, pCoursesTS);
+
+        // prevTS = [ [255, 254] ]
+        TupleSet prevTS = factory.setOf(factory.tuple((Object)
+atoms.get(255), (Object) atoms.get(254)));        
+        bounds.bound(prev, prevTS, prevTS);
+
+        // sCourses can be anything from Semester -> Course
+        bounds.bound(sCourses,
+factory.area(factory.tuple((Object)atoms.get(semesterIndex),
+(Object)atoms.get(courseIndex)), 
+
+factory.tuple((Object)atoms.get(semesterIndex+semesterScope-1),
+(Object)atoms.get(courseIndex+courseScope-1))));
+
+        // pCoursesTS = [ [0, 256] ]
+        TupleSet prereqsTS = factory.setOf(factory.tuple((Object)
+atoms.get(0), (Object) atoms.get(256)));                
+        bounds.bound(prereqs, prereqsTS, prereqsTS);                       
+
+        // all s: futureSemesters | all c: s.courses | no c.prereqs or some p: c.prereqs | p.courses in s.prev^.courses 
+        final Variable s = Variable.unary("s"), c = Variable.unary("c"), p =
+Variable.unary("p");        
+        Formula formula = 
+            (p.join(pCourses).in(s.join(prev.closure()).join(sCourses)).
+            forAll(p.oneOf(c.join(prereqs)))).
+                forAll(c.oneOf(s.join(sCourses))).
+                    forAll(s.oneOf(semester));
+
+//        System.out.println(formula);
+       
+        try {
+			final Instance instance = solver.solve(formula, bounds);
+			assertNotNull(instance);
+		} catch (TimeoutException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}     
+
+	}
+	
 	public final void testVincent_02172006() {
         // set ups universe of atoms [1..257]
         final List<Integer> atoms = new ArrayList<Integer>();

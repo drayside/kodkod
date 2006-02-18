@@ -385,20 +385,21 @@ public final class IntTreeSet extends AbstractIntSet {
 				minFloor.value.intValue = min-1;
 			}
 		}
-		
+	
 		Entry<MutableInteger> succ = ints.successor(min);
-		if (succ != null) {
-			while(succ!=ints.NIL && succ.value.intValue <= max) {
-				sizeDelta += (succ.value.intValue - succ.index + 1);
-				ints.remove(succ.index);
-				succ = ints.successor(succ.index);
-			}
+		
+		while(succ!=null && succ.value.intValue <= max) {
+			sizeDelta += (succ.value.intValue - succ.index + 1);
+			ints.remove(succ.index);
+			succ = ints.successor(succ.index);
 			
-			if (succ!=ints.NIL && succ.index<=max) {
-				sizeDelta += (max - succ.index + 1);
-				ints.put(max + 1, ints.remove(succ.index));
-			}
 		}
+		
+		if (succ!=null && succ.index<=max) {
+			sizeDelta += (max - succ.index + 1);
+			ints.put(max + 1, ints.remove(succ.index));
+		}
+		
 
 		size -= sizeDelta;
 	}
