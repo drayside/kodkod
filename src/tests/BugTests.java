@@ -31,6 +31,72 @@ import kodkod.util.IntTreeSet;
 public class BugTests extends TestCase {
 	private final Solver solver = new Solver();
 	
+	public final void testVincent_02172006() {
+		
+//		 set ups universe of atoms [1..257]
+        final List<Integer> atoms = new ArrayList<Integer>();
+
+        // change this to 256, and the program works
+        for (int i=0; i<257; i++) {
+            atoms.add(i+1);
+        }
+
+        final Universe universe = new Universe(atoms);
+        final Bounds bounds = new Bounds(universe);
+        final TupleFactory factory = universe.factory();
+
+        final Relation oneRel = Relation.unary("oneRel");        
+        final Relation twoRel = Relation.unary("twoRel");        
+        final Relation binaryRel = Relation.binary("binaryRel");       
+        final Relation rel = Relation.unary("rel");
+
+
+        // list1 and list2 are temp lists for creating bounds for binaryRel below
+        // list1 = [1, 2]
+        // list2 = [3, 2]
+        // ts = [ [1, 2], [2, 2], [3, 2] ]
+        List<Integer> list1 = new ArrayList<Integer>();
+        list1.add(atoms.get(0));
+        list1.add(atoms.get(1));                       
+        List<Integer> list2 = new ArrayList<Integer>();
+        list2.add(atoms.get(2));
+        list2.add(atoms.get(1));                
+        TupleSet ts = factory.area(factory.tuple(list1),
+factory.tuple(list2));
+
+        // UNCOMMENT this line and the program does NOT crash...
+        //System.out.println(ts);
+
+        // ************************************************************
+        // ... or you can move the bound(binaryRel) statement here 
+        // up relative to the other 3, and it won't crash
+        bounds.bound(oneRel, factory.setOf(factory.tuple(atoms.get(0))),
+factory.setOf(factory.tuple(atoms.get(0))));        
+        bounds.bound(twoRel, factory.setOf(factory.tuple(atoms.get(1))),
+factory.setOf(factory.tuple(atoms.get(1))));
+        bounds.bound(rel, factory.allOf(1));       
+        bounds.bound(binaryRel, ts);
+        // ************************************************************
+
+
+        // constraint: oneRel in rel
+        Variable v = Variable.unary("v");                
+
+        Formula formula =
+v.join(binaryRel).in(rel).forAll(v.oneOf(rel)).and(oneRel.in(rel)).and(twoRel.in(rel));
+
+        // solve
+		try {
+			final Instance instance = solver.solve(formula, bounds);
+			System.out.println(instance);
+		} catch (TimeoutException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}        
+        
+
+	}
+	
 	public final void testEmina_02162006() {
 		final IntTreeSet s = new IntTreeSet();
 		for (int i=0; i<5; i++) {
