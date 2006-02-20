@@ -55,8 +55,12 @@ public interface SATSolver {
 	/**
 	 * Adds the specified sequence of literals to this.clauses.
 	 * No reference to the specified array is kept, so it can
-	 * be reused. 
+	 * be reused.  <b>The contents of the array may, however, 
+	 * be modified.</b>  It is the client's responsibility to 
+	 * ensure that no literals in a clause are repeated, or that
+	 * both a literal and its negation are present.
 	 * @effects this.clauses' = this.clauses + lits
+	 * @effects lits' may not have the same contents as lits
 	 * @throws NullPointerException - lits = null
 	 * @throws IllegalArgumentException - some i: [0..lits.length) | |lits[0]| > #this.literals 
 	 */
@@ -83,15 +87,4 @@ public interface SATSolver {
 	 */
 	public abstract IntSet variablesThatAre(boolean truthValue, int start, int end);
 	
-	/**
-	 * Returns the truth value assigned to the given literal by the
-	 * most recent call to {@link #solve()}.  If the value
-	 * of the given literal did not affect the result of the
-	 * last solution, null is returned.
-	 * @return the value of the given literal
-	 * @throws IllegalArgumentException - literal !in this.literals
-	 * @throws IllegalStateException - {@link #solve() } has not been called or the 
-	 * outcome of the last call was not <code>true</code>.
-	 */
-	public abstract Boolean valueOf(int literal);
 }

@@ -1,6 +1,7 @@
 package kodkod.engine;
 
 import kodkod.engine.satlab.MiniSAT;
+import kodkod.engine.satlab.ZChaff;
 
 import org.sat4j.minisat.SolverFactory;
 
@@ -10,7 +11,6 @@ import org.sat4j.minisat.SolverFactory;
  * used to choose the SAT solver, set the timeout, etc.
  * 
  * @specfield solver: SATSolver // SAT solver to use
- * @specfield seed: long // random seed to be used by the SAT solver
  * @specfield timeout:  int // SAT solver timeout, in seconds
  * @specfield symmetryBreaking: int // the amount of symmetry breaking to perform
  * @specfield skolemize: boolean // skolemize existential quantifiers?
@@ -21,7 +21,6 @@ import org.sat4j.minisat.SolverFactory;
  */
 public final class Options {
 	private SATSolver solver = SATSolver.DefaultSAT4J;
-	private long seed = 0L;
 	private int timeout = Integer.MAX_VALUE;
 	private int symmetryBreaking = 20;
 	private boolean skolemize = true;
@@ -34,7 +33,6 @@ public final class Options {
 	 * Constructs an Options object initalized with 
 	 * default values.
 	 * @effects this.solver' = SATSolver.DefaultSAT4J
-	 *          this.seed' = 0
 	 *          this.timeout' = Integer.MAX_VALUE 
 	 *          this.symmetryBreaking' = 20
 	 *          this.skolemize' = true
@@ -81,23 +79,6 @@ public final class Options {
 		if (solver==null)
 			throw new NullPointerException();
 		this.solver = solver;
-	}
-	
-	/**
-	 * Returns the value of the random seed used
-	 * by the solver.  The default is 0 for no-randomness.
-	 * @return this.seed
-	 */
-	public long seed() {
-		return seed;
-	}
-	
-	/**
-	 * Sets the seed option to the given value.
-	 * @effects this.seed' = seed
-	 */
-	public void setSeed(long seed) {
-		this.seed = seed;
 	}
 	
 	/**
@@ -248,8 +229,6 @@ public final class Options {
 		b.append("Options:");
 		b.append("\n solver: ");
 		b.append(solver);
-		b.append("\n seed: ");
-		b.append(seed);
 		b.append("\n timeout: ");
 		b.append(timeout);
 		b.append("\n flatten: ");
@@ -331,6 +310,15 @@ public final class Options {
 		Relsat {
 			public kodkod.engine.satlab.SATSolver instance() { 
 				return new MiniSAT(SolverFactory.newRelsat()); 
+			}
+		},
+		
+		/**
+		 * The zchaff solver from Princeton.
+		 */
+		ZChaff {
+			public kodkod.engine.satlab.SATSolver instance() { 
+				return new ZChaff(); 
 			}
 		};
 		

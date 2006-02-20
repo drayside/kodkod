@@ -99,12 +99,12 @@ public final class Translator {
 		}
 		
 		final boolean symmetricSolver = options.solver().isSymmetryDriven();
-		
+
 		if (!symmetricSolver) {
 //			System.out.println("generating sbp...");
 			sat = factory.and(sat, SymmetryBreaker.generateSBP(symmetricParts, allocator, options));
 		}
-		
+
 		if (options.flatten()) {
 //			System.out.println("flattening...");
 			// remove everything but the variables from the factory
@@ -112,6 +112,10 @@ public final class Translator {
 			sat = BooleanFormulaFlattener.flatten(sat, factory);
 			// release the memory used by the factory
 			factory.clear(0);
+		}
+		
+		if (sat==BooleanConstant.TRUE || sat==BooleanConstant.FALSE) {
+			throw new TrivialFormulaException(formula, optimalBounds, (BooleanConstant)sat);
 		}
 		
 //		System.out.println("sat2cnf...");
@@ -586,6 +590,7 @@ public final class Translator {
 		private final SATSolver solver;
 		private final IntSet visited;
 		private final int[] unaryClause = new int[1];
+		private final int[] binaryClause = new int[2];
 				
 		private Sat2Cnf(SATSolver solver, int numPrimaryVars, int maxLiteral) {
 			this.solver = solver;
@@ -609,11 +614,12 @@ public final class Translator {
 			if (visited.add(oLit)) { 
 				final int sgn  = (multigate.op()==AND ? 1 : -1);
 				final int[] lastClause = new int[multigate.numInputs()+1];
-				final int[] binaryClause = {0, oLit * -sgn};
+				final int output = oLit * -sgn;
 				int i = 0;
 				for(Iterator<BooleanValue> inputs = multigate.inputs(); inputs.hasNext();) {
 					int iLit = inputs.next().accept(this, arg)[0];
 					binaryClause[0] = iLit * sgn;
+					binaryClause[1] = output;
 					solver.addClause(binaryClause);
 					lastClause[i++] = iLit * -sgn;
 				}

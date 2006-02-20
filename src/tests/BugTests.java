@@ -37,6 +37,31 @@ public class BugTests extends TestCase {
 //			System.out.println(e); 
 //	}
 	
+	public final void testGreg_02192006() {
+		Relation r1 = Relation.unary("r1");
+		Relation r2 = Relation.unary("r2");
+		Relation r3 = Relation.unary("r3");
+		Expression e = r1.in(r2).thenElse(r2, r1);
+		Formula f = e.eq(r2).and(e.in(r3));
+		Object o1 = "o1";
+		Object o2 = "o2";	
+		Universe univ = new Universe(Arrays.asList(o1, o2));
+		TupleFactory factory = univ.factory();
+		TupleSet set1 = factory.setOf(o1);
+		TupleSet set2 = factory.setOf(o2);
+		Bounds bounds = new Bounds(univ);
+		bounds.bound(r1, set1);
+		bounds.boundExactly(r2, set2);
+		bounds.bound(r3, set1);
+		try {
+			solver.solve(f, bounds);
+		} catch (TimeoutException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+
+	}
+	
 	public final void testVincent_02182006() {
 //		 set ups universe of atoms [1..257]
         final List<Integer> atoms = new ArrayList<Integer>();

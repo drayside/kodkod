@@ -4,12 +4,10 @@
  */
 package kodkod.engine.satlab;
 
-//import java.io.BufferedWriter;
-//import java.io.FileWriter;
-//import java.io.IOException;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
+import kodkod.engine.Options;
 import kodkod.engine.TimeoutException;
 import kodkod.util.IntSet;
 import kodkod.util.Ints;
@@ -29,7 +27,7 @@ public final class MiniSAT implements SATSolver {
 	private final ReadOnlyIVecInt wrapper;
 	private Boolean isSatisfiable; 
 	private int vars, clauses;
-//	private  BufferedWriter w;
+	
 	/**
 	 * Constructs a wrapper for the given instance
 	 * of ISolver.
@@ -42,12 +40,6 @@ public final class MiniSAT implements SATSolver {
 		this.wrapper = new ReadOnlyIVecInt();
 		this.isSatisfiable = null;
 		this.vars = this.clauses = 0;
-//		try {
-//			this.w = new BufferedWriter(new FileWriter("/Users/emina/Desktop/solvers/zchaff/output.cnf"));
-//		} catch (IOException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
 	}
 
 	/**
@@ -56,7 +48,7 @@ public final class MiniSAT implements SATSolver {
 	 * @see kodkod.engine.satlab.SATSolver#numberOfVariables()
 	 */
 	public int numberOfVariables() {
-		return vars; //solver.nVars();
+		return vars; 
 	}
 
 	/**
@@ -66,7 +58,7 @@ public final class MiniSAT implements SATSolver {
 	 * @see kodkod.engine.satlab.SATSolver#numberOfClauses()
 	 */
 	public int numberOfClauses() {
-		return clauses; //solver.nConstraints();
+		return clauses; 
 	}
 
 	/**
@@ -94,7 +86,7 @@ public final class MiniSAT implements SATSolver {
 			throw new IllegalArgumentException("seconds < 0: " + seconds);
 		solver.setTimeout(seconds);
 	}
-
+	
 	/**
 	 * Adds the specified number of new variables
 	 * to the solver's vocabulary.
@@ -106,7 +98,7 @@ public final class MiniSAT implements SATSolver {
 			throw new IllegalArgumentException("numVars < 0: " + numVars);
 		else if (numVars > 0) {
 			vars += numVars;
-			solver.newVar(numVars);
+			solver.newVar(vars);
 		}
 	}
 
@@ -124,21 +116,6 @@ public final class MiniSAT implements SATSolver {
 			if (isSatisfiable != Boolean.FALSE) {
 				clauses++;
 				solver.addClause(wrapper.wrap(lits));
-//				for(int i : lits) {
-//					try {
-//						w.write(i + " ");
-//					} catch (IOException e) {
-//						// TODO Auto-generated catch block
-//						e.printStackTrace();
-//					}
-//				}
-//				try {
-//					w.write("0");
-//					w.newLine();
-//				} catch (IOException e) {
-//					// TODO Auto-generated catch block
-//					e.printStackTrace();
-//				}
 			}
 			
 		} catch (ContradictionException e) {
@@ -157,13 +134,6 @@ public final class MiniSAT implements SATSolver {
 	 */
 	public boolean solve() throws TimeoutException {
 		try {
-//			try {
-//				w.close();
-//			} catch (IOException e) {
-//				// TODO Auto-generated catch block
-//				e.printStackTrace();
-//			}
-//			isSatisfiable = Boolean.FALSE;
 			if (isSatisfiable != Boolean.FALSE)
 				isSatisfiable = Boolean.valueOf(solver.isSatisfiable());
 			return isSatisfiable;
@@ -197,34 +167,6 @@ public final class MiniSAT implements SATSolver {
 		return ret;
 	}
 
-	/**
-	 * Returns the truth value assigned to the given literal by the
-	 * most recent call to {@link #solve()}.  If the value
-	 * of the given literal did not affect the result of the
-	 * last solution, null is returned.
-	 * @return the value of the given literal
-	 * @throws IllegalArgumentException - literal !in this.literals
-	 * @throws IllegalStateException - {@link #solve() } has not been called, 
-	 * or the call terminated with an exception.
-	 * @see kodkod.engine.satlab.SATSolver#valueOf(int)
-	 */
-	public Boolean valueOf(int literal) {
-		if (isSatisfiable==null) 
-			throw new IllegalStateException();
-		if (literal < 1 || literal > solver.nVars())
-			throw new IllegalArgumentException();
-		if (isSatisfiable==Boolean.FALSE)
-			return null;
-		for(int lit : solver.model()) {
-			if (lit==literal)
-				return Boolean.TRUE;
-			else if (lit==-literal)
-				return Boolean.FALSE;
-			else if (lit > literal || -lit > literal)
-				break;
-		}
-		return null;
-	}
 	
 	/**
 	 * A wrapper for an int array that provides
@@ -373,6 +315,27 @@ public final class MiniSAT implements SATSolver {
 			};
 		}
 		
+	}
+	
+	public static void main(String[] args) {
+		final MiniSAT z = (MiniSAT)Options.SATSolver.DefaultSAT4J.instance();
+		z.addVariables(3);
+		int[] clause = {1,2,3};
+		z.addClause(clause);
+		int[] clause1 = {-3};
+		z.addClause(clause1);
+		System.out.println(z.solver.nVars());
+		z.addVariables(4);
+		System.out.println(z.solver.nVars());
+		clause1[0] = 7;
+		z.addClause(clause1);
+		try {
+			System.out.println(z.solve());
+			System.out.println(z.variablesThatAre(true, 1, 7));
+		} catch (TimeoutException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 }

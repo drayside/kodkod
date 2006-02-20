@@ -7,6 +7,7 @@ import junit.framework.TestCase;
 import kodkod.ast.Formula;
 import kodkod.ast.Relation;
 import kodkod.ast.Variable;
+//import kodkod.engine.Options;
 import kodkod.engine.Solver;
 import kodkod.engine.TimeoutException;
 import kodkod.instance.Bounds;
@@ -21,6 +22,7 @@ public class ModelsTest extends TestCase {
 	public ModelsTest(String arg0) {
 		super(arg0);
 		this.solver = new Solver();
+//		this.solver.options().setSolver(Options.SATSolver.ZChaff);
 		
 	}
 
