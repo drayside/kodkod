@@ -49,6 +49,7 @@ public final class Evaluator {
 	 * @return true if formula is true with respect to this.instance; otherwise returns false
 	 */
 	public boolean evaluate(Formula formula){
+		if (formula == null) throw new NullPointerException("formula");
 		return (Translator.evaluate(formula, instance)).booleanValue();
 	}
 	
@@ -60,6 +61,7 @@ public final class Evaluator {
 	 * mappings in this.instance.
 	 */
 	public TupleSet evaluate(Expression expression){
+		if (expression == null) throw new NullPointerException("expression");
 		final BooleanMatrix sol = Translator.evaluate(expression,instance);
 		final TupleFactory factory = instance.universe().factory();
 		final int arity = expression.arity();

@@ -7,8 +7,6 @@ package kodkod.ast;
 import kodkod.ast.visitor.ReturnVisitor;
 import kodkod.ast.visitor.VoidVisitor;
 
-
-
 /** 
  * A boolean literal {@link kodkod.ast.Formula formula}, true or false.
  *
@@ -24,8 +22,8 @@ public abstract class ConstantFormula extends Formula {
 			switch(op) {
 			case OR: return TRUE;
 			case AND: case IMPLIES: case IFF: return formula;
+			default: return super.compose(op, formula);
 			}
-	    	throw new AssertionError("Unknown operator: " + op);
 	    }
 
 		@Override
@@ -53,8 +51,8 @@ public abstract class ConstantFormula extends Formula {
 			case OR: return formula;
 			case IMPLIES: return TRUE;
 			case IFF: return formula.not();
+			default: return super.compose(op, formula);
 			}
-	    	throw new AssertionError("Unknown operator: " + op);
 	    }
 
 		@Override
