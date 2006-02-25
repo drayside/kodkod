@@ -9,25 +9,26 @@ import kodkod.util.IntSet;
 import kodkod.util.Ints;
 
 /**
- * The wrapper class for the zchaff solver from Princeton.
+ * A wrapper class that provides access to the basic
+ * functionality of the zchaff solver from Princeton.
  * 
  * @author Emina Torlak
  */
-public final class ZChaff implements SATSolver {
+final class ZChaff implements SATSolver {
 	private static final int UNDETERMINED = 0, UNSATISFIABLE = 1,
     SATISFIABLE = 2, TIME_OUT = 3, MEM_OUT = 4, ABORTED = 5;
 	
-	private long zchaff;
+	private final long zchaff;
 	private int status, timeout, vars, clauses;
 	
 	static {
-	    System.load("/Users/emina/Documents/workspace3.1/relations/zchaff/libzchaffJNI.jnilib");
+	    System.load("/Users/emina/Documents/workspace3.1/relations/zchaff_withcore/zchaffJNI.jnilib");
 	}
 	
 	/**
 	 * Constructs a wrapper for an instance of zchaff. 
 	 */
-	public ZChaff() {
+	ZChaff() {
 		this.status = UNDETERMINED;
 		this.timeout = Integer.MAX_VALUE;
 		this.zchaff = initialize(timeout);
@@ -229,6 +230,7 @@ public final class ZChaff implements SATSolver {
 	protected void finalize() throws Throwable {
 		super.finalize();
 		free(zchaff);
+//		System.out.println("finalizing " + zchaff);
 	}
 	
 	public static void main(String[] args) {
@@ -238,11 +240,12 @@ public final class ZChaff implements SATSolver {
 		z.addClause(clause);
 		int[] clause1 = {-3};
 		z.addClause(clause1);
-//		z.addVariables(2);
-		
+		z.addVariables(2);
+		clause1[0] = 5;
+		z.addClause(clause1);
 		try {
 			System.out.println(z.solve());
-			System.out.println(z.variablesThatAre(true, 1, 3));
+			System.out.println(z.variablesThatAre(true, 1, 5));
 		} catch (TimeoutException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

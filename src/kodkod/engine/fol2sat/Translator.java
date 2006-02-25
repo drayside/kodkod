@@ -104,7 +104,7 @@ public final class Translator {
 //			System.out.println("generating sbp...");
 			sat = factory.and(sat, SymmetryBreaker.generateSBP(symmetricParts, allocator, options));
 		}
-
+		
 		if (options.flatten()) {
 //			System.out.println("flattening...");
 			// remove everything but the variables from the factory
@@ -117,7 +117,7 @@ public final class Translator {
 		if (sat==BooleanConstant.TRUE || sat==BooleanConstant.FALSE) {
 			throw new TrivialFormulaException(formula, optimalBounds, (BooleanConstant)sat);
 		}
-		
+//		System.out.println(sat);
 //		System.out.println("sat2cnf...");
 		final SATSolver cnf = options.solver().instance();
 		cnf.setTimeout(options.timeout());

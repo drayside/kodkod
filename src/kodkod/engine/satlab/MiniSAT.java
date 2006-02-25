@@ -7,7 +7,6 @@ package kodkod.engine.satlab;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-import kodkod.engine.Options;
 import kodkod.engine.TimeoutException;
 import kodkod.util.IntSet;
 import kodkod.util.Ints;
@@ -17,12 +16,13 @@ import org.sat4j.specs.ISolver;
 import org.sat4j.specs.IVecInt;
 
 /**
- * The wrapper class for the MiniSAT solvers
- * (org.sat4j.specs.ISolver).
+ * A wrapper class that provides
+ * access to the basic funcionality of the MiniSAT solvers
+ * (org.sat4j.specs.ISolver) from CRIL. 
  * 
  * @author Emina Torlak
  */
-public final class MiniSAT implements SATSolver {
+final class MiniSAT implements SATSolver {
 	private final ISolver solver;
 	private final ReadOnlyIVecInt wrapper;
 	private Boolean isSatisfiable; 
@@ -33,7 +33,7 @@ public final class MiniSAT implements SATSolver {
 	 * of ISolver.
 	 * @throws NullPointerException - solver = null
 	 */
-	public MiniSAT(ISolver solver) {
+	MiniSAT(ISolver solver) {
 		if (solver==null)
 			throw new NullPointerException("solver");
 		this.solver = solver;
@@ -116,6 +116,10 @@ public final class MiniSAT implements SATSolver {
 			if (isSatisfiable != Boolean.FALSE) {
 				clauses++;
 				solver.addClause(wrapper.wrap(lits));
+//				for(int lit : lits) {
+//					System.out.print(lit + " ");
+//				}
+//				System.out.println(0);
 			}
 			
 		} catch (ContradictionException e) {
@@ -318,20 +322,25 @@ public final class MiniSAT implements SATSolver {
 	}
 	
 	public static void main(String[] args) {
-		final MiniSAT z = (MiniSAT)Options.SATSolver.DefaultSAT4J.instance();
-		z.addVariables(3);
-		int[] clause = {1,2,3};
-		z.addClause(clause);
-		int[] clause1 = {-3};
+		final MiniSAT z = (MiniSAT)SATFactory.DefaultSAT4J.instance();
+//		z.addVariables(3);
+//		int[] clause = {1,2,3};
+//		z.addClause(clause);
+//		int[] clause1 = {-3};
+//		z.addClause(clause1);
+//		System.out.println(z.solver.nVars());
+//		z.addVariables(4);
+//		System.out.println(z.solver.nVars());
+//		clause1[0] = 7;
+//		z.addClause(clause1);
+		z.addVariables(1);
+		int[] clause1 = {1};
 		z.addClause(clause1);
-		System.out.println(z.solver.nVars());
-		z.addVariables(4);
-		System.out.println(z.solver.nVars());
-		clause1[0] = 7;
+		clause1[0] = -1;
 		z.addClause(clause1);
 		try {
 			System.out.println(z.solve());
-			System.out.println(z.variablesThatAre(true, 1, 7));
+			//System.out.println(z.variablesThatAre(true, 1, 1));
 		} catch (TimeoutException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

@@ -1,44 +1,41 @@
 package kodkod.engine;
 
-import kodkod.engine.satlab.MiniSAT;
-import kodkod.engine.satlab.ZChaff;
-
-import org.sat4j.minisat.SolverFactory;
+import kodkod.engine.satlab.SATFactory;
 
 /**
  * This class stores information about various
  * user-level translation options.  It can be
  * used to choose the SAT solver, set the timeout, etc.
  * 
- * @specfield solver: SATSolver // SAT solver to use
+ * @specfield solver: SATFactory // SAT solver factory to use
  * @specfield timeout:  int // SAT solver timeout, in seconds
  * @specfield symmetryBreaking: int // the amount of symmetry breaking to perform
  * @specfield skolemize: boolean // skolemize existential quantifiers?
  * @specfield flatten: boolean // eliminate extraneous intermediate variables?
  * @specfield logEncodeFunctions: boolean // use a compact encoding for functions?
- * @specfield trackExpressionVars: boolean // keep track of intermediate variables assigned to expressions?
+ * @specfield trackVars: boolean // keep track of variables assigned to non-leaf nodes?
  * @author Emina Torlak
  */
 public final class Options {
-	private SATSolver solver = SATSolver.DefaultSAT4J;
+	private SATFactory solver = SATFactory.DefaultSAT4J;
 	private int timeout = Integer.MAX_VALUE;
 	private int symmetryBreaking = 20;
 	private boolean skolemize = true;
 	private boolean flatten = true;
 	private boolean logEncodeFunctions = true;
-	private boolean trackExpressionVars = false;
+	private boolean trackVars = false;
 	
 	
 	/**
 	 * Constructs an Options object initalized with 
 	 * default values.
-	 * @effects this.solver' = SATSolver.DefaultSAT4J
+	 * @effects this.solver' = SATFactory.DefaultSAT4J
 	 *          this.timeout' = Integer.MAX_VALUE 
 	 *          this.symmetryBreaking' = 20
 	 *          this.skolemize' = true
 	 *          this.flatten' = true
 	 *          this.logEncodeFunctions' = true
-	 *          this.trackExpressionVars' = false
+	 *          this.trackVars' = false
 	 */
 	public Options() {}
 	
@@ -53,10 +50,10 @@ public final class Options {
 	 *          this.skolemize' = true
 	 *          this.flatten' = true
 	 *          this.logEncodeFunctions' = true
-	 *          this.trackExpressionVars' = false
+	 *          this.trackVars' = false
 	 * @throws NullPointerException - solver = null
 	 */
-	public Options(SATSolver solver) {
+	public Options(SATFactory solver) {
 		this();
 		setSolver(solver);
 	}
@@ -66,7 +63,7 @@ public final class Options {
 	 * The default is SATSolver.DefaultSAT4J.
 	 * @return this.solver
 	 */
-	public SATSolver solver() {
+	public SATFactory solver() {
 		return solver;
 	}
 	
@@ -75,7 +72,7 @@ public final class Options {
 	 * @effects this.solver' = solver
 	 * @throws NullPointerException - solver = null
 	 */
-	public void setSolver(SATSolver solver) {
+	public void setSolver(SATFactory solver) {
 		if (solver==null)
 			throw new NullPointerException();
 		this.solver = solver;
@@ -115,7 +112,7 @@ public final class Options {
 	/**
 	 * Returns the value of the flattening flag, which specifies whether
 	 * to eliminate extraneous intermediate variables.  The flag is true by default.  
-	 * Flattening must be off if the tracking of expression variables is enabled.  
+	 * Flattening must be off if the tracking of variables is enabled.  
 	 * @return this.flatten
 	 */
 	public boolean flatten() {
@@ -125,11 +122,11 @@ public final class Options {
 	/**
 	 * Sets the flattening option to the given value.
 	 * @effects this.flatten' = flatten
-	 * @throws IllegalArgumentException - this.trackExpressionVars && flatten
+	 * @throws IllegalArgumentException - this.trackVars && flatten
 	 */
 	public void setFlatten(boolean flatten) {
-		if (trackExpressionVars && flatten)
-			throw new IllegalStateException("trackExpressionVars enabled:  flattening must be off.");
+		if (trackVars && flatten)
+			throw new IllegalStateException("trackVars enabled:  flattening must be off.");
 		this.flatten = flatten;
 	}
 	
@@ -196,28 +193,28 @@ public final class Options {
 	}
 	
 	/**
-	 * Returns true if a mapping from expressions to boolean variables that
+	 * Returns true if a mapping from non-leaf nodes to boolean variables that
 	 * represent them should be generated during translation.  This is useful
-	 * for determining which expressions occur in the unsat core of an 
+	 * for determining which formulas/expressions occur in the unsat core of an 
 	 * unsatisfiable formula.  The flatten flag must be off whenever 
-	 * this flag is enabled.  Expression tracking is off by default, since 
+	 * this flag is enabled.  Variable tracking is off by default, since 
 	 * it incurs a non-trivial memory overheaad.
-	 * @return this.trackExpressionVars
+	 * @return this.trackVars
 	 */
-	public boolean trackExpressionVars() {
-		return trackExpressionVars;
+	public boolean trackVars() {
+		return trackVars;
 	}
 	
 	/**
-	 * Sets the value of the expression tracking flag.  If the 
+	 * Sets the value of the variable tracking flag.  If the 
 	 * flag is turned on, flatten is automatically set to false.
-	 * @effects this.trackExpressionVars' = trackExpressionVars &&
-	 *          trackExpressionVars => this.flatten' = false
+	 * @effects this.trackVars' = trackVars &&
+	 *          trackVars => this.flatten' = false
 	 */
-	public void setTrackExpressionVars(boolean trackExpressionVars) {
-		if (trackExpressionVars)
+	public void setTrackVars(boolean trackVars) {
+		if (trackVars)
 			flatten = false;
-		this.trackExpressionVars = trackExpressionVars;
+		this.trackVars = trackVars;
 	}
 	
 	/**
@@ -239,117 +236,8 @@ public final class Options {
 		b.append(skolemize);
 		b.append("\n logEncodeFunctions: ");
 		b.append(logEncodeFunctions);
-		b.append("\n trackExpressionVars: ");
-		b.append(trackExpressionVars);
+		b.append("\n trackVars: ");
+		b.append(trackVars);
 		return b.toString();
 	}
-	
-	/**
-	 * An enumeration of available SAT solvers.
-	 */
-	public static enum SATSolver {
-		/**
-		 * The default solver of the sat4j library.
-		 * @see org.sat4j.core.ASolverFactory#defaultSolver()
-		 */
-		DefaultSAT4J { 
-			public kodkod.engine.satlab.SATSolver instance() { 
-				return new MiniSAT(SolverFactory.newMiniSAT2Heap()); 
-			}
-		},
-		
-		/**
-		 * A solver that is suitable for solving many small instances of SAT problems.
-		 * @see org.sat4j.core.ASolverFactory#lightSolver()
-		 */
-		LightSAT4J {
-			public kodkod.engine.satlab.SATSolver instance() { 
-				return new MiniSAT(SolverFactory.newMini3SAT()); 
-			}
-		},
-		
-		/**
-		 * A "default" "minilearning" solver learning clauses of size
-		 * smaller than 10 % of the total number of variables
-		 * @see org.sat4j.minisat.SolverFactory#newMiniLearning()
-		 */
-		MiniLearning {
-			public kodkod.engine.satlab.SATSolver instance() { 
-				return new MiniSAT(SolverFactory.newMiniLearning()); 
-			}
-		},
-		
-		/**
-		 * A SAT solver using First UIP clause generator, watched literals,
-		 * VSIDS like heuristics learning only clauses having a great number
-		 * of active variables, i.e. variables with an activity strictly
-		 * greater than one.
-		 * @see org.sat4j.minisat.SolverFactory#newActiveLearning()
-		 */
-		ActiveLearning {
-			public kodkod.engine.satlab.SATSolver instance() { 
-				return new MiniSAT(SolverFactory.newActiveLearning()); 
-			}
-		},
-		
-		/**
-		 * MiniSAT with VSIDS heuristics, FirstUIP clause generator for
-		 * backjumping but no learning.
-		 * @see org.sat4j.minisat.SolverFactory#newBackjumping()
-		 */
-		Backjumping {
-			public kodkod.engine.satlab.SATSolver instance() { 
-				return new MiniSAT(SolverFactory.newBackjumping()); 
-			}
-		},
-		
-		/**
-		 * MiniSAT with decision UIP clause generator.
-		 * @see org.sat4j.minisat.SolverFactory#newRelsat()
-		 */
-		Relsat {
-			public kodkod.engine.satlab.SATSolver instance() { 
-				return new MiniSAT(SolverFactory.newRelsat()); 
-			}
-		},
-		
-		/**
-		 * The zchaff solver from Princeton.
-		 */
-		ZChaff {
-			public kodkod.engine.satlab.SATSolver instance() { 
-				return new ZChaff(); 
-			}
-		};
-		
-		/**
-		 * The enum also doubles as a factory for obtaining
-		 * solver instances.
-		 * @return an actual SATSolver that corresponds to this
-		 * instance of the enum.
-		 */
-		public abstract kodkod.engine.satlab.SATSolver instance();
-		
-		/**
-		 * Returns true if the SATSolver represented by this
-		 * implements the SymmetryDrivenSolver interface.
-		 * @return true if the SATSolver represented by this
-		 * implements the SymmetryDrivenSolver interface.
-		 */
-		public boolean isSymmetryDriven() {
-			return false;
-		}
-		
-		/**
-		 * Returns true if the SATSolver represented by this
-		 * implements the UnsatProvingSolver interface.
-		 * @return true if the SATSolver represented by this
-		 * implements the UnsatProvingSolver interface.
-		 */
-		public boolean canProveUnsatisfiability() {
-			return false;
-		}
-		
-	}
-
 }
