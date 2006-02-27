@@ -3,15 +3,14 @@ package kodkod.engine.satlab;
 import org.sat4j.minisat.SolverFactory;
 
 /**
- * An enumeration of available SAT solvers that 
- * also doubles as a factory for SATSolver instances
- * of a given type.
+ * An enumeration of available SAT solvers whose members
+ * are factories for SATSolver instances of a given type.
  * 
  * @author Emina Torlak
  */
 public enum SATFactory {
 	/**
-	 * A factory for instances of the default sat4j solver.
+	 * The factory for instances of the default sat4j solver.
 	 * @see org.sat4j.core.ASolverFactory#defaultSolver()
 	 */
 	DefaultSAT4J { 
@@ -25,7 +24,7 @@ public enum SATFactory {
 	},
 	
 	/**
-	 * A factory for instances of the "light" sat4j solver that is
+	 * The factory for instances of the "light" sat4j solver that is
 	 * suitable for solving many small instances of SAT problems.
 	 * @see org.sat4j.core.ASolverFactory#lightSolver()
 	 */
@@ -40,7 +39,7 @@ public enum SATFactory {
 	},
 	
 	/**
-	 * A factory for instances of the "minilearning" sat4j solver 
+	 * The factory for instances of the "minilearning" sat4j solver 
 	 * that learns clauses of size smaller than 10 % of the total number of variables
 	 * @see org.sat4j.minisat.SolverFactory#newMiniLearning()
 	 */
@@ -55,7 +54,7 @@ public enum SATFactory {
 	},
 	
 	/**
-	 * A factory for instances of the sat4j "active learning" solver that
+	 * The factory for instances of the sat4j "active learning" solver that
 	 * uses First UIP clause generator, watched literals, etc.
 	 * @see org.sat4j.minisat.SolverFactory#newActiveLearning()
 	 */
@@ -70,7 +69,7 @@ public enum SATFactory {
 	},
 	
 	/**
-	 * A factory for instances of the "backjumping" sat4j solver 
+	 * The factory for instances of the "backjumping" sat4j solver 
 	 * with VSIDS heuristics, FirstUIP clause generator for backjumping but no learning.
 	 * @see org.sat4j.minisat.SolverFactory#newBackjumping()
 	 */
@@ -85,7 +84,7 @@ public enum SATFactory {
 	},
 	
 	/**
-	 * A factory for instances of the sat4j "relsat" solver with 
+	 * The factory for instances of the sat4j "relsat" solver with 
 	 * decision UIP clause generator.
 	 * @see org.sat4j.minisat.SolverFactory#newRelsat()
 	 */
@@ -100,7 +99,7 @@ public enum SATFactory {
 	},
 	
 	/**
-	 * A factory for instances that provide access to the basic
+	 * The factory for instances that provide access to the basic
 	 * functionality of the zchaff solver from Princeton; 
 	 * the returned instances 
 	 * support only basic sat solver operations (adding variables/clauses,
@@ -112,12 +111,12 @@ public enum SATFactory {
 		 * @return an instance of the zchaff solver.
 		 */
 		public SATSolver instance() { 
-			return new ZChaff(); 
+			return new ZChaff.Basic(); 
 		}
 	},
 	
 	/**
-	 * A factory for instances that proivde access to the core extraction
+	 * The factory for instances that proivde access to the core extraction
 	 * functionality of the zchaff solver from Princeton; the returned
 	 * instances implement the CoreExctractor interface.  Note that core
 	 * extraction can incur a significant memory overhead during solving,
@@ -132,7 +131,7 @@ public enum SATFactory {
 		 * functionality.
 		 */
 		public CoreExtractor instance() { 
-			return null; 
+			return new ZChaff.Plus(); 
 		}
 		
 		/**

@@ -69,8 +69,7 @@ public interface SATSolver {
 	/**
 	 * Returns true if there is a satisfying assignment for this.clauses.
 	 * Otherwise returns false.  If this.clauses are satisfiable, the 
-	 * satisfying assignment can be obtained by calling {@link #variablesThatAre(boolean, int, int)}
-	 * or {@link #valueOf(int) }.
+	 * satisfying assignment can be obtained by calling {@link #variablesThatAre(boolean, int, int)}.
 	 * @return true if this.clauses are satisfiable; otherwise false.
 	 * @throws TimeoutException - the solver could not determine
 	 * the satisfiability of the problem within this.timeout() seconds.

@@ -205,6 +205,13 @@ abstract class ZChaff implements SATSolver {
 		}
 	}
 	
+	/**
+	 * A wrapper class that provides access to the core extraction 
+	 * functionality of the zchaff solver from princeton, in addition
+	 * to the basic operations. 
+	 * 
+	 * @author Emina Torlak
+	 */
 	static final class Plus extends ZChaff implements CoreExtractor {
 		/**
 		 * Constructs a new ZChaff.Plus solver.
