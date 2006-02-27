@@ -1,93 +1,52 @@
 /**
  * ZChaff.java
- * Created on 1:43:34 PM
+ * Created on 5:36:29 PM
  */
 package kodkod.engine.satlab;
+
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 import kodkod.engine.TimeoutException;
 import kodkod.util.IntSet;
 import kodkod.util.Ints;
+import static kodkod.engine.satlab.ZChaffJNI.*;
 
 /**
- * A wrapper class that provides access to the basic
- * functionality of the zchaff solver from Princeton.
+ * A wrapper class that provides access to the 
+ * zchaff solver from Princeton.
  * 
  * @author Emina Torlak
  */
-final class ZChaff implements SATSolver {
-	private static final int UNDETERMINED = 0, UNSATISFIABLE = 1,
-    SATISFIABLE = 2, TIME_OUT = 3, MEM_OUT = 4, ABORTED = 5;
-	
-	private final long zchaff;
-	private int status, timeout, vars, clauses;
-	
-	static {
-	    System.load("/Users/emina/Documents/workspace3.1/relations/zchaff_withcore/zchaffJNI.jnilib");
-	}
+abstract class ZChaff implements SATSolver {
+	/**
+	 * The memory address of the instance of zchaff
+	 * wrapped by this wrapper.
+	 */
+	protected final long zchaff;
+	private int timeout, status;
 	
 	/**
-	 * Constructs a wrapper for an instance of zchaff. 
+	 * Constructs a new wrapper for a freshly created
+	 * instance of zchaff that provides the core
+	 * extraction functionality if the enableCoreExtraction flag is set.
+	 * Otherwise, the instance provides only the basic functionality.
+	 * @effects this.zchaff' contains the memory address of a new
+	 * instance of zchaff.
 	 */
-	ZChaff() {
-		this.status = UNDETERMINED;
+	ZChaff(boolean enableCoreExtraction) {
+		this.zchaff = make(enableCoreExtraction);
 		this.timeout = Integer.MAX_VALUE;
-		this.zchaff = initialize(timeout);
-		this.vars = this.clauses = 0;
+		ZChaffJNI.setTimeout(zchaff, timeout);
 	}
-	
-	/**
-	 * Creates an instance of zchaff with the given
-	 * timeout, and returns its address in 
-	 * memory.
-	 */
-	private native long initialize(int timeout);
-	
-	/**
-	 * Adds the given number of variables
-	 * to the instance of zchaff referenced
-	 * by the first argument.
-	 */
-	private native void addVariables(long zchaff, int numVariables);
-	
-	/**
-	 * Adds the specified claues to the instance
-	 * of zchaff referenced by the first argument.
-	 */
-	private native void addClause(long zchaff, int[] lits);
-	
-	/**
-	 * Calls the solve method on the instance of 
-	 * zchaff referenced by the given long.
-	 */
-	private native int solve(long zchaff);
-	
-	/**
-	 * Returns the assignment for the given literal
-	 * by the specified instance of zchaff:  1 means
-	 * the variable is TRUE, 0 that it's FALSE, and 
-	 * -1 that it is undecided.
-	 */
-	private native int valueOf(long zchaff, int literal);
-	
-	/**
-	 * Sets the timeout of the given instance of zchaff
-	 * to the specified value.
-	 */
-	private native void setTimeout(long zchaff, int timeout);
-	
-	/**
-	 * Releases the resources associated with
-	 * the given instance of zchaff.
-	 */
-	private native void free(long zchaff);
-	
+
 	/**
 	 * Returns the size of this solver's vocabulary.
 	 * @return #this.literals
 	 * @see kodkod.engine.satlab.SATSolver#numberOfVariables()
 	 */
-	public int numberOfVariables() {
-		return vars;
+	public final int numberOfVariables() {
+		return numVariables(zchaff);
 	}
 
 	/**
@@ -96,8 +55,8 @@ final class ZChaff implements SATSolver {
 	 * @return #this.clauses
 	 * @see kodkod.engine.satlab.SATSolver#numberOfClauses()
 	 */
-	public int numberOfClauses() {
-		return clauses;
+	public final int numberOfClauses() {
+		return numClauses(zchaff);
 	}
 
 	/**
@@ -107,7 +66,7 @@ final class ZChaff implements SATSolver {
 	 * @return the timeout (in seconds)
 	 * @see kodkod.engine.satlab.SATSolver#timeout()
 	 */
-	public int timeout() {
+	public final int timeout() {
 		return timeout;
 	}
 
@@ -120,11 +79,11 @@ final class ZChaff implements SATSolver {
 	 * @throws IllegalArgumentException - seconds < 0
 	 * @see kodkod.engine.satlab.SATSolver#setTimeout(int)
 	 */
-	public void setTimeout(int seconds) {
+	public final void setTimeout(int seconds) {
 		if (seconds < 0)
 			throw new IllegalArgumentException(seconds + " < 0");
 		timeout = seconds;
-		setTimeout(zchaff, timeout);
+		ZChaffJNI.setTimeout(zchaff, timeout);
 	}
 
 	/**
@@ -134,12 +93,11 @@ final class ZChaff implements SATSolver {
 	 * @throws IllegalArgumentException - vars < 0
 	 * @see kodkod.engine.satlab.SATSolver#addVariables(int)
 	 */
-	public void addVariables(int numVars) {
+	public final void addVariables(int numVars) {
 		if (numVars < 0)
 			throw new IllegalArgumentException("vars < 0: " + numVars);
 		else if (numVars > 0) {
-			vars += numVars;
-			addVariables(zchaff, vars);
+			ZChaffJNI.addVariables(zchaff, numVars);
 		}
 	}
 
@@ -152,28 +110,24 @@ final class ZChaff implements SATSolver {
 	 * @throws IllegalArgumentException - some i: [0..lits.length) | |lits[0]| > #this.literals 
 	 * @see kodkod.engine.satlab.SATSolver#addClause(int[])
 	 */
-	public void addClause(int[] lits) {
+	public final void addClause(int[] lits) {
 		if (lits==null)
 			throw new NullPointerException();
 		else if (lits.length > 0) {
-			clauses++;
-			// we must modify the lits to conform to the
-			// zchaff input format:  2 * VarIndex + Sign. 
-			// The Sign is 0 for positive phased literals,
-			// and 1 for negative phased literals.
-			// For example, a clause (3 -5 11 -4 ) should be represented by
-			// { 6, 11, 22, 9 }
-			for(int i = lits.length-1; i >= 0; i--) {
-				int lit = lits[i];
-				if (lit < 0)
-					lits[i] = (-lit << 1) + 1;
-				else 
-					lits[i] = lit << 1; 
-			}
-			addClause(zchaff, lits);	
+			ZChaffJNI.addClause(zchaff, lits);
 		}
 	}
 
+	/**
+	 * Returns the current solver status.  It
+	 * is an integer in the range [0..5], with 
+	 * the meanings defined in ZChaffJNI.
+	 * @return solver status
+	 */
+	protected final int status() {
+		return status;
+	}
+	
 	/**
 	 * Returns true if there is a satisfying assignment for this.clauses.
 	 * Otherwise returns false.  If this.clauses are satisfiable, the 
@@ -184,8 +138,8 @@ final class ZChaff implements SATSolver {
 	 * the satisfiability of the problem within this.timeout() seconds.
 	 * @see kodkod.engine.satlab.SATSolver#solve()
 	 */
-	public boolean solve() throws TimeoutException {
-		status = solve(zchaff);
+	public final boolean solve() throws TimeoutException {
+		status = ZChaffJNI.solve(zchaff);
 		switch(status) {
 		case UNDETERMINED : 
 			throw new UnknownError();
@@ -213,13 +167,13 @@ final class ZChaff implements SATSolver {
 	 * outcome of the last call was not <code>true</code>.
 	 * @see kodkod.engine.satlab.SATSolver#variablesThatAre(boolean, int, int)
 	 */
-	public IntSet variablesThatAre(boolean truthValue, int start, int end) {
+	public final IntSet variablesThatAre(boolean truthValue, int start, int end) {
 		if (status != SATISFIABLE)
 			throw new IllegalStateException();
 		if (start < 1 || start > end || end > numberOfVariables())
 			throw new IllegalArgumentException("[start..end]: " + start + ".." + end + ", #this.literals: " + numberOfVariables());
 		final IntSet ret = Ints.bestSet(start, end);
-		final int intTruth = truthValue ? 1 : 0;
+		final int intTruth = truthValue ? ZChaffJNI.TRUE : ZChaffJNI.FALSE;
 		for(; start <= end; start++) {
 			if (valueOf(zchaff, start)==intTruth)
 				ret.add(start);
@@ -227,29 +181,102 @@ final class ZChaff implements SATSolver {
 		return ret;
 	}
 
+	/**
+	 * Releases the memory used by this.zchaff.
+	 */
 	protected void finalize() throws Throwable {
 		super.finalize();
 		free(zchaff);
 //		System.out.println("finalizing " + zchaff);
 	}
 	
-	public static void main(String[] args) {
-		final ZChaff z = new ZChaff();
-		z.addVariables(3);
-		int[] clause = {1,2,3};
-		z.addClause(clause);
-		int[] clause1 = {-3};
-		z.addClause(clause1);
-		z.addVariables(2);
-		clause1[0] = 5;
-		z.addClause(clause1);
-		try {
-			System.out.println(z.solve());
-			System.out.println(z.variablesThatAre(true, 1, 5));
-		} catch (TimeoutException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+	/**
+	 * A wrapper class that provides access to the basic
+	 * functionality of the zchaff solver from princeton. 
+	 * 
+	 * @author Emina Torlak
+	 */
+	static final class Basic extends ZChaff {
+		/**
+		 * Constructs a new ZChaff.Basic solver.
+		 */
+		public Basic() {
+			super(false);
 		}
 	}
 	
+	static final class Plus extends ZChaff implements CoreExtractor {
+		/**
+		 * Constructs a new ZChaff.Plus solver.
+		 */
+		public Plus() {
+			super(true);
+		}
+
+		/**
+		 * Throws an IllegalArgumentException if the solver 
+		 * status is not UNSATISFIABLE.
+		 * @throws IllegalStateException - status() != UNSATISFIABLE
+		 */
+		private void checkStatus() {
+			if (status() != UNSATISFIABLE)
+				throw new IllegalStateException();
+		}
+		
+		/**
+		 * Returns the size of the unsatisfiable core of this.clauses.
+		 * @return #this.unsatCore
+		 * @throws IllegalStateException - {@link #solve() } has not been called or the 
+		 * outcome of the last call was not <code>false</code>.
+		 * @see kodkod.engine.satlab.CoreExtractor#coreSize()
+		 */
+		public int coreSize() {
+			checkStatus();
+			return ZChaffJNI.coreSize(zchaff);
+		}
+
+		/**
+		 * Returns an iterator over the unsatisifiable core 
+		 * of this.clauses; i.e. a subset of this.clauses
+		 * that makes the problem unsatisfiable.  The core
+		 * is usually smaller than this.clauses.
+		 * @return an Iterator over this.unsatCore
+		 * @throws IllegalStateException - {@link #solve() } has not been called or the 
+		 * outcome of the last call was not <code>false</code>.
+		 * @see kodkod.engine.satlab.CoreExtractor#unsatCore()
+		 */
+		public Iterator<int[]> unsatCore() {
+			checkStatus();
+			return new Iterator<int[]>() {
+				private int coreSize = coreSize(), cursor = 0;
+				
+				public boolean hasNext() {
+					return cursor < coreSize;
+				}
+
+				public int[] next() {
+					if (!hasNext()) throw new NoSuchElementException();
+					return ZChaffJNI.coreClause(zchaff, cursor++);
+				}
+
+				public void remove() {
+					throw new UnsupportedOperationException();
+				}
+				
+			};
+		}
+
+		/**
+		 * Remove all clauses from this.clauses that are not
+		 * in this.unsatCore.
+		 * @effects this.clauses' = this.unsatCore
+		 * @throws IllegalStateException - {@link #solve() } has not been called or the 
+		 * outcome of the last call was not <code>false</code>.
+		 * @see kodkod.engine.satlab.CoreExtractor#retainCore()
+		 */
+		public void retainCore() {
+			checkStatus();
+			ZChaffJNI.retainCore(zchaff);
+		}
+	}
 }

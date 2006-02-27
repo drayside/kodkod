@@ -9,6 +9,7 @@ import kodkod.ast.Relation;
 import kodkod.ast.Variable;
 import kodkod.engine.Solver;
 import kodkod.engine.TimeoutException;
+import kodkod.engine.satlab.SATFactory;
 import kodkod.instance.Bounds;
 import kodkod.instance.Instance;
 import kodkod.instance.TupleFactory;
@@ -335,6 +336,7 @@ public class Netconfig {
 	public static void main(String[] args) {
 		final Netconfig model = new Netconfig();
 		final Solver solver = new Solver();
+		solver.options().setSolver(SATFactory.ZChaff);
 		try {
 			final Formula show = model.show();
 			final Instance sol = solver.solve(show, model.bounds(Integer.parseInt(args[0]),Integer.parseInt(args[1]),Integer.parseInt(args[2]),Integer.parseInt(args[3])));

@@ -7,7 +7,6 @@ import junit.framework.TestCase;
 import kodkod.ast.Formula;
 import kodkod.ast.Relation;
 import kodkod.ast.Variable;
-//import kodkod.engine.Options;
 import kodkod.engine.Solver;
 import kodkod.engine.TimeoutException;
 import kodkod.instance.Bounds;
@@ -22,7 +21,7 @@ public class ModelsTest extends TestCase {
 	public ModelsTest(String arg0) {
 		super(arg0);
 		this.solver = new Solver();
-//		this.solver.options().setSolver(Options.SATSolver.ZChaff);
+//		this.solver.options().setSolver(SATFactory.ZChaff);
 		
 	}
 
@@ -106,7 +105,6 @@ public class ModelsTest extends TestCase {
 		final Formula noSharing = (m.eq(n).not().implies(body.not())).forAll(m.oneOf(man).and(n.oneOf(man)));
 		
 		bounds = ceilingsAndFloorsInstance(platform, 4, man, 4, ceiling, floor);
-	
 		assertNull(solve(((model.and(noSharing)).implies(belowToo)).not(), bounds));
 //		System.out.println(solve(((model.and(noSharing)).implies(belowToo)).not(), bounds));
 //		System.out.println(solve(model.and(noSharing).and(belowToo.not()), bounds));
