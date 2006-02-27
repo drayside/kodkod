@@ -22,6 +22,7 @@ public final class BinaryExpression extends Expression {
 	private final Operator op;
     private final Expression left;
     private final Expression right;
+    private final int arity;
     private final int hashCode;
     
     /**  
@@ -41,6 +42,7 @@ public final class BinaryExpression extends Expression {
         this.op = op;
         this.left = left;
         this.right = right;
+        this.arity = op.arity(left.arity(),right.arity());
         this.hashCode = op.hashCode() + left.hashCode() + right.hashCode();
     }
     
@@ -50,7 +52,7 @@ public final class BinaryExpression extends Expression {
      * @see kodkod.ast.Expression#arity()
      */
     public int arity() {
-        return op.arity(left.arity(),right.arity());
+        return arity;
     }
     
     /**

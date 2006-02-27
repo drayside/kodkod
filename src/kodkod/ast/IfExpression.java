@@ -21,6 +21,7 @@ public final class IfExpression extends Expression {
 
 	private final Formula condition;
 	private final Expression thenExpr, elseExpr;
+	private final int arity;
 	private final int hashCode;
 	
 	/**
@@ -37,6 +38,7 @@ public final class IfExpression extends Expression {
 		this.condition = condition;
 		this.thenExpr = thenExpr;
 		this.elseExpr = elseExpr;
+		this.arity  = thenExpr.arity();
 		this.hashCode = condition.hashCode() + thenExpr.hashCode() +
 			elseExpr.hashCode();
 	}
@@ -71,7 +73,7 @@ public final class IfExpression extends Expression {
 	 */
 	@Override
 	public int arity() {
-		return thenExpr.arity();
+		return arity;
 	}
 
 	/**

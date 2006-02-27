@@ -18,6 +18,7 @@ import kodkod.ast.visitor.VoidVisitor;
 public final class UnaryExpression extends Expression {
     private final Expression expression;
     private final Operator op;
+    private final int arity;
     private final int hashCode;
     
     /**  
@@ -33,6 +34,7 @@ public final class UnaryExpression extends Expression {
         }
         this.expression = child;
         this.op = op;
+        this.arity = op.arity(child.arity());
         this.hashCode = op.hashCode() + expression.hashCode();
     }
 
@@ -42,7 +44,7 @@ public final class UnaryExpression extends Expression {
      * @see kodkod.ast.Expression#arity()
      */
     public int arity() {
-        return expression.arity();
+        return arity;
     }
     
     /**
@@ -107,7 +109,16 @@ public final class UnaryExpression extends Expression {
         /**
          * @return true if this operator can be applied to an expression with the given arity.
          */
-        private boolean applicable(int childArity) { return childArity==2; }
+        private boolean applicable(int childArity) { return childArity == 2; }
+        
+        /**
+         * @return the arity of the expression that results from applyin 
+         * this operator to an expression with the given arity
+         * This method assumes that leftArity and rightArity are compatible, 
+         * i.e. this.compatible(leftArity, rightArity).
+         */
+        int arity(int childArity) { return 2; }
+        
     }
     
 
