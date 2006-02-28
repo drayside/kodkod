@@ -111,16 +111,17 @@ public enum SATFactory {
 		 * @return an instance of the zchaff solver.
 		 */
 		public SATSolver instance() { 
-			return new ZChaff.Basic(); 
+			return new ZChaff(false); 
 		}
 	},
 	
 	/**
 	 * The factory for instances that proivde access to the core extraction
-	 * functionality of the zchaff solver from Princeton; the returned
-	 * instances implement the CoreExctractor interface.  Note that core
+	 * functionality of the zchaff solver from Princeton; the 
+	 * {@link kodkod.engine.satlab.SATSolver#isCoreExtractor() } method of
+	 * the returned instances returns true.  Note that core
 	 * extraction can incur a significant memory overhead during solving,
-	 * so if you do not need this functionality, use ZChaff factory
+	 * so if you do not need this functionality, use the {@link #ZChaff} factory.
 	 * instead.
 	 */
 	ZChaffPlus {
@@ -130,16 +131,8 @@ public enum SATFactory {
 		 * @return an instance of the zchaff solver with the core extraction
 		 * functionality.
 		 */
-		public CoreExtractor instance() { 
-			return new ZChaff.Plus(); 
-		}
-		
-		/**
-		 * Returns true.
-		 * @return true
-		 */
-		public boolean canProveUnsatisfiability() {
-			return true;
+		public SATSolver instance() { 
+			return new ZChaff(true); 
 		}
 	};
 	
@@ -159,14 +152,5 @@ public enum SATFactory {
 	public boolean isSymmetryDriven() {
 		return false;
 	}
-	
-	/**
-	 * Returns true if the SATSolvers returned by this
-	 * factory implement the CoreExtractor interface.
-	 * @return true if the SATSolvers returned by this
-	 * implement the CoreExtractor interface.
-	 */
-	public boolean canProveUnsatisfiability() {
-		return false;
-	}
+
 }

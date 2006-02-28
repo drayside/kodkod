@@ -171,6 +171,37 @@ final class MiniSAT implements SATSolver {
 		return ret;
 	}
 
+	/**
+	 * Returns false.
+	 * @return false
+	 */
+	public boolean isCoreExtractor() {
+		return false;
+	}
+
+	/**
+	 * Throws UnsupportedOperationException.
+	 * @throws UnsupportedOperationException
+	 */
+	public int coreSize() {
+		throw new UnsupportedOperationException("This is not a core extracting solver.");
+	}
+
+	/**
+	 * Throws UnsupportedOperationException.
+	 * @throws UnsupportedOperationException
+	 */
+	public Iterator<int[]> unsatCore() {
+		throw new UnsupportedOperationException("This is not a core extracting solver.");
+	}
+
+	/**
+	 * Throws UnsupportedOperationException.
+	 * @throws UnsupportedOperationException
+	 */
+	public void retainCore() {
+		throw new UnsupportedOperationException("This is not a core extracting solver.");
+	}
 	
 	/**
 	 * A wrapper for an int array that provides
@@ -346,5 +377,7 @@ final class MiniSAT implements SATSolver {
 			e.printStackTrace();
 		}
 	}
+
+	
 
 }
