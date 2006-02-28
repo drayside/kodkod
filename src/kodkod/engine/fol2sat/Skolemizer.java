@@ -308,7 +308,8 @@ final class Skolemizer {
 		 */
 		private final Byte[] flagCombos;
 		
-		/* @invariant maps each shared node to a byte, depending on 
+		/* @invariant maps all nodes that have a quantified formula in their AST
+		 * and that are in the reflexive transitive closure of a shared node to a byte, depending on 
 		 * which combination of flags was active when the node was visited.
 		 * For example, if, during each visit to a node n, the flags negated
 		 * and topLevel were set to either FT or TT, visitedNodes
@@ -317,6 +318,8 @@ final class Skolemizer {
 		 */
 		private final Map<Node, Byte> visitedNodes;
 		
+		private final Set<Node> sharedNodes;
+		
 		final Set<QuantifiedFormula> formulas;
 		
 		private boolean negated, topLevel;
@@ -324,6 +327,7 @@ final class Skolemizer {
 		EQFDetector(Set<Node> sharedNodes) {
 		    this.negated = false;
 			this.topLevel = true;
+			this.sharedNodes = sharedNodes;
 			this.formulas = new IdentityHashSet<QuantifiedFormula>();
 			this.flagCombos = new Byte[16];
 			for(int i = 0; i < 16; i++) {
@@ -373,6 +377,10 @@ final class Skolemizer {
 				} else { // combination seen
 					return true;
 				}
+			} else if (sharedNodes.contains(node)) {
+				// this is a shared node that has no quantified formulas as descendents;
+				// we can therefore mark it as having been visited with all possible flag combinations
+				visitedNodes.put(node, flagCombos[15]);
 			}
 			return false;
 		}
@@ -618,5 +626,6 @@ final class Skolemizer {
 		}
 		
 	}
+	
 	
 }
