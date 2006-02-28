@@ -11,13 +11,17 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
 
+import kodkod.ast.BinaryExpression;
 import kodkod.ast.BinaryFormula;
 import kodkod.ast.ComparisonFormula;
 import kodkod.ast.Comprehension;
+import kodkod.ast.ConstantExpression;
+import kodkod.ast.ConstantFormula;
 import kodkod.ast.Decl;
 import kodkod.ast.Decls;
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
+import kodkod.ast.IfExpression;
 import kodkod.ast.LeafExpression;
 import kodkod.ast.MultiplicityFormula;
 import kodkod.ast.Node;
@@ -25,9 +29,11 @@ import kodkod.ast.NotFormula;
 import kodkod.ast.QuantifiedFormula;
 import kodkod.ast.Relation;
 import kodkod.ast.RelationPredicate;
+import kodkod.ast.UnaryExpression;
 import kodkod.ast.Variable;
 import kodkod.ast.visitor.DepthFirstReplacer;
 import kodkod.ast.visitor.DepthFirstVoidVisitor;
+import kodkod.ast.visitor.ReturnVisitor;
 import kodkod.engine.bool.BooleanMatrix;
 import kodkod.engine.bool.BooleanValue;
 import kodkod.instance.Bounds;
@@ -323,9 +329,17 @@ final class Skolemizer {
 			for(int i = 0; i < 16; i++) {
 				flagCombos[i] = new Byte((byte)i);
 			}
-			this.visitedNodes = new IdentityHashMap<Node,Byte>(sharedNodes.size());
-			for(Node n : sharedNodes) {
-				visitedNodes.put(n, flagCombos[0]);
+			// determine which shared nodes and their descendents
+			// have quantified formulas in their subtrees
+			final QFDescendentDetector qfd = new QFDescendentDetector();
+			for(Node n: sharedNodes) {
+				n.accept(qfd);
+			}
+			// prune away the nodes that have no quantified formulas as descendents
+			this.visitedNodes = new IdentityHashMap<Node,Byte>(qfd.numNodesWithQFDescendent);
+			for(Map.Entry<Node,Boolean> e : qfd.visitedNodes.entrySet()) {
+				if (e.getValue())
+					visitedNodes.put(e.getKey(), flagCombos[0]);
 			}
 		}
 		
@@ -341,14 +355,21 @@ final class Skolemizer {
 		/**
 		 * Returns true if the given node has already been visited with 
 		 * the present combination of the flags.  If not, the present
-		 * combination is recorded and false is returned.
+		 * combination is recorded and false is returned.  
 		 */
 		private final boolean visited(Node node) {
 			Byte status = visitedNodes.get(node);
 			if (status != null) {
 				final int current = flagCombo();
 				if ((status & current) == 0) { // not seen yet
-					visitedNodes.put(node, flagCombos[status|current]);
+					// if the current value of the topLevel flag is false,
+					// we don't have to visit this node ever again, so we
+					// simply mark it as having been visited with all possible
+					// flag combinations
+					if (!topLevel)
+						visitedNodes.put(node, flagCombos[15]);
+					else
+						visitedNodes.put(node, flagCombos[status|current]);
 				} else { // combination seen
 					return true;
 				}
@@ -444,4 +465,158 @@ final class Skolemizer {
 		}
 		
 	}
+	
+	
+	/**
+	 * Starting at a given root, a QFDescendentDetector determines which nodes in its
+	 * reflexive transitive closure have quantified formulas in their subtrees.
+	 */
+	private static final class QFDescendentDetector implements ReturnVisitor<Boolean, Boolean, Boolean> {
+		/**
+		 * Maps each visited node to TRUE, if it has a quantified formula
+		 * as a descendent, and to FALSE otherwise.
+		 */
+		final Map<Node, Boolean> visitedNodes;
+		int numNodesWithQFDescendent = 0;
+		/**
+		 * Constructs a new QFDescendentDetector.
+		 */
+		QFDescendentDetector() {
+			this.visitedNodes = new IdentityHashMap<Node,Boolean>();
+		}
+		
+		/**
+		 * Returns null if the node has not been visited before.
+		 * If it has, returns a Boolean value that represents
+		 * the presence or absence of a quantified formula in
+		 * the node's subtree.
+		 */
+		private Boolean visited(Node node) {
+			return visitedNodes.get(node);
+		}
+		
+		/**
+		 * Records the presence or absence of a quantified formula
+		 * in the node's subtree as given by hasQFDescendent and returns it.
+		 */
+		private Boolean recordVisit(Node node, boolean hasQFDescendent) {
+			final Boolean record = Boolean.valueOf(hasQFDescendent);
+			visitedNodes.put(node, record);
+			if (hasQFDescendent) numNodesWithQFDescendent++;
+			return record;
+		}
+		
+		public Boolean visit(Decls decls) {
+			Boolean hasQFDescendent = visited(decls);
+			if (hasQFDescendent!=null) 
+				return hasQFDescendent;
+			boolean qfd = false;
+			for(Decl d: decls) {
+				qfd = qfd | visit(d);
+			}
+			return recordVisit(decls, qfd);
+		}
+
+		public Boolean visit(Decl decl) {
+			Boolean hasQFDescendent = visited(decl);
+			if (hasQFDescendent!=null)
+				return hasQFDescendent;
+			return recordVisit(decl, decl.expression().accept(this));
+		}
+
+		public Boolean visit(Relation relation) {
+			return Boolean.FALSE;
+		}
+
+		public Boolean visit(Variable variable) {
+			return Boolean.FALSE;
+		}
+
+		public Boolean visit(ConstantExpression constExpr) {
+			return Boolean.FALSE;
+		}
+
+		public Boolean visit(BinaryExpression binExpr) {
+			Boolean hasQFDescendent = visited(binExpr);
+			if (hasQFDescendent!=null)
+				return hasQFDescendent;
+			return recordVisit(binExpr, binExpr.left().accept(this) | binExpr.right().accept(this));
+		}
+
+		public Boolean visit(UnaryExpression unaryExpr) {
+			Boolean hasQFDescendent = visited(unaryExpr);
+			if (hasQFDescendent!=null)
+				return hasQFDescendent;
+			return recordVisit(unaryExpr, unaryExpr.expression().accept(this));
+		}
+
+		public Boolean visit(Comprehension comprehension) {
+			Boolean hasQFDescendent = visited(comprehension);
+			if (hasQFDescendent!=null)
+				return hasQFDescendent;
+			return recordVisit(comprehension, comprehension.declarations().accept(this) | comprehension.formula().accept(this));
+		}
+
+		public Boolean visit(IfExpression ifExpr) {
+			Boolean hasQFDescendent = visited(ifExpr);
+			if (hasQFDescendent!=null)
+				return hasQFDescendent;
+			return recordVisit(ifExpr, ifExpr.condition().accept(this) | 
+					                   ifExpr.thenExpr().accept(this) | ifExpr.elseExpr().accept(this));
+		}
+
+		public Boolean visit(QuantifiedFormula quantFormula) {
+			Boolean hasQFDescendent = visited(quantFormula);
+			if (hasQFDescendent!=null)
+				return hasQFDescendent;
+			quantFormula.declarations().accept(this);
+			quantFormula.formula().accept(this);
+			return recordVisit(quantFormula, true);
+		}
+
+		public Boolean visit(BinaryFormula binFormula) {
+			Boolean hasQFDescendent = visited(binFormula);
+			if (hasQFDescendent!=null)
+				return hasQFDescendent;
+			return recordVisit(binFormula, binFormula.left().accept(this) | binFormula.right().accept(this));
+		}
+
+		public Boolean visit(NotFormula not) {
+			Boolean hasQFDescendent = visited(not);
+			if (hasQFDescendent!=null)
+				return hasQFDescendent;
+			return recordVisit(not, not.formula().accept(this));
+		}
+
+		public Boolean visit(ConstantFormula constant) {
+			return Boolean.FALSE;
+		}
+
+		public Boolean visit(ComparisonFormula compFormula) {
+			Boolean hasQFDescendent = visited(compFormula);
+			if (hasQFDescendent!=null)
+				return hasQFDescendent;
+			return recordVisit(compFormula, compFormula.left().accept(this) | compFormula.right().accept(this));
+		}
+
+		public Boolean visit(MultiplicityFormula multFormula) {
+			Boolean hasQFDescendent = visited(multFormula);
+			if (hasQFDescendent!=null)
+				return hasQFDescendent;
+			return recordVisit(multFormula, multFormula.expression().accept(this));
+		}
+
+		public Boolean visit(RelationPredicate predicate) {
+			Boolean hasQFDescendent = visited(predicate);
+			if (hasQFDescendent!=null)
+				return hasQFDescendent;
+			if (predicate.name()==RelationPredicate.Name.FUNCTION) {
+				final RelationPredicate.Function fun = (RelationPredicate.Function) predicate;
+				return recordVisit(fun, fun.domain().accept(this) | fun.range().accept(this));
+			}
+			return recordVisit(predicate, false);
+		}
+		
+	}
+	
 }
