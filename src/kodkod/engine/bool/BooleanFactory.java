@@ -416,7 +416,7 @@ public final class BooleanFactory {
 	 * @return { m: BooleanMatrix | no m.elements && m.factory = this && m.dimensions = dims && m.zero = zero }
 	 */
 	public BooleanMatrix matrix(Dimensions d, BooleanConstant c) {
-		if (c==null || c==null) throw new NullPointerException();
+		if (d == null || c == null) throw new NullPointerException();
 		return new BooleanMatrix(d, c, this);
 	}
 }
