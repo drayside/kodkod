@@ -465,7 +465,36 @@ final class Skolemizer {
 				topLevel = oldTop;
 			}
 		}
-		
+
+		public void visit(Decls decls) {
+			if (!visited(decls))
+				super.visit(decls);
+		}
+
+		public void visit(Decl decl) {
+			if (!visited(decl))
+				super.visit(decl);
+		}
+
+		public void visit(BinaryExpression binExpr) {
+			if (!visited(binExpr))
+				super.visit(binExpr);
+		}
+
+		public void visit(UnaryExpression unaryExpr) {
+			if (!visited(unaryExpr))
+				super.visit(unaryExpr);
+		}
+
+		public void visit(Comprehension comprehension) {
+			if (!visited(comprehension))
+				super.visit(comprehension);	
+		}
+
+		public void visit(IfExpression ifExpr) {
+			if (!visited(ifExpr))
+				super.visit(ifExpr);
+		}		
 	}
 	
 	
