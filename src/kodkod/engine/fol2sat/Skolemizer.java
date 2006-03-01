@@ -73,18 +73,12 @@ final class Skolemizer {
 		Formula ret;
 		final EQFDetector detector = new EQFDetector(sharedNodes);
 		formula.accept(detector);
-//		System.out.println(detector.formulas);
-		
 		if (detector.formulas.isEmpty()) {
 			ret = formula;
 		} else {
 			final EQFReplacer replacer = new EQFReplacer(detector.formulas, bounds, sharedNodes);
 			ret = formula.accept(replacer);
 			ret = ret.and(replacer.skolemFormula);
-//			ret = formula;
-//			System.out.println(formula);
-//			System.out.println(ret);
-//			System.out.println(bounds);
 		}
 		return ret;
 	}

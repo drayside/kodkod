@@ -83,6 +83,34 @@ public final class Ints {
 	}
 	
 	/**
+	 * Returns an unmodifiable IntSet whose sole
+	 * element is the given integer.
+	 * @return {s: IntSet | s.ints = i}
+	 */
+	public static IntSet singleton(final int i) {
+		return new AbstractIntSet() {
+			public boolean contains(int j) { return i==j; }
+			public int min() { return i; }
+			public int max() { return i; }
+			public IntIterator iterator(final int from, final int to) {	
+				return new IntIterator() {
+					boolean cursor = (from<=i && i<=to) || (to<=i && i<=from);
+					public boolean hasNext() { return cursor; }
+					public int nextInt() { 
+						if (!hasNext()) throw new NoSuchElementException(); 
+						cursor = false;
+						return i;
+					}
+					public Integer next() { return nextInt();	}
+					public void remove() { throw new UnsupportedOperationException(); }
+				};
+			}
+			public int size() {	return 1; }
+			public IntSet copy() { return this; }
+		};
+	}
+	
+	/**
 	 * Returns an implementation of the int set interface
 	 * that offers the best time/space trade-off for a 
 	 * set that can store all elements in the half open

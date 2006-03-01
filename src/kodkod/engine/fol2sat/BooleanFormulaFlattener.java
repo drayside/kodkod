@@ -4,7 +4,6 @@ import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import kodkod.engine.bool.AbstractBooleanVisitor;
 import kodkod.engine.bool.BooleanConstant;
 import kodkod.engine.bool.BooleanFactory;
 import kodkod.engine.bool.BooleanValue;
@@ -137,7 +136,7 @@ final class BooleanFormulaFlattener {
 	 * #inputs.m = 1 && (inputs.m).op = m.op => s.contains(m.literal).  That is,
 	 * flattenable = {i: int | some m: root.^inputs & MultiGate | #inputs.m = 1 && (inputs.m).op = m.op && m.literal = i}
 	 */
-	private static final class FlatteningDataGatherer extends AbstractBooleanVisitor<BooleanValue, Operator> {
+	private static final class FlatteningDataGatherer implements BooleanVisitor<Object, Operator> {
 		/* contains the literals of all the flattenable multi gates */
 		final IntSet flattenable;
 		/* contains the literals of all the visited multi gates */
@@ -153,7 +152,7 @@ final class BooleanFormulaFlattener {
 			this.visited = Ints.bestSet(maxLit+1);
 		}
 		
-		public BooleanValue visit(MultiGate multigate, Operator parentOp) {
+		public Object visit(MultiGate multigate, Operator parentOp) {
 			final int literal = multigate.literal();
 			if (visited.contains(literal)) { // we've seen this node already
 				flattenable.remove(literal);
@@ -169,8 +168,16 @@ final class BooleanFormulaFlattener {
 			return null;
 		}
 		
-		public BooleanValue visit(NotGate negation, Operator parentOp) {
+		public Object visit(NotGate negation, Operator parentOp) {
 			negation.input().accept(this,null);
+			return null;
+		}
+
+		public Object visit(BooleanVariable variable, Operator arg) {
+			return null;
+		}
+
+		public Object visit(BooleanConstant constant, Operator arg) {
 			return null;
 		}
 		
