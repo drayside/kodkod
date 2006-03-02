@@ -341,7 +341,7 @@ public class Netconfig {
 			final Formula show = model.show();
 			final Instance sol = solver.solve(show, model.bounds(Integer.parseInt(args[0]),Integer.parseInt(args[1]),Integer.parseInt(args[2]),Integer.parseInt(args[3])));
 //			System.out.println(show);
-			System.out.println("p cnf " + (solver.numberOfIntermediateVariables()+solver.numberOfPrimaryVariables()) + " " + solver.numberOfClauses());
+			//System.out.println("p cnf " + (solver.numberOfIntermediateVariables()+solver.numberOfPrimaryVariables()) + " " + solver.numberOfClauses());
 			System.out.println(sol);
 			
 		} catch (TimeoutException e) {

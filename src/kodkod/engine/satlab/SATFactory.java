@@ -142,15 +142,5 @@ public enum SATFactory {
 	 * @return a SATSolver instance
 	 */
 	public abstract SATSolver instance();
-	
-	/**
-	 * Returns true if the SATSolver instances returned by this
-	 * factory implement the SymmetryDrivenSolver interface.
-	 * @return true if the SATSolvers returned by this
-	 * implement the SymmetryDrivenSolver interface.
-	 */
-	public boolean isSymmetryDriven() {
-		return false;
-	}
 
 }

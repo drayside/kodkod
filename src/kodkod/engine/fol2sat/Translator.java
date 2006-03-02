@@ -98,7 +98,7 @@ public final class Translator {
 			throw new TrivialFormulaException(formula, optimalBounds, (BooleanConstant)sat);
 		}
 		
-		final boolean symmetricSolver = options.solver().isSymmetryDriven();
+		final boolean symmetricSolver = false;//options.solver().isSymmetryDriven();
 
 		if (!symmetricSolver) {
 //			System.out.println("generating sbp...");
