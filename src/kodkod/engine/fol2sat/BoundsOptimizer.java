@@ -278,7 +278,7 @@ final class BoundsOptimizer {
 	 *            all s: this.parts'[int] | all a1, a2: this.bounds.universe.atoms[s.ints] |
 	 *              all t1, t2: tupleSet.tuples | t1.atoms[0] = a1 && t2.atoms[0] = a2 =>
 	 *                t1.atoms[1..ts.arity) = t1.atoms[1..ts.arity) || 
-	 *                t1.atoms[1..ts.arity) = a1 && t1.atomos[1..ts.arity) = a2)
+	 *                t1.atoms[1..ts.arity) = a1 && t1.atoms[1..ts.arity) = a2)
 	 */
 	private void refinePartitions(TupleSet tupleSet) {
 		IntSet tview = tupleSet.indexView();
@@ -291,7 +291,7 @@ final class BoundsOptimizer {
 			}
 			refinePartitions(firstCol);
 			IntSet otherCols = Ints.bestSet(firstColFactor);
-			int idenFactor = (1 - firstColFactor) / (1 - usize);
+			int idenFactor = usize==1 ? 1 : (1 - firstColFactor) / (1 - usize);
 			for(ListIterator<IntSet> partsIter = parts.listIterator(); partsIter.hasNext(); ) {
 				IntSet part = partsIter.next();
 				if (firstCol.contains(part.min())) { // contains one, contains them all

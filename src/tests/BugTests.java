@@ -2,6 +2,7 @@ package tests;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import junit.framework.TestCase;
@@ -36,6 +37,19 @@ public class BugTests extends TestCase {
 //		for(Map.Entry e: p.entrySet())
 //			System.out.println(e); 
 //	}
+	
+	public final void testGreg_03032006() {
+		Relation r = Relation.binary("r");
+		Universe univ = new Universe(Collections.singleton("o"));
+		Bounds bounds = new Bounds(univ);
+		bounds.bound(r,  univ.factory().allOf(2));
+		try {
+			solver.solve(r.some(), bounds);
+		} catch (TimeoutException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 	
 	public final void testGreg_02192006() {
 		Relation r1 = Relation.unary("r1");
