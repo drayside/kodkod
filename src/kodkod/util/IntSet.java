@@ -98,11 +98,5 @@ public interface IntSet extends Set<Integer> {
 	 * c contains an element that is out of bounds
 	 */
 	public abstract boolean addAll(Collection<? extends Integer> c);
-	
-	/**
-	 * Returns a copy of this IntSet.
-	 * @return {s: IntSet | s.ints = this.ints }
-	 */
-	public abstract IntSet copy();
 
 }

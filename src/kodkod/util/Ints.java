@@ -35,7 +35,6 @@ public final class Ints {
 				};
 			}
 			public int size() {	return 0; }
-			public IntSet copy() { return EMPTY_SET; }
 	};
 	
 	private static final int SHORT = 0x0000ffff;
@@ -80,7 +79,7 @@ public final class Ints {
 	public static IntSet unmodifiableIntSet(final IntSet s) {
 		if (s==null) 
 			throw new NullPointerException("s = null");
-		else if (s instanceof UnmodifiableIntSet || s instanceof SingletonIntSet)
+		else if (s instanceof UnmodifiableIntSet || s instanceof SingletonIntSet || s instanceof RangeIntSet)
 			return s;
 		else 
 			return new UnmodifiableIntSet(s);
@@ -93,6 +92,17 @@ public final class Ints {
 	 */
 	public static IntSet singleton(final int i) {
 		return new SingletonIntSet(i);
+	}
+	
+	/**
+	 * Returns an unmodifiable IntSet that contains
+	 * all the elements in the given range.
+	 * @return {s: IntSet | s.ints = [range.min()..range.max()] }
+	 */
+	public static IntSet rangeSet(IntRange range) {
+		if (range==null)
+			throw new NullPointerException();
+		return new RangeIntSet(range);
 	}
 	
 	/**
@@ -210,6 +220,41 @@ public final class Ints {
 	}
 	
 	/**
+	 * An implementation of an IntSet wrapper for an IntRange.
+	 */
+	private static final class RangeIntSet extends AbstractIntSet {
+		private final IntRange range;
+		/**
+		 * Constructs an unmodifiable IntSet wrapper for a range.
+		 */
+		RangeIntSet(IntRange range) {
+			this.range = range;
+		}
+		public boolean contains(int i) { return range.contains(i); }
+		public int min() { return range.min(); }
+		public int max() { return range.max(); }
+		public IntIterator iterator(final int from, final int to) {
+			return new IntIterator() {
+				final boolean ascending = (from <= to);
+				int cursor = ascending ? StrictMath.max(range.min(), from) : StrictMath.min(range.max(), from);
+				final int end = ascending ? StrictMath.min(range.max(), to) : StrictMath.max(range.min(), to);
+				public boolean hasNext() {
+					return ascending && cursor<=end || cursor >= end;
+				}
+				public int nextInt() {
+					if (!hasNext()) throw new NoSuchElementException();
+					return ascending ? cursor++ : cursor--;
+				}
+				public Integer next() { return nextInt(); }
+				public void remove() { throw new UnsupportedOperationException(); }
+				
+			};
+		}
+		public int size() {	return range.size(); }
+		public IntSet copy() { return this; }
+	}
+	
+	/**
 	 * An implementation of an IntSet wrapper for a single integer.
 	 */
 	private static final class SingletonIntSet extends AbstractIntSet {
@@ -281,7 +326,6 @@ public final class Ints {
 				}	
 			};
 		}
-		public IntSet copy() { return s.copy(); }
 		public boolean equals(Object o) {
 			if (this==o) return true;
 			else if (o instanceof UnmodifiableIntSet) {

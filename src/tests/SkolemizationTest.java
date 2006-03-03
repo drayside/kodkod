@@ -91,6 +91,14 @@ public class SkolemizationTest extends TestCase {
 		
 		testNoSkolems(d, v.join(r2a).some().forAll(d).not());
 		testNoSkolems(d, v.join(r2a).some().forSome(d));
+		
+		final Formula f = v.join(r2a).some().forSome(d);
+		final Variable v1 = Variable.unary("v1");
+		final Decl d1 = v1.oneOf(f.thenElse(r1a, r1b));
+		final Formula f1 = v1.join(r2a).some().forAll(d1);
+		Instance inst = solve(f1.and(f));
+		assertEquals(bounds.relations(), inst.relations());
+		
 	}
 	
 	private final void assertSkolems(Bounds bounds, Instance inst, Set<String> skolems) {

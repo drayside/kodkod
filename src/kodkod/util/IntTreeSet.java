@@ -153,14 +153,6 @@ public final class IntTreeSet extends AbstractIntSet {
 	
 	/**
 	 * {@inheritDoc}
-	 * @see kodkod.util.IntSet#copy()
-	 */
-	public IntSet copy() {
-		return new IntTreeSet(this);
-	}
-	
-	/**
-	 * {@inheritDoc}
 	 * @see kodkod.util.IntSet#add(int)
 	 */
 	public boolean add(int i) {

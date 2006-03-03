@@ -383,6 +383,9 @@ final class Skolemizer {
 		public void visit(QuantifiedFormula quantFormula) {
 			if (!visited(quantFormula)) { 
 				final boolean oldTop = topLevel;
+				topLevel = false;
+				quantFormula.declarations().accept(this);
+				topLevel = oldTop;
 				final QuantifiedFormula.Quantifier q = quantFormula.quantifier();
 				if (topLevel && (q==SOME && !negated || q==ALL && negated)) {
 					final Byte status = visitedNodes.get(quantFormula);

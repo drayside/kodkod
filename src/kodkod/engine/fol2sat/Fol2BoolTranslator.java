@@ -209,9 +209,9 @@ final class Fol2BoolTranslator {
 		@Override
 		protected BooleanValue record(Formula formula, BooleanValue translation) {
 			if (translation==BooleanConstant.TRUE) {
-				trueFormulas.add(formula);
+				if (env.parent()==null) trueFormulas.add(formula);
 			} else if (translation==BooleanConstant.FALSE) {
-				falseFormulas.add(formula);
+				if (env.parent()==null) falseFormulas.add(formula);
 			} else if (env.parent()==null) { // top-level formula
 				varUsage.put(formula, Ints.singleton(StrictMath.abs(translation.literal())));	
 			} else {

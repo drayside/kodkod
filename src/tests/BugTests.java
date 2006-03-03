@@ -243,7 +243,7 @@ factory.tuple(list2));
 		final IntTreeSet s1 = new IntTreeSet();
 		s1.add(0);
 		
-		final IntSet intersection = s.copy();
+		final IntSet intersection = new IntTreeSet(s);
 		intersection.retainAll(s1);
 		s.removeAll(intersection);
 		

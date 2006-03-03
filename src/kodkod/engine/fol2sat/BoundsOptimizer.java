@@ -343,7 +343,8 @@ final class BoundsOptimizer {
 	private void refinePartitions(IntSet set) {
 		for(ListIterator<IntSet> partsIter = parts.listIterator(); partsIter.hasNext(); ) {
 			IntSet part = partsIter.next();
-			IntSet intersection = part.copy();
+			IntSet intersection = Ints.bestSet(part.min(), part.max());
+			intersection.addAll(part);
 			intersection.retainAll(set);
 			if (!intersection.isEmpty() && intersection.size() < part.size()) {
 				part.removeAll(intersection);

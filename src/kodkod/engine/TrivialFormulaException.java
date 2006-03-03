@@ -5,41 +5,44 @@ import kodkod.engine.bool.BooleanConstant;
 import kodkod.instance.Bounds;
 
 /**
- * Thrown when a formula is found to be trivially (un)satisfiable 
+ * Thrown when a reduction is found to be trivially (un)satisfiable 
  * with respect to given Bounds.
  * 
- * @specfield formula: Formula
+ * @specfield reduction: Formula
+ * @specfield reduction: reduction.*children
  * @specfield bounds: Bounds
- * @specfield formulaValue: BooleanConstant // the value to which the formula simplified
+ * @specfield formulaValue: BooleanConstant // the value to which the reduction simplified
+ * @invariant reduction is a subtree of reduction that has caused it to simplify to a constant
  * @author Emina Torlak
  */
 public final class TrivialFormulaException extends Exception {
 	private final BooleanConstant formulaValue;
-	private final Formula formula;
+	private final Formula reduction;
 	private final Bounds bounds;
 	
 	private static final long serialVersionUID = 6251577831781586067L;
 
 	/**
-	 * Constructs a new TrivialFormulaException caused by the specified Formula
-	 * simplifying to the given value when translated using the given Bounds.
-	 * @requires formula != null && bounds != null && formulaValue != null
-	 * @effects this.formula' = formula && this.bounds' = bounds && this.formulaValue' = formulaValue 
+	 * Constructs a new TrivialFormulaException caused by the specified reduction.
+	 * That is, the reduction has caused its parent reduction
+	 * to simplify to the given value when translated using the given Bounds.  
+	 * @requires reduction != null && bounds != null && formulaValue != null
+	 * @effects this.reduction' = reduction && this.bounds' = bounds && this.formulaValue' = formulaValue 
 	 */
-	public TrivialFormulaException(Formula formula, Bounds bounds, BooleanConstant formulaValue) {
+	public TrivialFormulaException(Formula reduction, BooleanConstant formulaValue, Bounds bounds) {
 		super();
-		assert formulaValue != null && bounds != null && formula != null;
-		this.formula = formula;
+		assert formulaValue != null && bounds != null && reduction != null;
+		this.reduction = reduction;
 		this.bounds = bounds;
 		this.formulaValue = formulaValue;
 	}
 
 	/**
-	 * Returns this.formula.
-	 * @return this.formula
+	 * Returns this.reduction.
+	 * @return this.reduction
 	 */
-	public Formula formula() {
-		return formula;
+	public Formula reduction() {
+		return reduction;
 	}
 	
 	/**

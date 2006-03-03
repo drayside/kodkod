@@ -148,18 +148,7 @@ public final class IntBitSet extends AbstractIntSet {
 	 * @see kodkod.util.IntBitSet#capacity()
 	 */
 	public int capacity() { return capacity; }
-	
-	/**
-	 * {@inheritDoc}
-	 * @see kodkod.util.IntSet#copy()
-	 */
-	public IntSet copy() {
-		final IntBitSet copy = new IntBitSet(capacity);
-		copy.size = this.size; 
-		System.arraycopy(elements, 0, copy.elements, 0, elements.length);
-		return copy;
-	}
-	
+		
 	/**
 	 * Returns the index of the word that contains
 	 * the bit that represents the integer i.

@@ -73,25 +73,16 @@ public final class Solution {
 
 	/**
 	 * Returns a reduction of this.formula to its trivially (un)satisfiable
-	 * subtree, if the value returned  by {@link #outcome() this.outcome()} 
+	 * subformula, if the value returned  by {@link #outcome() this.outcome()} 
 	 * is either TRIVIALLY_SATISFIABLE or TRIVIALLY_UNSATISFIABLE.  Otherwise
-	 * returns null.  <i>If this.formula is trivially (un)satisfiable but
-	 * the {@link Options options} with which the {@link Solver solver}
-	 * was invoked did not specify tracking of variables, an 
-	 * UnsupportedOperationException is thrown.</i>
+	 * returns null.  Note that this method does not guarantee to return the
+	 * <b>smallest</b> subtree of this.formula that makes it trivial; it may
+	 * return the formula itself.
 	 * @return a reduction of this.formula to its trivially (un)satisfiable
-	 * subtree, if one exists.
-	 * @throws UnsupportedOperationException - this.formula is trivially 
-	 * (un)satisfiable but the {@link Options options} 
-	 * with which the {@link Solver solver}
-	 * was invoked did not specify tracking of variables 
-	 * (see {@link Options#setTrackVars(boolean)} and
-	 * {@link Options#trackVars()})
+	 * subformula,if the value returned  by {@link #outcome() this.outcome()} 
+	 * is either TRIVIALLY_SATISFIABLE or TRIVIALLY_UNSATISFIABLE.
 	 */
 	public Formula reduction() {
-		if ((outcome==Outcome.TRIVIALLY_SATISFIABLE || outcome==Outcome.TRIVIALLY_UNSATISFIABLE) &&
-		    reduction==null)
-			throw new UnsupportedOperationException("variable tracking not enabled during translation.");
 		return reduction;
 	}
 

@@ -10,7 +10,6 @@ import kodkod.instance.Instance;
 import kodkod.instance.TupleFactory;
 import kodkod.instance.TupleSet;
 import kodkod.util.IntIterator;
-import kodkod.util.IntRange;
 import kodkod.util.IntSet;
 import kodkod.util.Ints;
 
@@ -27,23 +26,27 @@ import kodkod.util.Ints;
 public final class Translation {
 	private final Bounds bounds;
 	private final SATSolver solver;
-	/* maps a relation to the intrange whose minimum and maximum values represent
-	 * the minimum and maximum literal of the variables allocated to represent
-	 * that relation. */
-	private final Map<Relation, IntRange> rel2lit; 
-	private final int maxLit;
+	/* maps nodes to the literals that comprise their translations.  Note that this
+	 * map _always_ contains mappings for all relations in bounds.relations */
+	private final Map<Node, IntSet> varUsage; 
+	private final int maxPrimaryLit;
+	private final boolean trackedVars;
 	
 	/**
-	 * Constructs a new Translation object for the given solver and mapping
-	 * from Relations to literals.
-	 * @requires maxLit = max(rel2lit[Relation].max)
+	 * Constructs a new Translation object for the given solver, bounds, and mapping
+	 * from Nodes to literals.
+	 * @requires trackedVars should be true if variable tracking was enabled during translation;
+	 * otherwise it should be false
+	 * @requires maxPrimaryLit = max(varUsage[Relation].max)
+	 * @requires bounds.relations in varUsage.IntSet
 	 * @effects this.solver' = solver && this.bounds' = bounds
 	 */
-	Translation(SATSolver solver, Bounds bounds, Map<Relation, IntRange> rel2lit, int maxLit) {	
+	Translation(SATSolver solver, Bounds bounds, Map<Node, IntSet> varUsage, int maxPrimaryLit, boolean trackedVars) {	
 		this.solver = solver;
 		this.bounds = bounds;
-		this.rel2lit = rel2lit;
-		this.maxLit = maxLit;
+		this.varUsage = varUsage;
+		this.maxPrimaryLit = maxPrimaryLit;
+		this.trackedVars = trackedVars;
 	}
 
 	/**
@@ -74,13 +77,13 @@ public final class Translation {
 	public Instance interpret() {
 		final TupleFactory f = bounds.universe().factory();
 		final Instance instance = new Instance(bounds.universe());
-//		System.out.println(rel2lit);
-		final IntSet model = solver.variablesThatAre(true, 1, StrictMath.min(maxLit, solver.numberOfVariables()));
+//		System.out.println(varUsage);
+		final IntSet model = solver.variablesThatAre(true, 1, StrictMath.min(maxPrimaryLit, solver.numberOfVariables()));
 		for(Relation r : bounds) {
 			TupleSet lower = bounds.lowerBound(r);
 			IntSet indeces = Ints.bestSet(lower.capacity());
 			indeces.addAll(lower.indexView());
-			IntRange vars = rel2lit.get(r);
+			IntSet vars = varUsage.get(r);
 			if (vars!=null) {
 				int lit = vars.min();
 				for(IntIterator iter = bounds.upperBound(r).indexView().iterator(); iter.hasNext();) {
@@ -108,7 +111,7 @@ public final class Translation {
 	 * during translation.
 	 */
 	public int numberOfPrimaryVariables() {
-		return maxLit;
+		return maxPrimaryLit;
 	}
 	
 	/**
@@ -119,6 +122,6 @@ public final class Translation {
 	 * variables that comprise their translations.
 	 */
 	public Map<Node, IntSet> variableUsage() {
-		return null;
+		return trackedVars ? varUsage : null;
 	}
 }
