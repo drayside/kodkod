@@ -78,8 +78,12 @@ public final class Ints {
 	 * @throws NullPointerException - s = null
 	 */
 	public static IntSet unmodifiableIntSet(final IntSet s) {
-		if (s==null) throw new NullPointerException("s = null");
-		return (s instanceof UnmodifiableIntSet) ? s : new UnmodifiableIntSet(s);
+		if (s==null) 
+			throw new NullPointerException("s = null");
+		else if (s instanceof UnmodifiableIntSet || s instanceof SingletonIntSet)
+			return s;
+		else 
+			return new UnmodifiableIntSet(s);
 	}
 	
 	/**
@@ -88,26 +92,7 @@ public final class Ints {
 	 * @return {s: IntSet | s.ints = i}
 	 */
 	public static IntSet singleton(final int i) {
-		return new AbstractIntSet() {
-			public boolean contains(int j) { return i==j; }
-			public int min() { return i; }
-			public int max() { return i; }
-			public IntIterator iterator(final int from, final int to) {	
-				return new IntIterator() {
-					boolean cursor = (from<=i && i<=to) || (to<=i && i<=from);
-					public boolean hasNext() { return cursor; }
-					public int nextInt() { 
-						if (!hasNext()) throw new NoSuchElementException(); 
-						cursor = false;
-						return i;
-					}
-					public Integer next() { return nextInt();	}
-					public void remove() { throw new UnsupportedOperationException(); }
-				};
-			}
-			public int size() {	return 1; }
-			public IntSet copy() { return this; }
-		};
+		return new SingletonIntSet(i);
 	}
 	
 	/**
@@ -222,6 +207,46 @@ public final class Ints {
 		 hash ^= hash << 10;
 		
 		return hash;
+	}
+	
+	/**
+	 * An implementation of an IntSet wrapper for a single integer.
+	 */
+	private static final class SingletonIntSet extends AbstractIntSet {
+		private final int i;
+		/**
+		 * Constructs an unmodifiable intset wrapper for the given integer.
+		 */
+		SingletonIntSet(int i) {
+			this.i = i;
+		}
+		public boolean contains(int j) { return i==j; }
+		public int min() { return i; }
+		public int max() { return i; }
+		public IntIterator iterator(final int from, final int to) {	
+			return new IntIterator() {
+				boolean cursor = (from<=i && i<=to) || (to<=i && i<=from);
+				public boolean hasNext() { return cursor; }
+				public int nextInt() { 
+					if (!hasNext()) throw new NoSuchElementException(); 
+					cursor = false;
+					return i;
+				}
+				public Integer next() { return nextInt();	}
+				public void remove() { throw new UnsupportedOperationException(); }
+			};
+		}
+		public int size() {	return 1; }
+		public IntSet copy() { return this; }
+		public boolean equals(Object o) {
+			if (this==o) return true;
+			else if (o instanceof IntSet) {
+				final IntSet s = (IntSet) o;
+				return s.size()==1 && s.min()==i;
+			} else
+				return super.equals(o);
+		}
+		public int hashCode() { return i; }
 	}
 	
 	/**

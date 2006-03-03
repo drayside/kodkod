@@ -50,7 +50,10 @@ public final class Solution {
 	 * Lastly, if the returned Outcome is either TRIVIALLY_SATISFIABLE
 	 * or TRIVIALLY_UNSATISFIABLE, a reduction of this.formula to its 
 	 * trivially (un)satisfiable subtree can be obtained by calling
-	 * {@link #reduction()}.
+	 * {@link #reduction()} <i>provided that the {@link Options options} 
+	 * with which the {@link Solver solver}
+	 * was invoked specified tracking of variables (see {@link Options#setTrackVars(boolean)} and
+	 * {@link Options#trackVars()}).</i>.
 	 * @return an Outcome instance designating the 
 	 * satisfiability of this.formula with respect to this.bounds
 	 */
@@ -72,11 +75,23 @@ public final class Solution {
 	 * Returns a reduction of this.formula to its trivially (un)satisfiable
 	 * subtree, if the value returned  by {@link #outcome() this.outcome()} 
 	 * is either TRIVIALLY_SATISFIABLE or TRIVIALLY_UNSATISFIABLE.  Otherwise
-	 * returns null.
+	 * returns null.  <i>If this.formula is trivially (un)satisfiable but
+	 * the {@link Options options} with which the {@link Solver solver}
+	 * was invoked did not specify tracking of variables, an 
+	 * UnsupportedOperationException is thrown.</i>
 	 * @return a reduction of this.formula to its trivially (un)satisfiable
 	 * subtree, if one exists.
+	 * @throws UnsupportedOperationException - this.formula is trivially 
+	 * (un)satisfiable but the {@link Options options} 
+	 * with which the {@link Solver solver}
+	 * was invoked did not specify tracking of variables 
+	 * (see {@link Options#setTrackVars(boolean)} and
+	 * {@link Options#trackVars()})
 	 */
 	public Formula reduction() {
+		if ((outcome==Outcome.TRIVIALLY_SATISFIABLE || outcome==Outcome.TRIVIALLY_UNSATISFIABLE) &&
+		    reduction==null)
+			throw new UnsupportedOperationException("variable tracking not enabled during translation.");
 		return reduction;
 	}
 

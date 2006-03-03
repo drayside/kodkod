@@ -497,7 +497,6 @@ final class Skolemizer {
 		}		
 	}
 	
-	
 	/**
 	 * Starting at a given root, a QFDescendentDetector determines which nodes in its
 	 * reflexive transitive closure have quantified formulas in their subtrees.
@@ -646,9 +645,6 @@ final class Skolemizer {
 				return recordVisit(fun, fun.domain().accept(this) | fun.range().accept(this));
 			}
 			return recordVisit(predicate, false);
-		}
-		
+		}	
 	}
-	
-	
 }

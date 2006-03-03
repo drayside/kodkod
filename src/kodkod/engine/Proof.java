@@ -139,13 +139,13 @@ public final class Proof {
 	 * during the translation of this.formula
 	 * @throws UnsupportedOperationException - the {@link Options options} 
 	 * with which the {@link Solver solver}
-	 * was invoked did not specify that ariables be tracked 
+	 * was invoked did not specify that variables be tracked 
 	 * (see {@link Options#setTrackVars(boolean)} and
-	 * {@link Options#trackVars()}.
+	 * {@link Options#trackVars()}).
 	 */
 	public IntSet variablesFor(Node node) {
 		if (node2vars==null)
-			throw new UnsupportedOperationException("variabled tracking not enabled during translation.");
+			throw new UnsupportedOperationException("variable tracking not enabled during translation.");
 		final IntSet ret = node2vars.get(node);
 		return ret==null ? Ints.EMPTY_SET : ret;
 	}

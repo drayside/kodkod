@@ -4,7 +4,10 @@ import static kodkod.engine.bool.BooleanConstant.FALSE;
 import static kodkod.engine.bool.BooleanConstant.TRUE;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import kodkod.ast.BinaryExpression;
@@ -35,6 +38,10 @@ import kodkod.engine.bool.BooleanValue;
 import kodkod.engine.bool.Dimensions;
 import kodkod.engine.bool.MutableMultiGate;
 import kodkod.engine.bool.MultiGate.Operator;
+import kodkod.util.IdentityHashSet;
+import kodkod.util.IndexedEntry;
+import kodkod.util.IntSet;
+import kodkod.util.Ints;
 
 /**
  * Translates a first order logic formula into a boolean circuit.
@@ -60,7 +67,166 @@ final class Fol2BoolTranslator {
 	}
 	
 	/**
-	 * The helper class that actually performs the translation.  This
+	 * Translates the given first order formula into a boolean circuit using
+	 * the provided allocator and structural information.  Additionally, it 
+	 * keeps track of which variables comprise the descendents of the formula,
+	 * and which of its descendents are reduced to constants during translation.
+	 * @requires sharedInternalNodes = {n: Node | #(n.~children & node.*children) > 1 } 
+	 * @requires allocator.relations = n.*children & Relation
+	 * @return {c: AnnotatedCircuit | c.formula = formula } 
+	 */
+	static final AnnotatedCircuit translateAndTrack(Formula formula, Set<Node> sharedInternalNodes, BooleanFormulaAllocator allocator) {
+		final TrackingTranslator t = new TrackingTranslator(allocator, formula, sharedInternalNodes);
+		return new AnnotatedCircuit(formula.accept(t), t.varUsage, t.trueFormulas, t.falseFormulas);
+	}
+	
+	/**
+	 * Stores the translation and annotations computed by 
+	 * {@link Fol2BoolTranslator#translateAndTrack(Formula, Set, BooleanFormulaAllocator)}. 
+	 * 
+	 * @specfield formula: Formula // the formula being translated
+	 * @specfield allocator: BooleanFormulaAllocator // the allocator used for translation
+	 */
+	static final class AnnotatedCircuit {
+		private final BooleanValue translation;
+		private final Map<Node,IntSet> variableUsage;
+		private final Set<Formula> trueFormulas, falseFormulas;
+		
+		private AnnotatedCircuit(BooleanValue translation, Map<Node,IntSet> varUsage, 
+				                Set<Formula> trueFormulas, Set<Formula> falseFormulas) {
+			this.translation = translation;
+			this.variableUsage = Collections.unmodifiableMap(varUsage);
+			this.trueFormulas = Collections.unmodifiableSet(trueFormulas);
+			this.falseFormulas = Collections.unmodifiableSet(falseFormulas);
+		}
+		/**
+		 * Returns the translation of this.formula to a boolean circuit.
+		 * @return the translation of this.formula to a boolean circuit.
+		 */
+		BooleanValue translation() {
+			return translation;
+		}
+		
+		/**
+		 * Returns a map from the descendents of this.formula to the 
+		 * literals representing the BooleanFormulas that comprise 
+		 * the descendents' translations.  Descendents that evaluate 
+		 * to BooleanConstants or BooleanMatrices comprised of BooleanConstants
+		 * are not mapped.
+		 * @return from the descendents of this.formula to the 
+		 * literals representing the BooleanValues that comprise 
+		 * the descendents' translations.
+		 */
+		Map<Node, IntSet> variableUsage() {
+			return variableUsage;
+		}
+		
+		/**
+		 * Returns the set of descendents of this.formula that 
+		 * evaluate to the given constant.
+		 * @return {f: this.formula.*children & Formula | translate(f,this.allocator) = value}
+		 */
+		Set<Formula> formulasThatAre(BooleanConstant value) {
+			return value.booleanValue() ? trueFormulas : falseFormulas;
+		}
+	}
+	
+	/**
+	 * A subclass of Translator that tracks variables in addition to 
+	 * translating nodes to circuits.
+	 * 
+	 * @specfield formula: Formula
+	 * @specfield varUsage: formula.*children & (Expression + Formula) -> set int
+	 * @specfield trueFormulas: set formula.*children & Formula
+	 * @specfield falseFormulas: set formula.*children & Formula
+	 */
+	private static final class TrackingTranslator extends Translator {
+		final Map<Node, IntSet> varUsage;
+		final Set<Formula> trueFormulas, falseFormulas;
+		
+		/**
+		 * Constructs a new translator that will use the given allocator to perform the 
+		 * translation of the specified node.  The set sharedInternalNodes is used to 
+		 * determine which translations should be cached.
+		 * @requires sharedInternalNodes = {n: Node | #(n.~children & node.*children) > 1 } 
+		 */    
+		TrackingTranslator(BooleanFormulaAllocator allocator, Node node, Set<Node> sharedInternalNodes) {
+			super(allocator, node, sharedInternalNodes);
+			this.varUsage = new IdentityHashMap<Node,IntSet>();
+			this.trueFormulas = new IdentityHashSet<Formula>();
+			this.falseFormulas = new IdentityHashSet<Formula>();
+		}
+		
+		/**
+		 * If the given expression is one for which we are caching translations,
+		 * the provided translation is cached and returned.  Otherwise,
+		 * the translation is simply returned.  In addition, this method records
+		 * the literals of BooleanFormulas that comprise the dense regions of 
+		 * the translation in the varUsage map. 
+		 * @return translation
+		 * @effects if the expression is one for which we are caching translations,
+		 * the provided translation is cached.
+		 * @effects this.varUsage' = this.varUsage + 
+		 *           expr -> {i: int | some b: translation.elements[int] - BooleanConstant | 
+		 *                     i = |b.literal| }
+		 */
+		@Override
+		protected BooleanMatrix record(Expression expr, BooleanMatrix translation) {
+			final BooleanFactory factory = allocator.factory();
+			IntSet vars;
+			if (env.parent()==null) { // top-level expression
+				vars = Ints.bestSet(1, factory.maxFormulaLiteral());		
+			} else { // not a top-level expression
+				vars = varUsage.get(expr);
+				if (vars==null)
+					vars = Ints.bestSet(1, Integer.MAX_VALUE-1);
+			}
+			final BooleanValue nonZeroConstant = factory.not(translation.zero());
+			for(IndexedEntry<BooleanValue> e: translation) {
+				if (e.value() != nonZeroConstant)
+					vars.add(StrictMath.abs(e.value().literal()));
+			}
+			varUsage.put(expr, vars);
+			return cache.cache(expr, translation, env);
+		}
+		
+		/**
+		 * If the given formula is one for which we are caching translations,
+		 * the provided translation is cached and returned.  Otherwise,
+		 * the translation is simply returned. In addition, this method records
+		 * the literal of the translation in the varUsage map, if the translation
+		 * is non-constant.  If it is constant, it records the formula as being
+		 * constant.  
+		 * @return translation
+		 * @effects if the formula is one for which we are caching translations,
+		 * the provided translation is cached.
+		 * @effects translation = BooleanConstant.TRUE => 
+		 * 	          this.trueFormulas' = this.trueFormulas + formula,
+		 *          translation = BooleanConstant.FALSE => 
+		 * 	          this.falseFormulas' = this.falseFormulas + formula,
+		 *          this.varUsage' = this.varUsage + formula -> |translation.literal|
+		 */
+		@Override
+		protected BooleanValue record(Formula formula, BooleanValue translation) {
+			if (translation==BooleanConstant.TRUE) {
+				trueFormulas.add(formula);
+			} else if (translation==BooleanConstant.FALSE) {
+				falseFormulas.add(formula);
+			} else if (env.parent()==null) { // top-level formula
+				varUsage.put(formula, Ints.singleton(StrictMath.abs(translation.literal())));	
+			} else {
+				IntSet vars = varUsage.get(formula);
+				if (vars==null)
+					vars = Ints.bestSet(1, Integer.MAX_VALUE-1);
+				vars.add(StrictMath.abs(translation.literal()));
+				varUsage.put(formula, vars);
+			}
+			return cache.cache(formula, translation, env);
+		}
+	}
+	
+	/**
+	 * The helper class that performs the translation.  This
 	 * version of the translator does not track variables.
 	 */
 	private static class Translator implements ReturnVisitor<BooleanMatrix, BooleanValue, Object> {
@@ -522,6 +688,4 @@ final class Fol2BoolTranslator {
 			return ret != null ? ret : record(pred, pred.toConstraints().accept(this));
 		}
 	}
-
-
 }

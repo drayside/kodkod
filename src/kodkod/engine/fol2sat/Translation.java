@@ -2,6 +2,7 @@ package kodkod.engine.fol2sat;
 
 import java.util.Map;
 
+import kodkod.ast.Node;
 import kodkod.ast.Relation;
 import kodkod.engine.satlab.SATSolver;
 import kodkod.instance.Bounds;
@@ -108,5 +109,16 @@ public final class Translation {
 	 */
 	public int numberOfPrimaryVariables() {
 		return maxLit;
+	}
+	
+	/**
+	 * Returns the mapping from this.formula's
+	 * descendents to the CNF variables that comprise their translations, 
+	 * provided that this.options.trackVars is set to true.  Otherwise returns null.
+	 * @return a mapping from this.formula.*children to the CNF
+	 * variables that comprise their translations.
+	 */
+	public Map<Node, IntSet> variableUsage() {
+		return null;
 	}
 }
