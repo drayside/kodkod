@@ -6,11 +6,10 @@ import java.util.List;
 import junit.framework.TestCase;
 import kodkod.ast.Formula;
 import kodkod.ast.Relation;
-import kodkod.engine.Options;
+import kodkod.engine.Solution;
+import kodkod.engine.Solver;
+import kodkod.engine.Statistics;
 import kodkod.engine.TimeoutException;
-import kodkod.engine.TrivialFormulaException;
-import kodkod.engine.fol2sat.Translation;
-import kodkod.engine.fol2sat.Translator;
 import kodkod.instance.Bounds;
 import kodkod.instance.Instance;
 import kodkod.instance.TupleFactory;
@@ -26,17 +25,17 @@ import kodkod.instance.Universe;
 public class SymmetryBreakingTest extends TestCase {
 	private static final int USIZE = 10;
 	private final TupleFactory factory;
-	private final Options options;
 	private final Relation to1, ord1, first1, last1, 
 	                       to2, ord2, first2, last2, 
 	                       to3, ord3, first3, last3, 
 	                       ac1, ac2, ac3, r1, r2;
 	private Bounds bounds;
 	private int pVars, iVars, clauses;
+	private final Solver solver;
 	
 	public SymmetryBreakingTest(String arg0) {
 		super(arg0);
-		this.options = new Options();
+		this.solver = new Solver();
 		
 		List<String> atoms = new ArrayList<String>(USIZE);
 		for (int i = 0; i < USIZE; i++) {
@@ -72,34 +71,15 @@ public class SymmetryBreakingTest extends TestCase {
 		super.setUp();
 		bounds = new Bounds(factory.universe());		
 	}
-
-	/**
-	 * Creates an instance from the given Bounds.  The instance
-	 * is simply the mapping bounds.lowerBound.
-	 * @return the instance corresponding to bounds.lowerBound
-	 */
-	private static Instance toInstance(Bounds bounds) {
-		final Instance instance = new Instance(bounds.universe());
-		for (Relation r : bounds) {
-			instance.add(r, bounds.lowerBound(r));
-		}
-		return instance;
-	}
 	
 	private Instance solve(Formula f, Bounds b) {
 		try {
-			final Translation translation = Translator.translate(f, b, options);
-			pVars = translation.numberOfPrimaryVariables();
-			iVars = translation.cnf().numberOfVariables() - pVars;
-			clauses = translation.cnf().numberOfClauses();
-//			System.out.println("p cnf " + translation.cnf().numberOfVariables() + " " + translation.cnf().numberOfClauses());
-//			System.out.println("solving...");
-			if (translation.cnf().solve()) {
-				return translation.interpret();
-			}
-		} catch (TrivialFormulaException te) {
-			pVars = iVars = clauses = 0;
-			return toInstance(te.bounds());
+			final Solution sol = solver.solve(f, b);
+			final Statistics stats = sol.stats();
+			pVars = stats.primaryVariables();
+			iVars = stats.variables() - pVars;
+			clauses = stats.clauses();
+			return sol.instance();
 		} catch (TimeoutException e) {
 			fail("Timed out solving " + f);
 		}

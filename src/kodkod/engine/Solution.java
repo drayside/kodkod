@@ -114,6 +114,31 @@ public final class Solution {
 	}
 	
 	/**
+	 * Returns a string representation of this Solution.
+	 * @return a string representation of this Solution.
+	 */
+	public String toString() {
+		final StringBuilder b = new StringBuilder();
+		b.append("---OUTCOME---\n");
+		b.append(outcome);
+		b.append("\n");
+		if (instance!=null) {
+			b.append("\n---INSTANCE---\n");
+			b.append(instance);
+			b.append("\n");
+		}
+		if (reduction!=null) {
+			b.append("\n---REDUCTION---\n");
+			b.append(reduction);
+			b.append("\n");
+		}
+		b.append("\n---STATS---\n");
+		b.append(stats);
+		b.append("\n");
+		return b.toString();
+	}
+	
+	/**
 	 * Enumerates the possible outcomes of an attempt
 	 * to find a model for a FOL formula.
 	 */

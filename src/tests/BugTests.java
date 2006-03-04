@@ -11,6 +11,7 @@ import kodkod.ast.Formula;
 import kodkod.ast.Relation;
 import kodkod.ast.Variable;
 import kodkod.engine.Evaluator;
+import kodkod.engine.Solution;
 import kodkod.engine.Solver;
 import kodkod.engine.TimeoutException;
 import kodkod.instance.Bounds;
@@ -44,7 +45,7 @@ public class BugTests extends TestCase {
 		Bounds bounds = new Bounds(univ);
 		bounds.bound(r,  univ.factory().allOf(2));
 		try {
-			solver.solve(r.some(), bounds);
+			assertEquals(Solution.Outcome.SATISFIABLE, solver.solve(r.some(), bounds).outcome());
 		} catch (TimeoutException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -68,7 +69,7 @@ public class BugTests extends TestCase {
 		bounds.boundExactly(r2, set2);
 		bounds.bound(r3, set1);
 		try {
-			solver.solve(f, bounds);
+			assertEquals(Solution.Outcome.TRIVIALLY_UNSATISFIABLE, solver.solve(f, bounds).outcome());
 		} catch (TimeoutException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
@@ -161,7 +162,7 @@ Variable.unary("p");
 //        System.out.println(formula);
        
         try {
-			final Instance instance = solver.solve(formula, bounds);
+			final Instance instance = solver.solve(formula, bounds).instance();
 			assertNotNull(instance);
 		} catch (TimeoutException e) {
 			// TODO Auto-generated catch block
@@ -225,7 +226,7 @@ factory.tuple(list2));
 //        System.out.println(formula);
         // solve   
 		try {
-			final Instance instance = solver.solve(formula, bounds);
+			final Instance instance = solver.solve(formula, bounds).instance();
 			assertNotNull(instance);
 		} catch (TimeoutException e) {
 			// TODO Auto-generated catch block
@@ -280,7 +281,7 @@ factory.tuple(list2));
 
         // solve      
 		try {
-			final Instance instance = solver.solve(formula, bounds);
+			final Instance instance = solver.solve(formula, bounds).instance();
 			assertNotNull(instance);
 			//System.out.println(instance);
 		} catch (TimeoutException e) {
@@ -355,7 +356,7 @@ factory.tuple(list2));
 		final Formula f = r1.product(r2).in(r3);
 		
 		try {
-			final Instance instance = solver.solve(f, b);
+			final Instance instance = solver.solve(f, b).instance();
 			assertTrue((new Evaluator(instance)).evaluate(f));
 //			System.out.println(instance);
 //			System.out.println((new Evaluator(instance)).evaluate(f  ));
@@ -462,7 +463,7 @@ factory.tuple(list2));
 //			System.out.println(simulate);
 //			System.out.println(bounds);
 //			System.out.println(instance);
-			instance = solver.solve(simulate, bounds);
+			instance = solver.solve(simulate, bounds).instance();
 //			System.out.println(instance);
 			assertNotNull(instance);
 		} catch (TimeoutException e4) {
@@ -509,7 +510,7 @@ factory.tuple(list2));
 //		System.out.println(b);
 		
 		try {
-			final Instance instance = solver.solve(f, b);
+			final Instance instance = solver.solve(f, b).instance();
 			assertNull(instance);
 		} catch (TimeoutException te) {
 			fail("Timed out solving " + f);
@@ -546,7 +547,7 @@ factory.tuple(list2));
 //		System.out.println(b);
 		
 		try {
-			final Instance instance = solver.solve(f, b);
+			final Instance instance = solver.solve(f, b).instance();
 			assertTrue((new Evaluator(instance)).evaluate(f));
 //			System.out.println(instance);
 //			System.out.println((new Evaluator(instance)).evaluate(f  ));

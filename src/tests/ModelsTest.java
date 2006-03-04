@@ -35,7 +35,7 @@ public class ModelsTest extends TestCase {
 	
 	private Instance solve(Formula formula, Bounds bounds) {
 		try {
-			return solver.solve(formula, bounds);
+			return solver.solve(formula, bounds).instance();
 		} catch (TimeoutException te) {
 			fail("Timed out solving " + formula);
 			return null;

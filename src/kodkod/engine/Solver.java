@@ -8,6 +8,7 @@ import kodkod.ast.Formula;
 import kodkod.ast.Relation;
 import kodkod.engine.fol2sat.Translation;
 import kodkod.engine.fol2sat.Translator;
+import kodkod.engine.satlab.SATSolver;
 import kodkod.instance.Bounds;
 import kodkod.instance.Instance;
 
@@ -86,38 +87,61 @@ public final class Solver {
 	}
 	
 	/**
-	 * Attempts to satisfy the given formula with respect to the specified instance.
-	 * If the operation is successful, the method returns an Instance of the formula (in 
-	 * conjunction with constraints implied by the bounds).  If the formula and 
-	 * the instance constraints cannot be satisfied, null is returned.
-	 * 
+	 * Attempts to satisfy the given formula with respect to the specified bounds or
+	 * prove the formula's unsatisfiability.
+	 * If the operation is successful, the method returns a Solution that contains either
+	 * an instance of the formula or an unsatisfiability proof.  Note that an unsatisfiability
+	 * proof will be constructed iff this.options specifies the use of a core extracting SATSolver.
+	 * Additionally, the CNF variables in the proof can be related back to the nodes in the given formula 
+	 * iff this.options has variable tracking enabled.  
 	 * If the solver runs out of time, a TimeoutException is thrown.  
 	 * 
-	 * @return Instance of the formula if it is satisfiable with respect to the given bounds; null otherwise.
+	 * @return Solution to the formula with respect to the given bounds
 	 * @throws NullPointerException - formula = null || bounds = null
 	 * @throws IllegalArgumentException - the formula contains an unbound variable
 	 * @throws IllegalArgumentException - the formula contains a relation not mapped by the given bounds object
 	 * @throws TimeoutException - it takes more than this.timeout of seconds to solve the formula
+	 * @see Solution
+	 * @see Options
+	 * @see Proof
 	 */
-	public Instance solve(Formula formula, Bounds bounds) throws kodkod.engine.TimeoutException {
-		
+	public Solution solve(Formula formula, Bounds bounds) throws kodkod.engine.TimeoutException {
+		long startTransl = System.currentTimeMillis(), endTransl;
 		try {
-//			System.out.println("translating...");
 			final Translation translation = Translator.translate(formula, bounds, options);
-		
-//			System.out.println("p cnf " + translation.cnf().numberOfVariables() + " " + translation.cnf().numberOfClauses());
-//			System.out.println("solving...");
-			if (translation.cnf().solve()) {
-				return padInstance(translation.interpret(), bounds);
-			}
+			endTransl = System.currentTimeMillis();
 			
+			final SATSolver cnf = translation.cnf();
+			
+			final long startSolve = System.currentTimeMillis();
+			final boolean isSat = cnf.solve();
+			final long endSolve = System.currentTimeMillis();
+			
+			final Statistics stats = 
+				new Statistics(cnf.numberOfVariables(), translation.numberOfPrimaryVariables(), 
+						       cnf.numberOfClauses(), endTransl-startTransl, endSolve-startSolve);
+
+			if (isSat) {
+				return new Solution(Solution.Outcome.SATISFIABLE, stats,
+							        padInstance(translation.interpret(), bounds),
+							        null, null);
+			} else {
+				return new Solution(Solution.Outcome.UNSATISFIABLE, stats,
+								    null, null, new Proof(cnf, translation.variableUsage()));
+			}
+
 		} catch (TrivialFormulaException trivial) {
+			endTransl = System.currentTimeMillis();
+			final Statistics stats = new Statistics(0,0,0,endTransl-startTransl,0);
 			if (trivial.formulaValue().booleanValue()) {
-				return padInstance(toInstance(trivial.bounds()), bounds);
-			} 
+				return new Solution(Solution.Outcome.TRIVIALLY_SATISFIABLE, stats,
+								    padInstance(toInstance(trivial.bounds()), bounds), 
+								    trivial.reduction(), null);
+			} else {
+				return new Solution(Solution.Outcome.TRIVIALLY_UNSATISFIABLE, stats,
+					    	            null, trivial.reduction(), null);
+			}
 		}
-		
-		return null;
 	}
 	
 	public String toString() {

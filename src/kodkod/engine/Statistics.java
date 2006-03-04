@@ -93,10 +93,10 @@ public final class Statistics {
 		ret.append("\n");
 		ret.append("translation time: ");
 		ret.append(translation);
-		ret.append("\n");
+		ret.append(" ms\n");
 		ret.append("solving time: ");
 		ret.append(solving);
-		ret.append("\n");
+		ret.append(" ms\n");
 		return ret.toString();
 	}
 }

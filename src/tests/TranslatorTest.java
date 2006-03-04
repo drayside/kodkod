@@ -90,7 +90,7 @@ public class TranslatorTest extends TestCase {
 	
 	private Instance solve(Formula formula) {
 		try {
-			return solver.solve(formula, bounds);
+			return solver.solve(formula, bounds).instance();
 		} catch (TimeoutException te) {
 			fail("Timed out solving " + formula);
 			return null;
@@ -358,7 +358,7 @@ public class TranslatorTest extends TestCase {
 		final Formula f = i0.one().and(mutant.one()).and(expr1.eq(expr2).not());
 		
 		try {
-			final Instance instance = solver.solve(f, b);
+			final Instance instance = solver.solve(f, b).instance();
 			assertNotNull(instance);
 			
 //			System.out.println(instance);

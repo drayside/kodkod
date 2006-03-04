@@ -54,7 +54,7 @@ public class SkolemizationTest extends TestCase {
 	
 	private Instance solve(Formula formula) {
 		try {
-			return solver.solve(formula, bounds);
+			return solver.solve(formula, bounds).instance();
 		} catch (TimeoutException te) {
 			fail("Timed out solving " + formula);
 			return null;

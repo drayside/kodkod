@@ -7,11 +7,11 @@ import kodkod.ast.Expression;
 import kodkod.ast.Formula;
 import kodkod.ast.Relation;
 import kodkod.ast.Variable;
+import kodkod.engine.Solution;
 import kodkod.engine.Solver;
 import kodkod.engine.TimeoutException;
 import kodkod.engine.satlab.SATFactory;
 import kodkod.instance.Bounds;
-import kodkod.instance.Instance;
 import kodkod.instance.TupleFactory;
 import kodkod.instance.TupleSet;
 import kodkod.instance.Universe;
@@ -339,7 +339,7 @@ public class Netconfig {
 		solver.options().setSolver(SATFactory.ZChaff);
 		try {
 			final Formula show = model.show();
-			final Instance sol = solver.solve(show, model.bounds(Integer.parseInt(args[0]),Integer.parseInt(args[1]),Integer.parseInt(args[2]),Integer.parseInt(args[3])));
+			final Solution sol = solver.solve(show, model.bounds(Integer.parseInt(args[0]),Integer.parseInt(args[1]),Integer.parseInt(args[2]),Integer.parseInt(args[3])));
 //			System.out.println(show);
 			//System.out.println("p cnf " + (solver.numberOfIntermediateVariables()+solver.numberOfPrimaryVariables()) + " " + solver.numberOfClauses());
 			System.out.println(sol);
