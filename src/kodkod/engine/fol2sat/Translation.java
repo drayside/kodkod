@@ -2,6 +2,7 @@ package kodkod.engine.fol2sat;
 
 import java.util.Map;
 
+import kodkod.ast.Decl;
 import kodkod.ast.Node;
 import kodkod.ast.Relation;
 import kodkod.engine.satlab.SATSolver;
@@ -31,19 +32,21 @@ public final class Translation {
 	private final Map<Node, IntSet> varUsage; 
 	private final int maxPrimaryLit;
 	private final boolean trackedVars;
+	private final Map<Decl, Relation> skolems;
 	
 	/**
-	 * Constructs a new Translation object for the given solver, bounds, and mapping
-	 * from Nodes to literals.
+	 * Constructs a new Translation object for the given solver, bounds, mapping
+	 * from Nodes to literals, and skolems.
 	 * @requires trackedVars should be true if variable tracking was enabled during translation;
 	 * otherwise it should be false
 	 * @requires maxPrimaryLit = max(varUsage[Relation].max)
 	 * @requires bounds.relations in varUsage.IntSet
 	 * @effects this.solver' = solver && this.bounds' = bounds
 	 */
-	Translation(SATSolver solver, Bounds bounds, Map<Node, IntSet> varUsage, int maxPrimaryLit, boolean trackedVars) {	
+	Translation(SATSolver solver, Bounds bounds, Map<Decl, Relation> skolems, Map<Node, IntSet> varUsage, int maxPrimaryLit, boolean trackedVars) {	
 		this.solver = solver;
 		this.bounds = bounds;
+		this.skolems = skolems;
 		this.varUsage = varUsage;
 		this.maxPrimaryLit = maxPrimaryLit;
 		this.trackedVars = trackedVars;
@@ -123,5 +126,17 @@ public final class Translation {
 	 */
 	public Map<Node, IntSet> variableUsage() {
 		return trackedVars ? varUsage : null;
+	}
+	
+	/**
+	 * If this.options.skolemize is true, returns a 
+	 * mapping from this.formula's existentially quantified
+	 * declarations to their corresponding skolem constants.  
+	 * Otherwise returns null.
+	 * @return a mapping from this.formula.^children & Decl to
+	 * their corresponding skolem constants.
+	 */
+	public Map<Decl, Relation> skolems() {
+		return skolems;
 	}
 }

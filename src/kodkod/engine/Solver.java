@@ -123,10 +123,12 @@ public final class Solver {
 
 			if (isSat) {
 				return new Solution(Solution.Outcome.SATISFIABLE, stats,
+									translation.skolems(),
 							        padInstance(translation.interpret(), bounds),
 							        null, null);
 			} else {
 				return new Solution(Solution.Outcome.UNSATISFIABLE, stats,
+									translation.skolems(),
 								    null, null, new Proof(cnf, translation.variableUsage()));
 			}
 
@@ -135,11 +137,12 @@ public final class Solver {
 			final Statistics stats = new Statistics(0,0,0,endTransl-startTransl,0);
 			if (trivial.formulaValue().booleanValue()) {
 				return new Solution(Solution.Outcome.TRIVIALLY_SATISFIABLE, stats,
+									trivial.skolems(),
 								    padInstance(toInstance(trivial.bounds()), bounds), 
 								    trivial.reduction(), null);
 			} else {
 				return new Solution(Solution.Outcome.TRIVIALLY_UNSATISFIABLE, stats,
-					    	            null, trivial.reduction(), null);
+					    	            trivial.skolems(), null, trivial.reduction(), null);
 			}
 		}
 	}

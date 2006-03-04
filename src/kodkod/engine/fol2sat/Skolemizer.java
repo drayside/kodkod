@@ -7,6 +7,7 @@ import static kodkod.ast.BinaryFormula.Operator.OR;
 import static kodkod.ast.QuantifiedFormula.Quantifier.ALL;
 import static kodkod.ast.QuantifiedFormula.Quantifier.SOME;
 
+import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -69,18 +70,52 @@ final class Skolemizer {
 	 * @throws IllegalArgumentException - some Relation & this.formula.^children - bounds.relations
 	 * @throws UnsupportedOperationException - sharedNodes or bounds are unmodifiable
 	 */
-	static Formula skolemize(Formula formula, Set<Node> sharedNodes, Bounds bounds) {
-		Formula ret;
+	@SuppressWarnings("unchecked")
+	static SkolemizedFormula skolemize(Formula formula, Set<Node> sharedNodes, Bounds bounds) {
+		
 		final EQFDetector detector = new EQFDetector(sharedNodes);
 		formula.accept(detector);
 		if (detector.formulas.isEmpty()) {
-			ret = formula;
+			return new SkolemizedFormula(formula, Collections.EMPTY_MAP);
 		} else {
 			final EQFReplacer replacer = new EQFReplacer(detector.formulas, bounds, sharedNodes);
-			ret = formula.accept(replacer);
-			ret = ret.and(replacer.skolemFormula);
+			final Formula ret = formula.accept(replacer);
+			return new SkolemizedFormula(ret.and(replacer.skolemFormula), replacer.skolems);
 		}
-		return ret;
+	}
+	
+	/**
+	 * Stores the results of the {@link Skolemizer#skolemize(Formula, Set, Bounds)}
+	 * method:  the skolemized formula and the generated skolem constants.
+	 * @specfield originalFormula: Formula 
+	 */
+	static final class SkolemizedFormula {
+		private final Formula formula;
+		private final Map<Decl, Relation> skolems;
+		private SkolemizedFormula(Formula formula, Map<Decl, Relation> skolems) {
+			this.formula = formula;
+			this.skolems = Collections.unmodifiableMap(skolems);
+		}
+		
+		/**
+		 * Returns the skolemized version of this.originalFormula.
+		 * @return the skolemized version of this.originalFormula.
+		 */
+		Formula formula() {
+			return formula;
+		}
+		
+		/**
+		 * Returns a map from the existentially quantified declarations
+		 * in this.original formula to their corresponding skolem
+		 * constants.
+		 * @return a mapping from the existentially quantified declarations
+		 * in this.original formula to their corresponding skolem
+		 * constants.
+		 */
+		Map<Decl, Relation> skolems() {
+			return skolems;
+		}
 	}
 	
 	/**
@@ -111,6 +146,9 @@ final class Skolemizer {
 		 * for each decl->r in this.skolems, the conjunction contains the formula
 		 * 'r in decl.expression and one r'  */
 		Formula skolemFormula;
+		/* the mapping from skolemized declarations to their corresponding
+		 * skolem constants */
+		final Map<Decl, Relation> skolems;
 		
 		/**
 		 * Constructs a new EQFReplacer.  This replacer should only be applied to
@@ -123,6 +161,7 @@ final class Skolemizer {
 		EQFReplacer(Set<QuantifiedFormula> eqfs, Bounds bounds, Set<Node> sharedNodes) {
 			this.eqfs = eqfs;
 			this.allocator = new BooleanConstantAllocator.Overapproximating(bounds);
+			this.skolems = new IdentityHashMap<Decl, Relation>(eqfs.size());
 			this.skolemFormula = Formula.TRUE;
 			this.cache = new IdentityHashMap<Node,Node>(sharedNodes.size());
 			for(Node n: sharedNodes) {
@@ -243,6 +282,7 @@ final class Skolemizer {
 			}
 			allocator.bounds().bound(skolem, universe.factory().setOf(1, tuples));
 			skolemFormula = skolemFormula.and(skolem.in(decl.expression()).and(skolem.one()));
+			skolems.put(decl, skolem);
 		}
 		
 		/** 

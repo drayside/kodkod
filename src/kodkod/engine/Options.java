@@ -193,6 +193,14 @@ public final class Options {
 	}
 	
 	/**
+	 * Sets function encoding flag to the given value.
+	 * @effects this.logEncodeFunctions' = logEncodeFunctions
+	 */
+	public void setLogEncodeFunctions(boolean logEncondeFunctions) {
+		this.logEncodeFunctions = logEncondeFunctions;
+	}
+	
+	/**
 	 * Returns true if a mapping from non-leaf nodes to boolean variables that
 	 * represent them should be generated during translation.  This is useful
 	 * for determining which formulas/expressions occur in the unsat core of an 

@@ -11,6 +11,7 @@ import java.util.Set;
 
 import kodkod.ast.BinaryFormula;
 import kodkod.ast.ComparisonFormula;
+import kodkod.ast.Decl;
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
 import kodkod.ast.MultiplicityFormula;
@@ -57,9 +58,13 @@ public final class Translator {
 		bounds = bounds.copy();
 		Set<IntSet> symmetricParts = BoundsOptimizer.optimize(bounds, notes.relations(), 
 					                                          notes.topLevelOrders(), notes.topLevelAcyclics());
-		
+		final Map<Decl, Relation> skolems;
 		if (options.skolemize()) {
-			formula = Skolemizer.skolemize(formula, notes.sharedNodes(), bounds);
+			Skolemizer.SkolemizedFormula sf = Skolemizer.skolemize(formula, notes.sharedNodes(), bounds);
+			formula = sf.formula();
+			skolems = sf.skolems();
+		} else {
+			skolems = null;
 		}
 		
 		BooleanVariableAllocator allocator = new BooleanVariableAllocator(bounds, notes.topLevelFunctions());
@@ -73,14 +78,14 @@ public final class Translator {
 			circuit = acircuit.translation();
 			if (circuit==BooleanConstant.TRUE || circuit==BooleanConstant.FALSE) {
 				throw new TrivialFormulaException(Reducer.reduce(formula, acircuit, notes), 
-						                         (BooleanConstant)circuit, bounds);
+						                         (BooleanConstant)circuit, bounds, skolems);
 			}
 			varUsage = new IdentityHashMap<Node, IntSet>(allocator.allocationMap().size() + acircuit.variableUsage().size());
 			varUsage.putAll(acircuit.variableUsage());
 		} else {
 			circuit = Fol2BoolTranslator.translate(formula, notes.sharedNodes(), allocator);
 			if (circuit==BooleanConstant.TRUE || circuit==BooleanConstant.FALSE) {
-				throw new TrivialFormulaException(formula, (BooleanConstant)circuit, bounds);
+				throw new TrivialFormulaException(formula, (BooleanConstant)circuit, bounds, skolems);
 			}
 			varUsage = new IdentityHashMap<Node, IntSet>(allocator.allocationMap().size());
 		}
@@ -105,13 +110,13 @@ public final class Translator {
 		}
 		
 		if (circuit==BooleanConstant.TRUE || circuit==BooleanConstant.FALSE) {
-			throw new TrivialFormulaException(formula, (BooleanConstant)circuit, bounds);
+			throw new TrivialFormulaException(formula, (BooleanConstant)circuit, bounds, skolems);
 		}
 
 		final SATSolver cnf = Bool2CnfTranslator.translate(circuit, options.solver(), numPrimaryVariables);
 		cnf.setTimeout(options.timeout());
 		
-		return new Translation(cnf, bounds, Collections.unmodifiableMap(varUsage), numPrimaryVariables, options.trackVars());
+		return new Translation(cnf, bounds, skolems, Collections.unmodifiableMap(varUsage), numPrimaryVariables, options.trackVars());
 	}
 	
 	/**
@@ -172,6 +177,17 @@ public final class Translator {
 			}
 		}
 		
+		private static <T extends RelationPredicate> 
+			Formula predicates(Set<Relation> rels, Set<T> formulaPreds,
+					           Set<T> reducedPreds) {
+			Formula ret = Formula.TRUE;
+			for(T p: formulaPreds) {
+				if (!reducedPreds.contains(p) && rels.contains(p.relation()))
+					ret = ret.and(p);
+			}
+		    return ret;
+		}
+				 
 		/**
 		 * Reduces the given formula to the subformula that causes it to simplify
 		 * to a constant.
@@ -184,7 +200,10 @@ public final class Translator {
 				              NodeAnalyzer.FormulaAnnotations notes) {
 			final Reducer r = new Reducer(reducible, acircuit, notes );
 			Formula reduced = reducible.accept(r);
-			if (reduced != reducible && !notes.topLevelOrders().isEmpty()) {
+			if (reduced != reducible && 
+					(!notes.topLevelOrders().isEmpty()
+					|| !notes.topLevelAcyclics().isEmpty() || 
+					!notes.topLevelFunctions().isEmpty())) {
 				final NodeAnalyzer.FormulaAnnotations rnotes = NodeAnalyzer.annotate(reduced);
 				final Set<Relation> rrels = rnotes.relations();
 				final Set<RelationPredicate.TotalOrdering> rords = rnotes.topLevelOrders();
@@ -194,6 +213,8 @@ public final class Translator {
 						 rrels.contains(p.last()) || rrels.contains(p.ordered())))
 						reduced = reduced.and(p);
 				}
+				reduced = reduced.and(predicates(rrels, notes.topLevelAcyclics(), rnotes.topLevelAcyclics()));
+				reduced = reduced.and(predicates(rrels, notes.topLevelFunctions(), rnotes.topLevelFunctions()));
 			}
 			return reduced;
 		}

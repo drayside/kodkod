@@ -16,6 +16,7 @@ public class AllTests {
 		suite.addTestSuite(SkolemizationTest.class);
 		suite.addTestSuite(ModelsTest.class);
 		suite.addTestSuite(BugTests.class);
+		suite.addTestSuite(ReductionAndProofTest.class);
 		//$JUnit-END$
 		return suite;
 	}

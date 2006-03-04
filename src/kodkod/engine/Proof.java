@@ -2,6 +2,7 @@ package kodkod.engine;
 
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 import kodkod.ast.Node;
 import kodkod.engine.satlab.SATSolver;
@@ -134,7 +135,7 @@ public final class Proof {
 	 * Note that the returned set will contain only positive integers;
 	 * the presence of a negative integer in a clause indicates that
 	 * its corresponding variable is negated in that clause.
-	 * @requires node in this.formula.*children 
+	 * @requires node in this.trackedNodes()
 	 * @return the set of CNF variables allocated to the given node
 	 * during the translation of this.formula
 	 * @throws UnsupportedOperationException - the {@link Options options} 
@@ -150,5 +151,25 @@ public final class Proof {
 		return ret==null ? Ints.EMPTY_SET : ret;
 	}
 	
+	/**
+	 * Returns the set of all descdents of this.formula that did 
+	 * not reduce to a constant value during translation, <i>
+	 * provided the {@link Options options} 
+	 * with which the {@link Solver solver}
+	 * was invoked specified that variables be tracked </i>
+	 * @return the set of all descdents of this.formula that did 
+	 * not reduce to a constant value during translation.  <b>The 
+	 * returned set tests for containment using reference equality.</b>
+	 * @throws UnsupportedOperationException - the {@link Options options} 
+	 * with which the {@link Solver solver}
+	 * was invoked did not specify that variables be tracked 
+	 * (see {@link Options#setTrackVars(boolean)} and
+	 * {@link Options#trackVars()}).
+	 */
+	public Set<Node> trackedNodes() {
+		if (node2vars==null)
+			throw new UnsupportedOperationException("variable tracking not enabled during translation.");
+		return node2vars.keySet();
+	}
 	
 }

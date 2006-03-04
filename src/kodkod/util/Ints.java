@@ -239,7 +239,7 @@ public final class Ints {
 				int cursor = ascending ? StrictMath.max(range.min(), from) : StrictMath.min(range.max(), from);
 				final int end = ascending ? StrictMath.min(range.max(), to) : StrictMath.max(range.min(), to);
 				public boolean hasNext() {
-					return ascending && cursor<=end || cursor >= end;
+					return ascending && cursor<=end || !ascending && cursor >= end;
 				}
 				public int nextInt() {
 					if (!hasNext()) throw new NoSuchElementException();

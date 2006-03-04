@@ -1,7 +1,11 @@
 package kodkod.engine;
 
 
+import java.util.Map;
+
+import kodkod.ast.Decl;
 import kodkod.ast.Formula;
+import kodkod.ast.Relation;
 import kodkod.instance.Instance;
 
 /**
@@ -19,6 +23,7 @@ public final class Solution {
 	private final Instance instance;
 	private final Formula reduction;
 	private final Proof proof;
+	private final Map<Decl, Relation> skolems;
 	
 	/**
 	 * Constructs a Solution from the given values.
@@ -28,13 +33,14 @@ public final class Solution {
 	 *           outcome = TRIVIALLY_SATISFIABLE => instance != null && reduction != null,
 	 *           outcome = TRIVIALLY_UNSATISFIABLE => reduction != null
 	 */
-	Solution(Outcome outcome, Statistics stats, Instance instance, Formula reduction, Proof proof) {
+	Solution(Outcome outcome, Statistics stats, Map<Decl, Relation> skolems, Instance instance, Formula reduction, Proof proof) {
 		assert outcome != null && stats != null;
 		this.outcome = outcome;
 		this.stats = stats;
 		this.instance = instance;
 		this.reduction = reduction;
 		this.proof = proof;
+		this.skolems = skolems;
 	}
 	
 	/**
@@ -101,6 +107,26 @@ public final class Solution {
 	 */
 	public Proof proof() {
 		return proof;
+	}
+	
+	/**
+	 * Returns a mapping from this.formula's existentially quantified
+	 * declarations to their corresponding skolem constants, 
+	 * <i>provided that the {@link Options options} 
+	 * with which the {@link Solver solver}
+	 * was invoked had its skolemization flag set to true</i>.  
+	 * Otherwise throws an UnsupportedOperationException.
+	 * @return a mapping from this.formula.^children & Decl to
+	 * their corresponding skolem constants.  <b>The returned map
+	 * tests for containment using reference equality</b>.
+	 * @throws UnsupportedOperationException - the {@link Options options} 
+	 * with which the {@link Solver solver}
+	 * was invoked had its skolemization flag set to false.
+	 */
+	public Map<Decl, Relation> skolems() {
+		if (skolems==null)
+			throw new UnsupportedOperationException("skolemization not performed");
+		return skolems;
 	}
 	
 	/**
