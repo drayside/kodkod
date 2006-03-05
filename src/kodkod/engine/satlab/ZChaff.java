@@ -261,7 +261,7 @@ final class ZChaff implements SATSolver {
 	
 	/*----------------the native methods that call zchaff and the associated constants----------------*/
 	static {
-	    System.load("/Users/emina/Documents/workspace3.1/relations/zchaff_withcore/zchaffJNI.jnilib");
+	    System.loadLibrary("zchaffJNI");
 	}
 	
 	private static final int	 UNDETERMINED = 0, UNSATISFIABLE = 1, SATISFIABLE = 2,
