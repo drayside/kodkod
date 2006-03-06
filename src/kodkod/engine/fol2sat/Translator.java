@@ -54,12 +54,14 @@ public final class Translator {
 	 *                                   relation not mapped by the given bounds.
 	 */
 	public static Translation translate(Formula formula, Bounds bounds, Options options) throws TrivialFormulaException {
+//		System.out.println("analyzing structure...");
 		NodeAnalyzer.FormulaAnnotations notes = NodeAnalyzer.annotate(formula);
 		bounds = bounds.copy();
 		Set<IntSet> symmetricParts = BoundsOptimizer.optimize(bounds, notes.relations(), 
 					                                          notes.topLevelOrders(), notes.topLevelAcyclics());
 		final Map<Decl, Relation> skolems;
 		if (options.skolemize()) {
+//			System.out.println("skolemizing...");
 			Skolemizer.SkolemizedFormula sf = Skolemizer.skolemize(formula, notes.sharedNodes(), bounds);
 			formula = sf.formula();
 			skolems = sf.skolems();
@@ -71,6 +73,7 @@ public final class Translator {
 		BooleanFactory factory = allocator.factory();
 		final int numPrimaryVariables = factory.maxVariableLiteral();
 		
+//		System.out.println("translating to sat...");
 		final Map<Node, IntSet> varUsage;
 		BooleanValue circuit;
 		if (options.trackVars()) {
@@ -95,12 +98,14 @@ public final class Translator {
 		for(Map.Entry<Relation, IntRange> e: allocator.allocationMap().entrySet()) {
 			varUsage.put(e.getKey(), Ints.rangeSet(e.getValue()));
 		}
-
+		
+//		System.out.println("breaking symmetry...");
 		circuit = factory.and(circuit, SymmetryBreaker.generateSBP(symmetricParts, allocator, options));
 		
 		allocator = null; symmetricParts = null; // release the allocator and symmetric partitions
 		
 		if (options.flatten()) {
+//			System.out.println("flattening...");
 			// remove everything but the variables from the factory
 			factory.clear(numPrimaryVariables);
 			circuit = BooleanFormulaFlattener.flatten(circuit, factory);
@@ -112,7 +117,8 @@ public final class Translator {
 		if (circuit==BooleanConstant.TRUE || circuit==BooleanConstant.FALSE) {
 			throw new TrivialFormulaException(formula, (BooleanConstant)circuit, bounds, skolems);
 		}
-
+		
+//		System.out.println("translating to cnf...");
 		final SATSolver cnf = Bool2CnfTranslator.translate(circuit, options.solver(), numPrimaryVariables);
 		cnf.setTimeout(options.timeout());
 		

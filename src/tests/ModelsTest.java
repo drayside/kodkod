@@ -7,6 +7,7 @@ import junit.framework.TestCase;
 import kodkod.ast.Formula;
 import kodkod.ast.Relation;
 import kodkod.ast.Variable;
+import kodkod.engine.Solution;
 import kodkod.engine.Solver;
 import kodkod.engine.TimeoutException;
 import kodkod.instance.Bounds;
@@ -21,7 +22,7 @@ public class ModelsTest extends TestCase {
 	public ModelsTest(String arg0) {
 		super(arg0);
 		this.solver = new Solver();
-//		this.solver.options().setSolver(SATFactory.ZChaff);
+		//this.solver.options().setSolver(SATFactory.ZChaff);
 		
 	}
 
@@ -35,14 +36,16 @@ public class ModelsTest extends TestCase {
 	
 	private Instance solve(Formula formula, Bounds bounds) {
 		try {
-			return solver.solve(formula, bounds).instance();
+			Solution sol = solver.solve(formula, bounds);
+			System.out.println(sol);
+			return sol.instance();
 		} catch (TimeoutException te) {
 			fail("Timed out solving " + formula);
 			return null;
 		}
 	}
 	
-	private Bounds ceilingsAndFloorsInstance(Relation platform, int platformScope, 
+	private Bounds ceilingsAndFloorsBounds(Relation platform, int platformScope, 
 			                                   Relation man, int manScope, Relation ceiling, Relation floor) {
 		final List<String> atoms = new LinkedList<String>();
 		for (int i = 0; i < manScope; i++) {
@@ -87,7 +90,7 @@ public class ModelsTest extends TestCase {
 		
 		final Formula model = fieldConstraints.and(paulSimon);
 		
-		Bounds bounds = ceilingsAndFloorsInstance(platform,2, man, 2,ceiling,floor);
+		Bounds bounds = ceilingsAndFloorsBounds(platform,2, man, 2,ceiling,floor);
 		
 		//System.out.println(solve(model.and(belowToo.not()), bounds));
 		assertNotNull(solve(model.and(belowToo.not()), bounds));
@@ -95,7 +98,7 @@ public class ModelsTest extends TestCase {
 		// all m : Man | m.ceiling != m.floor
 		final Formula geometry = (m.join(ceiling).eq(m.join(floor)).not()).forAll(m.oneOf(man));
 		
-		bounds = ceilingsAndFloorsInstance(platform, 3, man, 3, ceiling, floor);
+		bounds = ceilingsAndFloorsBounds(platform, 3, man, 3, ceiling, floor);
 		
 //		System.out.println(solve(((model.and(geometry)).implies(belowToo)).not(), bounds));
 		assertNotNull(solve(((model.and(geometry)).implies(belowToo)).not(), bounds));
@@ -104,10 +107,7 @@ public class ModelsTest extends TestCase {
 		final Formula body = (m.join(floor).eq(n.join(floor))).or(m.join(ceiling).eq(n.join(ceiling)));
 		final Formula noSharing = (m.eq(n).not().implies(body.not())).forAll(m.oneOf(man).and(n.oneOf(man)));
 		
-		bounds = ceilingsAndFloorsInstance(platform, 4, man, 4, ceiling, floor);
+		bounds = ceilingsAndFloorsBounds(platform, 4, man, 4, ceiling, floor);
 		assertNull(solve(((model.and(noSharing)).implies(belowToo)).not(), bounds));
-//		System.out.println(solve(((model.and(noSharing)).implies(belowToo)).not(), bounds));
-//		System.out.println(solve(model.and(noSharing).and(belowToo.not()), bounds));
-//		System.out.println((solver.numberOfPrimaryVariables() +  solver.numberOfIntermediateVariables()) + " " + solver.numberOfClauses());
 	}
 }

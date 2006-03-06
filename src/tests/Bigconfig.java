@@ -150,14 +150,15 @@ public class Bigconfig {
 	
 	/**
 	 * Returns a bounds object that constructs the 'scope' for analyzing
-	 * the commands, using the given values for the number of sites
+	 * the commands, using the given values for the number of sub sites
 	 * and headquarters.  The number of Routers is taken to be the same
-	 * as the number of sites.
-	 * @requires all arguments are positive and hqNum <= siteNum
+	 * as the total number of sites.
+	 * @requires all arguments are positive
 	 * @return a bounds for the model
 	 */
-	Bounds bounds(int siteNum, int hqNum) {
-		assert siteNum > 0 && hqNum > 0 && hqNum <= siteNum;
+	Bounds bounds(int hqNum, int subNum) {
+		assert subNum > 0 && hqNum > 0;
+		final int siteNum = hqNum + subNum;
 		final List<String> atoms = new ArrayList<String>(siteNum*2);
 		for(int i = 0; i < siteNum; i++) {
 			atoms.add("Site"+i);
@@ -177,18 +178,16 @@ public class Bigconfig {
 		final String router0 = "Router0";
 		final String routerN = "Router" + (siteNum-1);
 
-		b.boundExactly(Site, f.range(f.tuple(site0), f.tuple(siteN)));
+		final TupleSet sites = f.range(f.tuple(site0), f.tuple(siteN));
+		b.boundExactly(Site, sites);
 		b.boundExactly(HQ, f.range(f.tuple(site0), f.tuple(siteHQ)));
-		if (hqNum < siteNum) {
-			b.boundExactly(Sub, f.range(f.tuple(siteSub), f.tuple(siteN)));
-		} else {
-			b.bound(Sub, f.noneOf(1));
-		}
+		b.boundExactly(Sub, f.range(f.tuple(siteSub), f.tuple(siteN)));
+		
 		
 		final TupleSet routers = f.range(f.tuple(router0), f.tuple(routerN));
 		b.boundExactly(Router, routers);	
 		b.bound(link, routers.product(routers));
-		
+//		b.bound(site, routers.product(sites));
 		final TupleSet routerLocations = f.noneOf(2);
 		for(int i = 0; i < siteNum; i++) {
 			routerLocations.add(f.tuple("Router"+i, "Site"+i));
@@ -212,7 +211,7 @@ public class Bigconfig {
 			System.out.println("timed out.");
 			e.printStackTrace();
 		} catch (NumberFormatException nfe) {
-			System.out.println("Usage: java tests.Netconfig [# sites] [# hq]");
+			System.out.println("Usage: java tests.Bigconfig [# hq] [# sub]");
 		}
 	}
 }
