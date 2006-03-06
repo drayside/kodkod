@@ -443,20 +443,20 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 			return copy();
 		
 		BooleanMatrix ret = this;
-		
-//		for(int min = cells.first().index() / dimensions.dimension(0),
-//				max = cells.last().index() / dimensions.dimension(0),
-//				i = min; i <= max; i++) {
-//			ret = ret.compose(OR, ret.dot(ret));
-//		}
-		
+	
+		// compute the number of rows in the matrix
+		int rowNum = 0;
 		final int rowFactor = dimensions.dimension(1);
-		
 		for(IndexedEntry<BooleanValue> rowLead = cells.first(); 
 		    rowLead != null; rowLead = cells.ceil(((rowLead.index()/rowFactor) + 1) * rowFactor)) {
+			rowNum++; //ret = ret.compose(OR, ret.dot(ret));
+		}	
+		
+		// compute closure using iterative squaring
+		for(int i = 1; i < rowNum; i*=2) {
 			ret = ret.compose(OR, ret.dot(ret));
 		}
-			
+		
 		return ret;
 	}
 	
