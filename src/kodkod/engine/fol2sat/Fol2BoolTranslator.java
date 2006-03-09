@@ -351,7 +351,10 @@ final class Fol2BoolTranslator {
 			final BooleanMatrix ret;
 			final int univSize = allocator.universe().size();
 			if (constExpr==Expression.UNIV) {
-				ret= allocator.factory().matrix(Dimensions.square(1, univSize), TRUE);
+				ret= allocator.factory().matrix(Dimensions.square(1, univSize), FALSE);
+				for(int i = 0; i < univSize; i++) {
+					ret.set(i, TRUE);
+				}
 			} else if (constExpr==Expression.IDEN) {
 				final Dimensions dim2 = Dimensions.square(2, univSize);
 				ret = allocator.factory().matrix(dim2, FALSE);
