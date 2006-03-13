@@ -92,7 +92,8 @@ public final class Translator {
 			}
 			varUsage = new IdentityHashMap<Node, IntSet>(allocator.allocationMap().size());
 		}
-		
+		//System.out.println(circuit);
+		//System.out.println(allocator.allocationMap());
 		notes = null; // release structural information
 		
 		for(Map.Entry<Relation, IntRange> e: allocator.allocationMap().entrySet()) {

@@ -122,11 +122,10 @@ public final class Toughnut {
 		final Toughnut nut = new Toughnut();
 		final Solver solver = new Solver();
 		solver.options().setSolver(SATFactory.ZChaff);
-		
 		final Formula covering = nut.covering();
 		final Bounds bounds = nut.board(n);
 		
-		System.out.println(covering);
+		//System.out.println(covering);
 		//System.out.println(bounds);
 		
 		try {
