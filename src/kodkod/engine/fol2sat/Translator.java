@@ -59,6 +59,8 @@ public final class Translator {
 		bounds = bounds.copy();
 		Set<IntSet> symmetricParts = BoundsOptimizer.optimize(bounds, notes.relations(), 
 					                                          notes.topLevelOrders(), notes.topLevelAcyclics());
+//		System.out.println("Symmetry classes: " + symmetricParts);
+//		System.out.println(bounds);
 		final Map<Decl, Relation> skolems;
 		if (options.skolemize()) {
 //			System.out.println("skolemizing...");
@@ -92,8 +94,8 @@ public final class Translator {
 			}
 			varUsage = new IdentityHashMap<Node, IntSet>(allocator.allocationMap().size());
 		}
-		//System.out.println(circuit);
-		//System.out.println(allocator.allocationMap());
+	//	System.out.println(circuit);
+	//	System.out.println(allocator.allocationMap());
 		notes = null; // release structural information
 		
 		for(Map.Entry<Relation, IntRange> e: allocator.allocationMap().entrySet()) {
@@ -114,7 +116,7 @@ public final class Translator {
 			factory.clear(0);
 			factory = null;
 		}
-		
+		//System.out.println(circuit);
 		if (circuit==BooleanConstant.TRUE || circuit==BooleanConstant.FALSE) {
 			throw new TrivialFormulaException(formula, (BooleanConstant)circuit, bounds, skolems);
 		}

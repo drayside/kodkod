@@ -10,12 +10,12 @@ import kodkod.ast.Variable;
  * @author Emina Torlak
  */
 public final class Handshake {
-	private final Relation Person, Hilary, Jocelyn, shaken, spouse;
+	private final Relation Person, /*Hilary, Jocelyn,*/ shaken, spouse;
 	
 	Handshake() {
 		Person = Relation.unary("Person");
-		Hilary = Relation.unary("Hilary");
-		Jocelyn = Relation.unary("Jocelyn");
+//		Hilary = Relation.unary("Hilary");
+//		Jocelyn = Relation.unary("Jocelyn");
 		shaken = Relation.binary("shaken");
 		spouse = Relation.binary("spouse");
 	}
@@ -94,6 +94,7 @@ public final class Handshake {
 //	Formula puzzle() {
 //		final Variable p = Variable.unary("p");
 //		final Variable q = Variable.unary("q");
+//		
 //	}
 	
 }

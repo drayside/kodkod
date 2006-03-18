@@ -175,7 +175,7 @@ public class SymmetryBreakingTest extends TestCase {
 		assertNotNull(solve(ac2.join(r2).some().and(ac2.acyclic())));
 		
 		final TupleSet ac3Bound = factory.allOf(2);
-		ac3Bound.remove(factory.tuple("9", "8"));
+		ac3Bound.remove(factory.tuple("9", "9"));
 		bounds.bound(ac3, ac3Bound);
 		
 		assertNotNull(solve(ac1.difference(ac2).union(ac3).some().and(ac1.acyclic()).and(ac2.acyclic())));

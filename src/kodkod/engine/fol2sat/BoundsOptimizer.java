@@ -257,77 +257,87 @@ final class BoundsOptimizer {
 		
 		// refine the partitions based on the upper/lower bounds
 		// of each relation
+		final Map<IntSet, IntSet> range2domain = new HashMap<IntSet, IntSet>((usize*2) / 3);
 		for(Relation r : bounds.relations()) {
 			TupleSet lower = bounds.lowerBound(r);
 			TupleSet upper = bounds.upperBound(r);
-			refinePartitions(lower);
+			
+			refinePartitions(lower.indexView(), lower.arity(), range2domain);
 			if (!lower.equals(upper))
-				refinePartitions(upper);
+				refinePartitions(upper.indexView(), upper.arity(), range2domain);
+		
 		}
 
 	}
 	
 	/**
-	 * Refines the atomic partitions in this.parts based on the contents of the given tupleset. 
+	 * Refines the atomic partitions in this.parts based on the contents of the given tupleset, 
+	 * decomposed into its constituent IntSet and arity.  The range2domain map is used for 
+	 * intermediate computations for efficiency (to avoid allocating it in each recursive call). 
 	 * @requires all disj s, q: this.parts[int] | 
 	 *            some s.ints && some q.ints && (no s.ints & q.ints) &&
 	 *            this.parts[int].ints = [0..this.bounds.universe.size())
-	 * @effects  all disj s, q: this.parts'[int] | 
-	 *            some s.ints && some q.ints && (no s.ints & q.ints) &&
-	 *            this.parts'[int].ints = [0..this.bounds.universe.size()) &&
-	 *            all s: this.parts'[int] | all a1, a2: this.bounds.universe.atoms[s.ints] |
-	 *              all t1, t2: tupleSet.tuples | t1.atoms[0] = a1 && t2.atoms[0] = a2 =>
-	 *                t1.atoms[1..ts.arity) = t1.atoms[1..ts.arity) || 
-	 *                t1.atoms[1..ts.arity) = a1 && t1.atoms[1..ts.arity) = a2)
+	 * @effects  let usize = this.bounds.universe.size(), firstColFactor = usize^(arit-1) |
+	 *            all disj s, q: this.parts'[int] | 
+	 *             some s.ints && some q.ints && (no s.ints & q.ints) &&
+	 *             this.parts'[int].ints = [0..usize) &&
+	 *             all s: this.parts'[int] | all a1, a2: this.bounds.universe.atoms[s.ints] |
+	 *               all t1, t2: set.ints | t1 / firstColFactor = a1 && t2 / firstColFactor = a2 =>
+	 *                 t1 % firstColFactor = t2 % firstColFactor  || 
+	 *                 t1 = a1*((1 - firstColFactor) / (1 - usize)) && 
+	 *                 t2 = a2*((1 - firstColFactor) / (1 - usize)))
 	 */
-	private void refinePartitions(TupleSet tupleSet) {
-		IntSet tview = tupleSet.indexView();
-		final Map<IntSet, IntSet> range2domain = tupleSet.arity()==1 ? null : new HashMap<IntSet, IntSet>((usize*2) / 3);
-		for(int c = tupleSet.arity() - 1; c > 0; c--) {	
-			int firstColFactor = (int) StrictMath.pow(usize, c);
-			IntSet firstCol = Ints.bestSet(usize);
-			for(IntIterator rbIter = tview.iterator(); rbIter.hasNext(); ) {
-				firstCol.add(rbIter.nextInt() / firstColFactor);
-			}
-			refinePartitions(firstCol);
-			IntSet otherCols = Ints.bestSet(firstColFactor);
-			int idenFactor = usize==1 ? 1 : (1 - firstColFactor) / (1 - usize);
-			for(ListIterator<IntSet> partsIter = parts.listIterator(); partsIter.hasNext(); ) {
-				IntSet part = partsIter.next();
-				if (firstCol.contains(part.min())) { // contains one, contains them all
-					for(IntIterator atoms = part.iterator(); atoms.hasNext(); ) {
-						int atom = atoms.nextInt();
-						IntSet atomRange = Ints.bestSet(firstColFactor);
-						for(IntIterator rbIter = tview.iterator(atom*firstColFactor, (atom+1)*firstColFactor - 1); 
-						    rbIter.hasNext(); ) {
-							atomRange.add(rbIter.nextInt() % firstColFactor);
-						}
-						IntSet atomDomain = range2domain.get(atomRange);
-						if (atomDomain != null) atomDomain.add(atom);
-						else range2domain.put(atomRange, oneOf(usize, atom));
-					}
-					partsIter.remove();
-					IntSet idenPartition = Ints.bestSet(usize);
-					for(Iterator<Map.Entry<IntSet, IntSet>> entries = range2domain.entrySet().iterator(); entries.hasNext(); ) {
-						Map.Entry<IntSet, IntSet> entry = entries.next();
-						if (entry.getValue().size()==1 && entry.getKey().size()==1 &&
-							entry.getKey().min() == entry.getValue().min() * idenFactor) {
-							idenPartition.add(entry.getValue().min());
-						} else {
-							otherCols.addAll(entry.getKey());
-							partsIter.add(entry.getValue());
-						}
-						entries.remove();
-					}
-					if (!idenPartition.isEmpty())
-						partsIter.add(idenPartition);
-				}
-			}
-			tview = otherCols;
+	private void refinePartitions(IntSet set, int arity, Map<IntSet, IntSet> range2domain) {
+		if (arity==1) {
+			refinePartitions(set);
+			return;
 		}
-		// refine partitions using the final column of the upper bound of r
-		refinePartitions(tview);		
-	}	
+		
+		final List<IntSet> otherColumns = new LinkedList<IntSet>();
+		int firstColFactor = (int) StrictMath.pow(usize, arity-1);
+		IntSet firstCol = Ints.bestSet(usize);
+		for(IntIterator rbIter = set.iterator(); rbIter.hasNext(); ) {
+			firstCol.add(rbIter.nextInt() / firstColFactor);
+		}
+		refinePartitions(firstCol);
+		
+		int idenFactor = usize==1 ? 1 : (1 - firstColFactor) / (1 - usize);
+		for(ListIterator<IntSet> partsIter = parts.listIterator(); partsIter.hasNext(); ) {
+			IntSet part = partsIter.next();
+			if (firstCol.contains(part.min())) { // contains one, contains them all
+				range2domain.clear();
+				for(IntIterator atoms = part.iterator(); atoms.hasNext(); ) {
+					int atom = atoms.nextInt();
+					IntSet atomRange = Ints.bestSet(firstColFactor);
+					for(IntIterator rbIter = set.iterator(atom*firstColFactor, (atom+1)*firstColFactor - 1); 
+					rbIter.hasNext(); ) {
+						atomRange.add(rbIter.nextInt() % firstColFactor);
+					}
+					IntSet atomDomain = range2domain.get(atomRange);
+					if (atomDomain != null) atomDomain.add(atom);
+					else range2domain.put(atomRange, oneOf(usize, atom));
+				}
+				partsIter.remove();
+				IntSet idenPartition = Ints.bestSet(usize);
+				for(Map.Entry<IntSet, IntSet> entry : range2domain.entrySet()) {
+					if (entry.getValue().size()==1 && entry.getKey().size()==1 &&
+						entry.getKey().min() == entry.getValue().min() * idenFactor) {
+						idenPartition.add(entry.getValue().min());
+					} else {
+						partsIter.add(entry.getValue());
+						otherColumns.add(entry.getKey());
+					}
+				}
+				if (!idenPartition.isEmpty())
+					partsIter.add(idenPartition);			
+			}
+		}
+		
+		// refine based on the remaining columns
+		for(IntSet otherCol : otherColumns) {
+			refinePartitions(otherCol, arity-1, range2domain);
+		}
+	}
 	
 	/**
 	 * Refines the atomic partitions this.parts based on the contents of the given set.

@@ -14,6 +14,7 @@ import kodkod.engine.Evaluator;
 import kodkod.engine.Solution;
 import kodkod.engine.Solver;
 import kodkod.engine.TimeoutException;
+import kodkod.engine.satlab.SATFactory;
 import kodkod.instance.Bounds;
 import kodkod.instance.Instance;
 import kodkod.instance.Tuple;
@@ -39,6 +40,148 @@ public class BugTests extends TestCase {
 //			System.out.println(e); 
 //	}
 	
+	public final void testVincent_03182006_reduced() {
+		final Relation pCourses = Relation.binary("pCourses"),
+		prereqs = Relation.binary("prereqs");
+		final List<String> atoms = new ArrayList<String>(14);
+		atoms.add("6.002");
+		atoms.add("8.02");
+		atoms.add("6.003");
+		atoms.add("6.001");
+		atoms.add("[8.02]");
+		atoms.add("[6.001]");
+		atoms.add("[]");
+		final Universe u = new Universe(atoms);
+		final Bounds b = new Bounds(u);
+		final TupleFactory f = u.factory();
+		
+		
+		b.bound(pCourses, f.setOf(f.tuple("[8.02]", "8.02"), f.tuple("[6.001]", "6.001")));
+		
+		b.bound(prereqs, f.setOf(f.tuple("6.002", "[8.02]"), f.tuple("8.02", "[]"), 
+				f.tuple("6.003", "[6.001]"), f.tuple("6.001", "[]")));
+		
+		try {
+//			System.out.println(u);
+			solver.options().setSolver(SATFactory.DefaultSAT4J);
+			Solution solution = solver.solve((pCourses.some()).and(prereqs.some()), b);		
+//	        System.out.println(solution); // SATISFIABLE
+	        assertEquals(solution.outcome(), Solution.Outcome.SATISFIABLE);
+	        
+		} catch (TimeoutException e2) {
+			// TODO Auto-generated catch block
+			e2.printStackTrace();
+		}
+	}
+	
+	public final void testVincent_03182006() { 
+		final Relation cAttributes = Relation.binary("cAttributes"),
+		               Int = Relation.unary("Integer"), c6001 = Relation.unary("6.001"),
+		               one = Relation.unary("ONE"), prereqsetUsed = Relation.binary("prereqsetUsed"),
+		               Course = Relation.unary("Course"), CardinalityGrouping = Relation.unary("CardinalityGrouping"),
+		               pCourses = Relation.binary("pCourses"), dec = Relation.binary("dec"),
+		               c6002 = Relation.unary("6.002"), greater = Relation.binary("greater"),
+		               size = Relation.binary("size"), less = Relation.binary("less"),
+		               sAttributes = Relation.binary("sAttributes"), PrereqSet = Relation.unary("PrereqSet"),
+		               inc = Relation.binary("inc"), next = Relation.binary("next"), equal = Relation.binary("equal"),
+		               Semester = Relation.unary("Semester"), index = Relation.ternary("index"),
+		               sCourses = Relation.binary("sCourses"), prev = Relation.binary("prev"),
+		               prereqs = Relation.binary("prereqs");
+		// [6.002, 8.02, 6.003, 6.001, Spring 2006, Fall 2006, [8.02], [6.001], [], Spring, Even, Fall, 1, 2]
+		final List<String> atoms = new ArrayList<String>(14);
+		atoms.add("6.002");
+		atoms.add("8.02");
+		atoms.add("6.003");
+		atoms.add("6.001");
+		atoms.add("Spring 2006");
+		atoms.add("Fall 2006");
+		atoms.add("[8.02]");
+		atoms.add("[6.001]");
+		atoms.add("[]");
+		atoms.add("Spring");
+		atoms.add("Even");
+		atoms.add("Fall");
+		atoms.add("1");
+		atoms.add("2");
+		final Universe u = new Universe(atoms);
+		final Bounds b = new Bounds(u);
+		final TupleFactory f = u.factory();
+		
+		b.bound(cAttributes, f.noneOf(2));
+		b.boundExactly(Int, f.range(f.tuple("1"), f.tuple("2")));
+		b.boundExactly(c6001, f.setOf(f.tuple("6.001")));
+		b.boundExactly(one, f.setOf(f.tuple("1")));
+		b.bound(prereqsetUsed, f.setOf(f.tuple("6.002", "[8.02]"), f.tuple("8.02", "[]"), f.tuple("6.003", "[6.001]"), f.tuple("6.001", "[]")));
+		b.bound(Course, f.range(f.tuple("6.002"), f.tuple("6.001")));
+		b.bound(CardinalityGrouping, f.noneOf(1));
+		b.boundExactly(pCourses, f.setOf(f.tuple("[8.02]", "8.02"), f.tuple("[6.001]", "6.001")));
+		b.boundExactly(dec, f.setOf(f.tuple("2", "1")));
+		b.boundExactly(greater, b.upperBound(dec));
+		b.bound(size, f.noneOf(2));
+		b.boundExactly(c6002, f.setOf(f.tuple("6.002")));
+		b.boundExactly(less, f.setOf(f.tuple("1", "2")));
+		b.boundExactly(sAttributes, f.setOf(f.tuple("Spring 2006", "Spring"), f.tuple("Spring 2006", "Even"), 
+				                           f.tuple("Fall 2006", "Even"), f.tuple("Fall 2006", "Fall")));
+		b.boundExactly(PrereqSet, f.setOf("[8.02]", "[6.001]", "[]"));
+		b.boundExactly(inc, b.upperBound(less));
+		b.boundExactly(next, f.setOf(f.tuple("Spring 2006", "Fall 2006")));
+		b.boundExactly(equal, f.setOf(f.tuple("1", "1"), f.tuple("2", "2")));
+		b.boundExactly(Semester, f.setOf("Spring 2006", "Fall 2006"));
+		b.bound(index, f.noneOf(3));
+		b.bound(sCourses, f.range(f.tuple("Spring 2006"), f.tuple("Fall 2006")).product(f.range(f.tuple("6.002"), f.tuple("6.001"))));
+		b.boundExactly(prev, f.setOf(f.tuple("Fall 2006", "Spring 2006")));
+		b.boundExactly(prereqs, f.setOf(f.tuple("6.002", "[8.02]"), f.tuple("8.02", "[]"), 
+				                       f.tuple("6.003", "[6.001]"), f.tuple("6.001", "[]")));
+		
+//		for(Relation r : b.relations()) {
+//        	System.out.println(r + " " + r.arity() + " " + b.lowerBound(r) + " ; " + b.upperBound(r));
+//        }
+//		System.out.println(u);
+		
+		final Formula f0 = sCourses.in(Semester.product(Course));
+		final Formula f1 = size.function(CardinalityGrouping, Int);
+		final Formula f2 = prereqsetUsed.function(Semester.join(sCourses), PrereqSet);
+		final Formula f3 = prereqsetUsed.in(prereqs);
+		final Variable s = Variable.unary("s");
+		final Expression e0 = s.join(sCourses).join(prereqsetUsed).join(pCourses);
+		final Expression e1 = s.join(prev.closure()).join(sCourses);
+		final Formula f4 = e0.in(e1).forAll(s.oneOf(Semester));
+		final Formula f5 = c6002.in(Semester.join(sCourses));
+		final Variable e = Variable.unary("e");
+		final Expression e3 = Semester.join(sCourses).difference(e);
+		final Formula f60 = c6002.in(e3);
+		final Formula f61 = e3.join(prereqsetUsed).join(pCourses).in(e3);
+		final Formula f6 = (f60.and(f61)).not().forAll(e.oneOf(Semester.join(sCourses)));
+		final Variable c = Variable.unary("c");
+		final Formula f7 = c.join(cAttributes).in(s.join(sAttributes)).forAll(c.oneOf(s.join(sCourses))).forAll(s.oneOf(Semester));
+		final Variable s1 = Variable.unary("s1"), s2 = Variable.unary("s2");
+		final Formula f8 = s1.join(sCourses).intersection(s2.join(sCourses)).no().forAll(s2.oneOf(Semester.difference(s1))).forAll(s1.oneOf(Semester));
+		final Formula f9 = c6001.intersection(Semester.join(sCourses)).no();
+		
+		final Formula x = f0.and(f1).and(f2).and(f3).and(f4).and(f5).and(f6).and(f7).and(f8);
+		final Formula y = x.and(f9);
+		
+//		System.out.println(x);
+//		System.out.println(y);
+		
+		try {
+			solver.options().setSolver(SATFactory.DefaultSAT4J);
+			Solution solution = solver.solve(x, b);		
+	        //System.out.println(solution); // SATISFIABLE
+			assertEquals(solution.outcome(), Solution.Outcome.SATISFIABLE);
+	        
+	        Solution solution2 = solver.solve(y, b);
+	        //System.out.println(solution2); // SATISFIABLE!!!???
+	        //System.out.println((new Evaluator(solution2.instance())).evaluate(x));
+	        assertEquals(solution2.outcome(), Solution.Outcome.SATISFIABLE);
+		} catch (TimeoutException e2) {
+			// TODO Auto-generated catch block
+			e2.printStackTrace();
+		}
+        
+		              
+	}
+	
 	public final void testGreg_03032006() {
 		Relation r = Relation.binary("r");
 		Universe univ = new Universe(Collections.singleton("o"));
@@ -51,6 +194,10 @@ public class BugTests extends TestCase {
 			e.printStackTrace();
 		}
 	}
+	
+	
+	
+	
 	
 	public final void testGreg_02192006() {
 		Relation r1 = Relation.unary("r1");
