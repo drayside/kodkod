@@ -62,16 +62,19 @@ public class Bigconfig {
 	// fields
 	private final Relation site, link;
 	
+	private final int closureApprox;
+	
 	/**
 	 * Constructs an instance of BigConfig.
 	 */
-	Bigconfig() {
+	Bigconfig(int closureApprox) {
 		Router = Relation.unary("Router");
 		Site = Relation.unary("Site");
 		HQ = Relation.unary("HQ");
 		Sub = Relation.unary("Sub");
 		site = Relation.binary("site");
 		link = Relation.binary("link");
+		this.closureApprox = closureApprox;
 	}
 	
 	/**
@@ -133,7 +136,11 @@ public class Bigconfig {
 	 */
 	Formula connectedSites(Expression sites) {
 		final Variable s = Variable.unary("s");
-		final Expression sreachable = site.join(s).join(link.closure()).join(site);
+		Expression closed = link;
+		for(int i = 1; i < closureApprox; i *= 2) {
+			closed = closed.union(closed.join(closed));
+		}
+		final Expression sreachable = site.join(s).join(closed).join(site);
 		final Formula f = sites.difference(s).in(sreachable);
 		return f.forAll(s.oneOf(sites));
 	}
@@ -198,7 +205,7 @@ public class Bigconfig {
 	}
 	
 	public static void main(String[] args) {
-		final Bigconfig model = new Bigconfig();
+		final Bigconfig model = new Bigconfig(Integer.parseInt(args[2]));
 		final Solver solver = new Solver();
 		solver.options().setSolver(SATFactory.ZChaff);
 		try {
@@ -211,7 +218,7 @@ public class Bigconfig {
 			System.out.println("timed out.");
 			e.printStackTrace();
 		} catch (NumberFormatException nfe) {
-			System.out.println("Usage: java tests.Bigconfig [# hq] [# sub]");
+			System.out.println("Usage: java tests.Bigconfig [# hq] [# sub] [# closure unwindings]");
 		}
 	}
 }

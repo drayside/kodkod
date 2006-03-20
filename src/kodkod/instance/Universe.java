@@ -33,91 +33,95 @@ import java.util.Map;
  * @specfield atoms: [0..size)->one Object
  * @specfield factory: TupleFactory
  * @invariant factory = (TupleFactory<:universe).this
+ * @invariant size > 0
  * @author Emina Torlak 
  */
 public final class Universe implements Iterable<Object> {
-    private final List<Object> atoms;
-    private final Map<Object,Integer> atomIndex;
-    private final TupleFactory factory;
-    
-    /**  
-     * Constructs a new Universe consisting of the given atoms, in the order that they are returned 
-     * by the specified Collection's Iterator.
-     * 
-     * @effects this.size' = atoms.size && this.atoms' = atoms.iterator
-     * @throws NullPointerException - atoms = null 
-     * @throws IllegalArgumentException - atoms contains duplicates
-     */
-    public Universe(Collection<?> atoms) {
-        this.atoms = new ArrayList<Object>(atoms.size());
-        this.atomIndex = new HashMap<Object, Integer>();
-        for (Object atom : atoms) {
-            if (atomIndex.put(atom, this.atoms.size()) == null) this.atoms.add(atom);
-            else throw new IllegalArgumentException(atom + " appears multiple times.");               	
-        }
-        this.factory = new TupleFactory(this);
-    }
-    
-    
-    /**
-     * Returns a TupleFactory that can be used to construct tuples and sets
-     * of tuples based on this universe.
-     * @return this.factory
-     */
-    public TupleFactory factory() { return this.factory; }
-    
-    /**
-     * Returns the size of this universe
-     *
-     * @return #this.atoms
-     */
-    public int size() {
-        return atoms.size();
-    }
-    
-    /**
-     * Returns true if atom is in this universe, otherwise returns false.
-     *
-     * @return atom in this.atoms[int]
-     */
-    public boolean contains(Object atom) {
-        return atomIndex.containsKey(atom);
-    }
-    
-    /**
-     * Returns the i_th atom in this universe
-     * 
-     * @return this.atoms[i]
-     * @throws IndexOutOfBoundsException - i < 0 || i >= this.size
-     */
-    public Object atom(int i) {
-        return atoms.get(i);
-    }
-    
-    /**
-     * Returns the index of the specified atom in this universe; if the
-     * atom is not in this universe, an IllegalArgumentException is thrown.
-     * 
-     * @return this.atoms.atom
-     * @throws IllegalArgumentException - no this.atoms.atom
-     */
-    public int index(Object atom) {
-        if (atomIndex.containsKey(atom)) return atomIndex.get(atom);
-        else throw new IllegalArgumentException("no this.atoms." + atom);
-    }
-    
-    /**
-     * Returns an iterator over atoms in this universe, according to their
-     * order in the universe.
-     * @return an iterator over atoms in this universe, according to their
-     * order in the universe
-     */
-    public Iterator<Object> iterator() {
-        return Collections.unmodifiableList(atoms).iterator();
-    }
-    
-    public String toString() {
-        return atoms.toString();
-    }
-   
+	private final List<Object> atoms;
+	private final Map<Object,Integer> atomIndex;
+	private final TupleFactory factory;
+	
+	/**  
+	 * Constructs a new Universe consisting of the given atoms, in the order that they are returned 
+	 * by the specified Collection's Iterator.
+	 * 
+	 * @effects this.size' = atoms.size && this.atoms' = atoms.iterator
+	 * @throws NullPointerException - atoms = null 
+	 * @throws IllegalArgumentException - atoms contains duplicates
+	 * @throws IllegalArgumentException - atoms is empty
+	 */
+	public Universe(Collection<?> atoms) {
+		if (atoms.isEmpty()) 
+			throw new IllegalArgumentException("cannot create an empty universe");
+		this.atoms = new ArrayList<Object>(atoms.size());
+		this.atomIndex = new HashMap<Object, Integer>();
+		for (Object atom : atoms) {
+			if (atomIndex.put(atom, this.atoms.size()) == null) this.atoms.add(atom);
+			else throw new IllegalArgumentException(atom + " appears multiple times.");               	
+		}
+		this.factory = new TupleFactory(this);
+	}
+	
+	
+	/**
+	 * Returns a TupleFactory that can be used to construct tuples and sets
+	 * of tuples based on this universe.
+	 * @return this.factory
+	 */
+	public TupleFactory factory() { return this.factory; }
+	
+	/**
+	 * Returns the size of this universe
+	 *
+	 * @return #this.atoms
+	 */
+	public int size() {
+		return atoms.size();
+	}
+	
+	/**
+	 * Returns true if atom is in this universe, otherwise returns false.
+	 *
+	 * @return atom in this.atoms[int]
+	 */
+	public boolean contains(Object atom) {
+		return atomIndex.containsKey(atom);
+	}
+	
+	/**
+	 * Returns the i_th atom in this universe
+	 * 
+	 * @return this.atoms[i]
+	 * @throws IndexOutOfBoundsException - i < 0 || i >= this.size
+	 */
+	public Object atom(int i) {
+		return atoms.get(i);
+	}
+	
+	/**
+	 * Returns the index of the specified atom in this universe; if the
+	 * atom is not in this universe, an IllegalArgumentException is thrown.
+	 * 
+	 * @return this.atoms.atom
+	 * @throws IllegalArgumentException - no this.atoms.atom
+	 */
+	public int index(Object atom) {
+		if (atomIndex.containsKey(atom)) return atomIndex.get(atom);
+		else throw new IllegalArgumentException("no this.atoms." + atom);
+	}
+	
+	/**
+	 * Returns an iterator over atoms in this universe, according to their
+	 * order in the universe.
+	 * @return an iterator over atoms in this universe, according to their
+	 * order in the universe
+	 */
+	public Iterator<Object> iterator() {
+		return Collections.unmodifiableList(atoms).iterator();
+	}
+	
+	public String toString() {
+		return atoms.toString();
+	}
+	
 }

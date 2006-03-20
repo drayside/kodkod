@@ -76,7 +76,7 @@ final class BoundsOptimizer {
 	static Set<IntSet> optimize(Bounds bounds, Set<Relation> relations,
 			                    Set<RelationPredicate.TotalOrdering> totals,
 			                    Set<RelationPredicate.Acyclic> acyclics) {
-		
+				
 		final BoundsOptimizer opt = new BoundsOptimizer(bounds, relations);
 		opt.computePartitions();
 		
@@ -254,6 +254,7 @@ final class BoundsOptimizer {
 		//	start with the maximum partition -- the whole universe.
 		assert parts.size() == 0;
 		parts.add(allOf(usize));
+		if (usize==1) return; // nothing more to do 
 		
 		// refine the partitions based on the upper/lower bounds
 		// of each relation
@@ -301,7 +302,7 @@ final class BoundsOptimizer {
 		}
 		refinePartitions(firstCol);
 		
-		int idenFactor = usize==1 ? 1 : (1 - firstColFactor) / (1 - usize);
+		int idenFactor = (1 - firstColFactor) / (1 - usize);
 		for(ListIterator<IntSet> partsIter = parts.listIterator(); partsIter.hasNext(); ) {
 			IntSet part = partsIter.next();
 			if (firstCol.contains(part.min())) { // contains one, contains them all
