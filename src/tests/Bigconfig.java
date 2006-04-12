@@ -136,10 +136,16 @@ public class Bigconfig {
 	 */
 	Formula connectedSites(Expression sites) {
 		final Variable s = Variable.unary("s");
-		Expression closed = link;
-		for(int i = 1; i < closureApprox; i *= 2) {
-			closed = closed.union(closed.join(closed));
+		Expression closed;
+		if (closureApprox > 0) {
+			closed = link;
+			for(int i = 1; i < closureApprox; i *= 2) {
+				closed = closed.union(closed.join(closed));
+			}
+		} else {
+			closed = link.closure();
 		}
+		
 		final Expression sreachable = site.join(s).join(closed).join(site);
 		final Formula f = sites.difference(s).in(sreachable);
 		return f.forAll(s.oneOf(sites));
@@ -211,14 +217,15 @@ public class Bigconfig {
 		try {
 			final Formula show = model.show();
 			final Solution sol = solver.solve(show, model.bounds(Integer.parseInt(args[0]),Integer.parseInt(args[1])));
-			System.out.println(show);
-			System.out.println(sol);
+			//System.out.println(show);
+			System.out.println(sol.outcome());
+			System.out.println(sol.stats());
 			
 		} catch (TimeoutException e) {
 			System.out.println("timed out.");
 			e.printStackTrace();
 		} catch (NumberFormatException nfe) {
-			System.out.println("Usage: java tests.Bigconfig [# hq] [# sub] [# closure unwindings]");
+			System.out.println("Usage: java tests.Bigconfig [# hq] [# sub] [# closure unwindings, 0 for true closure]");
 		}
 	}
 }
