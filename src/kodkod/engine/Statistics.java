@@ -7,6 +7,9 @@ package kodkod.engine;
  * @specfield bounds: Bounds // the bounds on the formula
  */
 public final class Statistics {
+	
+	private static final String NEW_LINE = System.getProperty("line.separator");
+	
 	private final int vars, pVars, clauses;
 	private final long translation, solving; 
 	
@@ -87,16 +90,16 @@ public final class Statistics {
 		ret.append(vars);
 		ret.append(" ");
 		ret.append(clauses);
-		ret.append("\n");
+		ret.append(NEW_LINE);
 		ret.append("primary variables: ");
 		ret.append(pVars);
-		ret.append("\n");
+		ret.append(NEW_LINE);
 		ret.append("translation time: ");
 		ret.append(translation);
-		ret.append(" ms\n");
+		ret.append(" ms").append(NEW_LINE);
 		ret.append("solving time: ");
 		ret.append(solving);
-		ret.append(" ms\n");
+		ret.append(" ms");
 		return ret.toString();
 	}
 }
