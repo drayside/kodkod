@@ -281,26 +281,28 @@ public final class RingElection {
 		final Solver solver = new Solver();
 		solver.options().setSolver(SATFactory.ZChaff);
 		
+		final int p = Integer.parseInt(args[0]);
+		final int t = Integer.parseInt(args[1]);
 		// check AtMostOneElected for 3 Process, 7 Time 
 		final Formula checkAtMostOneElected = model.declsAndFacts().and(model.atMostOneElected().not());
-		final Bounds bounds37 = model.bounds(3,7);
+		final Bounds bounds37 = model.bounds(p,t);
 		
 		// run looplessPath for 13 Time, 3 Process
-		final Formula runLooplessPath = model.declsAndFacts().and(model.looplessPath());
-		final Bounds bounds313 = model.bounds(3, 13);
+		//final Formula runLooplessPath = model.declsAndFacts().and(model.looplessPath());
+		//final Bounds bounds313 = model.bounds(3, 13);
 		
 		try {
-			System.out.println("*****check AtMostOneElected for 3 Process, 7 Time*****");
+			System.out.println("*****check AtMostOneElected for" + p +" Process, "+ t + " Time*****");
 //			System.out.println(checkAtMostOneElected);
 //			System.out.println(bounds37);
 			Solution sol1 = solver.solve(checkAtMostOneElected, bounds37);
 			System.out.println(sol1);
 			
-			System.out.println("*****run looplessPath for 13 Time, 3 Process*****");
+			//System.out.println("*****run looplessPath for 13 Time, 3 Process*****");
 //			System.out.println(runLooplessPath);
 //			System.out.println(bounds313);
-			Solution sol2 = solver.solve(runLooplessPath, bounds313);
-			System.out.println(sol2);
+			//Solution sol2 = solver.solve(runLooplessPath, bounds313);
+			//System.out.println(sol2);
 			
 		} catch (TimeoutException e) {
 			// TODO Auto-generated catch block

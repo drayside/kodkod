@@ -78,11 +78,15 @@ public final class Pigeonhole {
 	public static void main(String[] args) {
 		final Pigeonhole model = new Pigeonhole();
 		final Solver solver = new Solver();
+		final int p = Integer.parseInt(args[0]);
+		final int h = Integer.parseInt(args[1]);
 		solver.options().setSolver(SATFactory.ZChaff);
+		solver.options().setSymmetryBreaking(p);
+		solver.options().setFlatten(true);
 		try {
 			final Formula show = model.declarations().and(model.pigeonPerHole());
-			final Solution sol = solver.solve(show, model.bounds(Integer.parseInt(args[0]),Integer.parseInt(args[1])));
-			System.out.println(show);
+			final Solution sol = solver.solve(show, model.bounds(p,h));
+			//System.out.println(show);
 			System.out.println(sol);
 			
 		} catch (TimeoutException e) {

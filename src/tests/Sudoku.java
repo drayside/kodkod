@@ -165,11 +165,12 @@ public final class Sudoku {
 		try {
 			final Formula rules = sudoku.alterRules();// sudoku.rules();
 			final Bounds puzzle1 = sudoku.puzzle1();
-			System.out.println(rules);
+			//System.out.println(rules);
 			
 			final Solution sol = solver.solve(rules, puzzle1);
 			
-			System.out.println(sol);
+			//System.out.println(sol);
+			System.out.println(sol.stats());
 			
 			System.out.println("+-------+-------+-------+");
 			final Iterator<Tuple> psol = sol.instance().tuples(sudoku.puzzle).iterator();

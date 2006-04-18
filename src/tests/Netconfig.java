@@ -320,16 +320,16 @@ public class Netconfig {
 		
 		final TupleSet rBound = f.range(f.tuple("Router0"), f.tuple("Router"+(routerNum-1)));
 		b.boundExactly(Router, rBound);	
-		b.bound(site, rBound.product(sBound));
+		//b.bound(site, rBound.product(sBound));
 		b.bound(satellite, rBound.product(rBound).product(tBound));
 		b.bound(lineOfSight, b.upperBound(satellite));
 		
-//		assert siteNum == routerNum;
-//		final TupleSet siteBound = f.noneOf(2);
-//		for(int i = 0; i < siteNum; i++)
-//			siteBound.add(f.tuple("Router"+i, "Site"+i));
-//		b.boundExactly(site, siteBound);//rBound.product(sBound));
-//		
+		assert siteNum == routerNum;
+		final TupleSet siteBound = f.noneOf(2);
+		for(int i = 0; i < siteNum; i++)
+			siteBound.add(f.tuple("Router"+i, "Site"+i));
+		b.boundExactly(site, siteBound);//rBound.product(sBound));
+		
 		return b;
 	}
 	
@@ -342,7 +342,8 @@ public class Netconfig {
 			final Solution sol = solver.solve(show, model.bounds(Integer.parseInt(args[0]),Integer.parseInt(args[1]),Integer.parseInt(args[2]),Integer.parseInt(args[3])));
 //			System.out.println(show);
 			//System.out.println("p cnf " + (solver.numberOfIntermediateVariables()+solver.numberOfPrimaryVariables()) + " " + solver.numberOfClauses());
-			System.out.println(sol);
+			System.out.println(sol.outcome());
+			System.out.println(sol.stats());
 			
 		} catch (TimeoutException e) {
 			// TODO Auto-generated catch block

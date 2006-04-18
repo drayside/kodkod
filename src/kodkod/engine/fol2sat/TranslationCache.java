@@ -283,7 +283,7 @@ final class TranslationCache {
 		 * @return freeVars
 		 */
 		private final Set<Variable> cache(Node node, Set<Variable> freeVars) {
-			if (/*varsInScope.empty() && */sharedNodes.contains(node) || 
+			if (sharedNodes.contains(node) || 
 				!varsInScope.empty() && !freeVars.contains(varsInScope.peek())) {
 				
 				final int numVars = freeVars.size();
