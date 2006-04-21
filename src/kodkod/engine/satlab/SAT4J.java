@@ -22,7 +22,7 @@ import org.sat4j.specs.IVecInt;
  * 
  * @author Emina Torlak
  */
-final class MiniSAT implements SATSolver {
+final class SAT4J implements SATSolver {
 	private final ISolver solver;
 	private final ReadOnlyIVecInt wrapper;
 	private Boolean isSatisfiable; 
@@ -33,7 +33,7 @@ final class MiniSAT implements SATSolver {
 	 * of ISolver.
 	 * @throws NullPointerException - solver = null
 	 */
-	MiniSAT(ISolver solver) {
+	SAT4J(ISolver solver) {
 		if (solver==null)
 			throw new NullPointerException("solver");
 		this.solver = solver;
@@ -353,7 +353,7 @@ final class MiniSAT implements SATSolver {
 	}
 	
 	public static void main(String[] args) {
-		final MiniSAT z = (MiniSAT)SATFactory.DefaultSAT4J.instance();
+		final SAT4J z = (SAT4J)SATFactory.DefaultSAT4J.instance();
 //		z.addVariables(3);
 //		int[] clause = {1,2,3};
 //		z.addClause(clause);

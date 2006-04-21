@@ -17,7 +17,7 @@ public class SolverTest extends TestCase {
 	
 	@Override
 	protected void setUp() {
-		solver = (new SolverFactory()).defaultSolver();
+		solver = SolverFactory.instance().defaultSolver();
 		solver.newVar(NUM_VARS);
 	}
 	

@@ -1,6 +1,7 @@
 package kodkod.util;
 
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 import kodkod.util.IntRange.OnePointRange;
@@ -24,8 +25,6 @@ public final class Ints {
 			public boolean contains(int i) { return false; }
 			public int min() { throw new NoSuchElementException(); }
 			public int max() { throw new NoSuchElementException(); }
-//			public int predecessor(int i) { throw new NoSuchElementException(); }
-//			public int successor(int i) { throw new NoSuchElementException(); }
 			public IntIterator iterator(int from, int to) {	
 				return new IntIterator() {
 					public boolean hasNext() { return false; }
@@ -38,7 +37,6 @@ public final class Ints {
 	};
 	
 	private static final int SHORT = 0x0000ffff;
-//	private static final int BYTE  = 0x000000ff;
 	
 	private Ints() {}
 
@@ -132,6 +130,24 @@ public final class Ints {
 	public static IntSet bestSet(int min, int max) {
 		if (min > max) throw new IllegalArgumentException("min > max");
 		return min < 0 ? new IntTreeSet() : bestSet(max+1);
+	}
+	
+	/*-----------SEQUENCES-----------*/
+	/**
+	 * Returns an unmodifiable view of the specified sparse sequence. This method 
+	 * allows modules to provide users with "read-only" access to internal sparse sequences.
+	 * Query operations on the returned sequence "read through" to the specified sequence, and 
+	 * attempts to modify the returned sequence, whether direct or via its iterator, result 
+	 * in an UnsupportedOperationException.
+	 * @return an unmodifiable view of s
+	 * @throws NullPointerException - s = null
+	 */
+	public static <V> SparseSequence<V> unmodifiableSequence(SparseSequence<V> s) {
+		if (s==null) 
+			throw new NullPointerException();
+		if (s instanceof UnmodifiableSparseSequence)
+			return s;
+		else return new UnmodifiableSparseSequence<V>(s);
 	}
 	
 	/*-----------INTEGER MANIPULATION-----------*/
@@ -295,7 +311,7 @@ public final class Ints {
 	}
 	
 	/**
-	 * An implementation of an unmodifiable view wrapper for an IntSet.
+	 * An implementation of an unmodifiable IntSet view.
 	 * @author Emina Torlak
 	 */
 	private static final class UnmodifiableIntSet extends AbstractIntSet {
@@ -312,8 +328,6 @@ public final class Ints {
 		public boolean contains(int i) { return s.contains(i); }
 		public int min() { return s.min();	}
 		public int max() { return s.max();	}
-//		public int predecessor(int i) { return s.predecessor(i); }
-//		public int successor(int i) { return s.successor(i); }
 		public boolean containsAll(Collection<?> c) { return s.containsAll(c); }	
 		public IntIterator iterator(final int from, final int to) { 	
 			return new IntIterator() {
@@ -335,8 +349,87 @@ public final class Ints {
 		public int hashCode() { 	return s.hashCode();	}	
 	}
 	
-	public static void main(String[] args) {
+	/**
+	 * An implementation of an unmodifiable SparseSequence view.
+	 * @author Emina Torlak
+	 */
+	private static final class UnmodifiableSparseSequence<V> extends AbstractSparseSequence<V> {
+		private final SparseSequence<V> s;
+		
+		UnmodifiableSparseSequence(SparseSequence<V> s) {
+			this.s = s;
+		}
+		
+		@Override
+		public Iterator<IndexedEntry<V>> iterator(final int from, final int to) {
+			return new Iterator<IndexedEntry<V>>() {
+				Iterator<IndexedEntry<V>> iter = s.iterator(from, to);
+				public boolean hasNext() {
+					return iter.hasNext();
+				}
 
+				public IndexedEntry<V> next() {
+					return iter.next();
+				}
+
+				public void remove() {
+					throw new UnsupportedOperationException();
+				}
+				
+			};
+		}
+
+		public int size() {
+			return s.size();
+		}
+
+		public void clear() {
+			throw new UnsupportedOperationException();
+		}
+
+		public V put(int index, V value) {
+			throw new UnsupportedOperationException();
+		}
+
+		public V get(int index) {
+			return s.get(index);
+		}
+
+		public V remove(int index) {
+			throw new UnsupportedOperationException();
+		}
+
+		public boolean containsIndex(int index) {
+			return s.containsIndex(index);
+		}
+
+		public boolean contains(Object value) {
+			return s.contains(value);
+		}
+
+		public IndexedEntry<V> first() {
+			return s.first();
+		}
+
+		public IndexedEntry<V> last() {
+			return s.last();
+		}
+
+		public IndexedEntry<V> successor(int index) {
+			return s.successor(index);
+		}
+
+		public IndexedEntry<V> predecessor(int index) {
+			return s.predecessor(index);
+		}
+
+		public IndexedEntry<V> ceil(int index) {
+			return s.ceil(index);
+		}
+
+		public IndexedEntry<V> floor(int index) {
+			return s.floor(index);
+		}
+		
 	}
-	
 }

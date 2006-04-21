@@ -19,7 +19,7 @@ public enum SATFactory {
 		 * @return an instance of the default sat4j solver.
 		 */
 		public SATSolver instance() { 
-			return new MiniSAT(SolverFactory.newMiniSAT2Heap()); 
+			return new SAT4J(SolverFactory.instance().defaultSolver()); 
 		}
 	},
 	
@@ -34,7 +34,7 @@ public enum SATFactory {
 		 * @return an instance of the "light" sat4j solver.
 		 */
 		public SATSolver instance() { 
-			return new MiniSAT(SolverFactory.newMini3SAT()); 
+			return new SAT4J(SolverFactory.newMini3SAT()); 
 		}
 	},
 	
@@ -49,7 +49,7 @@ public enum SATFactory {
 		 * @return an instance of the "minilearning" sat4j solver.
 		 */
 		public SATSolver instance() { 
-			return new MiniSAT(SolverFactory.newMiniLearning()); 
+			return new SAT4J(SolverFactory.newMiniLearning()); 
 		}
 	},
 	
@@ -64,7 +64,7 @@ public enum SATFactory {
 		 * @return an instance of the "active learning" sat4j solver.
 		 */
 		public SATSolver instance() { 
-			return new MiniSAT(SolverFactory.newActiveLearning()); 
+			return new SAT4J(SolverFactory.newActiveLearning()); 
 		}
 	},
 	
@@ -79,7 +79,7 @@ public enum SATFactory {
 		 * @return an instance of the "backjumping" sat4j solver.
 		 */
 		public SATSolver instance() { 
-			return new MiniSAT(SolverFactory.newBackjumping()); 
+			return new SAT4J(SolverFactory.newBackjumping()); 
 		}
 	},
 	
@@ -94,7 +94,7 @@ public enum SATFactory {
 		 * @return an instance of the sat4j "relsat" solver.
 		 */
 		public SATSolver instance() { 
-			return new MiniSAT(SolverFactory.newRelsat()); 
+			return new SAT4J(SolverFactory.newRelsat()); 
 		}
 	},
 	

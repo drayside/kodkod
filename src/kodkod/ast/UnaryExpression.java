@@ -26,7 +26,7 @@ public final class UnaryExpression extends Expression {
      * 
      * @effects this.expression' = expression && this.op' = op
      * @throws NullPointerException - expression = null || op = null
-     * @throws IllegalArgumentException - child.arity != 2
+     * @throws IllegalArgumentException - op in {TRANSPOSE, CLOSURE, REFLEXIVE_CLOSURE} && child.arity != 2
      */
     UnaryExpression(Operator op, Expression child) {
         if (!op.applicable(child.arity())) {
@@ -104,18 +104,20 @@ public final class UnaryExpression extends Expression {
         
         TRANSPOSE { public String toString() { return "~";}},
         CLOSURE { public String toString() { return "^";}},
-        REFLEXIVE_CLOSURE { public String toString() { return "*";}};
+        REFLEXIVE_CLOSURE { public String toString() { return "*";}},
+        CARDINALITY { public String toString() { return "#";} 
+                      boolean applicable(int childArity) { return childArity > 0; }
+                      int arity(int childArity) { return 1; }
+        };
         
         /**
          * @return true if this operator can be applied to an expression with the given arity.
          */
-        private boolean applicable(int childArity) { return childArity == 2; }
+        boolean applicable(int childArity) { return childArity == 2; }
         
         /**
-         * @return the arity of the expression that results from applyin 
-         * this operator to an expression with the given arity
-         * This method assumes that leftArity and rightArity are compatible, 
-         * i.e. this.compatible(leftArity, rightArity).
+         * @return the arity of the expression that results from applying
+         * this operator to an expression with the given arity.
          */
         int arity(int childArity) { return 2; }
         

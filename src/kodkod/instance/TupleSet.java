@@ -18,7 +18,8 @@ import kodkod.util.Ints;
  * of a given arity, constructed over the same {@link kodkod.instance.Universe universe}.
  * All polymorphic methods throw a ClassCastException when passed
  * an element that is not a Tuple.  All methods throw a NullPointerException
- * when passed null.
+ * when passed null.  The iterator of a TupleSet returns tuples in the order of their
+ * {@link kodkod.instance.Tuple#index() indeces}.  
  * 
  * @specfield tuples: set Tuple
  * @specfield universe: Universe

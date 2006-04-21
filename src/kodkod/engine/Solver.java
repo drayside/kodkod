@@ -80,7 +80,7 @@ public final class Solver {
 	 */
 	private static Instance toInstance(Bounds bounds) {
 		final Instance instance = new Instance(bounds.universe());
-		for (Relation r : bounds) {
+		for (Relation r : bounds.relations()) {
 			instance.add(r, bounds.lowerBound(r));
 		}
 		return instance;

@@ -85,7 +85,7 @@ final class BooleanVariableAllocator extends BooleanFormulaAllocator {
 	 */
 	private static int assignLiterals(Bounds bounds, Map<Relation, IntRange> literals) {
 		int maxLit = 1;
-		for(Relation r : bounds) {
+		for(Relation r : bounds.relations()) {
 			int rLits = bounds.upperBound(r).size() - bounds.lowerBound(r).size();
 			if (rLits > 0) {
 				literals.put(r, Ints.range(maxLit, maxLit + rLits - 1));
@@ -128,7 +128,7 @@ final class BooleanVariableAllocator extends BooleanFormulaAllocator {
 	 * @throws IllegalArgumentException - !this.model.contains(r)
 	 */
 	private void validate(Relation r) {
-		if (!bounds.contains(r)) {
+		if (!bounds.relations().contains(r)) {
 			throw new IllegalArgumentException("!this.model.contains(r) : r = " + r);
 		}
 	}

@@ -104,7 +104,7 @@ public class SkolemizationTest extends TestCase {
 	private final void assertSkolems(Bounds bounds, Instance inst, Set<String> skolems) {
 		assertEquals(skolems.size(), inst.relations().size() - bounds.relations().size());
 		for(Relation r: inst.relations()) {
-			assertFalse(skolems.contains(r.name()) && bounds.contains(r));
+			assertFalse(skolems.contains(r.name()) && bounds.relations().contains(r));
 		}
 	}
 	

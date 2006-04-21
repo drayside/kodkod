@@ -3,9 +3,9 @@ package kodkod.util;
 import java.util.Iterator;
 
 /**
- * Represents a sparse sequence -- a sequence whose indeces are not
+ * Represents a sparse sequence -- a sequence whose indices are not
  * necessarily contiguous.  For example, a sparse sequence can have
- * elements at indeces 10, 2121, and 3000, without having any elements
+ * elements at indices 10, 2121, and 3000, without having any elements
  * in between.  This specification of sparse sequences also supports
  * negative indeces.  Formally, the following methods specify a partial
  * function from integers to values of type E.
@@ -87,6 +87,14 @@ public interface SparseSequence<V> extends Iterable<IndexedEntry<V>> {
 	 * @return some this.entries[index]
 	 */
 	public abstract boolean containsIndex(int index);
+	
+	/**
+	 * Returns the set of all indices mapped by this sparse sequence.
+	 * The returned set supports removal iff this is not an unmodifiable
+	 * sparse sequence.
+	 * @return {s: IntSet | s.ints = this.entries.V}
+	 */
+	public abstract IntSet indices();
 	
 	/**
 	 * Returns true if this sequence has an entry with the given value;

@@ -20,15 +20,15 @@ import kodkod.ast.visitor.ReturnVisitor;
  */
 public abstract class Expression implements Node {
 	
-	/** universal relation */
+	/** The universal relation:  contains all atoms in a {@link kodkod.instance.Universe universe of discourse}. */
 	public static final Expression UNIV = ConstantExpression.UNIV;
 	
-	/** identity relation */
+	/** The identity relation: maps all atoms in a {@link kodkod.instance.Universe universe of discourse} to themselves. */
 	public static final Expression IDEN = ConstantExpression.IDEN;
 	
-	/** empty relation */
+	/** The empty relation: contains no atoms. */
 	public static final Expression NONE = ConstantExpression.NONE;
-	
+		
     /**
      * Constructs a leaf expression
      * @effects no this.children'
@@ -129,6 +129,17 @@ public abstract class Expression implements Node {
      */
     public final Expression reflexiveClosure() {
     		return apply(UnaryExpression.Operator.REFLEXIVE_CLOSURE);
+    }
+    
+    /**
+     * Returns the cardinality of this expression.  
+     * @return #this
+     * @see kodkod.instance.Bounds#bound(int, TupleSet)
+     * @see kodkod.instance.Bounds#cardBound(int)
+     * @see kodkod.instance.Bounds#cards()
+     */
+    public final Expression count() {
+    		return apply(UnaryExpression.Operator.CARDINALITY);
     }
     
     /**

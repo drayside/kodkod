@@ -82,7 +82,7 @@ public final class Translation {
 		final Instance instance = new Instance(bounds.universe());
 //		System.out.println(varUsage);
 		final IntSet model = solver.variablesThatAre(true, 1, StrictMath.min(maxPrimaryLit, solver.numberOfVariables()));
-		for(Relation r : bounds) {
+		for(Relation r : bounds.relations()) {
 			TupleSet lower = bounds.lowerBound(r);
 			IntSet indeces = Ints.bestSet(lower.capacity());
 			indeces.addAll(lower.indexView());
