@@ -1,4 +1,5 @@
-package tests;
+package examples;
+
 
 import java.util.ArrayList;
 import java.util.List;
@@ -65,9 +66,9 @@ public class Bigconfig {
 	private final int closureApprox;
 	
 	/**
-	 * Constructs an instance of BigConfig.
+	 * Constructs an instance of the BigConfig example.
 	 */
-	Bigconfig(int closureApprox) {
+	public Bigconfig(int closureApprox) {
 		Router = Relation.unary("Router");
 		Site = Relation.unary("Site");
 		HQ = Relation.unary("HQ");
@@ -88,7 +89,7 @@ public class Bigconfig {
 	 *  link: set Router
 	 *  }
 	 */
-	Formula declarations() {
+	public Formula declarations() {
 		// HQ + Sub in Site && no HQ & Sub
 		final Formula hqSub = HQ.union(Sub).in(Site).and(HQ.intersection(Sub).no());
 		// site is a function from Router to Site
@@ -109,7 +110,7 @@ public class Bigconfig {
 	 *  no link & iden
 	 *  }
 	 */
-	Formula invariants() {
+	public Formula invariants() {
 		Formula atLeastARouter = Site.in(Router.join(site));
 		Formula linksSymmetric = link.eq(link.transpose());
 		Formula linksNotReflexive = link.intersection(Expression.IDEN).no();
@@ -123,7 +124,7 @@ public class Bigconfig {
 	 *  site.Sub in (site.HQ).link
 	 *  }
 	 */
-	Formula subsConnectedToHQ() {
+	public Formula subsConnectedToHQ() {
 		return site.join(Sub).in(site.join(HQ).join(link));
 	}
 	
@@ -134,7 +135,7 @@ public class Bigconfig {
 	 *  all s: sites | sites - s in ((site.s).^link).site
 	 *  }
 	 */
-	Formula connectedSites(Expression sites) {
+	public Formula connectedSites(Expression sites) {
 		final Variable s = Variable.unary("s");
 		Expression closed;
 		if (closureApprox > 0) {
@@ -157,7 +158,7 @@ public class Bigconfig {
 	 *  invariants() && subsConnectedToHQ() && connectedSites(Site) 
 	 *  }
 	 */
-	Formula show() {
+	public Formula show() {
 		return declarations().and(invariants()).and(subsConnectedToHQ()).and(connectedSites(Site));
 	}
 	
@@ -169,7 +170,7 @@ public class Bigconfig {
 	 * @requires all arguments are positive
 	 * @return a bounds for the model
 	 */
-	Bounds bounds(int hqNum, int subNum) {
+	public Bounds bounds(int hqNum, int subNum) {
 		assert subNum > 0 && hqNum > 0;
 		final int siteNum = hqNum + subNum;
 		final List<String> atoms = new ArrayList<String>(siteNum*2);
@@ -210,7 +211,18 @@ public class Bigconfig {
 		return b;
 	}
 	
+	private static void usage() {
+		System.out.println("Usage: java tests.Bigconfig [# hq] [# sub] [# closure unwindings, 0 for true closure]");
+		System.exit(1);
+	}
+	
+	/**
+	 * Usage: java tests.Bigconfig [# hq] [# sub] [# closure unwindings, 0 for true closure]
+	 */
 	public static void main(String[] args) {
+		if (args.length < 3) 
+			usage();
+		
 		final Bigconfig model = new Bigconfig(Integer.parseInt(args[2]));
 		final Solver solver = new Solver();
 		solver.options().setSolver(SATFactory.ZChaff);
@@ -225,7 +237,7 @@ public class Bigconfig {
 			System.out.println("timed out.");
 			e.printStackTrace();
 		} catch (NumberFormatException nfe) {
-			System.out.println("Usage: java tests.Bigconfig [# hq] [# sub] [# closure unwindings, 0 for true closure]");
+			usage();
 		}
 	}
 }

@@ -1,4 +1,4 @@
-package tests;
+package examples;
 
 import kodkod.ast.Formula;
 import kodkod.ast.Relation;
@@ -9,7 +9,7 @@ import kodkod.ast.Variable;
  * 
  * @author Emina Torlak
  */
-public final class Handshake {
+ final class Handshake {
 	private final Relation Person, /*Hilary, Jocelyn,*/ shaken, spouse;
 	
 	Handshake() {

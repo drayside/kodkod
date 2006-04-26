@@ -1,4 +1,4 @@
-package tests;
+package examples;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -72,7 +72,10 @@ public final class RingElection {
 	private final Relation Process, Time, succ, toSend, elected;
 	private final Relation pfirst, plast, pord, tfirst, tlast, tord;
 	
-	RingElection() {
+	/**
+	 * Constructs an instance of the RingElection example.
+	 */
+	public RingElection() {
 		Process = Relation.unary("Process");
 		Time = Relation.unary("Time");
 		succ = Relation.binary("succ");
@@ -96,7 +99,7 @@ public final class RingElection {
 	 *  elected: set Time }
 	 * </pre> 
 	 */
-	Formula declarations() {
+	public Formula declarations() {
 		final Formula ordTime = tord.totalOrder(Time, tfirst, tlast);
 		final Formula ordProcess = pord.totalOrder(Process, pfirst, plast);
 		final Formula succFunction = succ.function(Process, Time);
@@ -107,7 +110,7 @@ public final class RingElection {
 	 * Returns the fact Ring.
 	 * @return <pre>fact Ring {all p: Process | Process in p.^succ}</pre>
 	 */
-	Formula ring() {
+	public Formula ring() {
 		final Variable p = Variable.unary("p");
 		return Process.in(p.join(succ.closure())).forAll(p.oneOf(Process));
 	}
@@ -116,7 +119,7 @@ public final class RingElection {
 	 * Returns the init predicate.
 	 * @return <pre> pred init (t: Time) {all p: Process | p.toSend.t = p} </pre>
 	 */
-	Formula init(Expression t) {
+	public Formula init(Expression t) {
 		final Variable p = Variable.unary("p");
 		return p.join(toSend).join(t).eq(p).forAll(p.oneOf(Process));
 	}
@@ -132,7 +135,7 @@ public final class RingElection {
 	 *    to.t’ = to.t + (id - PO/prevs(p.succ)) } }
 	 * </pre>  
 	 */
-	Formula step(Expression t1, Expression t2, Expression p) {
+	public Formula step(Expression t1, Expression t2, Expression p) {
 		final Expression from = p.join(toSend);
 		final Expression to = p.join(succ).join(toSend);
 		final Variable id = Variable.unary("id");
@@ -147,7 +150,7 @@ public final class RingElection {
 	 * Returns the skip predicate
 	 * @return <pre>pred skip (t, t’: Time, p: Process) {p.toSend.t = p.toSend.t’}<pre>
 	 */
-	Formula skip(Expression t1, Expression t2, Expression p) {
+	public Formula skip(Expression t1, Expression t2, Expression p) {
 		return p.join(toSend).join(t1).eq(p.join(toSend).join(t2));
 	}
 	
@@ -160,7 +163,7 @@ public final class RingElection {
 	 *   all p: Process | step (t, t’, p) or step (t, t’, succ.p) or skip (t, t’, p) }
 	 *  </pre>
 	 */
-	Formula traces() {
+	public Formula traces() {
 		final Variable t1 = Variable.unary("t");
 		final Expression t2 = t1.join(tord);
 		final Variable p = Variable.unary("p");
@@ -178,7 +181,7 @@ public final class RingElection {
 	 *   elected.t = {p: Process | p in p.toSend.t - p.toSend.(TO/prev(t))} }
 	 * </pre>
 	 */
-	Formula defineElected() {
+	public Formula defineElected() {
 		final Variable t = Variable.unary("t");
 		final Formula f1 = elected.join(tfirst).no();
 		final Variable p = Variable.unary("p");
@@ -196,7 +199,7 @@ public final class RingElection {
 	 *   some Process.toSend.t => some p: Process | not skip (t, t’, p) }
 	 * </pre>  
 	 */
-	Formula progress() {
+	public Formula progress() {
 		final Variable t1 = Variable.unary("t");
 		final Expression t2 = t1.join(tord);
 		final Variable p = Variable.unary("p");
@@ -208,7 +211,7 @@ public final class RingElection {
 	 * Returns the looplessPath predicate
 	 * @return <pre>pred looplessPath () {no disj t, t’: Time | toSend.t = toSend.t’}</pre>
 	 */
-	Formula looplessPath() {
+	public Formula looplessPath() {
 		final Variable t1 = Variable.unary("t");
 		final Variable t2 = Variable.unary("t'");
 		// all t, t': Time | some t&t' || !(toSend.t = toSend.t’)
@@ -220,7 +223,7 @@ public final class RingElection {
 	 * Returns the AtLeastOneElected assertion.
 	 * @return <pre>assert AtLeastOneElected { progress () => some elected.Time }</pre>
 	 */
-	Formula atLeastOneElected() {
+	public Formula atLeastOneElected() {
 		return progress().implies(elected.join(Time).some());
 	}
 	
@@ -228,7 +231,7 @@ public final class RingElection {
 	 * Returns the atMostOneElected assertion
 	 * @return <pre>assert AtMostOneElected {lone elected.Time}</pre>
 	 */
-	Formula atMostOneElected() {
+	public Formula atMostOneElected() {
 		return elected.join(Time).lone();
 	}
 	
@@ -236,7 +239,7 @@ public final class RingElection {
 	 * Returns the declarations and facts of the model
 	 * @return the declarations and facts of the model
 	 */
-	Formula declsAndFacts() {
+	public Formula declsAndFacts() {
 		return declarations().and(ring()).and(traces()).and(defineElected());
 	}
 	
@@ -245,7 +248,7 @@ public final class RingElection {
 	 * fields according to given values.
 	 * @return bounds
 	 */
-	Bounds bounds(int processes, int times) {
+	public Bounds bounds(int processes, int times) {
 		final List<String> atoms = new ArrayList<String>(processes + times);
 		for(int i = 0; i < processes; i++) {
 			atoms.add("Process"+i);
@@ -276,23 +279,34 @@ public final class RingElection {
 		return b;
 	}
 	
+	private static void usage() {
+		System.out.println("java examples.RingElection [# processes] [# times]");
+		System.exit(1);
+	}
+	
+	/**
+	 * Usage: java examples.RingElection [# processes] [# times]
+	 */
 	public static void main(String[] args) {
-		final RingElection model = new RingElection();
-		final Solver solver = new Solver();
-		solver.options().setSolver(SATFactory.ZChaff);
-		
-		final int p = Integer.parseInt(args[0]);
-		final int t = Integer.parseInt(args[1]);
-		// check AtMostOneElected for 3 Process, 7 Time 
-		final Formula checkAtMostOneElected = model.declsAndFacts().and(model.atMostOneElected().not());
-		final Bounds bounds37 = model.bounds(p,t);
-		
-		// run looplessPath for 13 Time, 3 Process
-		//final Formula runLooplessPath = model.declsAndFacts().and(model.looplessPath());
-		//final Bounds bounds313 = model.bounds(3, 13);
+		if (args.length < 2)
+			usage();
 		
 		try {
-			System.out.println("*****check AtMostOneElected for" + p +" Process, "+ t + " Time*****");
+			final RingElection model = new RingElection();
+			final Solver solver = new Solver();
+			solver.options().setSolver(SATFactory.ZChaff);
+			
+			final int p = Integer.parseInt(args[0]);
+			final int t = Integer.parseInt(args[1]);
+			// check AtMostOneElected for 3 Process, 7 Time 
+			final Formula checkAtMostOneElected = model.declsAndFacts().and(model.atMostOneElected().not());
+			final Bounds bounds37 = model.bounds(p,t);
+			
+			// run looplessPath for 13 Time, 3 Process
+			//final Formula runLooplessPath = model.declsAndFacts().and(model.looplessPath());
+			//final Bounds bounds313 = model.bounds(3, 13);
+			
+			System.out.println("*****check AtMostOneElected for " + p +" Process, "+ t + " Time*****");
 //			System.out.println(checkAtMostOneElected);
 //			System.out.println(bounds37);
 			Solution sol1 = solver.solve(checkAtMostOneElected, bounds37);
@@ -307,6 +321,8 @@ public final class RingElection {
 		} catch (TimeoutException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		} catch (NumberFormatException nfe) {
+			usage();
 		}
 	}
 	

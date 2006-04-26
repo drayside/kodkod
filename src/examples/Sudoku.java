@@ -1,4 +1,4 @@
-package tests;
+package examples;
 
 import static kodkod.ast.Expression.UNIV;
 
@@ -20,7 +20,58 @@ import kodkod.instance.TupleFactory;
 import kodkod.instance.TupleSet;
 import kodkod.instance.Universe;
 /**
- * Sudoku puzzle as a partial instance problem
+ * A kodkod encoding of sudoku.als:
+ * <pre>
+ * module internal/sudoku2
+ * 
+ * abstract sig Number {
+ *  data: Number -> Number
+ * } 
+ * one sig Zero, One, Two, Three, Four, Five, Six, Seven, Eight extends Number {}
+ * 
+ * pred uniqueRegions() {
+ *   // all numbers in each region
+ *   let region0 = Zero+One+Two, region1 = Three+Four+Five, 
+ *     region2=Six+Seven+Eight | {
+ *     region0.(region0.data) = Number
+ *     region0.(region1.data) = Number
+ *     region0.(region2.data) = Number
+ *     region1.(region0.data) = Number
+ *     region1.(region1.data) = Number
+ *     region1.(region2.data) = Number
+ *     region2.(region0.data) = Number
+ *     region2.(region1.data) = Number
+ *     region2.(region2.data) = Number
+ *   }
+ * }
+ * 
+ * pred rules() {
+ *   uniqueRegions() &&
+ *   all x, y: Number | 
+ *    some y.(x.data) && 
+ *    no (y.(x.data) & 
+ *    ((Number-y).(x.data) + y.((Number-x).data))) 
+ * }
+ * 
+ * pred puzzle() {
+ *   Zero->Zero->One + Zero->Three->Two + Zero->Six->Three + 
+ *   One->One->Two + One->Four->Three + One->Seven->Four + 
+ *   Two->Two->Three + Two->Five->Four + Two->Eight->Five +
+ * 
+ *   Three->Zero->Six + Three->Three->Four + Three->Six->Five + 
+ *   Four->One->Seven + Four->Four->Five + Four->Seven->Six + 
+ *   Five->Two->Eight + Five->Five->Six + Five->Eight->Seven +   
+ * 
+ *   Six->Zero->Eight + Six->Three->Zero + Six->Six->Seven + 
+ *   Seven->One->Zero + Seven->Four->One + Seven->Seven->Eight + 
+ *   Eight->Two->One + Eight->Five->Two + Eight->Eight->Four 
+ *   
+ *   in data
+ * }
+ * 
+ * pred game() {
+ *  rules() && puzzle()
+ * }
  */
 public final class Sudoku {
 
@@ -32,7 +83,7 @@ public final class Sudoku {
 	 * Creates an nxn sudoku grid
 	 * @requires n > 0
 	 */
-	Sudoku(int n) {
+	public Sudoku(int n) {
 		assert n > 0;
 		puzzle = Relation.ternary("puzzle");
 		regions = new Relation[n];
@@ -41,23 +92,21 @@ public final class Sudoku {
 		}
 	}
 
-	final Formula declarations() {
+	/**
+	 * Returns the declaration constraints.
+	 * @return declarations
+	 */
+	public final Formula declarations() {
 		final Variable v1 = Variable.unary("v1");
 		final Variable v2 = Variable.unary("v2");
 		return v2.join(v1.join(puzzle)).one().forAll(v1.oneOf(UNIV).and(v2.oneOf(UNIV)));
 	}
 	
-	final Formula oneInEachRow() {
-		final Variable r = Variable.unary("r");
-		return UNIV.join(r.join(puzzle)).eq(UNIV).forAll(r.oneOf(UNIV));
-	}
-	
-	final Formula oneInEachColumn() {
-		final Variable c = Variable.unary("c");
-		return c.join(UNIV.join(puzzle)).eq(UNIV).forAll(c.oneOf(UNIV));
-	}
-	
-	final Formula oneInEachRegion() {
+	/**
+	 * Returns the uniqueRegions predicate.
+	 * @return uniqueRegions
+	 */
+	public final Formula oneInEachRegion() {
 		Formula ret = Formula.TRUE;
 		for(Relation x: regions) {
 			for(Relation y: regions) {
@@ -67,7 +116,11 @@ public final class Sudoku {
 		return ret;
 	}
 	
-	final Formula alterRules() {
+	/**
+	 * Returns the rules predicate.
+	 * @return rules
+	 */
+	public final Formula rules() {
 		Formula ret = oneInEachRegion();
 		final Variable x = Variable.unary("x");
 		final Variable y = Variable.unary("y");
@@ -78,12 +131,9 @@ public final class Sudoku {
 		return ret.and(f.forAll(x.oneOf(UNIV).and(y.oneOf(UNIV))));
 	}
 	
-	final Formula rules() {
-		return declarations().and(oneInEachRow()).and(oneInEachColumn()).and(oneInEachRegion());
-	}
 	
 	/**
-	 * Returns bounds for the following puzzle:
+	 * Returns the bounds for the following puzzle:
 	 * 
 	 * <pre>
 	 *        0 1 2   3 4 5   6 7 8
@@ -104,7 +154,7 @@ public final class Sudoku {
 	 * 
 	 * @return bounds for the puzzle
 	 */
-	final Bounds puzzle1() {
+	public final Bounds puzzle1() {
 		final int n = regions.length, nsq = n*n;
 		assert n==3;
 		final List<String> nums = new ArrayList<String>(nsq);
@@ -158,12 +208,15 @@ public final class Sudoku {
 		return b;
 	}
 	
+	/**
+	 * Usage: java examples.Suduku
+	 */
 	public static void main(String[] args) {
 		final Sudoku sudoku = new Sudoku(3);
 		final Solver solver = new Solver();
 		solver.options().setSolver(SATFactory.ZChaff);
 		try {
-			final Formula rules = sudoku.alterRules();// sudoku.rules();
+			final Formula rules = sudoku.rules();// sudoku.rules();
 			final Bounds puzzle1 = sudoku.puzzle1();
 			//System.out.println(rules);
 			

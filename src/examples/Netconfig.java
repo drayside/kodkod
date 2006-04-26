@@ -1,4 +1,4 @@
-package tests;
+package examples;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -90,7 +90,10 @@ public class Netconfig {
 	// fields
 	private final Relation site, satellite, lineOfSight, start, end, tick;
 	
-	private Netconfig() {
+	/**
+	 * Constructs an instance of the Netconfig problem.
+	 */
+	public Netconfig() {
 		Time = Relation.unary("Time");
 		start = Relation.unary("start");
 		end = Relation.unary("end");
@@ -116,20 +119,9 @@ public class Netconfig {
 	
 	/**
 	 * Returns the constraints implicit in signature and field declarations.
-	 * @return 
-	 * sig Time {}
-	 * sig Site {} 
-	 * sig HQ, Sub extends Site {} 
-	 * one sig Korat extends HQ {} 
-	 * one sig Udonthani, Phitsanulok extends Sub {}
-	 * 
-	 * sig Router { 
-	 *  site: Site, 
-	 *  satellite: Router -> Time, 
-	 *  lineOfSight: Router -> Time 
-	 * }
+	 * @return the constraints implicit in signature and field declarations.
 	 */
-	private Formula declarations() {
+	public Formula declarations() {
 		// HQ + Sub in Site && no HQ & Sub
 		final Formula hqSub = HQ.union(Sub).in(Site).and(HQ.intersection(Sub).no());
 		// site is a function from Router to Site
@@ -145,21 +137,9 @@ public class Netconfig {
 	
 	/**
 	 * Returns the invariants predicate.
-	 * @return pred invariants() { 
-	 *  -- every site has at least one Router Site in Router.site
-	 *  -- links are symmetric and non-reflexive 
-	 *  all t: Time | lineOfSight.t = ~(lineOfSight.t) && no lineOfSight.t & iden 
-	 *  all t: Time | satellite.t = ~(satellite.t) && no satellite.t & iden
-	 *  
-	 *  -- no two Routers are connected with two both a satellite and lineOfSight
-	 *  -- link at the same Time 
-	 *  all t: Time | no satellite.t & lineOfSight.t
-	 *  
-	 *  -- there is at most one satellite link at any given Time: a resource constraint 
-	 *  all t: Time | no satellite || some r1, r2: Router | r1->r2 + r2->r1 = satellite.t
-	 * }
+	 * @return  invariants 
 	 */
-	private Formula invariants() {
+	public Formula invariants() {
 		final Variable t = Variable.unary("t");
 		
 		final Expression losAtT = lineOfSight.join(t);
@@ -178,13 +158,10 @@ public class Netconfig {
 	
 	/**
 	 * Returns the subsConnectedToHQ predicate.
-	 * @return pred subsConnectedToHQ(endTime: Time) { 
-	 *  -- every Sub location is connected to an HQ location at the given Time 
-	 *  all subRouter: site.Sub | some hqRouter: site.HQ | 
-	 *   subRouter->hqRouter in (satellite + lineOfSight).endTime 
+	 * @return  subsConnectedToHQ 
 	 * }
 	 */
-	private Formula subsConnectedToHQ(Expression endTime) {
+	public Formula subsConnectedToHQ(Expression endTime) {
 		final Variable subRouter = Variable.unary("subRouter");
 		final Variable hqRouter = Variable.unary("hqRouter");
 		final Formula f = subRouter.product(hqRouter).in(satellite.union(lineOfSight).join(endTime));
@@ -193,13 +170,9 @@ public class Netconfig {
 	
 	/**
 	 * Returns the connectedSites predicate.
-	 * @return pred connectedSites(sites: set Site, endTime: Time) { 
-	 *  -- all sites in the given set are connected to each other at the given Time 
-	 *  all s: sites | some r: site.s | 
-	 *   sites - s in (r.^((satellite + lineOfSight).endTime)).site 
-	 * }
+	 * @return  connectedSites 
 	 */
-	private Formula connectedSites(Expression sites, Expression endTime) {
+	public Formula connectedSites(Expression sites, Expression endTime) {
 		final Variable s = Variable.unary("s");
 		final Variable r = Variable.unary("r");
 		final Expression linksAtEndTime = satellite.union(lineOfSight).join(endTime);
@@ -209,50 +182,44 @@ public class Netconfig {
 	
 	/**
 	 * Returns the addSatelliteLink predicate
-	 * @return pred addSatelliteLink(r1, r2: Router, t: Time) { r1->r2 in satellite.t }
+	 * @return addSatelliteLink
 	 */
-	private Formula addSatelliteLink(Expression r1, Expression r2, Expression t) {
+	public Formula addSatelliteLink(Expression r1, Expression r2, Expression t) {
 		return r1.product(r2).in(satellite.join(t));
 	}
 	
 	/**
 	 * Returns the addLineOfSightLink predicate.
-	 * @return pred addLineOfSightLink(r1, r2: Router, t: Time) { 
-	 *  r1->r2 in satellite.tick/prev(t) && r1->r2 in lineOfSight.t }
+	 * @return addLineOfSightLink
 	 */
-	private Formula addLineOfSightLink(Expression r1, Expression r2, Expression t) {
+	public Formula addLineOfSightLink(Expression r1, Expression r2, Expression t) {
 		final Expression link = r1.product(r2);
 		return link.in(satellite.join(tick.join(t))).and(link.in(lineOfSight.join(t)));
 	}
 	
 	/**
 	 * Returns the continuedConnection predicate.
-	 * @return pred continuedConnection(r1, r2: Router, t: Time) { 
-	 *  r1->r2 & lineOfSight.tick/prev(t) = r1->r2 & lineOfSight.t }
+	 * @return continuedConnection
 	 */
-	private Formula continuedConnection(Expression r1, Expression r2, Expression t) {
+	public Formula continuedConnection(Expression r1, Expression r2, Expression t) {
 		final Expression link = r1.product(r2);
 		return link.intersection(lineOfSight.join(tick.join(t))).eq(link.intersection(lineOfSight.join(t)));
 	}
  
 	/** 
 	 * Returns the lostConnection predicate.
-	 * @return pred lostConnection(r1, r2: Router, t: Time) { 
-	 *  r1->r2 in lineOfSight.tick/prev(t) && no r1->r2 & lineOfSight.t }
+	 * @return lostConnection
 	 */
-	private Formula lostConnection(Expression r1, Expression r2, Expression t) {
+	public Formula lostConnection(Expression r1, Expression r2, Expression t) {
 		final Expression link = r1.product(r2);
 		return link.in(lineOfSight.join(tick.join(t))).and(link.intersection(lineOfSight.join(t)).no());
 	}
 	
 	/**
 	 * Returns the traces predicate.
-	 * @return pred traces() { 
-	 *  all r1, r2: Router, t: Time | 
-	 *   addSatelliteLink(r1, r2, t) || addLineOfSightLink(r1, r2, t) || 
-	 *   continuedConnection(r1, r2, t) || lostConnection(r1, r2, t) }
+	 * @return traces
 	 */
-	private Formula traces() {
+	public Formula traces() {
 		final Variable r1 = Variable.unary("r1");
 		final Variable r2 = Variable.unary("r2");
 		final Variable t = Variable.unary("t");
@@ -266,12 +233,9 @@ public class Netconfig {
 	
 	/**
 	 * Returns the show predicate.
-	 * @return
-	 * pred show() { 
-	 *  invariants() && subsConnectedToHQ(tick/last()) &&
-	 *  connectedSites(Site, tick/last()) && traces() }
+	 * @return show
 	 */
-	private Formula show() {
+	public Formula show() {
 		return declarations().and(invariants()).and(subsConnectedToHQ(end)).
 		       and(connectedSites(Site, end)).and(traces());
 	}
@@ -283,7 +247,7 @@ public class Netconfig {
 	 * @requires all arguments are positive and hqNum <= siteNum
 	 * @return a bounds for the model
 	 */
-	private Bounds bounds(int siteNum, int hqNum, int routerNum, int timeLength) {
+	public Bounds bounds(int siteNum, int hqNum, int routerNum, int timeLength) {
 		assert siteNum > 0 && hqNum > 0 && hqNum <= siteNum && routerNum > 0 && timeLength > 0;
 		final List<String> atoms = new ArrayList<String>(siteNum+routerNum+timeLength);
 		for(int i = 0; i < siteNum; i++) {
@@ -333,7 +297,16 @@ public class Netconfig {
 		return b;
 	}
 	
+	private static final void usage() {
+		System.out.println("Usage: java examples.Netconfig [# sites] [# hq] [# routers] [# time steps]");
+		System.exit(1);
+	}
+	/**
+	 * Usage: java examples.Netconfig [# sites] [# hq] [# routers] [# time steps]
+	 */
 	public static void main(String[] args) {
+		if (args.length < 4)
+			usage();
 		final Netconfig model = new Netconfig();
 		final Solver solver = new Solver();
 		solver.options().setSolver(SATFactory.ZChaff);
@@ -349,7 +322,7 @@ public class Netconfig {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (NumberFormatException nfe) {
-			System.out.println("Usage: java tests.Netconfig [# sites] [# hq] [# routers] [# time steps]");
+			usage();
 		}
 	}
 }

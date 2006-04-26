@@ -1,4 +1,4 @@
-package tests;
+package examples;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,7 +50,7 @@ public final class Toughnut {
 	/**
 	 * Creates an instance of Toughnut.
 	 */
-	Toughnut() {
+	public Toughnut() {
 		this.Cell = Relation.unary("Cell");
 		this.covered = Relation.nary("covered", 4);
 		this.ord = Relation.binary("ord");
@@ -70,7 +70,7 @@ public final class Toughnut {
 	 * since they can be expressed as bounds constraints.
 	 * @return the covering predicate
 	 */
-	Formula covering() {
+	public Formula covering() {
 		final Variable x = Variable.unary("x");
 		final Variable y = Variable.unary("y");
 		final Decls d = x.oneOf(Cell).and(y.oneOf(Cell));
@@ -89,7 +89,7 @@ public final class Toughnut {
 	 * Returns bounds for an nxn board.
 	 * @return bounds for an nxn board.
 	 */
-	Bounds board(int n) {
+	public Bounds board(int n) {
 		assert n > 0;
 		final List<String> atoms = new ArrayList<String>(n);
 		for(int i = 0; i < n; i++) {
@@ -116,24 +116,28 @@ public final class Toughnut {
 		return b;
 	}
 	
-	
+	/**
+	 * Usage: java examples.Toughnut [# size of one side of the board; optional]
+	 * @return
+	 */
 	public static void main(String[] args) {
-		int n = args.length==0 ? 4 : Integer.parseInt(args[0]);
-		final Toughnut nut = new Toughnut();
-		final Solver solver = new Solver();
-		solver.options().setSolver(SATFactory.ZChaff);
-		final Formula covering = nut.covering();
-		final Bounds bounds = nut.board(n);
-		
-		//System.out.println(covering);
-		//System.out.println(bounds);
-		
 		try {
+			int n = args.length==0 ? 4 : Integer.parseInt(args[0]);
+			final Toughnut nut = new Toughnut();
+			final Solver solver = new Solver();
+			solver.options().setSolver(SATFactory.ZChaff);
+			final Formula covering = nut.covering();
+			final Bounds bounds = nut.board(n);
+			
+			//System.out.println(covering);
+			//System.out.println(bounds);
 			final Solution sol = solver.solve(covering, bounds);
 			System.out.println(sol);
 		} catch (TimeoutException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		} catch (NumberFormatException nfe) {
+			System.out.println("Usage: java examples.Toughnut [# size of one side of the board; optional]");
 		}
 		
 		

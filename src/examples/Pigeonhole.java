@@ -1,4 +1,4 @@
-package tests;
+package examples;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,7 +17,7 @@ import kodkod.instance.Universe;
 
 /**
  * A KodKod encoding of the pigeonhole problem: module internal/pigeonhole
- * 
+ * <pre> 
  * sig Pigeon { hole: Hole }
  * 
  * sig Hole {}
@@ -28,7 +28,7 @@ import kodkod.instance.Universe;
  *   p1.hole = p2.hole }
  * 
  * run aPigeonPerHole for exactly 30 Pigeon, exactly 29 Hole
- * 
+ * </pre>
  * @author Emina Torlak
  */
 public final class Pigeonhole {
@@ -37,24 +37,39 @@ public final class Pigeonhole {
 	// fields
 	private final Relation hole;
 	
-	Pigeonhole() {
+	/**
+	 * Creates an instance of the pigeonhole example.
+	 */
+	public Pigeonhole() {
 		this.Pigeon = Relation.unary("Pigeon");
 		this.Hole = Relation.unary("Hole");
 		this.hole = Relation.binary("hole");		
 	}
 	
-	Formula declarations() {
+	/**
+	 * Returns the declaration constraints.
+	 * @return declarations
+	 */
+	public Formula declarations() {
 		final Variable p = Variable.unary("p");
 		return p.join(hole).some().forAll(p.oneOf(Pigeon));
 	}
 	
-	Formula pigeonPerHole() {
+	/**
+	 * Returns the aPigeonPerHole constraints.
+	 * @return aPigeonPerHole
+	 */
+	public Formula pigeonPerHole() {
 		final Variable p1 = Variable.unary("p1");
 		final Variable p2 = Variable.unary("p2");
 		return (p1.eq(p2).not().implies(p1.join(hole).intersection(p2.join(hole)).no())).forAll(p1.oneOf(Pigeon).and(p2.oneOf(Pigeon)));
 	}
 	
-	Bounds bounds(int pigeons, int holes) {
+	/**
+	 * Returns the bounds for the given number of pigeons and holes.
+	 * @return bounds
+	 */
+	public Bounds bounds(int pigeons, int holes) {
 		final List<String> atoms = new ArrayList<String>(pigeons + holes);
 		for(int i = 0; i < pigeons; i++) {
 			atoms.add("Pigeon"+i);
@@ -75,7 +90,17 @@ public final class Pigeonhole {
 		return b;
 	}
 	
+	private static void usage() {
+		System.out.println("Usage: java tests.Pigeonhole [# pigeons] [# holes]");
+		System.exit(1);
+	}
+	
+	/**
+	 * Usage: java tests.Pigeonhole [# pigeons] [# holes]
+	 */
 	public static void main(String[] args) {
+		if (args.length < 2)
+			usage();
 		final Pigeonhole model = new Pigeonhole();
 		final Solver solver = new Solver();
 		final int p = Integer.parseInt(args[0]);
@@ -93,7 +118,7 @@ public final class Pigeonhole {
 			System.out.println("timed out.");
 			e.printStackTrace();
 		} catch (NumberFormatException nfe) {
-			System.out.println("Usage: java tests.Pigeonhole [# pigeons] [# holes]");
+			usage();
 		}
 	}
 	

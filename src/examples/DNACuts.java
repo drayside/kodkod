@@ -1,4 +1,4 @@
-package tests;
+package examples;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -75,7 +75,10 @@ public final class DNACuts {
 	private final Relation next, Link, CutLink, JoinLink, Base, base, partner;
 	private final Expression[] neighbor;
 	
-	DNACuts(int cutLinkLength) {
+	/**
+	 * Constructs an instance of the DNACuts example for the given cut link length.
+	 */
+	public DNACuts(int cutLinkLength) {
 		assert cutLinkLength > 0;
 		Base = Relation.unary("Base");
 		Link = Relation.unary("Link");
@@ -94,7 +97,11 @@ public final class DNACuts {
 		
 	}
 	
-	Formula declarations() {
+	/**
+	 * Returns declarations constraints.
+	 * @return declarations constraints.
+	 */
+	public Formula declarations() {
 		final Variable l = Variable.unary("l");
 		final Formula f0 = l.join(base).one().forAll(l.oneOf(Link));
 		final Formula f1 = CutLink.union(JoinLink).eq(Link);
@@ -102,7 +109,13 @@ public final class DNACuts {
 		return f0.and(f1).and(f2);
 	}
 	
-	Formula cutChainLength() {
+	/**
+	 * Returns the cutChainLength constraint.  (Similar to 
+	 * CutChainsAtMost6BasesLong fact, but with the cut 
+	 * chain length as specified during construction.)
+	 * @return the cutChainLength constraint
+	 */
+	public Formula cutChainLength() {
 		Formula ret = Formula.FALSE;
 		final Variable c = Variable.unary("c");
 		for(int i = 0; i < neighbor.length; i++) {
@@ -111,7 +124,11 @@ public final class DNACuts {
 		return ret.forAll(c.oneOf(CutLink));
 	}
 	
-	Formula cutLinkUniqueness() {
+	/**
+	 * Returns the cutLinkUniqueness constraint.
+	 * @return the cutLinkUniqueness constraint.
+	 */
+	public Formula cutLinkUniqueness() {
 		final Variable c1 = Variable.unary("c1");
 		final Variable c2 = Variable.unary("c2");
 		final Formula f0 = c1.eq(c2).not().and(next.join(c1).in(JoinLink)).and(next.join(c2).in(JoinLink));
@@ -124,14 +141,22 @@ public final class DNACuts {
 		return f0.implies(f).forAll(c1.oneOf(CutLink).and(c2.oneOf(CutLink)));
 	}
 	
-	Formula show() {
+	/**
+	 * Returns the show predicate.
+	 * @return the show predicate.
+	 */
+	public Formula show() {
 		final Formula f0 = Base.in(Link.join(base));
 		final Formula f1 = JoinLink.some();
 		final Formula f2 = CutLink.some();
 		return declarations().and(cutChainLength()).and(cutLinkUniqueness()).and(f0).and(f1).and(f2);
 	}
 	
-	Bounds bounds(int n) {
+	/**
+	 * Returns the bounds for n links.
+	 * @return bounds for n links.
+	 */
+	public Bounds bounds(int n) {
 		assert n >= 0;
 		final List<String> atoms = new ArrayList<String>(n + 4);
 		atoms.add("A");
@@ -178,11 +203,22 @@ public final class DNACuts {
 		return b;
 	}
 	
+	private static void usage() {
+		System.out.println("Usage: java examples.DNACuts [cut chain length] [# links]");
+		System.exit(1);
+	}
+	
+	/**
+	 * Usage:  java examples.DNACuts [cut chain length] [# links]
+	 */
 	public static void main(String[] args) {
-		final DNACuts model = new DNACuts(Integer.parseInt(args[0]));
-		final Solver solver = new Solver();
-		solver.options().setSolver(SATFactory.ZChaff);
+		if (args.length < 2) 
+			usage();
+		
 		try {
+			final DNACuts model = new DNACuts(Integer.parseInt(args[0]));
+			final Solver solver = new Solver();
+			solver.options().setSolver(SATFactory.ZChaff);
 			Formula f = model.show();
 			Bounds b = model.bounds(Integer.parseInt(args[1]));
 			System.out.println("solving...");
@@ -194,6 +230,8 @@ public final class DNACuts {
 		} catch (TimeoutException e) {
 			System.out.println("timed out.");
 			e.printStackTrace();
-		} 
+		} catch (NumberFormatException nfe) {
+			usage();
+		}
 	}
 }
