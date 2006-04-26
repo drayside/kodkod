@@ -24,6 +24,7 @@ import kodkod.engine.Options;
 import kodkod.engine.TrivialFormulaException;
 import kodkod.engine.bool.BooleanConstant;
 import kodkod.engine.bool.BooleanFactory;
+import kodkod.engine.bool.BooleanFormula;
 import kodkod.engine.bool.BooleanMatrix;
 import kodkod.engine.bool.BooleanValue;
 import kodkod.engine.satlab.SATSolver;
@@ -73,7 +74,7 @@ public final class Translator {
 		
 		BooleanVariableAllocator allocator = new BooleanVariableAllocator(bounds, notes.topLevelFunctions());
 		BooleanFactory factory = allocator.factory();
-		final int numPrimaryVariables = factory.maxVariableLiteral();
+		final int numPrimaryVariables = factory.maxVariableLabel();
 		
 //		System.out.println("translating to sat...");
 		final Map<Node, IntSet> varUsage;
@@ -111,7 +112,7 @@ public final class Translator {
 //			System.out.println("flattening...");
 			// remove everything but the variables from the factory
 			factory.clear(numPrimaryVariables);
-			circuit = BooleanFormulaFlattener.flatten(circuit, factory);
+			circuit = BooleanFormulaFlattener.flatten((BooleanFormula)circuit, factory);
 			// release the memory used by the factory and the factory itself
 			factory.clear(0);
 			factory = null;
@@ -122,7 +123,7 @@ public final class Translator {
 		}
 		
 //		System.out.println("translating to cnf...");
-		final SATSolver cnf = Bool2CnfTranslator.translate(circuit, options.solver(), numPrimaryVariables);
+		final SATSolver cnf = Bool2CnfTranslator.translate((BooleanFormula)circuit, options.solver(), numPrimaryVariables);
 		cnf.setTimeout(options.timeout());
 		
 		return new Translation(cnf, bounds, skolems, Collections.unmodifiableMap(varUsage), numPrimaryVariables, options.trackVars());

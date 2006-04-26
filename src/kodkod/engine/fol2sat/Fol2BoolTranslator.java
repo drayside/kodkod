@@ -36,8 +36,8 @@ import kodkod.engine.bool.BooleanFactory;
 import kodkod.engine.bool.BooleanMatrix;
 import kodkod.engine.bool.BooleanValue;
 import kodkod.engine.bool.Dimensions;
-import kodkod.engine.bool.MutableMultiGate;
-import kodkod.engine.bool.MultiGate.Operator;
+import kodkod.engine.bool.BooleanAccumulator;
+import kodkod.engine.bool.Operator;
 import kodkod.util.IdentityHashSet;
 import kodkod.util.IndexedEntry;
 import kodkod.util.IntSet;
@@ -161,21 +161,21 @@ final class Fol2BoolTranslator {
 		 * If the given expression is one for which we are caching translations,
 		 * the provided translation is cached and returned.  Otherwise,
 		 * the translation is simply returned.  In addition, this method records
-		 * the literals of BooleanFormulas that comprise the dense regions of 
+		 * the labels of BooleanFormulas that comprise the dense regions of 
 		 * the translation in the varUsage map. 
 		 * @return translation
 		 * @effects if the expression is one for which we are caching translations,
 		 * the provided translation is cached.
 		 * @effects this.varUsage' = this.varUsage + 
 		 *           expr -> {i: int | some b: translation.elements[int] - BooleanConstant | 
-		 *                     i = |b.literal| }
+		 *                     i = |b.label| }
 		 */
 		@Override
 		protected BooleanMatrix record(Expression expr, BooleanMatrix translation) {
 			final BooleanFactory factory = allocator.factory();
 			IntSet vars;
 			if (env.parent()==null) { // top-level expression
-				vars = Ints.bestSet(1, factory.maxFormulaLiteral());		
+				vars = Ints.bestSet(1, factory.maxFormulaLabel());		
 			} else { // not a top-level expression
 				vars = varUsage.get(expr);
 				if (vars==null)
@@ -184,7 +184,7 @@ final class Fol2BoolTranslator {
 			final BooleanValue nonZeroConstant = factory.not(translation.zero());
 			for(IndexedEntry<BooleanValue> e: translation) {
 				if (e.value() != nonZeroConstant)
-					vars.add(StrictMath.abs(e.value().literal()));
+					vars.add(StrictMath.abs(e.value().label()));
 			}
 			varUsage.put(expr, vars);
 			return cache.cache(expr, translation, env);
@@ -194,7 +194,7 @@ final class Fol2BoolTranslator {
 		 * If the given formula is one for which we are caching translations,
 		 * the provided translation is cached and returned.  Otherwise,
 		 * the translation is simply returned. In addition, this method records
-		 * the literal of the translation in the varUsage map, if the translation
+		 * the label of the translation in the varUsage map, if the translation
 		 * is non-constant.  If it is constant, it records the formula as being
 		 * constant.  
 		 * @return translation
@@ -204,7 +204,7 @@ final class Fol2BoolTranslator {
 		 * 	          this.trueFormulas' = this.trueFormulas + formula,
 		 *          translation = BooleanConstant.FALSE => 
 		 * 	          this.falseFormulas' = this.falseFormulas + formula,
-		 *          this.varUsage' = this.varUsage + formula -> |translation.literal|
+		 *          this.varUsage' = this.varUsage + formula -> |translation.label|
 		 */
 		@Override
 		protected BooleanValue record(Formula formula, BooleanValue translation) {
@@ -213,12 +213,12 @@ final class Fol2BoolTranslator {
 			} else if (translation==BooleanConstant.FALSE) {
 				if (env.parent()==null) falseFormulas.add(formula);
 			} else if (env.parent()==null) { // top-level formula
-				varUsage.put(formula, Ints.singleton(StrictMath.abs(translation.literal())));	
+				varUsage.put(formula, Ints.singleton(StrictMath.abs(translation.label())));	
 			} else {
 				IntSet vars = varUsage.get(formula);
 				if (vars==null)
 					vars = Ints.bestSet(1, Integer.MAX_VALUE-1);
-				vars.add(StrictMath.abs(translation.literal()));
+				vars.add(StrictMath.abs(translation.label()));
 				varUsage.put(formula, vars);
 			}
 			return cache.cache(formula, translation, env);
@@ -449,16 +449,16 @@ final class Fol2BoolTranslator {
 				env = generator.next(factory);
 				
 				int[] index = generator.index();
-				MutableMultiGate conjunct = MutableMultiGate.treeGate(Operator.AND);
+				BooleanAccumulator conjunct = BooleanAccumulator.treeGate(Operator.AND);
 				// A_index[0] && B_index[1] && ... && X_index[index.length-1]
 				for(int i = 0; i < index.length; i++) {
-					conjunct.addInput(declTransls.get(i).get(index[i]));
+					conjunct.add(declTransls.get(i).get(index[i]));
 				}
 				// A_index[0] && B_index[1] && ... && X_index[index.length-1] &&
 				//   translate(F(A_index[0], B_index[1], ..., X_index[index.length-1]))
-				conjunct.addInput(comprehension.formula().accept(this));
+				conjunct.add(comprehension.formula().accept(this));
 				
-				ret.set(dims.convert(index), factory.toImmutableValue(conjunct)); 
+				ret.set(dims.convert(index), factory.adopt(conjunct)); 
 			}	
 			env = generator.baseEnvironment();
 			
@@ -499,7 +499,7 @@ final class Fol2BoolTranslator {
 		 */
 		private BooleanValue visitUniversalFormula(QuantifiedFormula qf) {
 			// holds the top level conjuction
-			final MutableMultiGate conjunct = MutableMultiGate.treeGate(Operator.AND);
+			final BooleanAccumulator conjunct = BooleanAccumulator.treeGate(Operator.AND);
 			
 			final Decls decls = qf.declarations();
 			final List<BooleanMatrix> declTransls = visit(decls);
@@ -510,21 +510,21 @@ final class Fol2BoolTranslator {
 				env = generator.next(factory);
 				
 				int index[] = generator.index();
-				MutableMultiGate disjunct = MutableMultiGate.treeGate(Operator.OR);
+				BooleanAccumulator disjunct = BooleanAccumulator.treeGate(Operator.OR);
 				// !A_index[0] || !B_index[1] || ... || !X_index[index.length-1]
 				for(int i = 0; i < index.length; i++) {
-					disjunct.addInput(factory.not(declTransls.get(i).get(index[i])));
+					disjunct.add(factory.not(declTransls.get(i).get(index[i])));
 				}
 				// !A_index[0] || !B_index[1] || ... || !X_index[index.length-1] ||
 				//   translate(F(A_index[0], B_index[1], ..., X_index[index.length-1]))
-				disjunct.addInput(qf.formula().accept(this));
+				disjunct.add(qf.formula().accept(this));
 				
-				conjunct.addInput(factory.toImmutableValue(disjunct));
+				conjunct.add(factory.adopt(disjunct));
 				
 			}
 			env = generator.baseEnvironment();
 			
-			return factory.toImmutableValue(conjunct);
+			return factory.adopt(conjunct);
 		}
 		
 		/**
@@ -539,7 +539,7 @@ final class Fol2BoolTranslator {
 		 */
 		private BooleanValue visitExistentialFormula(QuantifiedFormula qf) {
 			// holds the top level disjuction
-			final MutableMultiGate disjunct = MutableMultiGate.treeGate(Operator.OR);
+			final BooleanAccumulator disjunct = BooleanAccumulator.treeGate(Operator.OR);
 			
 			final Decls decls = qf.declarations();
 			final List<BooleanMatrix> declTransls = visit(decls);
@@ -550,20 +550,20 @@ final class Fol2BoolTranslator {
 				env = generator.next(factory);
 				
 				int index[] = generator.index();
-				MutableMultiGate conjunct = MutableMultiGate.treeGate(Operator.AND);
+				BooleanAccumulator conjunct = BooleanAccumulator.treeGate(Operator.AND);
 				// A_index[0] && B_index[1] && ... && X_index[index.length-1]
 				for(int i = 0; i < index.length; i++) {
-					conjunct.addInput(declTransls.get(i).get(index[i]));
+					conjunct.add(declTransls.get(i).get(index[i]));
 				}
 				// A_index[0] && B_index[1] && ... && X_index[index.length-1] &&
 				//   translate(F(A_index[0], B_index[1], ..., X_index[index.length-1]))
-				conjunct.addInput(qf.formula().accept(this));
+				conjunct.add(qf.formula().accept(this));
 				
-				disjunct.addInput(factory.toImmutableValue(conjunct));	
+				disjunct.add(factory.adopt(conjunct));	
 			}
 			env = generator.baseEnvironment();
 			
-			return factory.toImmutableValue(disjunct);
+			return factory.adopt(disjunct);
 		}
 		
 		/** 

@@ -3,58 +3,48 @@ package kodkod.engine.bool;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-import kodkod.engine.bool.MultiGate.Operator;
 import kodkod.util.Ints;
 
 
 /**
  * Represents a NOT gate.
  * 
- * @invariant #inputs = 1 && inputs in MultiGate + BooleanVariable
- * @invariant this.literal = -input.literal
- * @invariant literal in (-Integer.MAX_VALUE..-1]
+ * @invariant this.op = Operator.NOT
+ * @invariant #inputs = 1 
+ * @invariant this.label = -inputs.label
+ * @invariant label in (-Integer.MAX_VALUE..-1]
  * @author Emina Torlak
  */
 public final class NotGate extends BooleanFormula {
 
-	private final BooleanFormula input;
-	private final int digest;
+	private final int hashcode;
 	
 	/**
 	 * Constructs a new NotGate with the given formula as its input.
 	 * @requires input != null && input !in NotGate
-	 * @effects this.inputs' = 0->input && this.output'.literal = -input.literal
+	 * @effects this.inputs' = 0->input && this.output'.label = -input.label
 	 */
 	NotGate(BooleanFormula input) {
-		this.input = input;
-		this.digest = Ints.superFastHash(-input.literal());
+		super(input);
+		this.hashcode = Ints.superFastHash(-input.label());
 	}
 	
 	/**
-	 * Returns a hash of this inverter's literal.
-	 * @return IntHasher.superFastHash(this.literal)
+	 * Returns a hash of this inverter's label.
+	 * @return Ints.superFastHash(this.label)
 	 */
 	@Override
-	int digest(Operator op) {
-		return digest;
+	int hash(Operator op) {
+		return hashcode;
 	}
-	
-	@Override
-	BooleanFormula negation() {
-		return input;
-	}
-	
+
 	/**
-	 * Returns the sole input to this NOT gate.
-	 * @return this.inputs
+	 * Returns an iterator that returns this gate's single input.
+	 * @return an iterator over this.inputs.
 	 */
-	public BooleanFormula input() {
-		return input; 
-	}
-	
 	@Override
-	public Iterator<BooleanValue> inputs() {
-		return new Iterator<BooleanValue>() {
+	public Iterator<BooleanFormula> iterator() {
+		return new Iterator<BooleanFormula>() {
 			boolean hasNext = true;
 			public boolean hasNext() {
 				return hasNext;
@@ -63,7 +53,7 @@ public final class NotGate extends BooleanFormula {
 			public BooleanFormula next() {
 				if (!hasNext) throw new NoSuchElementException();
 				hasNext = false;
-				return input;
+				return negation();
 			}
 
 			public void remove() {
@@ -73,21 +63,66 @@ public final class NotGate extends BooleanFormula {
 		};
 	}
 	
+	/**
+	 * Returns the label for this value. 
+	 * @return this.label
+	 */
 	@Override
-	public final int literal() { return -input.literal(); }
+	public final int label() { return -negation().label(); }
 	
+	/**
+	 * Returns 1.
+	 * @return 1.
+	 */
 	@Override
-	public int numInputs() {
+	public int size() {
 		return 1;
 	}
 	
+	/**
+	 * Passes this value and the given
+	 * argument value to the visitor, and returns the resulting value.
+	 * @return the value produced by the visitor when visiting this node
+	 * with the given argument.
+	 */
 	@Override
 	public <T, A> T accept(BooleanVisitor<T,A> visitor, A arg) {
 		return visitor.visit(this, arg);
 	}
 	
+	/**
+	 * Returns a string representation of this inverter.
+	 * @return a string representation of this inverter.
+	 */
 	public String toString() {
-		return "!" + input.toString();
+		return "!" + negation().toString();
 	}
 
+	/**
+	 * Returns Operator.NOT.
+	 * @return Operator.NOT
+	 */
+	@Override
+	public kodkod.engine.bool.Operator op() {
+		return kodkod.engine.bool.Operator.NOT;
+	}
+
+	/**
+	 * Returns this.input[i].
+	 * @return this.input[i]
+	 * @throws IndexOutOfBoundsException - i != 0
+	 */
+	@Override
+	public BooleanFormula input(int i) {
+		if (i != 0) throw new IndexOutOfBoundsException();
+		return negation();
+	}
+
+	/**
+	 * Returns a hashcode for this inverter.
+	 * @return a hashcode for this inverter.
+	 */
+	public int hashCode() { 
+		return hashcode;
+	}
 }

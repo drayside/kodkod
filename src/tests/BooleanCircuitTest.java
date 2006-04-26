@@ -2,8 +2,8 @@ package tests;
 
 import static kodkod.engine.bool.BooleanConstant.FALSE;
 import static kodkod.engine.bool.BooleanConstant.TRUE;
-import static kodkod.engine.bool.MultiGate.Operator.AND;
-import static kodkod.engine.bool.MultiGate.Operator.OR;
+import static kodkod.engine.bool.Operator.AND;
+import static kodkod.engine.bool.Operator.OR;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -13,7 +13,8 @@ import kodkod.engine.bool.BooleanConstant;
 import kodkod.engine.bool.BooleanFactory;
 import kodkod.engine.bool.BooleanValue;
 import kodkod.engine.bool.BooleanVariable;
-import kodkod.engine.bool.MultiGate.Operator;
+import kodkod.engine.bool.Operator;
+
 
 
 public class BooleanCircuitTest extends TestCase {
@@ -72,7 +73,7 @@ public class BooleanCircuitTest extends TestCase {
 		}
 	}
 	
-	private final void testParenthesis(BooleanValue result, Operator op,
+	private final void testParenthesis(BooleanValue result, Operator.Nary op,
 			BooleanValue p, BooleanValue q,
 			BooleanValue r, BooleanValue s) {
 		
@@ -110,7 +111,7 @@ public class BooleanCircuitTest extends TestCase {
 		assertSame(result, f.compose(op, f.compose(op, f.compose(op, p, q), r), s));
 	}
 	
-	private final void testIdentityContradictionExcludedMiddle(Operator op, BooleanValue p) {
+	private final void testIdentityContradictionExcludedMiddle(Operator.Nary op, BooleanValue p) {
         // identity: p & T = p | F = p
         assertSame(p, f.compose(op, p, op.identity()));
         
@@ -122,7 +123,7 @@ public class BooleanCircuitTest extends TestCase {
         
     }
 	
-	private final void testIdempotencyAbsorptionContraction(Operator op, BooleanValue p, BooleanValue q) {
+	private final void testIdempotencyAbsorptionContraction(Operator.Nary op, BooleanValue p, BooleanValue q) {
         // idempotency: p op p = p 
         assertSame(p, f.compose(op, p, p));
         assertSame(q, f.compose(op, q, q));
@@ -137,7 +138,7 @@ public class BooleanCircuitTest extends TestCase {
 	
 	
 	
-	private final void testCommutativityAndAssociativity(Operator op, 
+	private final void testCommutativityAndAssociativity(Operator.Nary op, 
 			BooleanValue p, BooleanValue q,
 			BooleanValue r, BooleanValue s) {
 		
@@ -180,7 +181,7 @@ public class BooleanCircuitTest extends TestCase {
 		
 	}
 	
-	private final void testMultiGateWithConstantAndFormula(Operator op, BooleanValue p, BooleanValue q) {
+	private final void testMultiGateWithConstantAndFormula(Operator.Nary op, BooleanValue p, BooleanValue q) {
 		testCommutativityAndAssociativity(op, TRUE, p, q, FALSE);
 		testCommutativityAndAssociativity(op, FALSE, TRUE, p, q);
 		testCommutativityAndAssociativity(op, p, TRUE, q, FALSE);
@@ -188,7 +189,7 @@ public class BooleanCircuitTest extends TestCase {
         testIdempotencyAbsorptionContraction(op, TRUE, q);
 	}
 	
-	private final void testMultiGateWithConstantArgument(Operator op) {
+	private final void testMultiGateWithConstantArgument(Operator.Nary op) {
 		// constant / constant
         testIdentityContradictionExcludedMiddle(op, TRUE);
         testIdentityContradictionExcludedMiddle(op, FALSE);
@@ -208,7 +209,7 @@ public class BooleanCircuitTest extends TestCase {
         testMultiGateWithConstantAndFormula(op, f.compose(op, v[2], v[3]), f.compose(op, v[1], v[4]));
 	}
 	
-	private final void testMultiGateWithVariableArgument(Operator op) {
+	private final void testMultiGateWithVariableArgument(Operator.Nary op) {
 		// variable / variable    
         testIdentityContradictionExcludedMiddle(op, v[0]);
         testIdentityContradictionExcludedMiddle(op, v[3]);
@@ -235,7 +236,7 @@ public class BooleanCircuitTest extends TestCase {
         testIdempotencyAbsorptionContraction(op, v[14], v141815);
 	}
 	
-	private final void testMultiGateWithNegatedArgument(Operator op) {
+	private final void testMultiGateWithNegatedArgument(Operator.Nary op) {
 		// negation / negation
         final BooleanValue v842 = f.compose(op.complement(), v[8], f.compose(op.complement(), v[4], v[2])), 
                            v191015 = f.compose(op, v[19], f.compose(op, v[10], v[15])), 
@@ -253,7 +254,7 @@ public class BooleanCircuitTest extends TestCase {
         
 	}
 	
-	private final void testMultiGateWithMultiGateArgument(Operator op) {
+	private final void testMultiGateWithMultiGateArgument(Operator.Nary op) {
 		final BooleanValue v842 = f.compose(op.complement(), v[8], f.compose(op.complement(), v[4], v[2])), 
                            v191015 = f.compose(op, v[19], f.compose(op, v[10], v[15])), 
                            v027 = f.compose(op.complement(), v[0], f.compose(op, v[2], v[7])),  
@@ -266,7 +267,7 @@ public class BooleanCircuitTest extends TestCase {
         testIdempotencyAbsorptionContraction(op, v842, v15104);
 	}
 			
-	private void testMultiGate(Operator op) {
+	private void testMultiGate(Operator.Nary op) {
 		testMultiGateWithConstantArgument(op);
 		init();
 		testMultiGateWithVariableArgument(op);

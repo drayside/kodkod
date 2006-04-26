@@ -1,7 +1,7 @@
 package kodkod.engine.bool;
 
 /** 
- * Visits {@link kodkod.engine.bool.BooleanValue boolean values}.
+ * Visits {@link kodkod.engine.bool.BooleanFormula boolean formulas}.
  * In addition to passing themselves as the argument to the visitor,
  * the boolean values also pass along satelite information of type A.
  *
@@ -16,6 +16,12 @@ public interface BooleanVisitor<T, A> {
     public T visit(MultiGate multigate, A arg);
     
     /**
+     * Visits the if-then-else gate and returns the result.
+     * @return the result of visiting the given ITEGate
+     */
+    public T visit(ITEGate ite, A arg);
+    
+    /**
 	 * Visits the inverter and returns the result.
 	 * @return the result of visiting the given inverter
 	 */
@@ -26,11 +32,5 @@ public interface BooleanVisitor<T, A> {
 	 * @return the result of visiting the given variable
 	 */
     public T visit(BooleanVariable variable, A arg);
-    
-    /**
-	 * Visits the constant and returns the result.
-	 * @return the result of visiting the given constant
-	 */
-    public T visit(BooleanConstant constant, A arg);
-
+  
 }

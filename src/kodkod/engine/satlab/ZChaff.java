@@ -42,7 +42,7 @@ final class ZChaff implements SATSolver {
 	
 	/**
 	 * Returns the size of this solver's vocabulary.
-	 * @return #this.literals
+	 * @return #this.labels
 	 * @see kodkod.engine.satlab.SATSolver#numberOfVariables()
 	 */
 	public final int numberOfVariables() {
@@ -89,7 +89,7 @@ final class ZChaff implements SATSolver {
 	/**
 	 * Adds the specified number of new variables
 	 * to the solver's vocabulary.
-	 * @effects this.literals' = [1..#this.literals + vars]
+	 * @effects this.labels' = [1..#this.literals + vars]
 	 * @throws IllegalArgumentException - vars < 0
 	 * @see kodkod.engine.satlab.SATSolver#addVariables(int)
 	 */

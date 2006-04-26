@@ -312,12 +312,11 @@ public final class CacheSet<E> extends AbstractSet<E> {
 	}
 	
 	/**
-	 * Returns an iterator over the elements in this set,
+	 * Returns an iterator over the elements 
 	 * whose hashcode() method returns the given hash.
-	 * @return an iterator over the elements in this set,
-	 * whose hashcode() method returns the given hash.
+	 * @return an iterator over {e: this.elts | e.hashCode() = hash }
 	 */
-	public Iterator<E> iterator(final int hash) {
+	public Iterator<E> get(final int hash) {
 		final int i = indexFor(hash(hash), table.length);
 		return new Iterator<E>() {
 			

@@ -6,8 +6,6 @@ package tests;
 
 import static kodkod.engine.bool.BooleanConstant.FALSE;
 import static kodkod.engine.bool.BooleanConstant.TRUE;
-import static kodkod.engine.bool.MultiGate.Operator.AND;
-import static kodkod.engine.bool.MultiGate.Operator.OR;
 
 import java.util.Arrays;
 import java.util.Iterator;
@@ -19,8 +17,8 @@ import kodkod.engine.bool.BooleanMatrix;
 import kodkod.engine.bool.BooleanValue;
 import kodkod.engine.bool.BooleanVariable;
 import kodkod.engine.bool.Dimensions;
-import kodkod.engine.bool.MultiGate;
-import kodkod.engine.bool.MutableMultiGate;
+import kodkod.engine.bool.BooleanAccumulator;
+import kodkod.engine.bool.Operator;
 import kodkod.util.IndexedEntry;
 import kodkod.util.IntRange;
 import kodkod.util.Ints;
@@ -200,23 +198,23 @@ public class BooleanMatrixTest extends TestCase {
     }
 
     public final void testAnd() {
-        assertTrue(equivalent(mT324, mT324.compose(AND, mT324))); 
-        assertTrue(equivalent(mF324, mF324.compose(AND, mF324)));
-        assertTrue(equivalent(mF324, mF324.compose(AND, mT324)));
-        assertTrue(equivalent(mT324.compose(AND, mF324), mF324.compose(AND, mT324)));
+        assertTrue(equivalent(mT324, mT324.and(mT324))); 
+        assertTrue(equivalent(mF324, mF324.and(mF324)));
+        assertTrue(equivalent(mF324, mF324.and(mT324)));
+        assertTrue(equivalent(mT324.and(mF324), mF324.and(mT324)));
         
           
         for (int i = mR[2].min(); i <= mR[2].max(); i++) {
             mT324.set(i, vars[i]);
             mF324.set(i, vars[2*i % vars.length]);
-            mCells[i] = f.compose(AND, vars[i], vars[2*i % vars.length]);
+            mCells[i] = f.and(vars[i], vars[2*i % vars.length]);
         }
-        assertTrue(equivalent(mT324.compose(AND, mF324), mCells));
+        assertTrue(equivalent(mT324.and(mF324), mCells));
         
         mT324.set(mR[4].min(), vars[mR[4].min()]);
         mF324.set(mR[3].min(), vars[mR[3].min()]);
         mCells[mR[3].min()] = vars[mR[3].min()];
-        assertTrue(equivalent(mT324.compose(AND, mF324), mCells));
+        assertTrue(equivalent(mT324.and(mF324), mCells));
         
         //System.out.println(mT324);
         //System.out.println(mF324);
@@ -224,24 +222,24 @@ public class BooleanMatrixTest extends TestCase {
     }
 
     public final void testOr() {
-        assertTrue(equivalent(mT324, mT324.compose(OR,  mT324))); 
-        assertTrue(equivalent(mF324, mF324.compose(OR, mF324)));
-        assertTrue(equivalent(mT324, mT324.compose(OR, mF324)));
-        assertTrue(equivalent(mT324.compose(OR, mF324), mF324.compose(OR, mT324)));
+        assertTrue(equivalent(mT324, mT324.or(mT324))); 
+        assertTrue(equivalent(mF324, mF324.or(mF324)));
+        assertTrue(equivalent(mT324, mT324.or(mF324)));
+        assertTrue(equivalent(mT324.or(mF324), mF324.or(mT324)));
         
         Arrays.fill(mCells, TRUE);
                 
         for (int i = mR[1].min(); i <= mR[1].max(); i++) {
             mT324.set(i, vars[i]);
             mF324.set(i, vars[2*i % vars.length]);
-            mCells[i] = f.compose(OR, vars[i], vars[2*i % vars.length]);
+            mCells[i] = f.or(vars[i], vars[2*i % vars.length]);
         }
-        assertTrue(equivalent(mT324.compose(OR, mF324), mCells));
+        assertTrue(equivalent(mT324.or(mF324), mCells));
         
         mT324.set(mR[0].max(), vars[mR[0].max()]);
         mF324.set(mR[2].min(), vars[mR[2].min()]);
         mCells[mR[0].max()] = vars[mR[0].max()];
-        assertTrue(equivalent(mT324.compose(OR, mF324), mCells));
+        assertTrue(equivalent(mT324.or(mF324), mCells));
         
         //System.out.println(mT324);
         //System.out.println(mF324);
@@ -258,12 +256,12 @@ public class BooleanMatrixTest extends TestCase {
         mF324.set(mR[0].max(), vars[mR[0].max()]);
         mF324.set(mR[5].max(), vars[mR[5].max()]);
         assertEquals(FALSE, mF324.andFold());
-        assertTrue(f.compose(OR, vars[mR[0].max()], vars[mR[5].max()])==mF324.orFold());
+        assertTrue(f.or(vars[mR[0].max()], vars[mR[5].max()])==mF324.orFold());
         
         mT324.set(mR[2].max(), vars[mR[2].max()]);
         mT324.set(mR[3].max(), vars[mR[3].max()]);
         assertEquals(TRUE, mT324.orFold());
-        assertTrue(f.compose(AND, vars[mR[2].max()], vars[mR[3].max()])==mT324.andFold());
+        assertTrue(f.and(vars[mR[2].max()], vars[mR[3].max()])==mT324.andFold());
         
     }
     
@@ -285,7 +283,9 @@ public class BooleanMatrixTest extends TestCase {
            
         
         BooleanValue[] result = new BooleanValue[dim324.dot(dim43).capacity()];
-        Arrays.fill(result, FALSE);
+        for(int i = 0; i < result.length; i++) {
+        		result[i] = BooleanAccumulator.treeGate(Operator.Nary.OR);
+        }
         int rows43 = dim324.dimension(dim324.numDimensions()-1);
         int rows324 = dim324.capacity() / rows43;
         int cols43 = dim43.capacity() / rows43;
@@ -295,9 +295,12 @@ public class BooleanMatrixTest extends TestCase {
                     int index324 = i*rows43 + k;
                     int index43 = j+ k*cols43;
                     int indexR = cols43*i + j;
-                    result[indexR] = f.compose(OR, result[indexR], f.compose(AND, mF324.get(index324), mF43.get(index43)));
+                    ((BooleanAccumulator)result[indexR]).add(f.and(mF324.get(index324), mF43.get(index43)));
                 }
             }
+        }
+        for(int i = 0; i < result.length; i++) {
+    			result[i] = f.adopt((BooleanAccumulator) result[i]);
         }
         
         assertTrue(equivalent(mF324.dot(mF43), result));
@@ -334,7 +337,7 @@ public class BooleanMatrixTest extends TestCase {
         final int c32443 = c324*c43;
         
         for (int i = 0; i < c32443; i++) {
-            result[i] = f.compose(AND, mT324.get(i / c43), mT43.get(i % c43));
+            result[i] = f.and(mT324.get(i / c43), mT43.get(i % c43));
         }
         assertTrue(equivalent(mT324.cross(mT43), result));
         
@@ -397,8 +400,8 @@ public class BooleanMatrixTest extends TestCase {
         BooleanValue[] result = new BooleanValue[mF44.dimensions().capacity()];
         for (int i = 0 ; i < result.length; i++) { result[i] = FALSE; }
         result[0] = vars[0];
-        result[1] = f.compose(AND, vars[2], vars[9]);
-        result[1] = f.compose(OR, result[1], f.compose(AND, vars[0], result[1]));
+        result[1] = f.and(vars[2], vars[9]);
+        result[1] = f.or(result[1], f.and(vars[0], result[1]));
         result[2] = vars[2];
         result[9] = vars[9];
        
@@ -406,8 +409,8 @@ public class BooleanMatrixTest extends TestCase {
         
         mF44.set(7, vars[7]);
         result[7] = vars[7];
-        result[3] = f.compose(AND, vars[2], f.compose(AND, vars[9], vars[7]));
-        result[11] = f.compose(AND,vars[7], vars[9]);
+        result[3] = f.and(vars[2], f.and(vars[9], vars[7]));
+        result[11] = f.and(vars[7], vars[9]);
         
         
         assertTrue(equivalent(mF44.closure(), result));
@@ -464,10 +467,10 @@ public class BooleanMatrixTest extends TestCase {
     		for(int i = 0; i < 16; i++)
     			mFoT.set(i, mT324.get(i));
     		
-    		final MutableMultiGate g = MutableMultiGate.treeGate(MultiGate.Operator.AND);
+    		final BooleanAccumulator g = BooleanAccumulator.treeGate(Operator.AND);
     		for(int i = 0; i < 8; i++)
-    			g.addInput(f.not(vars[i]));
-    		final BooleanValue v3 = f.toImmutableValue(g);
+    			g.add(f.not(vars[i]));
+    		final BooleanValue v3 = f.adopt(g);
     		
     		for(int i = 16; i < 24; i++)
     			mFoT.set(i, f.or(f.and(v3, mF324.get(i)), mT324.get(i)));

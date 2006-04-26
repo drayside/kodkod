@@ -2,12 +2,9 @@ package kodkod.engine.bool;
 
 import static kodkod.engine.bool.BooleanConstant.FALSE;
 import static kodkod.engine.bool.BooleanConstant.TRUE;
-import static kodkod.engine.bool.MultiGate.Operator.AND;
-import static kodkod.engine.bool.MultiGate.Operator.OR;
-
+import static kodkod.engine.bool.Operator.*;
 import java.util.Iterator;
 
-import kodkod.engine.bool.MultiGate.Operator;
 import kodkod.util.IndexedEntry;
 import kodkod.util.SparseSequence;
 import kodkod.util.TreeSequence;
@@ -16,7 +13,7 @@ import kodkod.util.TreeSequence;
 /** 
  * Represents an n-dimensional matrix of {@link kodkod.engine.bool.BooleanValue boolean values}.  
  * Boolean matrices are indexed using flat integer indeces.  For example,
- * let m be a the 2 x 3 matrix of boolean variables identifed by literals [0 4 1; 5 10 2].  
+ * let m be a the 2 x 3 matrix of boolean variables identifed by labels [0 4 1; 5 10 2].  
  * Then, m[0] = 0, m[3] = 5, m[5] = 2, etc.  
  * 
  * All values stored in the same matrix must be created by the same {@link kodkod.engine.bool.BooleanFactory circuit factory}.  
@@ -159,7 +156,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	 * specified operator.  The method assumes that m0.zero = m1.zero = op.identity,
 	 * that neither matrix is empty, and that the matrices have the same factory and dimensions.
 	 */
-	private static BooleanMatrix composeUnion(Operator op, BooleanMatrix m0, BooleanMatrix m1) {
+	private static BooleanMatrix composeUnion(Operator.Nary op, BooleanMatrix m0, BooleanMatrix m1) {
 		final BooleanMatrix ret = new BooleanMatrix(m0.dimensions, op.identity(), m0.factory);
 		
 		IndexedEntry<BooleanValue> e0 = m0.cells.first(), e1 = m1.cells.first();
@@ -189,7 +186,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	 * specified operator.  The method assumes that m0.zero = m1.zero = op.shortCircuit,
 	 * that neither matrix is empty, and that the matrices have the same factory and dimensions.
 	 */
-	private static BooleanMatrix composeIntersection(Operator op, BooleanMatrix m0, BooleanMatrix m1) {
+	private static BooleanMatrix composeIntersection(Operator.Nary op, BooleanMatrix m0, BooleanMatrix m1) {
 		final BooleanMatrix ret = new BooleanMatrix(m0.dimensions, op.shortCircuit(), m0.factory);
 		
 		IndexedEntry<BooleanValue> e0 = m0.cells.first(), e1 = m1.cells.first();
@@ -216,7 +213,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	 * specified operator.  The method assumes that m0.zero = op.identity && m1.zero = op.shortCircuit,
 	 * that neither matrix is empty, and that the matrices have the same factory and dimensions.
 	 */
-	private static BooleanMatrix composeMixed(Operator op, BooleanMatrix m0, BooleanMatrix m1) {
+	private static BooleanMatrix composeMixed(Operator.Nary op, BooleanMatrix m0, BooleanMatrix m1) {
 		final BooleanMatrix ret = new BooleanMatrix(m0.dimensions, op.shortCircuit(), m0.factory);
 		IndexedEntry<BooleanValue> e0 = m0.cells.first(), e1 = m1.cells.first();
 		
@@ -249,7 +246,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	 * @throws NullPointerException - other = null || op = null
 	 * @throws IllegalArgumentException - !other.dimensions.equals(this.dimensions) || this.factory != other.factory
 	 */
-	public BooleanMatrix compose(Operator op, BooleanMatrix other) {
+	public BooleanMatrix compose(Operator.Nary op, BooleanMatrix other) {
 		if (factory != other.factory) throw new IllegalArgumentException();
 		if (!dimensions.equals(other.dimensions)) throw new IllegalArgumentException();
 		
@@ -264,7 +261,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	/**
 	 * Returns a new matrix such that an entry in the returned matrix represents a 
 	 * conjunction of the corresponding entries in this and other matrix.  The effect 
-	 * of this method is the same as calling this.compose(Operator.AND, other).
+	 * of this method is the same as calling this.compose(Operator.Binary.AND, other).
 	 * 
 	 * @return { m: BooleanMatrix | m.dimensions = this.dimensions && m.factory = this.factory &&
 	 *                              m.zero = this.zero AND other.zero &&
@@ -280,7 +277,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	/**
 	 * Returns a new matrix such that an entry in the returned matrix represents a 
 	 * combination of the corresponding entries in this and other matrix.  The effect 
-	 * of this method is the same as calling this.compose(Operator.OR, other).
+	 * of this method is the same as calling this.compose(Operator.Binary.OR, other).
 	 * 
 	 * @return { m: BooleanMatrix | m.dimensions = this.dimensions && m.factory = this.factory &&
 	 *                              m.zero = this.zero OR other.zero &&
@@ -362,9 +359,9 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 				BooleanValue kVal = fastGet(k);
 				if (kVal != TRUE) {
 					if (kVal==FALSE) {
-						kVal = MutableMultiGate.treeGate(OR);
+						kVal = BooleanAccumulator.treeGate(OR);
 					} 
-					fastSet(k, ((MutableMultiGate) kVal).addInput(value));
+					fastSet(k, ((BooleanAccumulator) kVal).add(value));
 				}
 			}
 		}
@@ -423,7 +420,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 		final BooleanConstant notZero = (t0 && t1 ? FALSE : TRUE);
 		for(IndexedEntry<BooleanValue> e : ret.cells) {
 			if (e.value()!=notZero) {
-				ret.cells.put(e.index(), factory.makeImmutable((MutableMultiGate) e.value()));
+				ret.cells.put(e.index(), factory.fastAdopt((BooleanAccumulator) e.value()));
 			}
 		}
 		return ret;
@@ -485,7 +482,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 		final BooleanMatrix ret =  new BooleanMatrix(m0.dimensions, m0.zero, f);
 		final BooleanValue notc = c.negation();
 		final BooleanValue c0 = (m0.zero==TRUE ? notc : c), c1 = c0.negation();
-		final Operator op = (m0.zero==TRUE ? OR : AND);
+		final Operator.Nary op = (m0.zero==TRUE ? OR : AND);
 		
 		IndexedEntry<BooleanValue> e0 = m0.cells.first(), e1 = m1.cells.first();
 		
@@ -553,16 +550,16 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	 */
 	private BooleanValue conjunctionOfNegations(int start, int end) {
 		int count = 0;
-		final MutableMultiGate g = MutableMultiGate.treeGate(AND);
+		final BooleanAccumulator g = BooleanAccumulator.treeGate(AND);
 		for(Iterator<IndexedEntry<BooleanValue>> iter = cells.iterator(start, end-1); iter.hasNext(); ) {
 			count++;
-			if (g.addInput(factory.not(iter.next().value()))==FALSE) 
+			if (g.add(factory.not(iter.next().value()))==FALSE) 
 				return FALSE;
 		}
 		if (count < end - start) {
-			g.addInput(factory.not(zero));
+			g.add(factory.not(zero));
 		}
-		return factory.makeImmutable(g);
+		return factory.fastAdopt(g);
 	}
 	
 	/**
@@ -660,15 +657,15 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	 * @return { f: BooleanValue | f <=> this.elements[0] op ... op this.elements[this.dimensions.capacity-1] }
 	 * @throws NullPointerException - op = null
 	 */
-	public BooleanValue fold(Operator op) {
+	public BooleanValue fold(Operator.Nary op) {
 		final BooleanConstant shortCircuit = op.shortCircuit();
 		if (cells.isEmpty()) return zero;
 		if (zero==shortCircuit && density() < dimensions.capacity()) return shortCircuit;
-		final MutableMultiGate g = MutableMultiGate.treeGate(op);
+		final BooleanAccumulator g = BooleanAccumulator.treeGate(op);
 		for(Iterator<IndexedEntry<BooleanValue>> entries = cells.iterator(); entries.hasNext();) {
-			if (g.addInput(entries.next().value())==shortCircuit) return shortCircuit;
+			if (g.add(entries.next().value())==shortCircuit) return shortCircuit;
 		}
-		return factory.makeImmutable(g);
+		return factory.fastAdopt(g);
 	}
 	
 	/**
@@ -718,25 +715,25 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	public BooleanValue one() {
 		final int density = density();
 		if (zero==FALSE && cells.isEmpty() || zero==TRUE && density <= dimensions.capacity()-2) return FALSE;
-		final MutableMultiGate g = MutableMultiGate.treeGate(OR);
+		final BooleanAccumulator g = BooleanAccumulator.treeGate(OR);
 		UPDATEg : for (int i = 0; i < density; i++) { // g contains the outermost disjunction
 			Iterator<IndexedEntry<BooleanValue>> entries = cells.iterator();
-			MutableMultiGate v = MutableMultiGate.treeGate(OR); // v contains the individual disjunctions
+			BooleanAccumulator v = BooleanAccumulator.treeGate(OR); // v contains the individual disjunctions
 			for(int j = 0; j < i; j++) {
-				if (v.addInput(entries.next().value())==TRUE) {
+				if (v.add(entries.next().value())==TRUE) {
 					continue UPDATEg;
 				}
 			}
-			if (v.addInput(entries.next().value().negation())==TRUE) continue;
+			if (v.add(entries.next().value().negation())==TRUE) continue;
 			for(int j = i+1; j < density; j++) {
-				if (v.addInput(entries.next().value())==TRUE) {
+				if (v.add(entries.next().value())==TRUE) {
 					continue UPDATEg;
 				}
 			}
-			if (g.addInput(factory.makeImmutable(v).negation())==TRUE) return TRUE;
+			if (g.add(factory.fastAdopt(v).negation())==TRUE) return TRUE;
 		}
 		
-		return factory.makeImmutable(g);
+		return factory.fastAdopt(g);
 	}
 	
 	/**

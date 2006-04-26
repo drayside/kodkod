@@ -17,8 +17,8 @@ import kodkod.engine.bool.BooleanConstant;
 import kodkod.engine.bool.BooleanFactory;
 import kodkod.engine.bool.BooleanMatrix;
 import kodkod.engine.bool.BooleanValue;
-import kodkod.engine.bool.MultiGate;
-import kodkod.engine.bool.MutableMultiGate;
+import kodkod.engine.bool.BooleanAccumulator;
+import kodkod.engine.bool.Operator;
 import kodkod.instance.Bounds;
 import kodkod.util.IndexedEntry;
 import kodkod.util.IntIterator;
@@ -121,12 +121,12 @@ final class SymmetryBreaker {
 	 * atom sets in this.symmetries
 	 */
 	private BooleanValue lexLeaderPredicates() {
-		final MutableMultiGate sbp = MutableMultiGate.treeGate(MultiGate.Operator.AND);
+		final BooleanAccumulator sbp = BooleanAccumulator.treeGate(Operator.AND);
 		for(Iterator<IntSet> symIter = symmetries.iterator(); symIter.hasNext(); ) {
-			sbp.addInput(lexLeaderPredicateFor(symIter.next()));
+			sbp.add(lexLeaderPredicateFor(symIter.next()));
 			symIter.remove();
 		}
-		return allocator.factory().toImmutableValue(sbp);
+		return allocator.factory().adopt(sbp);
 	}
 	
 	/**
@@ -138,7 +138,7 @@ final class SymmetryBreaker {
 	private BooleanValue lexLeaderPredicateFor(IntSet symmPart) {
 		if (symmPart.size()<2) return BooleanConstant.TRUE;
 		
-		final MutableMultiGate lexLeader = MutableMultiGate.treeGate(MultiGate.Operator.AND);
+		final BooleanAccumulator lexLeader = BooleanAccumulator.treeGate(Operator.AND);
 		final Bounds bounds = allocator.bounds();
 		final List<BooleanValue> originalBits = new ArrayList<BooleanValue>(MAX_CMP_LENGTH);
 		final List<BooleanValue> permutedBits = new ArrayList<BooleanValue>(MAX_CMP_LENGTH);
@@ -172,13 +172,13 @@ final class SymmetryBreaker {
 //			System.out.println(originalBits + " <= ");
 //			System.out.println(permutedBits);
 			
-			lexLeader.addInput(leq(originalBits, permutedBits));
+			lexLeader.add(leq(originalBits, permutedBits));
 			originalBits.clear();
 			permutedBits.clear();
 			prevIndex = curIndex;
 		}
 		
-		return allocator.factory().toImmutableValue(lexLeader);
+		return allocator.factory().adopt(lexLeader);
 	}
 	
 	/**
@@ -190,13 +190,13 @@ final class SymmetryBreaker {
 	 */
 	private final BooleanValue leq(List<BooleanValue> l0, List<BooleanValue> l1) {
 		final BooleanFactory f = allocator.factory();
-		final MutableMultiGate cmp = MutableMultiGate.treeGate(MultiGate.Operator.AND);
+		final BooleanAccumulator cmp = BooleanAccumulator.treeGate(Operator.AND);
 		BooleanValue prevEquals = BooleanConstant.TRUE;
 		for(int i = 0; i < l0.size(); i++) {
-			cmp.addInput(f.implies(prevEquals, f.implies(l0.get(i), l1.get(i))));
+			cmp.add(f.implies(prevEquals, f.implies(l0.get(i), l1.get(i))));
 			prevEquals = f.and(prevEquals, f.iff(l0.get(i), l1.get(i)));
 		}
-		return f.toImmutableValue(cmp);
+		return f.adopt(cmp);
 	}
 	
 	/**

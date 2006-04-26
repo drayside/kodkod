@@ -1,106 +1,110 @@
 package kodkod.engine.bool;
 
 import java.util.Iterator;
-import java.util.NoSuchElementException;
 
-import kodkod.engine.bool.MultiGate.Operator;
 import kodkod.util.Ints;
+import kodkod.util.Iterators;
 
 
 /**
  * Represents a boolean variable.  
  * 
- * @invariant no inputs && literal in [1, ..., Integer.MAX_VALUE)
+ * @invariant op = Operator.VAR
+ * @invariant no inputs && label in [1, ..., Integer.MAX_VALUE)
  * @author Emina Torlak
  */
 public final class BooleanVariable extends BooleanFormula {
-	final int literal;
-	private final int digest;
-	
-	/*
-	 * cache of this variable's inverter
-	 * @invariant some negation => negation.input = this
-	 */
-	private NotGate negation = null;
+	final int label;
+	private final int hashcode;
 
 	/**
-	 * Constructs a new BooleanVariable with the given literal.
-	 * @requires literal != 0
-	 * @effects this.literal' = literal
+	 * Constructs a new BooleanVariable with the given label.
+	 * @requires label != 0
+	 * @effects this.label' = label
 	 */
-	BooleanVariable(int literal) {
-		assert literal != 0;
-		this.literal = literal;
-		this.digest = Ints.superFastHash(literal);
+	BooleanVariable(int label) {
+		super(null);
+		assert label != 0;
+		this.label = label;
+		this.hashcode = Ints.superFastHash(label);
 	}
-
+		
 	/**
-	 * Returns true if this variable was created by the given factory.
-	 * Otherwise returns false.
-	 * @return this in factory.components
+	 * Returns a hash of this variable's label.
+	 * @return Ints.superFastHash(this.label)
 	 */
-	boolean ownedBy(BooleanFactory factory) {
-		return factory.variable(literal) == this;
+	@Override
+	int hash(Operator op) {
+		return hashcode;
 	}
 	
 	/**
-	 * Returns a hash of this variable's literal.
-	 * @return IntHasher.superFastHash(this.literal)
+	 * Returns the label for this value. 
+	 * @return this.label
 	 */
 	@Override
-	int digest(Operator op) {
-		return digest;
-	}
+	public int label() {	return label; }
 	
-	@Override
-	BooleanFormula negation() {
-		if (negation==null) {
-			negation = new NotGate(this);
-		}
-		return negation;
-	}
-	
-	@Override
-	public int literal() {	return literal; }
-	
+	/**
+	 * Returns a string representation of this variable.
+	 * @return a string representation of this variable.
+	 */
 	public String toString() {
-		return Integer.toString(literal);
+		return Integer.toString(label);
 	}
 
 	/**
-	 * Returns an empty iterator, since a variable has no inputs.
-	 * @return an empty iterator
+	 * Passes this value and the given
+	 * argument value to the visitor, and returns the resulting value.
+	 * @return the value produced by the visitor when visiting this node
+	 * with the given argument.
 	 */
-	@Override
-	public Iterator<BooleanValue> inputs() {
-		return new Iterator<BooleanValue>() {
-
-			public boolean hasNext() {	return false;	}
-
-			public BooleanValue next() {
-				throw new NoSuchElementException();
-			}
-
-			public void remove() {
-				throw new UnsupportedOperationException();	
-			}
-			
-		};
-	}
-
-	/**
-	 * Returns 0, since a variable has no inputs.
-	 * @return 0
-	 */
-	@Override
-	public int numInputs() {
-		return 0;
-	}
-
 	@Override
 	public <T, A> T accept(BooleanVisitor<T,A> visitor, A arg) {
 		return visitor.visit(this, arg);
 	}
-	
-	
+
+	/**
+	 * Returns the VAR operator.
+	 * @return Operator.VAR
+	 */
+	@Override
+	public Operator op() {
+		return Operator.VAR;
+	}
+
+	/**
+	 * Returns an empty iterator.
+	 * @return an empty iterator
+	 */
+	@Override
+	public Iterator<BooleanFormula> iterator() {
+		return Iterators.emptyIterator();
+	}
+
+	/**
+	 * Returns 0.
+	 * @return 0
+	 */
+	@Override
+	public int size() {
+		return 0;
+	}
+
+	/**
+	 * Throws an IndexOutOfBoundsException.
+	 * @throws IndexOutOfBoundsException
+	 */
+	@Override
+	public BooleanFormula input(int i) {
+		throw new IndexOutOfBoundsException();
+	}
+
+	/**
+	 * Returns a hashcode for this variable.
+	 * @return a hashcode for this variable.
+	 */
+	public int hashCode() { 
+		return hashcode;
+	}
 }

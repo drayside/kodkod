@@ -2,14 +2,15 @@ package kodkod.engine.bool;
 
 import static kodkod.engine.bool.BooleanConstant.FALSE;
 import static kodkod.engine.bool.BooleanConstant.TRUE;
+import static kodkod.engine.bool.Operator.AND;
+import static kodkod.engine.bool.Operator.OR;
 
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
+import java.util.Set;
 
-import kodkod.engine.bool.MultiGate.Operator;
-import kodkod.util.LinkedStack;
-import kodkod.util.Stack;
+import kodkod.engine.bool.Operator.Nary;
+import kodkod.util.CacheSet;
+import kodkod.util.IdentityHashSet;
 
 
 /**
@@ -22,19 +23,24 @@ import kodkod.util.Stack;
  */
 public final class BooleanFactory {
 	/**
+	 * Set used for gate comparisons.  Its capacity is 2^(depth), where
+	 * depth is the depth to which gates should be checked for equality.
+	 */
+	private final Set<BooleanFormula> flat0, flat1;
+	
+	/**
 	 * Stores input variables.
-	 * @invariant all i: [1..iLits.size()] | vars[i-1].positive.literal = i
+	 * @invariant all i: [1..iLits.size()] | vars[i-1].positive.label = i
 	 */
 	private BooleanVariable[] vars;
 	
 	/**
-	 * Stores gate caches; e.g. the map that caches OR gates is in gates[OR].
-	 * @invariant all map: gates[int] | all g1, g2: map.values() | g1.op = g2.op
-	 * @invariant all map: gates[int] | all entry: map | entry.key = entry.value.digest(value.op)
+	 * Caches the AND, OR, and ITE gates.  
+	 * @invariant all i: [0..2] | c[i].op.ordinal = i
 	 */
-	private final Map<Integer, Stack<ImmutableMultiGate>>[] gates;
+	private final CacheSet<BooleanFormula>[] cache;
 	
-	private int eqDepth;
+	private int k;
 	private int nextLiteral;
 	
 	/**
@@ -43,41 +49,44 @@ public final class BooleanFactory {
 	 * @requires 0 <= numInputVariables < Integer.MAX_VALUE 
 	 * @requires checkToDepth >= 0
 	 * @effects #this.components' = numInputVariables && this.components' in BooleanVariable &&
-	 *          (all i: [1..numInputVariables] | one this.components'.literal & i }
+	 *          (all i: [1..numInputVariables] | one this.components'.label & i }
 	 */
 	@SuppressWarnings("unchecked")
 	private BooleanFactory(int numInputVariables, int checkToDepth) {
-		eqDepth = checkToDepth;
+		k = 1<<checkToDepth;
 		vars = new BooleanVariable[numInputVariables];
 		for(int i = 0; i < numInputVariables; i++) {
 			vars[i]= new BooleanVariable(i+1);                                                                        
 		}
 		nextLiteral = numInputVariables + 1;
-		gates = new HashMap[2];
-		gates[0] = new HashMap<Integer,Stack<ImmutableMultiGate>>();
-		gates[1] = new HashMap<Integer,Stack<ImmutableMultiGate>>();
+		flat0 = new IdentityHashSet<BooleanFormula>(k);
+		flat1 = new IdentityHashSet<BooleanFormula>(k);
+		cache = new CacheSet[3];
+		cache[0] = new CacheSet<BooleanFormula>();
+		cache[1] = new CacheSet<BooleanFormula>();
+		cache[2] = new CacheSet<BooleanFormula>();
 	}
 	
 	/**
 	 * Returns a circuit factory, initialized to contain the given number
 	 * of input variables that can be used in circuit construction.  The
-	 * integer representations of the initial variables are the literals
+	 * integer representations of the initial variables are the labels
 	 * [1..numInputVariables].  Gates are checked for semantic equality 
 	 * down to depth 5, when composing them using BooleanFactory#compose
 	 * method.  The effect of this method is the same as calling BooleanFactory.factory(numInputVariables, 5).
 	 * @return {f: BooleanFactory | #f.components = numInputVariables && f.components in BooleanVariable &&
 	 *                              (all v: f.components | v.generator = v) &&
-	 *                              (all i: [1..numInputVariables] | one f.components.literal & i }}
+	 *                              (all i: [1..numInputVariables] | one f.components.label & i }}
 	 * @throws IllegalArgumentException - numInputVariables < 0 || numInputVariables > Integer.MAX_VALUE - 1
 	 */
 	public static BooleanFactory factory(int numInputVariables) {
-		return factory(numInputVariables, 5);
+		return factory(numInputVariables, 3);
 	}
 	
 	/**
 	 * Returns a circuit factory, initialized to contain the given number
 	 * of input variables that can be used in circuit construction.  The
-	 * integer representations of the initial variables are the literals
+	 * integer representations of the initial variables are the labels
 	 * [1..numInputVariables].  Gates are checked for semantic equality 
 	 * down to the given depth when composing them using BooleanFactory#compose
 	 * method.  In general,  setting the
@@ -86,14 +95,14 @@ public final class BooleanFactory {
 	 * gate construction.  
 	 * @return {f: BooleanFactory | #f.components = numInputVariables && f.components in BooleanVariable &&
 	 *                              (all v: f.components | v.generator = v) &&
-	 *                              (all i: [1..numInputVariables] | one f.components.literal & i }}
+	 *                              (all i: [1..numInputVariables] | one f.components.label & i }}
 	 * @throws IllegalArgumentException - numInputVariables < 0 || numInputVariables > Integer.MAX_VALUE - 1
-	 * @throws IllegalArgumentException - compDepth < 0
+	 * @throws IllegalArgumentException - compDepth < 1
 	 */
 	public static BooleanFactory factory(int numInputVariables, int compDepth) {
 		if (numInputVariables < 0 || numInputVariables == Integer.MAX_VALUE) 
 			throw new IllegalArgumentException("numInputVariables < 0 || numInputVariables > Integer.MAX_VALUE - 1");
-		if (compDepth < 0) throw new IllegalArgumentException("checkToDepth < 0");
+		if (compDepth < 1) throw new IllegalArgumentException("checkToDepth < 1: " + compDepth);
 		return new BooleanFactory(numInputVariables, compDepth);
 	}
 	
@@ -102,7 +111,7 @@ public final class BooleanFactory {
 	 * semantic equality during gate construction.
 	 * @return maximum depth to which components are checked for equality
 	 */
-	public int comparisonDepth() { return eqDepth; }
+	public int comparisonDepth() { return k; }
 	
 	/**
 	 * Sets the comparison depth to the given value.  Setting the
@@ -110,39 +119,39 @@ public final class BooleanFactory {
 	 * subcomponents being shared.  However, it will also slow down
 	 * gate construction.
 	 * @effects sets the comparison depth to the given value
-	 * @throws IllegalArgumentException - newDepth < 0
+	 * @throws IllegalArgumentException - newDepth < 1
 	 */
 	public void setComparisonDepth(int newDepth) {
-		if (newDepth < 0)
-			throw new IllegalArgumentException("newDepth < 0: " + newDepth);
-		eqDepth = newDepth;
+		if (newDepth < 1)
+			throw new IllegalArgumentException("newDepth < 1: " + newDepth);
+		k = 1<<newDepth;
 	}
 	
 	/**
-	 * Returns the largest literal corresponding to a formula created by this factory.
-	 * @return max((BooleanFormula & this.components).literal)
+	 * Returns the largest label corresponding to a formula created by this factory.
+	 * @return max((BooleanFormula & this.components).label)
 	 */
-	public int maxFormulaLiteral() { return nextLiteral-1; }
+	public int maxFormulaLabel() { return nextLiteral-1; }
 	
 	/**
-	 * Returns the variable with the given literal, if it has already been produced
+	 * Returns the variable with the given label, if it has already been produced
 	 * by this factory.  If not, null is returned.
-	 * @return (this.components & BooleanVariable).literal
+	 * @return (this.components & BooleanVariable).label
 	 */
-	public BooleanVariable variable(int literal) {
-		return (literal > 0 && literal <= vars.length ? 
-				vars[literal - 1] : null);
+	public BooleanVariable variable(int label) {
+		return (label > 0 && label <= vars.length ? 
+				vars[label - 1] : null);
 	}
 	
 	/**
-	 * Returns the largest literal corresponding to a variable created by this factory.
-	 * @return max((BooleanVariable & this.components).literal)
+	 * Returns the largest label corresponding to a variable created by this factory.
+	 * @return max((BooleanVariable & this.components).label)
 	 */
-	public int maxVariableLiteral() { return vars.length; }
+	public int maxVariableLabel() { return vars.length; }
 	
 	/**
 	 * Returns the negation of the given boolean value.
-	 * @return {n: BooleanValue | n.literal = -v.literal && [[n]] = ![[v]] }
+	 * @return {n: BooleanValue | n.label = -v.label && [[n]] = ![[v]] }
 	 * @effects (components.v).components' = (components.v).components + n 
 	 * @throws NullPointerException - v = null                             
 	 */
@@ -159,7 +168,7 @@ public final class BooleanFactory {
 	 * @throws IllegalArgumentException - v0 + v1 !in this.components
 	 */
 	public final BooleanValue and(BooleanValue v0, BooleanValue v1) {
-		return compose(MultiGate.Operator.AND, v0, v1);
+		return compose(AND, v0, v1);
 	}
 	
 	/**
@@ -171,7 +180,7 @@ public final class BooleanFactory {
 	 * @throws IllegalArgumentException - v0 + v1 !in this.components
 	 */
 	public final BooleanValue or(BooleanValue v0, BooleanValue v1) {
-		return compose(MultiGate.Operator.OR, v0, v1);
+		return compose(OR, v0, v1);
 	}
 	
 	/**
@@ -183,7 +192,7 @@ public final class BooleanFactory {
 	 * @throws IllegalArgumentException - v0 + v1 !in this.components
 	 */
 	public final BooleanValue implies(BooleanValue v0, BooleanValue v1) {
-		return compose(MultiGate.Operator.OR, v0.negation(), v1);
+		return compose(OR, v0.negation(), v1);
 	}
 	
 	/**
@@ -196,7 +205,53 @@ public final class BooleanFactory {
 	 * @throws IllegalArgumentException - v0 + v1 !in this.components
 	 */
 	public final BooleanValue iff(BooleanValue v0, BooleanValue v1) {
-		return compose(MultiGate.Operator.AND, implies(v0,v1), implies(v1,v0));
+		return compose(AND, implies(v0,v1), implies(v1,v0));
+	}
+	
+	/**
+	 * Returns a boolean value that represents the formula (if i then t else e). 
+	 * @return { v: BooleanValue | [[v]] = if [[i]] then [[t]] else [[e]] }
+	 * @effects this.components' = this.components + v
+	 * @throws NullPointerException - any of the arguments are null
+	 * @throws IllegalArgumentException - i + t + e !in this.components
+	 */
+	public final BooleanValue ite(BooleanValue i, BooleanValue t, BooleanValue e) {
+		if (!contains(i) || !contains(t) || !contains(e)) {
+			throw new IllegalArgumentException("i + t + e !in this.components");
+		}
+		return fastITE(i, t, e);
+	}
+	
+	/**
+	 * Returns a boolean value that represents the formula (if i then t else e) without
+	 * checking if the specified values are in this.components
+	 * @return { v: BooleanValue | [[v]] = if [[i]] then [[t]] else [[e]] }
+	 * @effects this.components' = this.components + v
+	 * @throws NullPointerException - any of the arguments are null
+	 */
+	BooleanValue fastITE(BooleanValue i, BooleanValue t, BooleanValue e) {
+		if (i==TRUE || t==e) return t;
+		else if (i==FALSE) return e;
+		else if (t==TRUE || i==t) return fastCompose(OR, i, e);
+		else if (t==FALSE || i.negation()==t) return fastCompose(AND, i.negation(), e);
+		else if (e==TRUE || i.negation()==e) return fastCompose(OR, i.negation(), t);
+		else if (e==FALSE || i==e) return fastCompose(AND, i, t);
+		else {
+			final BooleanFormula f0 = (BooleanFormula) i, f1 = (BooleanFormula) t, f2 = (BooleanFormula) e;
+			final int digest = f0.hash(null) + f1.hash(null) + f2.hash(null);
+			
+			for(Iterator<BooleanFormula> gates = opCache(Operator.ITE).get(digest); gates.hasNext();) {
+				BooleanFormula gate = gates.next();
+				if (gate.op() == Operator.ITE) {
+					if (gate.input(0)==i && gate.input(1)==t && gate.input(2)==e)
+						return gate;
+				}
+				
+			}
+			final BooleanFormula ret = new ITEGate(nextLiteral++, f0, f1, f2);
+			opCache(Operator.ITE).add(ret);
+			return ret;
+		}
 	}
 	
 	/**
@@ -207,14 +262,14 @@ public final class BooleanFactory {
 	 * @throws NullPointerException - any of the arguments are null
 	 * @throws IllegalArgumentException - v0 + v1 !in this.components
 	 */
-	public BooleanValue compose(MultiGate.Operator op, BooleanValue v0, BooleanValue v1) {
+	public BooleanValue compose(Operator.Nary op, BooleanValue v0, BooleanValue v1) {
 		if (!contains(v0) || !contains(v1))
 			throw new IllegalArgumentException("v0 + v1 !in this.components");
 		return fastCompose(op, v0, v1);
 	}
 	
 	/**
-	 * Converts the given mutable gate into an immutable value and adds it to this.components.
+	 * Converts the given accumulator into an immutable boolean value and adds it to this.components.
 	 * This method requires that all of g's inputs are in this.components.  If g has no inputs,
 	 * its operator's identity constant is returned.  If g has one input, that input is returned.
 	 * Otherwise, an immutable value that is semantically equivalent to g is returned.
@@ -224,34 +279,11 @@ public final class BooleanFactory {
 	 * @effects this.components' = this.components + g'
 	 * @throws IllegalArgumentException - g.inputs !in this.components
 	 */
-	public BooleanValue toImmutableValue(MutableMultiGate g) {
-		for(Iterator<BooleanValue> inputs = g.inputs(); inputs.hasNext();) {
+	public BooleanValue adopt(BooleanAccumulator g) {
+		for(Iterator<BooleanValue> inputs = g.iterator(); inputs.hasNext();) {
 			if (!contains(inputs.next())) throw new IllegalArgumentException();
 		}
-		return makeImmutable(g);
-	}
-	
-	/**
-	 * Returns the map used for caching the multigates with the given operator.
-	 */
-	private Map<Integer,Stack<ImmutableMultiGate>> cacheFor(Operator op) {
-		return gates[op.ordinal()];
-	}
-	
-	/**
-	 * Returns the stack in which the multigates with the given operator and
-	 * digest (with respect to that operator) are cached.  If such a stack does not exist, it 
-	 * is created, added to the cache, and returned.
-	 * @return some gates[op][digest] => gates[op][digest], s: LinkedStack | s = new LinkedStack()
-	 * @effects gates[op].map' = gates[op].map + digest->s 
-	 */
-	private Stack<ImmutableMultiGate> stackFor(Operator op, int digest) {
-		Stack<ImmutableMultiGate> gates = cacheFor(op).get(digest);
-		if (gates==null) {
-			gates = new LinkedStack<ImmutableMultiGate>();
-			cacheFor(op).put(digest, gates);
-		}
-		return gates;
+		return fastAdopt(g);
 	}
 	
 	/**
@@ -260,26 +292,23 @@ public final class BooleanFactory {
 	 * @throws NullPointerException - v = null
 	 */
 	public boolean contains(BooleanValue v) {
-		if (v==TRUE || v==FALSE) return true;
-		if (v.literal()==0) return false;
-		if (v.literal() < 0) v = v.negation();
-		final int absLit = v.literal();
+		if (v.op()==Operator.CONST) return true;
+		if (v.label()==0) return false;
+		if (v.label() < 0) v = v.negation();
+		final int absLit = v.label();
 		if (absLit <= vars.length) {
 			return v == vars[absLit-1];
 		} else {
-			final MultiGate g = (MultiGate) v;
-			final Stack<ImmutableMultiGate> s = cacheFor(g.op).get(g.digest(g.op));
-		    if (s!=null) {
-		    	for (Iterator<ImmutableMultiGate> gates = s.iterator(); gates.hasNext();) {
-		    		if (gates.next()==g) return true;
-		    	}
+			final BooleanFormula g = (BooleanFormula) v;
+			for(Iterator<BooleanFormula> gates = opCache(g.op()).get(g.hashCode()); gates.hasNext(); ) {
+			    	if (gates.next()==g) return true;
 		    }
 			return false;
 		}
 	}
 	
 	/**
-	 * Makes the given mutable gate into an immutable formula and adds it to this.components.
+	 * Makes the given accumulator into an immutable value and adds it to this.components.
 	 * This method requires that all of g's inputs are in this.components.  If g has no inputs,
 	 * its operator's identity constant is returned.  If g has one input, that input is returned.
 	 * Otherwise, an immutable value that is semantically equivalent to g is returned.
@@ -289,56 +318,38 @@ public final class BooleanFactory {
 	 *         {g' : BooleanValue - MutableMultiGate | [[g']] = [[g]] }
 	 * @effects this.components' = this.components + g'
 	 */
-	BooleanValue makeImmutable(MutableMultiGate g) {
-		final int gsize = g.numInputs();
-		if (gsize==0) return g.op.identity();
-		else if (gsize==1) return g.inputs().next();
-		else if (gsize==2) {
-			final Iterator<BooleanValue> inputs = g.inputs();
-			return fastCompose(g.op, inputs.next(), inputs.next());
-		} else { // g.numInputs > 2
-			final Stack<ImmutableMultiGate> s = stackFor(g.op, g.digest(g.op));
-			final int parts = g.numAtomicParts(g.op);
-			
-			for(Iterator<ImmutableMultiGate> gates = s.iterator(); gates.hasNext();) {
-				ImmutableMultiGate gate = gates.next();
-				if (gate.numAtomicParts(g.op)==parts) {
-					boolean same = true;
-					for(Iterator<BooleanValue> inputs = g.inputs(); inputs.hasNext(); ) {
-						if (!((BooleanFormula) inputs.next()).isPartOf(g.op, gate, eqDepth, eqDepth)) {
-							same = false;
-							break;
-						}
-					}
-					if (same) return gate;
+	@SuppressWarnings("unchecked") BooleanValue fastAdopt(BooleanAccumulator acc) {
+		final int asize = acc.size();
+		switch(asize) {
+		case 0 : return acc.op.identity();
+		case 1 : return acc.iterator().next();
+		case 2 : 
+			final Iterator<BooleanValue> inputs = acc.iterator();
+			return fastCompose(acc.op, inputs.next(), inputs.next());
+		default :
+			final int hash = acc.op.hash((Iterator)acc.iterator());
+			for(Iterator<BooleanFormula> gates = opCache(acc.op).get(hash); gates.hasNext(); ) {
+				BooleanFormula g = gates.next();
+				if (g.size()==asize && ((MultiGate.NAry) g).sameInputs(acc.iterator())) { 
+					return g;
 				}
 			}
-			return s.push(ImmutableMultiGate.make(g, nextLiteral++));
+			final BooleanFormula ret = MultiGate.make(acc, nextLiteral++, hash);
+			opCache(acc.op).add(ret);
+			return ret;
 		}
 	}
-	
+
 	/**
-	 * Returns a multigate with the given operator and children.  If such a gate
-	 * has already been created, it is returned.  Otherwise, it is created, cached,
-	 * and returned.
-	 * @requires f0 and f1 have already been reduced with respect to the given operator
-	 * (i.e. f0!=f1 && f0 != !f1, etc.)
-	 * @return {m: MultiGate | m.op = op && m.inputs = f0 + f1
-	 * @effects this.gates[op.ordinal]' = this.gates[op.ordinal] + m.digest(op)->m
+	 * Given two operators, op0 and op1, returns an AndOrCreator,
+	 * which contains the creator for expressions of the form v0 op v1 where 
+	 * op in Operator.Nary and v0.op = op0 and v1.op = op1.
+	 * @requires op0 <= op1
+	 * @requires op0 != null && op1 != null
+	 * @return CREATORS[4op0 + op1 - (op0(op0-1))/2]
 	 */
-	private ImmutableMultiGate cache(MultiGate.Operator op, BooleanFormula f0, BooleanFormula f1) {
-		final int digest = f0.digest(op) + f1.digest(op), parts = f0.numAtomicParts(op) + f1.numAtomicParts(op);
-		final Stack<ImmutableMultiGate> s = stackFor(op, digest);
-		
-		for(Iterator<ImmutableMultiGate> gates = s.iterator(); gates.hasNext();) {
-			ImmutableMultiGate gate = gates.next();
-			if (gate.numAtomicParts(op)==parts && 
-				f0.isPartOf(op, gate, eqDepth, eqDepth) &&
-				f1.isPartOf(op, gate, eqDepth, eqDepth)) {
-				return gate;
-			}
-		}
-		return s.push(ImmutableMultiGate.make(op, nextLiteral++, f0, f1));
+	private static final AndOrCreator creator(Operator op0, Operator op1) { 
+		return CREATORS[(op0.ordinal << 2) + op1.ordinal - ( (op0.ordinal*(op0.ordinal-1) >> 1 ))];
 	}
 	
 	/**
@@ -349,64 +360,31 @@ public final class BooleanFactory {
 	 * @effects this.components' = this.components + v
 	 * @throws NullPointerException - any of the arguments are null
 	 */
-	BooleanValue fastCompose(MultiGate.Operator op, BooleanValue v0, BooleanValue v1) {
-		if (v0==TRUE || v0==FALSE) {
-			return v0==op.shortCircuit() ? v0 : v1;
-		} else if (v1==TRUE || v1==FALSE) {
-			return v1==op.shortCircuit() ? v1 : v0;
+	BooleanValue fastCompose(Operator.Nary op, BooleanValue v0, BooleanValue v1) {
+		final BooleanValue l, h;
+		if (v0.op().ordinal < v1.op().ordinal) {
+			l = v0; h = v1;
 		} else {
-			
-			final int l0 = v0.literal(), l1 = v1.literal();
-			
-			if (l0==l1) return v0; // a op a = a
-			else if (l0==-l1) return op.shortCircuit(); // a op !a = op.shortCircuit
-			else {
-				final BooleanFormula f0 = (BooleanFormula) v0, f1 = (BooleanFormula) v1;
-
-				if (f1.isPartOf(op, f0, eqDepth, eqDepth) ||              // (a op b) op a = (a op b)
-					f0.isPartOf(op.complement(), f1, eqDepth, eqDepth)) { // (a op.complement b) op a = a
-					return f0; 
-				} else if (f0.isPartOf(op, f1, eqDepth, eqDepth) ||             
-						   f1.isPartOf(op.complement(), f0, eqDepth, eqDepth)) {
-					return f1; 
-				} else {
-					return cache(op, f0, f1);
-				}
-			}
+			l = v1; h = v0;
 		}
+		if (h.op()==Operator.CONST) 
+			return h==op.identity() ? l : h;
+		else 
+			return creator(l.op(), h.op()).compose(op, (BooleanFormula)l, (BooleanFormula)h, this);
 	}
 	
 	/**
-	 * Removes all formulas whose literal is higher
+	 * Removes all formulas whose label is higher
 	 * than the specified value from this.components.
 	 * @effects this.componets' = 
-	 *     this.components - { f: BooleanFormula | |f.literal| > |maxLit| }
+	 *     this.components - { f: BooleanFormula | |f.label| > |maxLit| }
 	 */
 	public void clear(int maxLit) {
-		maxLit = StrictMath.abs(maxLit);
-		if (maxLit<=vars.length) {
-			this.gates[0].clear();
-			this.gates[1].clear();
-			BooleanVariable[] temp = new BooleanVariable[maxLit];
-			System.arraycopy(this.vars, 0, temp, 0, maxLit);
-			this.vars = temp;
-			this.nextLiteral = vars.length + 1;
-		} else if (maxLit < this.nextLiteral-1) {
-			for(int i = 0; i < 2; i++) {
-				for(Iterator<Map.Entry<Integer, Stack<ImmutableMultiGate>>> entries = gates[i].entrySet().iterator(); entries.hasNext(); ) {
-					Map.Entry<Integer, Stack<ImmutableMultiGate>> entry = entries.next();
-					Stack<ImmutableMultiGate> s = entry.getValue();
-					for(Iterator<ImmutableMultiGate> sIter = s.iterator(); sIter.hasNext();) {
-						ImmutableMultiGate gate = sIter.next();
-						if (gate.literal() > maxLit)
-							sIter.remove();
-					}
-					if (s.empty())
-						entries.remove();
-				}
-			}
-			this.nextLiteral = maxLit + 1;
-		}
+		assert maxLit == vars.length;
+		cache[0].clear(); 
+		cache[1].clear(); 
+		cache[2].clear();
+		this.nextLiteral = vars.length + 1;
 	}
 	
 	/**
@@ -419,4 +397,361 @@ public final class BooleanFactory {
 		if (d == null || c == null) throw new NullPointerException();
 		return new BooleanMatrix(d, c, this);
 	}
+	
+	/**
+	 * Returns the cache for gates with the given operator.
+	 * @requires op in AND + OR + ITE
+	 * @return cache[op.ordinal]
+	 */
+	private CacheSet<BooleanFormula> opCache(Operator op) {
+		return cache[op.ordinal];
+	}
+	
+	/**
+	 * Returns a BooleanFormula f such that [[f]] = f0 op f1.  The method
+	 * requires that the formulas f0 and f1 be already reduced with respect to op.
+	 * A new formula is created and cached iff the circuit f0 op f1 has not already
+	 * been created.
+	 * @return f0 op f1
+	 * @effects f0 op f1 !in this.components => this.components' = this.components + (f0 op f1),
+	 * this.compnents' = this.components
+	 */
+	private BooleanFormula cache(Operator.Nary op, BooleanFormula f0, BooleanFormula f1) {
+		final BooleanFormula l, h;
+		if (f0.label()<f1.label()) {
+			l = f0; h = f1;
+		} else {
+			l = f1; h = f0;
+		}
+		final int hash = op.hash(l,h);
+		if (l.op()==op || h.op()==op) {
+			flat0.clear();
+			l.flatten(op, flat0, k-1);
+			h.flatten(op, flat0, k-flat0.size());
+			for(Iterator<BooleanFormula> gates = opCache(op).get(hash); gates.hasNext(); ) {
+				BooleanFormula gate = gates.next();
+				if (gate.size()==2 && gate.input(0)==l && gate.input(1)==h)
+					return gate;
+				else {
+					flat1.clear();
+					gate.flatten(op, flat1, k);
+					if (flat0.equals(flat1))
+						return gate;
+				}
+			}
+		} else {
+			for(Iterator<BooleanFormula> gates = opCache(op).get(hash); gates.hasNext(); ) {
+				BooleanFormula gate = gates.next();
+				if (gate.size()==2 && gate.input(0)==l && gate.input(1)==h)
+					return gate;
+			}
+		}
+		final BooleanFormula ret = MultiGate.make(op, nextLiteral++, hash, l, h);
+		opCache(op).add(ret);
+		return ret;
+	}
+	
+	/**
+	 * Wrapper for a method that performs circuit reductions and caching.
+	 * 
+	 * @author Emina Torlak
+	 */
+	private static interface AndOrCreator {
+		
+		/**
+		 * Returns a BooleanValue whose meaning is [[f0]] op [[f1]].  A
+		 * new circuit is created and stored in factory.cache(op) iff [[f0]] op [[f1]] cannot be reduced
+		 * to a simpler value and opCache does not already contain a circuit
+		 * with equivalent meaning.
+		 * @requires f0.op <= f1.op
+		 * @requires f0 + f1 in factory.components
+		 * @requires all arguments are non-null
+		 * @return [[f0]] op [[f1]] = [[f0]] => f0,
+		 *         [[f0]] op [[f1]] = [[f1]] => f1,
+		 *         [[f0]] op [[f1]] in BooleanConstant => {c: BooleanConstant | [[c]] = [[f0]] op [[f1]]},
+		 *         [[f0]] op [[f1]] in factory.components => {v: opCache.elts | [[v]] = [[f0]] op [[f1]]},
+		 *         {v: BooleanValue - factory.components | [[v]] = [[f0]] op [[f1]]} 
+		 * @effects factory.components' != factory.components => 
+		 *          factory.components' - factory.components = {v: BooleanValue | [[v]] = [[f0]] op [[f1]]} 
+		 * @return v: BooleanValue | [[v]] = [[f0]] op [[f1]]
+		 */
+		public abstract BooleanValue compose(Operator.Nary op, BooleanFormula f0, BooleanFormula f1, BooleanFactory factory);
+		
+	}
+	
+	/**
+	 * Performs common simplifications on circuits of the form AND op X or OR op X, 
+	 * where X can be any operator other than CONST (J stands for 'junction').
+	 */
+	private static final AndOrCreator JoX = new AndOrCreator() {
+		/**
+		 * Performs the following reductions, if possible.  Note that 
+		 * these reductions will be possible only if f0 was created after f1 (i.e.  |f0.label| > |f1.label|).
+		 * (a & b) & a = a & b	(a & b) & !a = F	  (a & b) | a = a
+		 * (a | b) | a = a | b	(a | b) | !a = T	  (a | b) & a = a
+		 * @requires f0.op in (AND + OR)
+		 */
+		public BooleanValue compose(Nary op, BooleanFormula f0, BooleanFormula f1, BooleanFactory factory) {
+			assert f0.op().ordinal < 2;
+			if (f0.contains(f0.op(), f1, factory.k) > 0) 
+				return op==f0.op() ? f0 : f1;
+			else if (op==f0.op() && f0.contains(op, f1.negation(), factory.k) > 0) 
+				return op.shortCircuit();
+			else 
+				return factory.cache(op, f0, f1);
+		}
+	};
+	
+	/**
+	 * Performs common simplifications on circuits of the form AND op OR.
+	 */
+	private static final AndOrCreator AoO = new AndOrCreator() {
+		/**
+		 * Performs the following reductions, if possible, along with JoX reductions.
+		 * (aj & ... & ak) & (a1 | ... | an) = (aj & ... & ak) where 1 <= j <= k <= n  
+		 * (a1 & ... & an) | (aj | ... | ak) = (ai | ... | ak) where 1 <= j <= k <= n
+		 * @requires f0.op in (AND + OR)
+		 */
+		public BooleanValue compose(Nary op, BooleanFormula f0, BooleanFormula f1, BooleanFactory factory) {
+			assert f0.op() == Operator.AND && f1.op() == Operator.OR;
+			factory.flat0.clear(); 
+			factory.flat1.clear();
+			f0.flatten(op, factory.flat0, factory.k); 
+			f1.flatten(op, factory.flat1, factory.k);
+			if (op==Operator.AND && factory.flat0.size()<=factory.flat1.size() && factory.flat1.containsAll(factory.flat0)) 
+				return f0;
+			else if (op==Operator.OR && factory.flat0.removeAll(factory.flat1))
+				return f1;
+			else if (f0.label() < f1.label()) // f0 created before f1
+				return JoX.compose(op, f1, f0, factory);
+			else
+				return JoX.compose(op, f0, f1, factory);
+		}
+		
+	};
+	
+	/**
+	 * Performs common simplifications on circuits of the form AND op AND or OR op OR.
+	 */
+	private static final AndOrCreator JoJ = new AndOrCreator() {
+		/**
+		 * Performs the following reductions, if possible, along with the JoX reductions.
+		 * (a1 & ... & an) & (aj & ... & ak) = (a1 & ... & an) where 1 <= j <= k <= n
+		 * (a1 & ... & an) | (aj & ... & ak) = (aj & ... & ak) where 1 <= j <= k <= n
+		 * (a1 | ... | an) | (aj | ... | ak) = (a1 | ... | an) where 1 <= j <= k <= n
+		 * (a1 | ... | an) & (aj | ... | ak) = (aj | ... | ak) where 1 <= j <= k <= n
+		 * @requires (f0+f1).op in (AND + OR)
+		 */
+		public BooleanValue compose(Nary op, BooleanFormula f0, BooleanFormula f1, BooleanFactory factory) {
+			assert f0.op() == f1.op();
+			if (f0==f1) return f0;
+			factory.flat0.clear(); 
+			factory.flat1.clear();
+			f0.flatten(op, factory.flat0, factory.k); 
+			f1.flatten(op, factory.flat1, factory.k);
+			if (factory.flat0.size()<factory.flat1.size() && factory.flat1.containsAll(factory.flat0)) 
+				return op==f0.op() ? f1 : f0;
+			else if (factory.flat0.size()>=factory.flat1.size() && factory.flat0.containsAll(factory.flat1))
+				return op==f0.op() ? f0 : f1;
+			else if (f0.label() < f1.label()) // f0 created before f1
+				return JoX.compose(op, f1, f0, factory);
+			else
+				return JoX.compose(op, f0, f1, factory);
+		}
+		
+	};
+	
+	/**
+	 * Performs common simplifications on circuits of the form AND op ITE or OR op ITE.
+	 */
+	private static final AndOrCreator JoI = new AndOrCreator() {
+		/**
+		 * Combines JoX and IoX reductions.
+		 * @requires f0.op in (AND + OR) && f1.op = ITE
+		 */
+		public BooleanValue compose(Nary op, BooleanFormula f0, BooleanFormula f1, BooleanFactory factory) {
+			assert f0.op().ordinal < 2 && f1.op() == Operator.ITE;
+			if (f0.label() < f1.label()) // f0 created before f1
+				return IoX.compose(op, f1, f0, factory); 
+			else
+				return JoX.compose(op, f0, f1, factory);
+		}
+	};
+	
+	/**
+	 * Performs common simplifications on circuits of the form AND op NOT or OR op NOT.
+	 */
+	private static final AndOrCreator JoN = new AndOrCreator() {
+		/**
+		 * Performs the following reductions, if possible, along with the JoX/NoX reductions.
+		 * a & !a = F	a | !a = T
+		 * @requires f0.op in (AND + OR) && f1.op = NOT
+		 */
+		public BooleanValue compose(Nary op, BooleanFormula f0, BooleanFormula f1, BooleanFactory factory) {
+			assert f0.op().ordinal < 2 && f1.op() == Operator.NOT;
+			if (f0.label()==-f1.label()) return op.shortCircuit();
+			else if (f0.label() < StrictMath.abs(f1.label()))  // f0 created before f1
+				return NoX.compose(op, f1, f0, factory);
+			else 
+				return JoX.compose(op, f0, f1, factory);
+		}
+	};
+	
+	/**
+	 * Performs common simplifications on circuits of the form ITE op X, where X can be any operator other than CONST.
+	 */
+	private static final AndOrCreator IoX = new AndOrCreator() {
+		/**
+		 * Performs the following reductions, if possible.  Note that 
+		 * these reductions will be possible only if f0 was created after f1 (i.e.  |f0.label| > |f1.label|).
+		 * (a ? b : c) & a = a & b	(a ? b : c) & !a  = !a & c
+		 * (a ? b : c) | a = a | c	(a ? b : c) | !a = !a | b
+		 * @requires f0.op = ITE && AND.ordinal = 0 && OR.ordinal = 1
+		 */
+		public BooleanValue compose(Nary op, BooleanFormula f0, BooleanFormula f1, BooleanFactory factory) {
+			assert f0.op() == Operator.ITE;
+			if (f0.input(0)==f1) 
+				return factory.fastCompose(op, f0.input(op.ordinal+1), f1);
+			else if (f0.input(0).label()==-f1.label()) 
+				return factory.fastCompose(op, f0.input(2-op.ordinal), f1);
+			else
+				return factory.cache(op, f0, f1);
+		}
+	};
+	
+	/**
+	 * Performs common simplifications on circuits of the form ITE op ITE.
+	 */
+	private static final AndOrCreator IoI = new AndOrCreator() {
+		/**
+		 * Performs the following reductions, if possible, along with IoX reductions.
+		 * (a ? b : c) & (a ? b : c) = (a ? b : c)		(a ? b : c) & (!a ? b : c) = b & c
+		 * (a ? b : c) | (a ? b : c) = (a ? b : c)		(a ? b : c) | (!a ? b : c) = b | c
+		 * @requires f0.op + f1.op = ITE 
+		 */
+		public BooleanValue compose(Nary op, BooleanFormula f0, BooleanFormula f1, BooleanFactory factory) {
+			assert f0.op() == Operator.ITE && f1.op() == Operator.ITE;
+			if (f0==f1) return f0;
+			else if (f0.input(0).label()==-f1.input(0).label() && f0.input(1)==f1.input(1) && f0.input(2)==f1.input(2)) 
+				return factory.fastCompose(op, f0.input(1), f0.input(2)); 
+			else if (f0.label() < f1.label()) // f0 created before f1
+				return IoX.compose(op, f1, f0, factory); 
+			else
+				return IoX.compose(op, f0, f1, factory);
+		}
+	};
+	
+	/**
+	 * Performs common simplifications on circuits of the form ITE op NOT.
+	 */
+	private static final AndOrCreator IoN =new AndOrCreator() {
+		/**
+		 * Performs the following reductions, if possible, along with IoX/NoX reductions.
+		 * (a ? b : c) & !(a ? b : c) = F		
+		 * (a ? b : c) | !(a ? b : c) = T
+		 * @requires f0.op = ITE && f1.op = NOT
+		 */
+		public BooleanValue compose(Nary op, BooleanFormula f0, BooleanFormula f1, BooleanFactory factory) {
+			assert f0.op() == Operator.ITE && f1.op() == Operator.NOT;
+			if (f0.label()==-f1.label()) return op.shortCircuit();
+			else if (f0.label() < StrictMath.abs(f1.label()))  // f0 created before f1
+				return NoX.compose(op, f1, f0, factory);
+			else 
+				return IoX.compose(op, f0, f1, factory);
+		}
+	};
+	
+	/**
+	 * Performs common simplifications on circuits of the form NOT op X, where X can be any operator other than CONST.
+	 */
+	private static final AndOrCreator NoX = new AndOrCreator() {
+		/**
+		 * Performs the following reductions, if possible.  Note that 
+		 * these reductions will be possible only if f0 was created after f1 (i.e.  |f0.label| > |f1.label|).
+		 * !(a | b) & a = F	!(a | b) & !a = !(a | b)
+		 * !(a & b) | a = T	!(a & b) | !a = !(a & b)
+		 * @requires f0.op = NOT
+		 */
+		public BooleanValue compose(Nary op, BooleanFormula f0, BooleanFormula f1, BooleanFactory factory) {
+			assert f0.op() == Operator.NOT ;
+			if (f0.input(0).contains(op.complement(), f1, factory.k) > 0) return op.shortCircuit();
+			else if (f0.input(0).contains(op.complement(), f1.negation(), factory.k) > 0) return f0;
+			else return factory.cache(op, f0, f1);
+		}
+	};
+	
+	/**
+	 * Performs common simplifications on circuits of the form NOT op NOT.
+	 */
+	private static final AndOrCreator NoN = new AndOrCreator() {
+		/**
+		 * Performs the following reductions, if possible, along with NoX reductions.
+		 * !a & !a = !a		!a | !a = !a
+		 * @requires f1.op + f0.op = NOT
+		 */
+		public BooleanValue compose(Nary op, BooleanFormula f0, BooleanFormula f1, BooleanFactory factory) {
+			assert f0.op() == Operator.NOT && f1.op() == Operator.NOT;
+			if (f0==f1) return f0;
+			else if (f0.label() < f1.label()) // f0 created after f1
+				return NoX.compose(op, f0, f1, factory);
+			else 
+				return NoX.compose(op, f1, f0, factory);
+		}
+	};
+	
+	/**
+	 * Performs common simplifications on circuits of the form NOT op VAR.
+	 */
+	private static final AndOrCreator NoV = new AndOrCreator() {
+		/**
+		 * Performs the following reductions, if possible, along with NoX reductions.
+		 * !a & a = F		!a | a = T
+		 * @requires f1.op = NOT && f1.op = VAR
+		 */
+		public BooleanValue compose(Nary op, BooleanFormula f0, BooleanFormula f1, BooleanFactory factory) {
+			assert f0.op() == Operator.NOT && f1.op() == Operator.VAR;
+			if (f0.label()==-f1.label()) return op.shortCircuit();
+			else return NoX.compose(op, f0, f1, factory);
+		}
+	};
+	
+	/**
+	 * Performs common simplifications on circuits of the form VAR op VAR.
+	 */
+	private static final AndOrCreator VoV = new AndOrCreator() {
+		/**
+		 * Performs the following reductions, if possible:
+		 * a & a = a 
+		 * a | a = a
+		 * @requires f0.op + f1.op = VAR
+		 */
+		public BooleanValue compose(Nary op, BooleanFormula f0, BooleanFormula f1, BooleanFactory factory) {
+			assert f0.op() == Operator.VAR && f1.op() == Operator.VAR;
+			return (f0==f1) ? f0 : factory.cache(op, f0, f1); 
+		}
+	};
+	
+	/**
+	 * 15 creators representing all possible composition combinations of 
+	 * non-constant vertices using the operators AND and OR.  Note that there
+	 * are 15 of them rather than 25 because of the v0.op <= v1.op requirement
+	 * of the {@link AndOrCreator#compose(Operator.Nary, BooleanFormula, BooleanFormula, BooleanFactory) compose} method.
+	 */
+	private static final AndOrCreator[] CREATORS = {
+		JoJ,		/* AND op AND */
+		AoO,		/* AND op OR */
+		JoI,		/* AND op ITE */
+		JoN,		/* AND op NOT */
+		JoX,		/* AND op VAR */
+		JoJ,		/* OR op OR */
+		JoI,		/* OR op ITE */
+		JoN,		/* OR op NOT */
+		JoX,		/* OR op VAR */
+		IoI,		/* ITE op ITE */
+		IoN, 	/* ITE op NOT */
+		IoX,		/* ITE op VAR */
+		NoN,		/* NOT op NOT */
+		NoV,		/* NOT op VAR */
+		VoV		/* VAR op VAR */
+	};
 }
