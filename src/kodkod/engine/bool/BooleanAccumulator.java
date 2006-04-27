@@ -2,9 +2,9 @@ package kodkod.engine.bool;
 
 import java.util.Iterator;
 
-import kodkod.util.IndexedEntry;
-import kodkod.util.SparseSequence;
-import kodkod.util.TreeSequence;
+import kodkod.util.ints.IndexedEntry;
+import kodkod.util.ints.SparseSequence;
+import kodkod.util.ints.TreeSequence;
 
 
 /**

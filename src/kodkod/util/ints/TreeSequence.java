@@ -2,7 +2,7 @@
  * TreeSequence.java
  * Created on 9:51:24 AM
  */
-package kodkod.util;
+package kodkod.util.ints;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -48,7 +48,7 @@ public final class TreeSequence<V> extends AbstractSparseSequence<V> {
 	
 	/**
 	 * {@inheritDoc}
-	 * @see kodkod.util.SparseSequence#size()
+	 * @see kodkod.util.ints.SparseSequence#size()
 	 */
 	public int size() {
 		return size;
@@ -56,7 +56,7 @@ public final class TreeSequence<V> extends AbstractSparseSequence<V> {
 	
 	/**
 	 * {@inheritDoc}
-	 * @see kodkod.util.SparseSequence#clear()
+	 * @see kodkod.util.ints.SparseSequence#clear()
 	 */
 	public void clear() {
 		root = NIL;
@@ -172,7 +172,7 @@ public final class TreeSequence<V> extends AbstractSparseSequence<V> {
 	
 	/**
 	 * {@inheritDoc}
-	 * @see kodkod.util.SparseSequence#get(int)
+	 * @see kodkod.util.ints.SparseSequence#get(int)
 	 */
 	public V get(int index) {
 		final Entry<V> node = search(root, index);
@@ -181,7 +181,7 @@ public final class TreeSequence<V> extends AbstractSparseSequence<V> {
 	
 	/**
 	 * {@inheritDoc}
-	 * @see kodkod.util.SparseSequence#containsIndex(int)
+	 * @see kodkod.util.ints.SparseSequence#containsIndex(int)
 	 */
 	public boolean containsIndex(int index) {
 		return search(root, index) != NIL;
@@ -211,7 +211,7 @@ public final class TreeSequence<V> extends AbstractSparseSequence<V> {
 	
 	/**
 	 * {@inheritDoc}
-	 * @see kodkod.util.SparseSequence#contains(java.lang.Object)
+	 * @see kodkod.util.ints.SparseSequence#contains(java.lang.Object)
 	 */
 	public boolean contains(Object value) {
 		return value==null ? containsNullValue(root) : containsValue(root, value);
@@ -219,7 +219,7 @@ public final class TreeSequence<V> extends AbstractSparseSequence<V> {
 	
 	/**
 	 * {@inheritDoc}
-	 * @see kodkod.util.SparseSequence#iterator()
+	 * @see kodkod.util.ints.SparseSequence#iterator()
 	 */
 	public Iterator<IndexedEntry<V>> iterator() {
 		return new AscendingIterator(Integer.MIN_VALUE, Integer.MAX_VALUE);
@@ -240,7 +240,7 @@ public final class TreeSequence<V> extends AbstractSparseSequence<V> {
 	
 	/**
 	 * {@inheritDoc}
-	 * @see kodkod.util.SparseSequence#first()
+	 * @see kodkod.util.ints.SparseSequence#first()
 	 */
 	public Entry<V> first() {
 		return unwrap(min(root));
@@ -248,7 +248,7 @@ public final class TreeSequence<V> extends AbstractSparseSequence<V> {
 	
 	/**
 	 * {@inheritDoc}
-	 * @see kodkod.util.SparseSequence#last()
+	 * @see kodkod.util.ints.SparseSequence#last()
 	 */
 	public Entry<V> last() {
 		return unwrap(max(root));
@@ -256,7 +256,7 @@ public final class TreeSequence<V> extends AbstractSparseSequence<V> {
 	
 	/**
 	 * {@inheritDoc}
-	 * @see kodkod.util.SparseSequence#successor(int)
+	 * @see kodkod.util.ints.SparseSequence#successor(int)
 	 */
 	public Entry<V> successor(int index) {
 		final Entry<V> c = ceil(index);
@@ -266,7 +266,7 @@ public final class TreeSequence<V> extends AbstractSparseSequence<V> {
 	
 	/**
 	 * {@inheritDoc}
-	 * @see kodkod.util.SparseSequence#predecessor(int)
+	 * @see kodkod.util.ints.SparseSequence#predecessor(int)
 	 */
 	public Entry<V> predecessor(int index) {
 		final Entry<V> f = floor(index);
@@ -276,7 +276,7 @@ public final class TreeSequence<V> extends AbstractSparseSequence<V> {
 	
 	/**
 	 * {@inheritDoc}
-	 * @see kodkod.util.SparseSequence#ceil(int)
+	 * @see kodkod.util.ints.SparseSequence#ceil(int)
 	 */
 	public Entry<V> ceil(int index) {
 		Entry<V> ceilEntry = root;
@@ -300,7 +300,7 @@ public final class TreeSequence<V> extends AbstractSparseSequence<V> {
 	
 	/**
 	 * {@inheritDoc}
-	 * @see kodkod.util.SparseSequence#floor(int)
+	 * @see kodkod.util.ints.SparseSequence#floor(int)
 	 */
 	public Entry<V> floor(int index) {
 		Entry<V> floorEntry = root;
@@ -324,7 +324,7 @@ public final class TreeSequence<V> extends AbstractSparseSequence<V> {
 	
 	/**
 	 * {@inheritDoc}
-	 * @see kodkod.util.SparseSequence#put
+	 * @see kodkod.util.ints.SparseSequence#put
 	 */
 	public V put(int index, V value) {
 		// insertion algorithm from CLR modified to disallow duplicate keys
@@ -368,7 +368,7 @@ public final class TreeSequence<V> extends AbstractSparseSequence<V> {
 	
 	/**
 	 * {@inheritDoc}
-	 * @see kodkod.util.SparseSequence#remove(int)
+	 * @see kodkod.util.ints.SparseSequence#remove(int)
 	 */
 	public V remove(int index) {
 		Entry<V> z = search(root, index);

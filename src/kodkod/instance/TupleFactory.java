@@ -3,7 +3,7 @@ package kodkod.instance;
 import java.util.Collection;
 import java.util.List;
 
-import kodkod.util.IntSet;
+import kodkod.util.ints.IntSet;
 
 
 /**

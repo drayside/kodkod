@@ -2,13 +2,13 @@
  * IntTreeSet.java
  * Created on 12:27:00 PM
  */
-package kodkod.util;
+package kodkod.util.ints;
 
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-import kodkod.util.TreeSequence.Entry;
+import kodkod.util.ints.TreeSequence.Entry;
 
 
 /**
@@ -66,7 +66,7 @@ public final class IntTreeSet extends AbstractIntSet {
 
 	/**
 	 * {@inheritDoc}
-	 * @see kodkod.util.IntSet#contains(int)
+	 * @see kodkod.util.ints.IntSet#contains(int)
 	 */
 	public boolean contains(int i) {
 		final Entry<MutableInteger> range = ints.floor(i);
@@ -75,7 +75,7 @@ public final class IntTreeSet extends AbstractIntSet {
 	
 	/**
 	 * {@inheritDoc}
-	 * @see kodkod.util.IntSet#min()
+	 * @see kodkod.util.ints.IntSet#min()
 	 */
 	public int min() {
 		checkNonEmpty();
@@ -84,7 +84,7 @@ public final class IntTreeSet extends AbstractIntSet {
 
 	/**
 	 * {@inheritDoc}
-	 * @see kodkod.util.IntSet#max()
+	 * @see kodkod.util.ints.IntSet#max()
 	 */
 	public int max() {
 		checkNonEmpty();
@@ -153,7 +153,7 @@ public final class IntTreeSet extends AbstractIntSet {
 	
 	/**
 	 * {@inheritDoc}
-	 * @see kodkod.util.IntSet#add(int)
+	 * @see kodkod.util.ints.IntSet#add(int)
 	 */
 	public boolean add(int i) {
 		final Entry<MutableInteger> floor = ints.floor(i);
@@ -182,7 +182,7 @@ public final class IntTreeSet extends AbstractIntSet {
 	
 	/**
 	 * {@inheritDoc}
-	 * @see kodkod.util.IntSet#remove(int)
+	 * @see kodkod.util.ints.IntSet#remove(int)
 	 */
 	public boolean remove(int i) {
 		final Entry<MutableInteger> floor = ints.floor(i);

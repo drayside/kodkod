@@ -12,8 +12,8 @@ import kodkod.engine.bool.MultiGate;
 import kodkod.engine.bool.NotGate;
 import kodkod.engine.satlab.SATFactory;
 import kodkod.engine.satlab.SATSolver;
-import kodkod.util.IntSet;
-import kodkod.util.Ints;
+import kodkod.util.ints.IntSet;
+import kodkod.util.ints.Ints;
 
 /**
  * Transforms a boolean circuit into a formula in conjunctive
@@ -21,36 +21,37 @@ import kodkod.util.Ints;
  * 
  * @author Emina Torlak
  */
-final class Bool2CnfTranslator {
+final class Bool2Cnf {
 
-	private Bool2CnfTranslator() {}
+	private Bool2Cnf() {}
 
 	/**
 	 * Creates a new instance of SATSolver using the provided factory
-	 * and uses to translate the given circuit into conjunctive normal form.
+	 * and uses it to translate the given circuit into conjunctive normal form
+	 * using the <i>definitional translation algorithm</i>.
 	 * The third parameter is required to contain the number of primary variables
 	 * allocated during translation from FOL to booelan.
 	 * @return a SATSolver instance returned by the given factory and initialized
 	 * to contain the CNF translation of the given circuit.
 	 */
-	static SATSolver translate(BooleanFormula circuit, SATFactory factory, int numPrimaryVariables) {
+	static SATSolver definitional(BooleanFormula circuit, SATFactory factory, int numPrimaryVariables) {
 		final SATSolver solver = factory.instance();
 		final int maxLiteral = StrictMath.abs(circuit.label());
-		solver.addClause(circuit.accept(new Translator(solver, numPrimaryVariables, maxLiteral),null));
+		solver.addClause(circuit.accept(new DefinitionalTranslator(solver, numPrimaryVariables, maxLiteral),null));
 		return solver;
 	}
 	
 	/**
-	 * The helper class that performs the translation.
+	 * The helper class that performs <i> definitional translation to cnf </i>.
 	 */
-	private static final class Translator implements BooleanVisitor<int[], Object> {
+	private static final class DefinitionalTranslator implements BooleanVisitor<int[], Object> {
 		private final SATSolver solver;
 		private final IntSet visited;
 		private final int[] unaryClause = new int[1];
 		private final int[] binaryClause = new int[2];
 		private final int[] ternaryClause = new int[3];
 		
-		private Translator(SATSolver solver, int numPrimaryVars, int maxLiteral) {
+		private DefinitionalTranslator(SATSolver solver, int numPrimaryVars, int maxLiteral) {
 			this.solver = solver;
 			this.solver.addVariables(maxLiteral);
 			final int minGateLiteral = numPrimaryVars+1;
@@ -137,4 +138,8 @@ final class Bool2CnfTranslator {
 			return unaryClause;
 		}
 	}
+	
+	
+	
+	
 }

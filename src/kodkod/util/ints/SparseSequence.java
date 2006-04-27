@@ -1,4 +1,4 @@
-package kodkod.util;
+package kodkod.util.ints;
 
 import java.util.Iterator;
 

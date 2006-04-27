@@ -13,8 +13,8 @@ import java.util.Iterator;
 import java.util.Set;
 
 import kodkod.engine.bool.Operator.Nary;
-import kodkod.util.CacheSet;
-import kodkod.util.IdentityHashSet;
+import kodkod.util.collections.CacheSet;
+import kodkod.util.collections.IdentityHashSet;
 
 
 /**

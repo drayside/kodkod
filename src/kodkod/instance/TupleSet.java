@@ -8,9 +8,9 @@ import java.util.AbstractSet;
 import java.util.Collection;
 import java.util.Iterator;
 
-import kodkod.util.IntIterator;
-import kodkod.util.IntSet;
-import kodkod.util.Ints;
+import kodkod.util.ints.IntIterator;
+import kodkod.util.ints.IntSet;
+import kodkod.util.ints.Ints;
 
 
 /**

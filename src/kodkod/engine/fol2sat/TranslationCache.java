@@ -28,7 +28,7 @@ import kodkod.ast.Variable;
 import kodkod.ast.visitor.ReturnVisitor;
 import kodkod.engine.bool.BooleanConstant;
 import kodkod.engine.bool.BooleanMatrix;
-import kodkod.util.ArrayStack;
+import kodkod.util.collections.ArrayStack;
 
 
 /**

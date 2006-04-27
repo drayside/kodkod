@@ -25,7 +25,7 @@ import kodkod.ast.Relation;
 import kodkod.ast.RelationPredicate;
 import kodkod.ast.UnaryExpression;
 import kodkod.ast.visitor.DepthFirstVoidVisitor;
-import kodkod.util.IdentityHashSet;
+import kodkod.util.collections.IdentityHashSet;
 
 /**
  * Provides utility methods for collecting various 

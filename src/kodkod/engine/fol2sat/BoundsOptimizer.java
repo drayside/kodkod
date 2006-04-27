@@ -15,10 +15,10 @@ import kodkod.ast.RelationPredicate;
 import kodkod.instance.Bounds;
 import kodkod.instance.TupleFactory;
 import kodkod.instance.TupleSet;
-import kodkod.util.IdentityHashSet;
-import kodkod.util.IntIterator;
-import kodkod.util.IntSet;
-import kodkod.util.Ints;
+import kodkod.util.collections.IdentityHashSet;
+import kodkod.util.ints.IntIterator;
+import kodkod.util.ints.IntSet;
+import kodkod.util.ints.Ints;
 
 /**
  * A BoundsOptimizer minimizes the number and size of mappings

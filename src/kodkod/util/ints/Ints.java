@@ -1,17 +1,17 @@
-package kodkod.util;
+package kodkod.util.ints;
 
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-import kodkod.util.IntRange.OnePointRange;
-import kodkod.util.IntRange.TwoPointRange;
+import kodkod.util.ints.IntRange.OnePointRange;
+import kodkod.util.ints.IntRange.TwoPointRange;
 
 
 /**
  * This class contains various utility methods for working with
- * integers, {@link kodkod.util.IntRange IntRanges}, and 
- * {@link kodkod.util.IntSet IntSets}.
+ * integers, {@link kodkod.util.ints.IntRange IntRanges}, and 
+ * {@link kodkod.util.ints.IntSet IntSets}.
  * 
  * The methods in this class all throw a NullPointerException if 
  * given a null reference unless otherwise specified.

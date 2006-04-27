@@ -30,9 +30,9 @@ import kodkod.engine.bool.BooleanValue;
 import kodkod.engine.satlab.SATSolver;
 import kodkod.instance.Bounds;
 import kodkod.instance.Instance;
-import kodkod.util.IntRange;
-import kodkod.util.IntSet;
-import kodkod.util.Ints;
+import kodkod.util.ints.IntRange;
+import kodkod.util.ints.IntSet;
+import kodkod.util.ints.Ints;
 
 
 /** 
@@ -80,7 +80,7 @@ public final class Translator {
 		final Map<Node, IntSet> varUsage;
 		BooleanValue circuit;
 		if (options.trackVars()) {
-			Fol2BoolTranslator.AnnotatedCircuit acircuit = Fol2BoolTranslator.translateAndTrack(formula, notes.sharedNodes(), allocator);
+			Fol2Bool.AnnotatedCircuit acircuit = Fol2Bool.translateAndTrack(formula, notes.sharedNodes(), allocator);
 			circuit = acircuit.translation();
 			if (circuit==BooleanConstant.TRUE || circuit==BooleanConstant.FALSE) {
 				throw new TrivialFormulaException(Reducer.reduce(formula, acircuit, notes), 
@@ -89,7 +89,7 @@ public final class Translator {
 			varUsage = new IdentityHashMap<Node, IntSet>(allocator.allocationMap().size() + acircuit.variableUsage().size());
 			varUsage.putAll(acircuit.variableUsage());
 		} else {
-			circuit = Fol2BoolTranslator.translate(formula, notes.sharedNodes(), allocator);
+			circuit = Fol2Bool.translate(formula, notes.sharedNodes(), allocator);
 			if (circuit==BooleanConstant.TRUE || circuit==BooleanConstant.FALSE) {
 				throw new TrivialFormulaException(formula, (BooleanConstant)circuit, bounds, skolems);
 			}
@@ -122,7 +122,7 @@ public final class Translator {
 		}
 		
 //		System.out.println("translating to cnf...");
-		final SATSolver cnf = Bool2CnfTranslator.translate((BooleanFormula)circuit, options.solver(), numPrimaryVariables);
+		final SATSolver cnf = Bool2Cnf.definitional((BooleanFormula)circuit, options.solver(), numPrimaryVariables);
 		cnf.setTimeout(options.timeout());
 		
 		return new Translation(cnf, bounds, skolems, Collections.unmodifiableMap(varUsage), numPrimaryVariables, options.trackVars());
@@ -137,7 +137,7 @@ public final class Translator {
 	 */
 	@SuppressWarnings("unchecked")
 	static <T> T evaluate(Node node, BooleanConstantAllocator allocator) {
-		return (T) Fol2BoolTranslator.translate(node, NodeAnalyzer.detectSharing(node), allocator);//node.accept(new Fol2Sat(allocator, node, NodeAnalyzer.detectSharing(node)));
+		return (T) Fol2Bool.translate(node, NodeAnalyzer.detectSharing(node), allocator);//node.accept(new Fol2Sat(allocator, node, NodeAnalyzer.detectSharing(node)));
 	}
 	
 	/**
@@ -176,7 +176,7 @@ public final class Translator {
 		 * @requires notes.formula = formula && acircuit.formula = formula &&
 		 * acircuit.translation in BooleanConstant
 		 */
-		private Reducer(Formula reducible, Fol2BoolTranslator.AnnotatedCircuit acircuit,
+		private Reducer(Formula reducible, Fol2Bool.AnnotatedCircuit acircuit,
 	                    NodeAnalyzer.FormulaAnnotations notes) {
 			this.trues = acircuit.formulasThatAre(BooleanConstant.TRUE);
 			this.falses = acircuit.formulasThatAre(BooleanConstant.FALSE);
@@ -205,7 +205,7 @@ public final class Translator {
 		 * @return the subformula of the given formula that causes it to simplify
 		 * to a constant.
 		 */
-		static Formula reduce(Formula reducible, Fol2BoolTranslator.AnnotatedCircuit acircuit,
+		static Formula reduce(Formula reducible, Fol2Bool.AnnotatedCircuit acircuit,
 				              NodeAnalyzer.FormulaAnnotations notes) {
 			final Reducer r = new Reducer(reducible, acircuit, notes );
 			Formula reduced = reducible.accept(r);

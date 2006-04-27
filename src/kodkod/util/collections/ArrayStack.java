@@ -2,7 +2,7 @@
  * ArrayStack.java
  * Created on 11:11:41 AM
  */
-package kodkod.util;
+package kodkod.util.collections;
 
 import java.util.EmptyStackException;
 import java.util.Iterator;
@@ -65,13 +65,13 @@ public class ArrayStack<T> extends Stack<T> {
     }
    
     /**
-     * @see kodkod.util.Stack#size()
+     * @see kodkod.util.collections.Stack#size()
      */
     public int size() { return size; }
     
 	/**
 	 * {@inheritDoc}
-	 * @see kodkod.util.Stack#push
+	 * @see kodkod.util.collections.Stack#push
 	 */
 	public T push(T item) {
 		ensureCapacity(size + 1);  
@@ -80,7 +80,7 @@ public class ArrayStack<T> extends Stack<T> {
 	}
 
 	/**
-	 * @see kodkod.util.Stack#pop()
+	 * @see kodkod.util.collections.Stack#pop()
 	 */
 	public T pop() {
 		if (empty()) throw new EmptyStackException();
@@ -90,7 +90,7 @@ public class ArrayStack<T> extends Stack<T> {
 	}
 
 	/**
-	 * @see kodkod.util.Stack#peek()
+	 * @see kodkod.util.collections.Stack#peek()
 	 */
 	public T peek() {
 		if (empty()) throw new EmptyStackException();
@@ -98,7 +98,7 @@ public class ArrayStack<T> extends Stack<T> {
 	}
 
 	/**
-	 * @see kodkod.util.Stack#search(java.lang.Object)
+	 * @see kodkod.util.collections.Stack#search(java.lang.Object)
 	 */
 	public int search(Object o) {
 		for(int i = size-1; i >= 0; i--) {
@@ -109,7 +109,7 @@ public class ArrayStack<T> extends Stack<T> {
 	}
 
 	/**
-	 * @see kodkod.util.Stack#empty()
+	 * @see kodkod.util.collections.Stack#empty()
 	 */
 	public boolean empty() {
 		return size==0;
@@ -117,7 +117,7 @@ public class ArrayStack<T> extends Stack<T> {
 
 	/**
 	 * {@inheritDoc}
-	 * @see kodkod.util.Stack#iterator()
+	 * @see kodkod.util.collections.Stack#iterator()
 	 */
 	public Iterator<T> iterator() {
 		return new Iterator<T>()  {

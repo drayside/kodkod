@@ -2,8 +2,8 @@ package kodkod.engine.bool;
 
 import java.util.Iterator;
 
-import kodkod.util.Ints;
-import kodkod.util.Iterators;
+import kodkod.util.collections.Iterators;
+import kodkod.util.ints.Ints;
 
 
 /**

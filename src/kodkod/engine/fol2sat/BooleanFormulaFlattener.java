@@ -15,8 +15,8 @@ import kodkod.engine.bool.ITEGate;
 import kodkod.engine.bool.MultiGate;
 import kodkod.engine.bool.NotGate;
 import kodkod.engine.bool.Operator;
-import kodkod.util.IntSet;
-import kodkod.util.Ints;
+import kodkod.util.ints.IntSet;
+import kodkod.util.ints.Ints;
 
 /**
  * <p>Given a {@link kodkod.engine.bool.BooleanValue boolean value}, v, and a 
@@ -153,7 +153,7 @@ final class BooleanFormulaFlattener {
 		 * Constructs a new flattenning data gatherer.   The returned visitor can only be
 		 * applied to the specified root value.
 		 */
-		private FlatteningDataGatherer(BooleanValue root) {
+		private FlatteningDataGatherer(BooleanFormula root) {
 			final int maxLit = StrictMath.abs(root.label());
 			this.flattenable = Ints.bestSet(maxLit+1);
 			this.visited = Ints.bestSet(maxLit+1);

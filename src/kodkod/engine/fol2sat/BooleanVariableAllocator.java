@@ -17,11 +17,11 @@ import kodkod.engine.bool.BooleanMatrix;
 import kodkod.engine.bool.Dimensions;
 import kodkod.instance.Bounds;
 import kodkod.instance.Universe;
-import kodkod.util.IdentityHashSet;
-import kodkod.util.IntIterator;
-import kodkod.util.IntRange;
-import kodkod.util.IntSet;
-import kodkod.util.Ints;
+import kodkod.util.collections.IdentityHashSet;
+import kodkod.util.ints.IntIterator;
+import kodkod.util.ints.IntRange;
+import kodkod.util.ints.IntSet;
+import kodkod.util.ints.Ints;
 
 
 /**

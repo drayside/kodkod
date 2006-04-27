@@ -1,4 +1,4 @@
-package kodkod.util;
+package kodkod.util.ints;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -43,7 +43,7 @@ public final class IntBitSet extends AbstractIntSet {
 	
 	/**
 	 * {@inheritDoc}
-	 * @see kodkod.util.IntSet#min()
+	 * @see kodkod.util.ints.IntSet#min()
 	 */
 	public int min() {
 		checkNonEmpty();
@@ -54,7 +54,7 @@ public final class IntBitSet extends AbstractIntSet {
 
 	/**
 	 * {@inheritDoc}
-	 * @see kodkod.util.IntSet#max()
+	 * @see kodkod.util.ints.IntSet#max()
 	 */
 	public int max() {
 		checkNonEmpty();
@@ -115,7 +115,7 @@ public final class IntBitSet extends AbstractIntSet {
 	
 	/**
 	 * {@inheritDoc}
-	 * @see kodkod.util.IntSet#iterator()
+	 * @see kodkod.util.ints.IntSet#iterator()
 	 */
 	@Override
 	public IntIterator iterator() {
@@ -129,7 +129,7 @@ public final class IntBitSet extends AbstractIntSet {
 	 * Otherwise, they are returned in the descending order.
 	 * @return an iterator over the elements in this sequence
 	 * that are in the closed range [from..to]. 
-	 * @see kodkod.util.IntSet#iterator(int, int)
+	 * @see kodkod.util.ints.IntSet#iterator(int, int)
 	 */
 	public IntIterator iterator(int from, int to) {
 		return from > to ? new DescendingIterator(from,to) : new AscendingIterator(from,to);
@@ -137,7 +137,7 @@ public final class IntBitSet extends AbstractIntSet {
 	
 	/**
 	 * {@inheritDoc}
-	 * @see kodkod.util.IntSet#size()
+	 * @see kodkod.util.ints.IntSet#size()
 	 */
 	@Override
 	public int size() {
@@ -145,7 +145,7 @@ public final class IntBitSet extends AbstractIntSet {
 	}
 	
 	/**
-	 * @see kodkod.util.IntBitSet#capacity()
+	 * @see kodkod.util.ints.IntBitSet#capacity()
 	 */
 	public int capacity() { return capacity; }
 		
@@ -186,7 +186,7 @@ public final class IntBitSet extends AbstractIntSet {
 	
 	/**
 	 * {@inheritDoc}
-	 * @see kodkod.util.IntSet#contains(int)
+	 * @see kodkod.util.ints.IntSet#contains(int)
 	 */
 	@Override
 	public boolean contains(int i) {
@@ -195,7 +195,7 @@ public final class IntBitSet extends AbstractIntSet {
 
 	/**
 	 * {@inheritDoc}
-	 * @see kodkod.util.IntSet#add(int)
+	 * @see kodkod.util.ints.IntSet#add(int)
 	 */
 	@Override
 	public boolean add(int i) {
@@ -213,7 +213,7 @@ public final class IntBitSet extends AbstractIntSet {
 
 	/**
 	 * {@inheritDoc}
-	 * @see kodkod.util.IntSet#remove(int)
+	 * @see kodkod.util.ints.IntSet#remove(int)
 	 */
 	@Override
  	public boolean remove(int i) {

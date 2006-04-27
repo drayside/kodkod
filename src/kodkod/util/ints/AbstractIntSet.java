@@ -1,4 +1,4 @@
-package kodkod.util;
+package kodkod.util.ints;
 
 import java.util.AbstractSet;
 import java.util.NoSuchElementException;

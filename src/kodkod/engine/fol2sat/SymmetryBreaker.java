@@ -20,9 +20,9 @@ import kodkod.engine.bool.BooleanValue;
 import kodkod.engine.bool.BooleanAccumulator;
 import kodkod.engine.bool.Operator;
 import kodkod.instance.Bounds;
-import kodkod.util.IndexedEntry;
-import kodkod.util.IntIterator;
-import kodkod.util.IntSet;
+import kodkod.util.ints.IndexedEntry;
+import kodkod.util.ints.IntIterator;
+import kodkod.util.ints.IntSet;
 
 /**
  * Generates a symmetry breaking predicate

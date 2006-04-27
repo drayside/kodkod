@@ -4,8 +4,8 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
-import kodkod.util.Ints;
-import kodkod.util.Iterators;
+import kodkod.util.collections.Iterators;
+import kodkod.util.ints.Ints;
 
 
 /**

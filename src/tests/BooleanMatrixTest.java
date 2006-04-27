@@ -19,9 +19,9 @@ import kodkod.engine.bool.BooleanVariable;
 import kodkod.engine.bool.Dimensions;
 import kodkod.engine.bool.BooleanAccumulator;
 import kodkod.engine.bool.Operator;
-import kodkod.util.IndexedEntry;
-import kodkod.util.IntRange;
-import kodkod.util.Ints;
+import kodkod.util.ints.IndexedEntry;
+import kodkod.util.ints.IntRange;
+import kodkod.util.ints.Ints;
 
 /** 
  * Tests {@link kodkod.engine.bool.BooleanMatrix BooleanMatrix}.

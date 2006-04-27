@@ -6,10 +6,10 @@ import java.util.Map;
 import java.util.Set;
 
 import kodkod.ast.Relation;
-import kodkod.util.IntSet;
-import kodkod.util.Ints;
-import kodkod.util.SparseSequence;
-import kodkod.util.TreeSequence;
+import kodkod.util.ints.IntSet;
+import kodkod.util.ints.Ints;
+import kodkod.util.ints.SparseSequence;
+import kodkod.util.ints.TreeSequence;
 
 
 /**

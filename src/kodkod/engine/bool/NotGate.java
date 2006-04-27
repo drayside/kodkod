@@ -3,7 +3,7 @@ package kodkod.engine.bool;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-import kodkod.util.Ints;
+import kodkod.util.ints.Ints;
 
 
 /**

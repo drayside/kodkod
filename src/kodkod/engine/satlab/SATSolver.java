@@ -3,7 +3,7 @@ package kodkod.engine.satlab;
 import java.util.Iterator;
 
 import kodkod.engine.TimeoutException;
-import kodkod.util.IntSet;
+import kodkod.util.ints.IntSet;
 
 /**
  * Provides an interface to a SAT solver.

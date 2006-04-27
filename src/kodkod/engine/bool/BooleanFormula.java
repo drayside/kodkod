@@ -7,12 +7,10 @@ import java.util.Set;
 
 /**
  * Represents a non-constant boolean value, with zero or more inputs. 
- * Satellite data can be associated with formulas using the 
- * 
+ 
  * @specfield op: Operator
  * @specfield size: int
  * @specfield inputs: [0..size) -> one BooleanFormula
- * @specfield data: lone Object
  * @invariant size >= 0
  * @author Emina Torlak
  */

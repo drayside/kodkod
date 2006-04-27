@@ -31,26 +31,27 @@ import kodkod.ast.RelationPredicate;
 import kodkod.ast.UnaryExpression;
 import kodkod.ast.Variable;
 import kodkod.ast.visitor.ReturnVisitor;
+import kodkod.engine.bool.BooleanAccumulator;
 import kodkod.engine.bool.BooleanConstant;
 import kodkod.engine.bool.BooleanFactory;
+import kodkod.engine.bool.BooleanFormula;
 import kodkod.engine.bool.BooleanMatrix;
 import kodkod.engine.bool.BooleanValue;
 import kodkod.engine.bool.Dimensions;
-import kodkod.engine.bool.BooleanAccumulator;
 import kodkod.engine.bool.Operator;
-import kodkod.util.IdentityHashSet;
-import kodkod.util.IndexedEntry;
-import kodkod.util.IntSet;
-import kodkod.util.Ints;
+import kodkod.util.collections.IdentityHashSet;
+import kodkod.util.ints.IndexedEntry;
+import kodkod.util.ints.IntSet;
+import kodkod.util.ints.Ints;
 
 /**
  * Translates a first order logic formula into a boolean circuit.
  * 
  * @author Emina Torlak
  */
-final class Fol2BoolTranslator {
+final class Fol2Bool {
 
-	private Fol2BoolTranslator() {}
+	private Fol2Bool() {}
 	
 	/**
 	 * Translates the given first order formula or expression into a boolean
@@ -82,7 +83,7 @@ final class Fol2BoolTranslator {
 	
 	/**
 	 * Stores the translation and annotations computed by 
-	 * {@link Fol2BoolTranslator#translateAndTrack(Formula, Set, BooleanFormulaAllocator)}. 
+	 * {@link Fol2Bool#translateAndTrack(Formula, Set, BooleanFormulaAllocator)}. 
 	 * 
 	 * @specfield formula: Formula // the formula being translated
 	 * @specfield allocator: BooleanFormulaAllocator // the allocator used for translation
@@ -184,7 +185,7 @@ final class Fol2BoolTranslator {
 			final BooleanValue nonZeroConstant = factory.not(translation.zero());
 			for(IndexedEntry<BooleanValue> e: translation) {
 				if (e.value() != nonZeroConstant)
-					vars.add(StrictMath.abs(e.value().label()));
+					vars.add(StrictMath.abs(((BooleanFormula)e.value()).label()));
 			}
 			varUsage.put(expr, vars);
 			return cache.cache(expr, translation, env);
@@ -213,12 +214,12 @@ final class Fol2BoolTranslator {
 			} else if (translation==BooleanConstant.FALSE) {
 				if (env.parent()==null) falseFormulas.add(formula);
 			} else if (env.parent()==null) { // top-level formula
-				varUsage.put(formula, Ints.singleton(StrictMath.abs(translation.label())));	
+				varUsage.put(formula, Ints.singleton(StrictMath.abs(((BooleanFormula)translation).label())));	
 			} else {
 				IntSet vars = varUsage.get(formula);
 				if (vars==null)
 					vars = Ints.bestSet(1, Integer.MAX_VALUE-1);
-				vars.add(StrictMath.abs(translation.label()));
+				vars.add(StrictMath.abs(((BooleanFormula)translation).label()));
 				varUsage.put(formula, vars);
 			}
 			return cache.cache(formula, translation, env);

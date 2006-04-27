@@ -8,8 +8,8 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 import kodkod.engine.TimeoutException;
-import kodkod.util.IntSet;
-import kodkod.util.Ints;
+import kodkod.util.ints.IntSet;
+import kodkod.util.ints.Ints;
 
 import org.sat4j.specs.ContradictionException;
 import org.sat4j.specs.ISolver;

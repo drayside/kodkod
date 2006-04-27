@@ -1,4 +1,4 @@
-package kodkod.util;
+package kodkod.util.ints;
 
 /**
  * Represents an entry in a {@link SparseSequence sparse sequence}.

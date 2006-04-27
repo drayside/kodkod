@@ -1,4 +1,4 @@
-package kodkod.util;
+package kodkod.util.collections;
 
 import java.util.EmptyStackException;
 import java.util.Iterator;
@@ -22,7 +22,7 @@ public final class LinkedStack<T> extends  Stack<T> {
 	}
 
 	/**
-	 * @see kodkod.util.Stack#size()
+	 * @see kodkod.util.collections.Stack#size()
 	 */
 	public int size() { return size; }
 	

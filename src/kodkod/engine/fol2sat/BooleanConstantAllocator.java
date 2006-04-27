@@ -13,7 +13,7 @@ import kodkod.instance.Bounds;
 import kodkod.instance.Instance;
 import kodkod.instance.TupleSet;
 import kodkod.instance.Universe;
-import kodkod.util.IntIterator;
+import kodkod.util.ints.IntIterator;
 
 /** 
  * Uses {@link kodkod.engine.bool.BooleanConstant boolean constants} to 

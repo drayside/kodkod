@@ -16,7 +16,7 @@ import kodkod.engine.bool.BooleanConstant;
 import kodkod.engine.bool.BooleanFactory;
 import kodkod.engine.bool.BooleanMatrix;
 import kodkod.engine.bool.BooleanValue;
-import kodkod.util.IndexedEntry;
+import kodkod.util.ints.IndexedEntry;
 
 
 /** 

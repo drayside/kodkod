@@ -39,10 +39,10 @@ import kodkod.engine.bool.BooleanMatrix;
 import kodkod.engine.bool.BooleanValue;
 import kodkod.instance.Bounds;
 import kodkod.instance.Universe;
-import kodkod.util.IdentityHashSet;
-import kodkod.util.IndexedEntry;
-import kodkod.util.IntSet;
-import kodkod.util.Ints;
+import kodkod.util.collections.IdentityHashSet;
+import kodkod.util.ints.IndexedEntry;
+import kodkod.util.ints.IntSet;
+import kodkod.util.ints.Ints;
 
 /**
  * Skolemizes away existential quantifiers.  Specifically,

@@ -6,8 +6,8 @@ import java.util.Set;
 
 import kodkod.ast.Node;
 import kodkod.engine.satlab.SATSolver;
-import kodkod.util.IntSet;
-import kodkod.util.Ints;
+import kodkod.util.ints.IntSet;
+import kodkod.util.ints.Ints;
 
 /**
  * Contains a proof of unsatisfiability of a

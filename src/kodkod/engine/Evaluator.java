@@ -12,7 +12,7 @@ import kodkod.engine.fol2sat.Translator;
 import kodkod.instance.Instance;
 import kodkod.instance.TupleFactory;
 import kodkod.instance.TupleSet;
-import kodkod.util.IndexedEntry;
+import kodkod.util.ints.IndexedEntry;
 
 /**
  * An evaluator for relational formulas and expressions with

@@ -2,7 +2,7 @@
  * AbstractIndexedEntry.java
  * Created on 8:00:49 PM
  */
-package kodkod.util;
+package kodkod.util.ints;
 
 /**
  * A skeletal implementation of the IndexedEntry interface.
@@ -27,14 +27,14 @@ public abstract class AbstractIndexedEntry<V> implements IndexedEntry<V> {
 	}
 	
 	/**
-	 * @see kodkod.util.IndexedEntry#index()
+	 * @see kodkod.util.ints.IndexedEntry#index()
 	 */
 	public int index() {
 		return index;
 	}
 
 	/**
-	 * @see kodkod.util.IndexedEntry#value()
+	 * @see kodkod.util.ints.IndexedEntry#value()
 	 */
 	public V value() {
 		return value;

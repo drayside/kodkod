@@ -1,4 +1,4 @@
-package kodkod.util;
+package kodkod.util.collections;
 
 import java.util.Collections;
 import java.util.Iterator;

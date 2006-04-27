@@ -2,9 +2,11 @@
  * ArraySequence.java
  * Created on 1:07:24 PM
  */
-package kodkod.util;
+package kodkod.util.ints;
 
 import java.util.Iterator;
+
+import kodkod.util.collections.Iterators;
 
 /**
  * An implementation of a sparse sequence based on an array.
@@ -54,7 +56,7 @@ public final class ArraySequence<V> extends AbstractSparseSequence<V> {
 	/**
 	 * Returns the number of entries in this sequence.
 	 * @return #this.entries
-	 * @see kodkod.util.SparseSequence#size()
+	 * @see kodkod.util.ints.SparseSequence#size()
 	 */
 	public int size() {
 		return entries.length;
@@ -63,7 +65,7 @@ public final class ArraySequence<V> extends AbstractSparseSequence<V> {
 	/**
 	 * Returns true if this sequence is empty; otherwise returns false.
 	 * @return no this.entries
-	 * @see kodkod.util.SparseSequence#isEmpty()
+	 * @see kodkod.util.ints.SparseSequence#isEmpty()
 	 */
 	public boolean isEmpty() {
 		return entries.length==0;
@@ -72,7 +74,7 @@ public final class ArraySequence<V> extends AbstractSparseSequence<V> {
 	/** 
 	 * This operation is not supported for array sequences.
 	 * @throws UnsupportedOperationException
-	 * @see kodkod.util.SparseSequence#clear()
+	 * @see kodkod.util.ints.SparseSequence#clear()
 	 */
 	public void clear() {
 		throw new UnsupportedOperationException();
@@ -114,7 +116,7 @@ public final class ArraySequence<V> extends AbstractSparseSequence<V> {
 	 * @effects this.entries' = this.entries + index->value
 	 * @return this.entries[index]
 	 * @throws IndexOutOfBoundsException - index !in this.indeces
-	 * @see kodkod.util.SparseSequence#put(int, Object)
+	 * @see kodkod.util.ints.SparseSequence#put(int, Object)
 	 */
 	public V put(int index, V value) {
 		final int position = search(index);
@@ -127,7 +129,7 @@ public final class ArraySequence<V> extends AbstractSparseSequence<V> {
 	 * Returns the value to which this sequence maps the given
 	 * index.  If the index is not mapped, null is returned.
 	 * @return this.entries[index]
-	 * @see kodkod.util.SparseSequence#get(int)
+	 * @see kodkod.util.ints.SparseSequence#get(int)
 	 */
 	public V get(int index) {
 		final int position = search(index);
@@ -136,7 +138,7 @@ public final class ArraySequence<V> extends AbstractSparseSequence<V> {
 	
 	/** 
 	 * This operation is not supported for array sequences.
-	 * @see kodkod.util.SparseSequence#remove(int)
+	 * @see kodkod.util.ints.SparseSequence#remove(int)
 	 */
 	public V remove(int index) {
 		throw new UnsupportedOperationException();
@@ -146,7 +148,7 @@ public final class ArraySequence<V> extends AbstractSparseSequence<V> {
 	 * Returns true if this sparse sequence has an entry for the
 	 * given index; otherwise returns false.
 	 * @return index in this.indeces
-	 * @see kodkod.util.SparseSequence#containsIndex(int)
+	 * @see kodkod.util.ints.SparseSequence#containsIndex(int)
 	 */
 	public boolean containsIndex(int index) {
 		return search(index) >= 0;
@@ -156,7 +158,7 @@ public final class ArraySequence<V> extends AbstractSparseSequence<V> {
 	 * Returns true if this sequence has an entry with the given value;
 	 * otherwise returns false.
 	 * @return some this.entries.value
-	 * @see kodkod.util.SparseSequence#contains(java.lang.Object)
+	 * @see kodkod.util.ints.SparseSequence#contains(java.lang.Object)
 	 */
 	public boolean contains(Object value) {
 		if (value==null) {
@@ -179,7 +181,7 @@ public final class ArraySequence<V> extends AbstractSparseSequence<V> {
 	 * The returned iterator does not support removal.
 	 * @return an iterator over this.entries starting at the entry
 	 * with the smallest index
-	 * @see kodkod.util.SparseSequence#iterator()
+	 * @see kodkod.util.ints.SparseSequence#iterator()
 	 */
 	public Iterator<IndexedEntry<V>> iterator() {
 		return Iterators.iterate(entries);
@@ -196,7 +198,7 @@ public final class ArraySequence<V> extends AbstractSparseSequence<V> {
 	 * from < to, then the first and last entries returned
 	 * by the iterator are this.ceil(from) and this.floor(to).
 	 * Otherwise, they are this.floor(from) and this.ceil(to).
-	 * @see kodkod.util.SparseSequence#iterator(int, int)
+	 * @see kodkod.util.ints.SparseSequence#iterator(int, int)
 	 */
 	public Iterator<IndexedEntry<V>> iterator(int from, int to) {
 		final int fromPos = search(from);
@@ -221,7 +223,7 @@ public final class ArraySequence<V> extends AbstractSparseSequence<V> {
 	 * is empty, returns null.
 	 * @return {e: IndexedEntry | e.index = min(this.entries.E) && 
 	 *                            e.value = this.entries[e.index] }
-	 * @see kodkod.util.SparseSequence#first()
+	 * @see kodkod.util.ints.SparseSequence#first()
 	 */
 	public IndexedEntry<V> first() {
 		return entries.length==0 ? null : entries[0];
@@ -232,7 +234,7 @@ public final class ArraySequence<V> extends AbstractSparseSequence<V> {
 	 * is empty, returns null.
 	 * @return {e: IndexedEntry | e.index = max(this.entries.E) && 
 	 *                            e.value = this.entries[e.index] }
-	 * @see kodkod.util.SparseSequence#last()
+	 * @see kodkod.util.ints.SparseSequence#last()
 	 */
 	public IndexedEntry<V> last() {
 		return entries.length==0 ? null : entries[entries.length-1];
@@ -243,7 +245,7 @@ public final class ArraySequence<V> extends AbstractSparseSequence<V> {
 	 * larger than the given index.  If no such entry exists, null is returned.
 	 * @return {e: IndexedEntry | e.value = this.entries[e.index] && e.index in this.entries.E &&
 	 *                            no i: this.entries.E - e.index | index < i < e.index }
-	 * @see kodkod.util.SparseSequence#successor(int)
+	 * @see kodkod.util.ints.SparseSequence#successor(int)
 	 */
 	public IndexedEntry<V> successor(int index) {
 		final int position = search(index);
@@ -257,7 +259,7 @@ public final class ArraySequence<V> extends AbstractSparseSequence<V> {
 	 * smaller than the given index.  If no such entry exists, null is returned.
 	 * @return {e: IndexedEntry | e.value = this.entries[e.index] && e.index in this.entriess.E &&
 	 *                            no i: this.entries.E - e.index | index > i > e.index }
-	 * @see kodkod.util.SparseSequence#predecessor(int)
+	 * @see kodkod.util.ints.SparseSequence#predecessor(int)
 	 */
 	public IndexedEntry<V> predecessor(int index) {
 		final int position = search(index);
@@ -274,7 +276,7 @@ public final class ArraySequence<V> extends AbstractSparseSequence<V> {
 	 * @return this.containsIndex(index) => 
 	 *          {e: IndexedEntry | e.index = index && e.value = this.entries[index] }, 
 	 *          successor(index)
-	 * @see kodkod.util.SparseSequence#ceil(int)
+	 * @see kodkod.util.ints.SparseSequence#ceil(int)
 	 */
 	public IndexedEntry<V> ceil(int index) {
 		final int position = search(index);
@@ -289,7 +291,7 @@ public final class ArraySequence<V> extends AbstractSparseSequence<V> {
 	 * @return this.containsIndex(index) => 
 	 *          {e: IndexedEntry | e.index = index && e.value = this.entries[index] }, 
 	 *          predecessor(index)
-	 * @see kodkod.util.SparseSequence#floor(int)
+	 * @see kodkod.util.ints.SparseSequence#floor(int)
 	 */
 	public IndexedEntry<V> floor(int index) {
 		final int position = search(index);

@@ -21,10 +21,10 @@ import kodkod.instance.Tuple;
 import kodkod.instance.TupleFactory;
 import kodkod.instance.TupleSet;
 import kodkod.instance.Universe;
-import kodkod.util.IntBitSet;
-import kodkod.util.IntIterator;
-import kodkod.util.IntSet;
-import kodkod.util.IntTreeSet;
+import kodkod.util.ints.IntBitSet;
+import kodkod.util.ints.IntIterator;
+import kodkod.util.ints.IntSet;
+import kodkod.util.ints.IntTreeSet;
 
 /**
  * Test cases that record reported bugs. 
