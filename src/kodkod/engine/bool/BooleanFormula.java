@@ -7,15 +7,18 @@ import java.util.Set;
 
 /**
  * Represents a non-constant boolean value, with zero or more inputs. 
+ * Satellite data can be associated with formulas using the 
  * 
  * @specfield op: Operator
  * @specfield size: int
  * @specfield inputs: [0..size) -> one BooleanFormula
+ * @specfield data: lone Object
  * @invariant size >= 0
  * @author Emina Torlak
  */
 public abstract class BooleanFormula extends BooleanValue implements Iterable<BooleanFormula> {
 	private BooleanFormula negation;
+	//private Object data = null;
 	
 	/**
 	 * Constructs a new boolean formula that has the specified booelan
@@ -109,4 +112,24 @@ public abstract class BooleanFormula extends BooleanValue implements Iterable<Bo
 	 * @throws IndexOutOfBoundsException - i < 0 || i >= #this.inputs
 	 */
 	public abstract BooleanFormula input(int i);
+	
+//	/**
+//	 * Returns the stored satellite data.
+//	 * @return this.data
+//	 */
+//	@SuppressWarnings("unchecked")
+//	public final <T> T data() {
+//		return (T) data;
+//	}
+//	
+//	/**
+//	 * Sets the satellite data to the given value.
+//	 * @effects this.data' = newData
+//	 */
+//	@SuppressWarnings("unchecked")
+//	public final <T> void setData(T newData) {
+//		data = newData;
+//	}
+	
+	
 }

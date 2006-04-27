@@ -111,10 +111,9 @@ public final class Translator {
 		if (options.flatten()) {
 //			System.out.println("flattening...");
 			// remove everything but the variables from the factory
-			factory.clear(numPrimaryVariables);
+			factory.clear();
 			circuit = BooleanFormulaFlattener.flatten((BooleanFormula)circuit, factory);
-			// release the memory used by the factory and the factory itself
-			factory.clear(0);
+			// release the factory itself
 			factory = null;
 		}
 		//System.out.println(circuit);

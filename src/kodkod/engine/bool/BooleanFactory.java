@@ -4,6 +4,10 @@ import static kodkod.engine.bool.BooleanConstant.FALSE;
 import static kodkod.engine.bool.BooleanConstant.TRUE;
 import static kodkod.engine.bool.Operator.AND;
 import static kodkod.engine.bool.Operator.OR;
+import static kodkod.engine.bool.Operator.ITE;
+import static kodkod.engine.bool.Operator.NOT;
+import static kodkod.engine.bool.Operator.VAR;
+import static kodkod.engine.bool.Operator.CONST;
 
 import java.util.Iterator;
 import java.util.Set;
@@ -32,7 +36,7 @@ public final class BooleanFactory {
 	 * Stores input variables.
 	 * @invariant all i: [1..iLits.size()] | vars[i-1].positive.label = i
 	 */
-	private BooleanVariable[] vars;
+	private final BooleanVariable[] vars;
 	
 	/**
 	 * Caches the AND, OR, and ITE gates.  
@@ -161,7 +165,7 @@ public final class BooleanFactory {
 	
 	/**
 	 * Returns a boolean value that represents the conjunction of the input components.  
-	 * The effect of this method is the same as calling this.compose(MultiGate.Operator.AND, v0, v1).
+	 * The effect of this method is the same as calling this.compose(Operator.AND, v0, v1).
 	 * @return {v: BooleanValue | [[v]] = [[v0]] AND [[v1]] }
 	 * @effects this.components' = this.components + v 
 	 * @throws NullPointerException - any of the arguments are null
@@ -173,7 +177,7 @@ public final class BooleanFactory {
 	
 	/**
 	 * Returns a boolean value that represents the disjunction of the input components.  
-	 * The effect of this method is the same as calling this.compose(MultiGate.Operator.OR, v0, v1).
+	 * The effect of this method is the same as calling this.compose(Operator.OR, v0, v1).
 	 * @return {v: BooleanValue | [[v]] = [[v0]] OR [[v1]] }
 	 * @effects this.components' = this.components + v 
 	 * @throws NullPointerException - any of the arguments are null
@@ -240,16 +244,16 @@ public final class BooleanFactory {
 			final BooleanFormula f0 = (BooleanFormula) i, f1 = (BooleanFormula) t, f2 = (BooleanFormula) e;
 			final int digest = f0.hash(null) + f1.hash(null) + f2.hash(null);
 			
-			for(Iterator<BooleanFormula> gates = opCache(Operator.ITE).get(digest); gates.hasNext();) {
+			for(Iterator<BooleanFormula> gates = opCache(ITE).get(digest); gates.hasNext();) {
 				BooleanFormula gate = gates.next();
-				if (gate.op() == Operator.ITE) {
+				if (gate.op() == ITE) {
 					if (gate.input(0)==i && gate.input(1)==t && gate.input(2)==e)
 						return gate;
 				}
 				
 			}
 			final BooleanFormula ret = new ITEGate(nextLiteral++, f0, f1, f2);
-			opCache(Operator.ITE).add(ret);
+			opCache(ITE).add(ret);
 			return ret;
 		}
 	}
@@ -292,7 +296,7 @@ public final class BooleanFactory {
 	 * @throws NullPointerException - v = null
 	 */
 	public boolean contains(BooleanValue v) {
-		if (v.op()==Operator.CONST) return true;
+		if (v.op()==CONST) return true;
 		if (v.label()==0) return false;
 		if (v.label() < 0) v = v.negation();
 		final int absLit = v.label();
@@ -348,8 +352,8 @@ public final class BooleanFactory {
 	 * @requires op0 != null && op1 != null
 	 * @return CREATORS[4op0 + op1 - (op0(op0-1))/2]
 	 */
-	private static final AndOrCreator creator(Operator op0, Operator op1) { 
-		return CREATORS[(op0.ordinal << 2) + op1.ordinal - ( (op0.ordinal*(op0.ordinal-1) >> 1 ))];
+	private static final AndOrFactory creator(Operator op0, Operator op1) { 
+		return AOFACTORIES[(op0.ordinal << 2) + op1.ordinal - ( (op0.ordinal*(op0.ordinal-1) >> 1 ))];
 	}
 	
 	/**
@@ -367,20 +371,18 @@ public final class BooleanFactory {
 		} else {
 			l = v1; h = v0;
 		}
-		if (h.op()==Operator.CONST) 
+		if (h.op()==CONST) 
 			return h==op.identity() ? l : h;
 		else 
 			return creator(l.op(), h.op()).compose(op, (BooleanFormula)l, (BooleanFormula)h, this);
 	}
 	
 	/**
-	 * Removes all formulas whose label is higher
-	 * than the specified value from this.components.
+	 * Removes all gates from this.components.
 	 * @effects this.componets' = 
-	 *     this.components - { f: BooleanFormula | |f.label| > |maxLit| }
+	 *    BooleanConstant + this.components - { f: BooleanFormula | |f.label| > this.maxVariableLabel() }
 	 */
-	public void clear(int maxLit) {
-		assert maxLit == vars.length;
+	public void clear() {
 		cache[0].clear(); 
 		cache[1].clear(); 
 		cache[2].clear();
@@ -410,11 +412,14 @@ public final class BooleanFactory {
 	/**
 	 * Returns a BooleanFormula f such that [[f]] = f0 op f1.  The method
 	 * requires that the formulas f0 and f1 be already reduced with respect to op.
-	 * A new formula is created and cached iff the circuit f0 op f1 has not already
-	 * been created.
-	 * @return f0 op f1
-	 * @effects f0 op f1 !in this.components => this.components' = this.components + (f0 op f1),
-	 * this.compnents' = this.components
+	 * A new formula is created and cached iff the circuit with the meaning
+	 * [[f0]] op [[f1]] has not already been created.
+	 * @requires f0 and f1 have already been reduced with respect to op; i.e.  
+	 * f0 op f1 cannot be reduced to a constant or a simple circuit 
+	 * by applying absorption, idempotence, etc. laws to f0 and f1.
+	 * @return f : BooleanFormula | [[f]] = [[f0]] op [[f1]]
+	 * @effects f !in this.components => this.components' = this.components + f,
+	 * 	        this.compnents' = this.components
 	 */
 	private BooleanFormula cache(Operator.Nary op, BooleanFormula f0, BooleanFormula f1) {
 		final BooleanFormula l, h;
@@ -452,11 +457,11 @@ public final class BooleanFactory {
 	}
 	
 	/**
-	 * Wrapper for a method that performs circuit reductions and caching.
-	 * 
+	 * Wrapper for a method that performs circuit reductions and caching 
+	 * for circuits created using AND and OR operators.
 	 * @author Emina Torlak
 	 */
-	private static interface AndOrCreator {
+	private static interface AndOrFactory {
 		
 		/**
 		 * Returns a BooleanValue whose meaning is [[f0]] op [[f1]].  A
@@ -466,14 +471,10 @@ public final class BooleanFactory {
 		 * @requires f0.op <= f1.op
 		 * @requires f0 + f1 in factory.components
 		 * @requires all arguments are non-null
-		 * @return [[f0]] op [[f1]] = [[f0]] => f0,
-		 *         [[f0]] op [[f1]] = [[f1]] => f1,
-		 *         [[f0]] op [[f1]] in BooleanConstant => {c: BooleanConstant | [[c]] = [[f0]] op [[f1]]},
-		 *         [[f0]] op [[f1]] in factory.components => {v: opCache.elts | [[v]] = [[f0]] op [[f1]]},
-		 *         {v: BooleanValue - factory.components | [[v]] = [[f0]] op [[f1]]} 
-		 * @effects factory.components' != factory.components => 
-		 *          factory.components' - factory.components = {v: BooleanValue | [[v]] = [[f0]] op [[f1]]} 
 		 * @return v: BooleanValue | [[v]] = [[f0]] op [[f1]]
+		 * @effects (no v: BooleanValue | [[v]] = [[f0]] op [[f1]]) => 
+		 *          factory.components' = factory.components + {v: BooleanValue - factory.components | [[v]] = [[f0]] op [[f1]]} => 
+		 *          factory.components' - factory.components =  
 		 */
 		public abstract BooleanValue compose(Operator.Nary op, BooleanFormula f0, BooleanFormula f1, BooleanFactory factory);
 		
@@ -483,7 +484,7 @@ public final class BooleanFactory {
 	 * Performs common simplifications on circuits of the form AND op X or OR op X, 
 	 * where X can be any operator other than CONST (J stands for 'junction').
 	 */
-	private static final AndOrCreator JoX = new AndOrCreator() {
+	private static final AndOrFactory JoX = new AndOrFactory() {
 		/**
 		 * Performs the following reductions, if possible.  Note that 
 		 * these reductions will be possible only if f0 was created after f1 (i.e.  |f0.label| > |f1.label|).
@@ -505,7 +506,7 @@ public final class BooleanFactory {
 	/**
 	 * Performs common simplifications on circuits of the form AND op OR.
 	 */
-	private static final AndOrCreator AoO = new AndOrCreator() {
+	private static final AndOrFactory AoO = new AndOrFactory() {
 		/**
 		 * Performs the following reductions, if possible, along with JoX reductions.
 		 * (aj & ... & ak) & (a1 | ... | an) = (aj & ... & ak) where 1 <= j <= k <= n  
@@ -513,14 +514,14 @@ public final class BooleanFactory {
 		 * @requires f0.op in (AND + OR)
 		 */
 		public BooleanValue compose(Nary op, BooleanFormula f0, BooleanFormula f1, BooleanFactory factory) {
-			assert f0.op() == Operator.AND && f1.op() == Operator.OR;
+			assert f0.op() == AND && f1.op() == OR;
 			factory.flat0.clear(); 
 			factory.flat1.clear();
 			f0.flatten(op, factory.flat0, factory.k); 
 			f1.flatten(op, factory.flat1, factory.k);
-			if (op==Operator.AND && factory.flat0.size()<=factory.flat1.size() && factory.flat1.containsAll(factory.flat0)) 
+			if (op==AND && factory.flat0.size()<=factory.flat1.size() && factory.flat1.containsAll(factory.flat0)) 
 				return f0;
-			else if (op==Operator.OR && factory.flat0.removeAll(factory.flat1))
+			else if (op==OR && factory.flat0.removeAll(factory.flat1))
 				return f1;
 			else if (f0.label() < f1.label()) // f0 created before f1
 				return JoX.compose(op, f1, f0, factory);
@@ -533,7 +534,7 @@ public final class BooleanFactory {
 	/**
 	 * Performs common simplifications on circuits of the form AND op AND or OR op OR.
 	 */
-	private static final AndOrCreator JoJ = new AndOrCreator() {
+	private static final AndOrFactory JoJ = new AndOrFactory() {
 		/**
 		 * Performs the following reductions, if possible, along with the JoX reductions.
 		 * (a1 & ... & an) & (aj & ... & ak) = (a1 & ... & an) where 1 <= j <= k <= n
@@ -564,13 +565,13 @@ public final class BooleanFactory {
 	/**
 	 * Performs common simplifications on circuits of the form AND op ITE or OR op ITE.
 	 */
-	private static final AndOrCreator JoI = new AndOrCreator() {
+	private static final AndOrFactory JoI = new AndOrFactory() {
 		/**
 		 * Combines JoX and IoX reductions.
 		 * @requires f0.op in (AND + OR) && f1.op = ITE
 		 */
 		public BooleanValue compose(Nary op, BooleanFormula f0, BooleanFormula f1, BooleanFactory factory) {
-			assert f0.op().ordinal < 2 && f1.op() == Operator.ITE;
+			assert f0.op().ordinal < 2 && f1.op() == ITE;
 			if (f0.label() < f1.label()) // f0 created before f1
 				return IoX.compose(op, f1, f0, factory); 
 			else
@@ -581,14 +582,14 @@ public final class BooleanFactory {
 	/**
 	 * Performs common simplifications on circuits of the form AND op NOT or OR op NOT.
 	 */
-	private static final AndOrCreator JoN = new AndOrCreator() {
+	private static final AndOrFactory JoN = new AndOrFactory() {
 		/**
 		 * Performs the following reductions, if possible, along with the JoX/NoX reductions.
 		 * a & !a = F	a | !a = T
 		 * @requires f0.op in (AND + OR) && f1.op = NOT
 		 */
 		public BooleanValue compose(Nary op, BooleanFormula f0, BooleanFormula f1, BooleanFactory factory) {
-			assert f0.op().ordinal < 2 && f1.op() == Operator.NOT;
+			assert f0.op().ordinal < 2 && f1.op() == NOT;
 			if (f0.label()==-f1.label()) return op.shortCircuit();
 			else if (f0.label() < StrictMath.abs(f1.label()))  // f0 created before f1
 				return NoX.compose(op, f1, f0, factory);
@@ -600,7 +601,7 @@ public final class BooleanFactory {
 	/**
 	 * Performs common simplifications on circuits of the form ITE op X, where X can be any operator other than CONST.
 	 */
-	private static final AndOrCreator IoX = new AndOrCreator() {
+	private static final AndOrFactory IoX = new AndOrFactory() {
 		/**
 		 * Performs the following reductions, if possible.  Note that 
 		 * these reductions will be possible only if f0 was created after f1 (i.e.  |f0.label| > |f1.label|).
@@ -609,7 +610,7 @@ public final class BooleanFactory {
 		 * @requires f0.op = ITE && AND.ordinal = 0 && OR.ordinal = 1
 		 */
 		public BooleanValue compose(Nary op, BooleanFormula f0, BooleanFormula f1, BooleanFactory factory) {
-			assert f0.op() == Operator.ITE;
+			assert f0.op() == ITE;
 			if (f0.input(0)==f1) 
 				return factory.fastCompose(op, f0.input(op.ordinal+1), f1);
 			else if (f0.input(0).label()==-f1.label()) 
@@ -622,7 +623,7 @@ public final class BooleanFactory {
 	/**
 	 * Performs common simplifications on circuits of the form ITE op ITE.
 	 */
-	private static final AndOrCreator IoI = new AndOrCreator() {
+	private static final AndOrFactory IoI = new AndOrFactory() {
 		/**
 		 * Performs the following reductions, if possible, along with IoX reductions.
 		 * (a ? b : c) & (a ? b : c) = (a ? b : c)		(a ? b : c) & (!a ? b : c) = b & c
@@ -630,7 +631,7 @@ public final class BooleanFactory {
 		 * @requires f0.op + f1.op = ITE 
 		 */
 		public BooleanValue compose(Nary op, BooleanFormula f0, BooleanFormula f1, BooleanFactory factory) {
-			assert f0.op() == Operator.ITE && f1.op() == Operator.ITE;
+			assert f0.op() == ITE && f1.op() == ITE;
 			if (f0==f1) return f0;
 			else if (f0.input(0).label()==-f1.input(0).label() && f0.input(1)==f1.input(1) && f0.input(2)==f1.input(2)) 
 				return factory.fastCompose(op, f0.input(1), f0.input(2)); 
@@ -644,7 +645,7 @@ public final class BooleanFactory {
 	/**
 	 * Performs common simplifications on circuits of the form ITE op NOT.
 	 */
-	private static final AndOrCreator IoN =new AndOrCreator() {
+	private static final AndOrFactory IoN =new AndOrFactory() {
 		/**
 		 * Performs the following reductions, if possible, along with IoX/NoX reductions.
 		 * (a ? b : c) & !(a ? b : c) = F		
@@ -652,7 +653,7 @@ public final class BooleanFactory {
 		 * @requires f0.op = ITE && f1.op = NOT
 		 */
 		public BooleanValue compose(Nary op, BooleanFormula f0, BooleanFormula f1, BooleanFactory factory) {
-			assert f0.op() == Operator.ITE && f1.op() == Operator.NOT;
+			assert f0.op() == ITE && f1.op() == NOT;
 			if (f0.label()==-f1.label()) return op.shortCircuit();
 			else if (f0.label() < StrictMath.abs(f1.label()))  // f0 created before f1
 				return NoX.compose(op, f1, f0, factory);
@@ -664,7 +665,7 @@ public final class BooleanFactory {
 	/**
 	 * Performs common simplifications on circuits of the form NOT op X, where X can be any operator other than CONST.
 	 */
-	private static final AndOrCreator NoX = new AndOrCreator() {
+	private static final AndOrFactory NoX = new AndOrFactory() {
 		/**
 		 * Performs the following reductions, if possible.  Note that 
 		 * these reductions will be possible only if f0 was created after f1 (i.e.  |f0.label| > |f1.label|).
@@ -673,7 +674,7 @@ public final class BooleanFactory {
 		 * @requires f0.op = NOT
 		 */
 		public BooleanValue compose(Nary op, BooleanFormula f0, BooleanFormula f1, BooleanFactory factory) {
-			assert f0.op() == Operator.NOT ;
+			assert f0.op() == NOT ;
 			if (f0.input(0).contains(op.complement(), f1, factory.k) > 0) return op.shortCircuit();
 			else if (f0.input(0).contains(op.complement(), f1.negation(), factory.k) > 0) return f0;
 			else return factory.cache(op, f0, f1);
@@ -683,14 +684,14 @@ public final class BooleanFactory {
 	/**
 	 * Performs common simplifications on circuits of the form NOT op NOT.
 	 */
-	private static final AndOrCreator NoN = new AndOrCreator() {
+	private static final AndOrFactory NoN = new AndOrFactory() {
 		/**
 		 * Performs the following reductions, if possible, along with NoX reductions.
 		 * !a & !a = !a		!a | !a = !a
 		 * @requires f1.op + f0.op = NOT
 		 */
 		public BooleanValue compose(Nary op, BooleanFormula f0, BooleanFormula f1, BooleanFactory factory) {
-			assert f0.op() == Operator.NOT && f1.op() == Operator.NOT;
+			assert f0.op() == NOT && f1.op() == NOT;
 			if (f0==f1) return f0;
 			else if (f0.label() < f1.label()) // f0 created after f1
 				return NoX.compose(op, f0, f1, factory);
@@ -702,14 +703,14 @@ public final class BooleanFactory {
 	/**
 	 * Performs common simplifications on circuits of the form NOT op VAR.
 	 */
-	private static final AndOrCreator NoV = new AndOrCreator() {
+	private static final AndOrFactory NoV = new AndOrFactory() {
 		/**
 		 * Performs the following reductions, if possible, along with NoX reductions.
 		 * !a & a = F		!a | a = T
 		 * @requires f1.op = NOT && f1.op = VAR
 		 */
 		public BooleanValue compose(Nary op, BooleanFormula f0, BooleanFormula f1, BooleanFactory factory) {
-			assert f0.op() == Operator.NOT && f1.op() == Operator.VAR;
+			assert f0.op() == NOT && f1.op() == VAR;
 			if (f0.label()==-f1.label()) return op.shortCircuit();
 			else return NoX.compose(op, f0, f1, factory);
 		}
@@ -718,7 +719,7 @@ public final class BooleanFactory {
 	/**
 	 * Performs common simplifications on circuits of the form VAR op VAR.
 	 */
-	private static final AndOrCreator VoV = new AndOrCreator() {
+	private static final AndOrFactory VoV = new AndOrFactory() {
 		/**
 		 * Performs the following reductions, if possible:
 		 * a & a = a 
@@ -726,18 +727,18 @@ public final class BooleanFactory {
 		 * @requires f0.op + f1.op = VAR
 		 */
 		public BooleanValue compose(Nary op, BooleanFormula f0, BooleanFormula f1, BooleanFactory factory) {
-			assert f0.op() == Operator.VAR && f1.op() == Operator.VAR;
+			assert f0.op() == VAR && f1.op() == VAR;
 			return (f0==f1) ? f0 : factory.cache(op, f0, f1); 
 		}
 	};
 	
 	/**
-	 * 15 creators representing all possible composition combinations of 
+	 * 15 AndOrFactories representing all possible composition combinations of 
 	 * non-constant vertices using the operators AND and OR.  Note that there
 	 * are 15 of them rather than 25 because of the v0.op <= v1.op requirement
-	 * of the {@link AndOrCreator#compose(Operator.Nary, BooleanFormula, BooleanFormula, BooleanFactory) compose} method.
+	 * of the {@link AndOrFactory#compose(Operator.Nary, BooleanFormula, BooleanFormula, BooleanFactory) compose} method.
 	 */
-	private static final AndOrCreator[] CREATORS = {
+	private static final AndOrFactory[] AOFACTORIES = {
 		JoJ,		/* AND op AND */
 		AoO,		/* AND op OR */
 		JoI,		/* AND op ITE */
@@ -754,4 +755,29 @@ public final class BooleanFactory {
 		NoV,		/* NOT op VAR */
 		VoV		/* VAR op VAR */
 	};
+	
+	
+	/**
+	 * Wrapper for a method that performs circuit reductions and caching 
+	 * for circuits created using the ITE operator.
+	 * @author Emina Torlak
+	 */
+	private static interface ITEFactory {
+		
+		/**
+		 * Returns a BooleanValue whose meaning is (i ? t : e).  A
+		 * new circuit is created and stored in factory.cache(ITE) iff (i ? t : e) cannot be reduced
+		 * to a simpler value and opCache does not already contain a circuit
+		 * with equivalent meaning.
+		 * @requires an implementing class may place constraints on the op values of the arguments
+		 * @requires i + t + e in factory.components
+		 * @requires all arguments are non-null
+		 * @return {v: factory.components' | [[v]] = (i ? t : e)} 
+		 * @effects (no v: BooleanValue | [[v]] = (i ? t : e)) =>  
+		 *          factory.components' = factory.components + {v: BooleanValue - factory.components | [[v]] = (i ? t : e)},
+		 *          factory.components' = factory.components
+		 */
+		public abstract BooleanValue ite(BooleanValue i, BooleanValue t, BooleanValue e, BooleanFactory factory);
+		
+	}
 }

@@ -21,7 +21,7 @@ import kodkod.util.Iterators;
 public abstract class MultiGate extends BooleanFormula {
 	final Operator.Nary op;
 	
-	private final int label, hashcode;
+	private final int label, labelhash, hashcode;
 	
 	/**
 	 * Constructs a new MultiGate gate with the given operator and label.
@@ -34,6 +34,7 @@ public abstract class MultiGate extends BooleanFormula {
 		assert label >= 0;
 		this.op = op;
 		this.label = label;
+		this.labelhash = Ints.superFastHash(label);
 		this.hashcode = hashcode;
 	}
 	
@@ -122,7 +123,7 @@ public abstract class MultiGate extends BooleanFormula {
 	 */
 	@Override
 	final int hash(Operator op) {
-		return op==this.op ? hashcode : Ints.superFastHash(label());
+		return op==this.op ? hashcode : labelhash; 
 	}
 	
 	/**
