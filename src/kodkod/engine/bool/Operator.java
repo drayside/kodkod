@@ -65,7 +65,7 @@ public abstract class Operator implements Comparable<Operator>{
 	/**
 	 * Ternary {@link ITEGate if-then-else} operator.
 	 */
-	public static final Operator ITE = new Operator(2) {
+	public static final Ternary ITE = new Ternary(2) {
 		public String toString() { return "?"; }
 	};
 	
@@ -102,8 +102,7 @@ public abstract class Operator implements Comparable<Operator>{
 		/**
 		 * Returns the hashcode for a gate v such that
 		 * v.op = this && v.inputs[int] = f0 + f1
-		 * @return hashcode for a gate v such that
-		 * v.op = this && v.inputs[int] = f0 + f1
+		 * @return f0.hash(this) + f1.hash(this)
 		 */
 		int hash(BooleanFormula f0, BooleanFormula f1) {
 			return f0.hash(this) + f1.hash(this);
@@ -112,8 +111,7 @@ public abstract class Operator implements Comparable<Operator>{
 		/**
 		 * Returns the hashcode for a gate v such that
 		 * v.op = this && v.iterator() = formulas.
-		 * @return hashcode for a gate v such that
-		 * v.op = this && v.iterator() = formulas
+		 * @return sum(formulas.hash(this))
 		 */
 		int hash(Iterator<BooleanFormula> formulas) {
 			int sum = 0;
@@ -143,6 +141,22 @@ public abstract class Operator implements Comparable<Operator>{
 		 * @return the complement of this binary operator
 		 */
 		public abstract Operator.Nary complement();
+	}
+	
+	static abstract class Ternary extends Operator {
+		
+		private Ternary(int ordinal) {
+			super(ordinal);
+		}
+		
+		/**
+		 * Returns the hashcode for a gate v such that
+		 * v = (i ? t : e)
+		 * @return 3*i.hash(this) + 5*t.hash(this) + 7*e.hash(this)
+		 */
+		int hash(BooleanFormula i, BooleanFormula t, BooleanFormula e) {
+			return 3*i.hash(this) + 5*t.hash(this) + 7*e.hash(this);
+		}
 	}
 	
 }

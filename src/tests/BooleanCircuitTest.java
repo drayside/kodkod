@@ -285,7 +285,25 @@ public class BooleanCircuitTest extends TestCase {
 		testMultiGate(OR);
 	}
 	
-	
+	public final void testITE() {
+		final BooleanValue a12 = f.and(v[1], v[2]),  na12 = f.not(a12), 
+		                   a45 = f.and(v[4], v[5]), o67 = f.or(v[6], v[7]), 
+		                   no67 = f.not(o67), o89 = f.or(v[8], v[9]), 
+		                   no89 = f.not(o89);
+		assertSame(a12, f.ite(TRUE, a12, a45));
+		assertSame(a45, f.ite(FALSE, a12, a45));
+		assertSame(f.or(o89, a12), f.ite(a12, TRUE, o89));
+		assertSame(f.and(o89, na12), f.ite(a12, FALSE, o89));
+		assertSame(f.or(no67, a45), f.ite(o67, a45, TRUE));
+		assertSame(f.and(no89, no67), f.ite(no89, no67, FALSE));
+		assertSame(o67, f.ite(o89, o67, o67));
+		assertSame(f.or(a12, o67), f.ite(a12, a12, o67));
+		assertSame(f.and(o89, na12), f.ite(a12, na12, o89));
+		assertSame(f.or(no67, a45), f.ite(o67, a45, no67));
+		assertSame(f.and(no89, no67), f.ite(no89, no67, no89));
+		assertSame(f.ite(f.and(v[1],v[2]), o67, a45), f.ite(a12, f.or(v[6], v[7]), a45));
+		
+	}
 
 
 }

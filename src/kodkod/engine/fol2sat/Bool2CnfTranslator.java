@@ -107,9 +107,9 @@ final class Bool2CnfTranslator {
 				solver.addClause(ternaryClause);
 				ternaryClause[1] = t; ternaryClause[2] = -oLit;
 				solver.addClause(ternaryClause);
-				ternaryClause[0] = i; ternaryClause[1] = e; 
+				ternaryClause[0] = i; ternaryClause[1] = -e; ternaryClause[2] = oLit;
 				solver.addClause(ternaryClause);
-				ternaryClause[1] = -e; ternaryClause[2] = -oLit;
+				ternaryClause[1] = e; ternaryClause[2] = -oLit;
 				solver.addClause(ternaryClause);
 			}
 			unaryClause[0] = oLit;

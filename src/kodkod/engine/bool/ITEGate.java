@@ -23,20 +23,22 @@ import kodkod.util.Iterators;
  */
 public final class ITEGate extends BooleanFormula {
 	private final BooleanFormula[] inputs;
-	private final int label, hashcode;
+	private final int label, hashcode, labelhash;
 	
 	/**
 	 * Constructs a new ITEGate from the given formulas and label.
 	 * @requires label >= 0 && null !in ifFormula + thenFormula + elseFormula
+	 * @requires hashcode = ITE.hash(ifFormula, thenFormula, elseFormula)
 	 * @effects this.label' = label && this.ifFormula' = ifFormula &&
 	 * this.thenFormula' = thenFormula && this.elseFormula' = elseFormula
 	 * @throws NullPointerException - owner = null
 	 */
-	ITEGate(int label, BooleanFormula ifFormula, BooleanFormula thenFormula, BooleanFormula elseFormula) {
+	ITEGate(int label, int hashcode, BooleanFormula ifFormula, BooleanFormula thenFormula, BooleanFormula elseFormula) {
 		super(null);
 		assert label >= 0;
 		this.label = label;
-		this.hashcode = Ints.superFastHash(label);
+		this.labelhash = Ints.superFastHash(label);
+		this.hashcode = hashcode;
 		this.inputs = new BooleanFormula[3];
 		inputs[0] = ifFormula;
 		inputs[1] = thenFormula;
@@ -50,7 +52,7 @@ public final class ITEGate extends BooleanFormula {
 	 */
 	@Override
 	int hash(Operator op) {
-		return hashcode;
+		return labelhash;
 	}
 	
 	/**
@@ -103,6 +105,13 @@ public final class ITEGate extends BooleanFormula {
 		return "(" + inputs[0] + "?" + inputs[1] + ":" + inputs[2] + ")";
 	}
 
+	/**
+	 * Returns the hashcode for this if-then-else gate.
+	 * @return the hashcode for this gate.
+	 */
+	public int hashCode() {
+		return hashcode;
+	}
 	/**
 	 * Returns Operator.ITE.
 	 * @return Operator.ITE

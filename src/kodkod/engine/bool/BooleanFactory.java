@@ -188,6 +188,19 @@ public final class BooleanFactory {
 	}
 	
 	/**
+	 * Returns a boolean value that represents the formula v0 xor v1.  The
+	 * effect of this method is the same as calling 
+	 * this.ite(v0, f.not(v1), v1).
+	 * @return { v: BooleanValue | [[v]] = [[v0]] xor [[v1]] }
+	 * @effects this.components' = this.components + v
+	 * @throws NullPointerException - any of the arguments are null
+	 * @throws IllegalArgumentException - v0 + v1 !in this.components
+	 */
+	public final BooleanValue xor(BooleanValue v0, BooleanValue v1) {
+		return ite(v0, v1.negation(), v1);
+	}
+	
+	/**
 	 * Returns a boolean value that represents the formula v0 => v1.  The effect
 	 * of this method is the same as calling this.compose(OR, this.not(v0), v1).
 	 * @return { v: BooleanValue | [[v]] = [[v0]] => [[v1]] }
@@ -202,14 +215,14 @@ public final class BooleanFactory {
 	/**
 	 * Returns a boolean value that represents the formula v0 = v1.  The
 	 * effect of this method is the same as calling 
-	 * this.and(this.implies(v0, v1), this.implies(v1, v0)).
+	 * this.ite(v0, v1, f.not(v1)).
 	 * @return { v: BooleanValue | [[v]] = [[v0]] iff [[v1]] }
 	 * @effects this.components' = this.components + v
 	 * @throws NullPointerException - any of the arguments are null
 	 * @throws IllegalArgumentException - v0 + v1 !in this.components
 	 */
 	public final BooleanValue iff(BooleanValue v0, BooleanValue v1) {
-		return compose(AND, implies(v0,v1), implies(v1,v0));
+		return ite(v0, v1, v1.negation());
 	}
 	
 	/**
@@ -242,17 +255,14 @@ public final class BooleanFactory {
 		else if (e==FALSE || i==e) return fastCompose(AND, i, t);
 		else {
 			final BooleanFormula f0 = (BooleanFormula) i, f1 = (BooleanFormula) t, f2 = (BooleanFormula) e;
-			final int digest = f0.hash(null) + f1.hash(null) + f2.hash(null);
+			final int hash = ITE.hash(f0, f1, f2);
 			
-			for(Iterator<BooleanFormula> gates = opCache(ITE).get(digest); gates.hasNext();) {
+			for(Iterator<BooleanFormula> gates = opCache(ITE).get(hash); gates.hasNext();) {
 				BooleanFormula gate = gates.next();
-				if (gate.op() == ITE) {
-					if (gate.input(0)==i && gate.input(1)==t && gate.input(2)==e)
-						return gate;
-				}
-				
+				if (gate.input(0)==i && gate.input(1)==t && gate.input(2)==e)
+					return gate;
 			}
-			final BooleanFormula ret = new ITEGate(nextLiteral++, f0, f1, f2);
+			final BooleanFormula ret = new ITEGate(nextLiteral++, hash, f0, f1, f2);
 			opCache(ITE).add(ret);
 			return ret;
 		}
@@ -755,29 +765,4 @@ public final class BooleanFactory {
 		NoV,		/* NOT op VAR */
 		VoV		/* VAR op VAR */
 	};
-	
-	
-	/**
-	 * Wrapper for a method that performs circuit reductions and caching 
-	 * for circuits created using the ITE operator.
-	 * @author Emina Torlak
-	 */
-	private static interface ITEFactory {
-		
-		/**
-		 * Returns a BooleanValue whose meaning is (i ? t : e).  A
-		 * new circuit is created and stored in factory.cache(ITE) iff (i ? t : e) cannot be reduced
-		 * to a simpler value and opCache does not already contain a circuit
-		 * with equivalent meaning.
-		 * @requires an implementing class may place constraints on the op values of the arguments
-		 * @requires i + t + e in factory.components
-		 * @requires all arguments are non-null
-		 * @return {v: factory.components' | [[v]] = (i ? t : e)} 
-		 * @effects (no v: BooleanValue | [[v]] = (i ? t : e)) =>  
-		 *          factory.components' = factory.components + {v: BooleanValue - factory.components | [[v]] = (i ? t : e)},
-		 *          factory.components' = factory.components
-		 */
-		public abstract BooleanValue ite(BooleanValue i, BooleanValue t, BooleanValue e, BooleanFactory factory);
-		
-	}
 }

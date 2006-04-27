@@ -262,6 +262,14 @@ public class TranslatorTest extends TestCase {
 		
 	}
 	
+	public final void testIFF() {
+		// some r11 && (r11 in r12 iff r12 in r11)
+		Formula f = r1[1].some().and(r1[1].in(r1[2]).iff(r1[2].in(r1[1])));
+		assertTrue(isSatisfiable(f));
+		// some r11 && no r12 && (r11 in r12 iff r12 in r11)
+		assertFalse(isSatisfiable(f.and(r1[2].no())));
+	}
+	
 	
 	public final void testFlattening() {
 		final List<String> atoms = new ArrayList<String>(9);

@@ -479,25 +479,29 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	 */
 	private static BooleanMatrix choiceSameZero(final BooleanValue c, final BooleanMatrix m0, final BooleanMatrix m1) {
 		final BooleanFactory f = m0.factory;
-		final BooleanMatrix ret =  new BooleanMatrix(m0.dimensions, m0.zero, f);
-		final BooleanValue notc = c.negation();
-		final BooleanValue c0 = (m0.zero==TRUE ? notc : c), c1 = c0.negation();
-		final Operator.Nary op = (m0.zero==TRUE ? OR : AND);
+		final BooleanConstant zero = m0.zero;
+		final BooleanMatrix ret =  new BooleanMatrix(m0.dimensions, zero, f);
+//		final BooleanValue notc = c.negation();
+//		final BooleanValue c0 = (m0.zero==TRUE ? notc : c), c1 = c0.negation();
+//		final Operator.Nary op = (m0.zero==TRUE ? OR : AND);
 		
 		IndexedEntry<BooleanValue> e0 = m0.cells.first(), e1 = m1.cells.first();
 		
 		while (e0 != null || e1 != null) {
 			int i0 = e0==null ? Integer.MAX_VALUE : e0.index();
 			int i1 = e1==null ? Integer.MAX_VALUE : e1.index();
-			if (i0==i1) { // c => e0, e1 = (!c || e0) && (c || e1)
-				ret.fastSet(i0, f.fastCompose(AND, f.fastCompose(OR, notc, e0.value()), f.fastCompose(OR, c, e1.value())));
+			if (i0==i1) { // (c => e0, e1) = (!c || e0) && (c || e1)
+				//ret.fastSet(i0, f.fastCompose(AND, f.fastCompose(OR, notc, e0.value()), f.fastCompose(OR, c, e1.value())));
+				ret.fastSet(i0, f.fastITE(c, e0.value(), e1.value()));
 				e0 = m0.cells.successor(i0);
 				e1 = m1.cells.successor(i1);
-			} else if (i0 < i1) { // c => e0, zero = (!c || e0) && (c || zero) = c0 op e0
-				ret.fastSet(i0, f.fastCompose(op, c0, e0.value()));
+			} else if (i0 < i1) { // (c => e0, zero) = (!c || e0) && (c || zero) = c0 op e0
+//				ret.fastSet(i0, f.fastCompose(op, c0, e0.value()));
+				ret.fastSet(i0, f.fastITE(c, e0.value(), zero));
 				e0 = m0.cells.successor(i0);
-			} else { // c => zero, e1 = (!c || zero) && (c || e1) = c1 op e1
-				ret.fastSet(i1, f.fastCompose(op, c1, e1.value()));
+			} else { // (c => zero, e1) = (!c || zero) && (c || e1) = c1 op e1
+//				ret.fastSet(i1, f.fastCompose(op, c1, e1.value()));
+				ret.fastSet(i1, f.fastITE(c, zero, e1.value()));
 				e1 = m1.cells.successor(i1);
 			}
 		}
@@ -513,10 +517,11 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	private static BooleanMatrix choiceDifferentZero(final BooleanValue c, final BooleanMatrix m0, final BooleanMatrix m1) {
 		final BooleanFactory f = m0.factory;
 		final BooleanMatrix ret =  new BooleanMatrix(m0.dimensions, FALSE, f);
-		final BooleanValue notc = c.negation();
+//		final BooleanValue notc = c.negation();
 		
 		for(int i = 0, n = ret.dimensions.capacity(); i < n; i++) {
-			ret.fastSet(i, f.fastCompose(AND, f.fastCompose(OR, notc, m0.fastGet(i)), f.fastCompose(OR, c, m1.fastGet(i))));
+			//ret.fastSet(i, f.fastCompose(AND, f.fastCompose(OR, notc, m0.fastGet(i)), f.fastCompose(OR, c, m1.fastGet(i))));
+			ret.fastSet(i, f.fastITE(c, m0.fastGet(i), m1.fastGet(i)));
 		}
 		
 		return ret;

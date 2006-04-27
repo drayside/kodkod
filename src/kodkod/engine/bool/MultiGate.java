@@ -93,7 +93,7 @@ public abstract class MultiGate extends BooleanFormula {
 	 * @requires one components.(this + l + h)
 	 * @requires l.label < h.label 
 	 * @requires label > |l.label| && |label > h.label|
-	 * @requires hashcode = l.hash(op) + h.hash(op)
+	 * @requires hashcode = op.hash(l, h)
 	 * @return { gate: ImmutableMultiGate | gate.op = op && gate.inputs = l + h && gate.label = label }
 	 */
 	static MultiGate make(Operator.Nary op, int label, int hashcode, BooleanFormula l, BooleanFormula h) {
@@ -104,7 +104,7 @@ public abstract class MultiGate extends BooleanFormula {
 	 * Returns a new immutable gate with the given label, hashcode, and same inputs and operator as 
 	 * the given mutable gate.
 	 * @requires #g.inputs > 2 && one (components).(g.inputs) && label > max(|g.inputs.label|)
-	 * @requires hashcode = sum(g.inputs.hash(g.op))
+	 * @requires hashcode = op.hash(g.iterator())
 	 * @return { gate: ImmutableMultiGate | gate.op = g.op && gate.inputs = g.inputs && gate.label = label } 
 	 */
 	static MultiGate make(BooleanAccumulator g, int label, int hashcode) {
@@ -119,7 +119,7 @@ public abstract class MultiGate extends BooleanFormula {
 	 * if op = this.op, then the sum of this circuit's irreducible
 	 * inputs' hashes (with respect to op) is returned.  Otherwise, 
 	 * the superFastHash of this.label is returned.
-	 * @return this.op = op => sum((irreducible inputs of this).hash(op)), Ints.superFastHash(this.label)
+	 * @return this.op = op => this.op.hash(this.inputs), Ints.superFastHash(this.label)
 	 */
 	@Override
 	final int hash(Operator op) {
