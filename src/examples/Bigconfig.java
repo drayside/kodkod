@@ -163,34 +163,41 @@ public class Bigconfig {
 	}
 	
 	/**
-	 * Returns a bounds object that constructs the 'scope' for analyzing
-	 * the commands, using the given values for the number of sub sites
-	 * and headquarters.  The number of Routers is taken to be the same
-	 * as the total number of sites.
-	 * @requires all arguments are positive
-	 * @return a bounds for the model
+	 * @return a universe with n routers and n
+	 * sites.  The first n atoms are sites.
 	 */
-	public Bounds bounds(int hqNum, int subNum) {
-		assert subNum > 0 && hqNum > 0;
-		final int siteNum = hqNum + subNum;
-		final List<String> atoms = new ArrayList<String>(siteNum*2);
-		for(int i = 0; i < siteNum; i++) {
+	private Universe universe(int n) {
+		final List<String> atoms = new ArrayList<String>(n*2);
+		for(int i = 0; i < n; i++) {
 			atoms.add("Site"+i);
 		}
-		for(int i = 0; i < siteNum; i++) {
+		for(int i = 0; i < n; i++) {
 			atoms.add("Router"+i);
 		}
-		final Universe u = new Universe(atoms);
+		return new Universe(atoms);
+	}
+	
+	/**
+	 * Returns a bounds  with the
+	 * given number of hqs and subs, constructed using the 
+	 * given universe. 
+	 * @requires hqNum > 0 && subNum > 0
+	 * @requires u contains at least (hqNum+sub) Router atoms and 
+	 * as many Site atoms
+	 * @return bounds
+	 */
+	private Bounds bounds(int hqNum, int subNum, Universe u) {
 		final TupleFactory f = u.factory();
 		
 		final Bounds b = new Bounds(u);
+		final int siteMax = hqNum + subNum - 1;
 		
 		final String site0 = "Site0";
-		final String siteN = "Site" + (siteNum-1);
+		final String siteN = "Site" + siteMax;
 		final String siteHQ = "Site" + (hqNum-1);
 		final String siteSub = "Site" + hqNum;
 		final String router0 = "Router0";
-		final String routerN = "Router" + (siteNum-1);
+		final String routerN = "Router" + siteMax;
 
 		final TupleSet sites = f.range(f.tuple(site0), f.tuple(siteN));
 		b.boundExactly(Site, sites);
@@ -203,21 +210,34 @@ public class Bigconfig {
 		b.bound(link, routers.product(routers));
 //		b.bound(site, routers.product(sites));
 		final TupleSet routerLocations = f.noneOf(2);
-		for(int i = 0; i < siteNum; i++) {
+		for(int i = 0; i <= siteMax; i++) {
 			routerLocations.add(f.tuple("Router"+i, "Site"+i));
 		}
 		b.boundExactly(site, routerLocations);
 		
 		return b;
 	}
+	/**
+	 * Returns a bounds  with the
+	 * given number of hqs and subs.  The parameter routerNum
+	 * designates the total number of routers in the universe.
+	 * @requires hqNum > 0 && subNum > 0
+	 * @requires hqNum + subNum <= routers
+	 * @return bounds
+	 */
+	public Bounds bounds(int hqNum, int subNum, int routerNum) {
+		assert hqNum > 0 && subNum > 0 && hqNum + subNum <= routerNum;
+		
+		return bounds(hqNum, subNum, universe(routerNum));
+	}
 	
 	private static void usage() {
-		System.out.println("Usage: java tests.Bigconfig [# hq] [# sub] [# closure unwindings, 0 for true closure]");
+		System.out.println("Usage: java tests.Bigconfig [# hq] [# sub] [# closure unwindings, 0 for true closure] [size of partial instance, 0 default]");
 		System.exit(1);
 	}
 	
 	/**
-	 * Usage: java tests.Bigconfig [# hq] [# sub] [# closure unwindings, 0 for true closure]
+	 * Usage: java tests.Bigconfig [# hq] [# sub] [# closure unwindings, 0 for true closure] [size of partial instance, 0 default] 
 	 */
 	public static void main(String[] args) {
 		if (args.length < 3) 
@@ -227,12 +247,29 @@ public class Bigconfig {
 		final Solver solver = new Solver();
 		solver.options().setSolver(SATFactory.ZChaff);
 		try {
+			final int hq = Integer.parseInt(args[0]);
+			final int sub = Integer.parseInt(args[1]);
+			final int partial = args.length > 3 ? Integer.parseInt(args[3]) : 0;
 			final Formula show = model.show();
-			final Solution sol = solver.solve(show, model.bounds(Integer.parseInt(args[0]),Integer.parseInt(args[1])));
-			//System.out.println(show);
-			System.out.println(sol.outcome());
-			System.out.println(sol.stats());
-			
+			if (partial>0) {
+				Bounds bounds = model.bounds(hq, sub-partial, hq+sub);
+				Solution sol = solver.solve(show, bounds);
+				System.out.println("Solved for " + hq + " hq and " + (sub-partial) + " subs.");
+				System.out.println(sol.outcome());
+				System.out.println(sol.stats());
+				System.out.println("Solving again with a partial instance: " + hq + " hq and " + sub + " subs.");
+				bounds = model.bounds(hq, sub, bounds.universe());
+				bounds.bound(model.link, sol.instance().tuples(model.link), bounds.upperBound(model.link));
+				sol = solver.solve(show, bounds);
+				System.out.println(sol.outcome());
+				System.out.println(sol.stats());
+			} else {
+				final Bounds bounds =  model.bounds(hq, sub, hq + sub);
+				final Solution sol = solver.solve(show, bounds);
+				//System.out.println(show);
+				System.out.println(sol.outcome());
+				System.out.println(sol.stats());
+			}
 		} catch (TimeoutException e) {
 			System.out.println("timed out.");
 			e.printStackTrace();

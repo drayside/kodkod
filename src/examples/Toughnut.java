@@ -117,7 +117,7 @@ public final class Toughnut {
 	}
 	
 	/**
-	 * Usage: java examples.Toughnut [# size of one side of the board; optional]
+	 * Usage: java examples.Toughnut [size of one side of the board; optional]
 	 * @return
 	 */
 	public static void main(String[] args) {
@@ -137,7 +137,7 @@ public final class Toughnut {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (NumberFormatException nfe) {
-			System.out.println("Usage: java examples.Toughnut [# size of one side of the board; optional]");
+			System.out.println("Usage: java examples.Toughnut [size of one side of the board; optional]");
 		}
 		
 		
