@@ -624,9 +624,7 @@ public final class TreeSequence<V> extends AbstractSparseSequence<V> {
 	 */
 	@SuppressWarnings("hiding")
 	static final class Entry<V> extends AbstractIndexedEntry<V> {
-		@SuppressWarnings("unused")
 		private Entry<V> parent, left, right;
-		@SuppressWarnings("unused")
 		private boolean color;
 		
 		/**

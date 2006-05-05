@@ -3,15 +3,16 @@ package kodkod.util.ints;
 import java.util.Iterator;
 
 /**
- * Represents a sparse sequence -- a sequence whose indices are not
+ * <p>Represents a sparse sequence -- a sequence whose indices are not
  * necessarily contiguous.  For example, a sparse sequence can have
  * elements at indices 10, 2121, and 3000, without having any elements
  * in between.  This specification of sparse sequences also supports
  * negative indeces.  Formally, the following methods specify a partial
- * function from integers to values of type E.
+ * function from integers to values of type E.</p>
  * 
+ * <p>Sequence implementations are not required to support mutation.
  * All mutating operations are optional and may 
- * throw an UnsupportedOperationException.  
+ * throw an UnsupportedOperationException.</p>  
  * 
  * @specfield entries: int -> lone V
  * 
