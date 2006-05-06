@@ -40,6 +40,7 @@ public class BugTests extends TestCase {
 //			System.out.println(e); 
 //	}
 	
+	
 	public final void testVincent_03182006_reduced() {
 		final Relation pCourses = Relation.binary("pCourses"),
 		prereqs = Relation.binary("prereqs");
@@ -132,7 +133,6 @@ public class BugTests extends TestCase {
 		b.boundExactly(prev, f.setOf(f.tuple("Fall 2006", "Spring 2006")));
 		b.boundExactly(prereqs, f.setOf(f.tuple("6.002", "[8.02]"), f.tuple("8.02", "[]"), 
 				                       f.tuple("6.003", "[6.001]"), f.tuple("6.001", "[]")));
-		
 //		for(Relation r : b.relations()) {
 //        	System.out.println(r + " " + r.arity() + " " + b.lowerBound(r) + " ; " + b.upperBound(r));
 //        }

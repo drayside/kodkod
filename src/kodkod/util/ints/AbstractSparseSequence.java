@@ -6,7 +6,7 @@ import java.util.NoSuchElementException;
 /**
  * A skeletal implementation of the SparseSequence interface.
  * The class provides an implementation for the <code>isEmpty</code>, 
- * <code>putAll</code>, <code>equals</code>, <code>hashCode</code>,
+ * <code>putAll</code>, <code>contains</code>, <code>indices</code>, <code>equals</code>, <code>hashCode</code>,
  * and <code>toString</code> methods.  All other methods must be
  * implemented by the subclasses. 
  * 
@@ -63,58 +63,62 @@ public abstract class AbstractSparseSequence<V> implements SparseSequence<V> {
 	 */
 	public IntSet indices() {
 		return new AbstractIntSet() {
-
-			@Override
 			public IntIterator iterator(final int from, final int to) {
 				return new IntIterator() {
 					Iterator<IndexedEntry<V>> iter = AbstractSparseSequence.this.iterator(from, to);
 					public boolean hasNext() {
 						return iter.hasNext();
 					}
-
 					public int nextInt() {
 						return iter.next().index();
 					}
-
 					public Integer next() {
 						return nextInt();
 					}
-
 					public void remove() {
 						iter.remove();
 					}
 				};
 			}
-
-			@Override
 			public int size() {
 				return AbstractSparseSequence.this.size();
 			}
-			
 			public boolean contains(int i) {
 				return containsIndex(i);
 			}
-			
 			public int min() {
 				final IndexedEntry<V> first = AbstractSparseSequence.this.first();
 				if (first==null) 
 					throw new NoSuchElementException();
 				return first.index();
 			}
-			
 			public int max() {
 				final IndexedEntry<V> last = AbstractSparseSequence.this.last();
 				if (last==null) 
 					throw new NoSuchElementException();
 				return last.index();
 			}
-			
 			public boolean remove(int i) {
 				final boolean isMapped = containsIndex(i);
 				AbstractSparseSequence.this.remove(i);
 				return isMapped;
 			}
 		};
+	}
+	
+	/**
+	 * Iterates through all the entries in this sequence and returns 
+	 * true if one of the encountered entries has the given object as
+	 * its value.
+	 * @return {@inheritDoc}
+	 * @see kodkod.util.ints.SparseSequence#contains(java.lang.Object)
+	 */
+	public boolean contains(Object value) {
+		for(IndexedEntry<?> v: this) {
+			if (equal(value, v.value()))
+				return true;
+		}
+		return false;
 	}
 	
 	/*---------- adapted from java.util.AbstractMap -----------*/

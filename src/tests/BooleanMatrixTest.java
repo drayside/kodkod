@@ -159,11 +159,13 @@ public class BooleanMatrixTest extends TestCase {
         fill(mF324, mCells, mR[5]); fill(mF324, mCells, mR[2]);
         assertTrue(equivalent(mF324, mCells));
         
+        //System.out.println(mF324);
+        
         // check that the dense regions in the matrix are [4..14] and [16..23]
         Iterator<IndexedEntry<BooleanValue>> indeces = mF324.iterator();
         assertEquals(Ints.merge(Ints.merge(mR[1], mR[2]), mR[3]), indeces);
         assertEquals(mR[5], indeces);
-                
+              
         // wipe out 4, 14, 23, and 10
         blank(mF324, mCells,mR[1].min()); blank(mF324, mCells, mR[3].max()); 
         blank(mF324, mCells, mR[5].max()); blank(mF324, mCells, mR[2].max());
@@ -306,6 +308,7 @@ public class BooleanMatrixTest extends TestCase {
         assertTrue(equivalent(mF324.dot(mF43), result));
         
         for (int i = 0; i < dim324.capacity(); i += 2) { mF324.set(i, FALSE); }
+        //System.out.println(mF4);
         for (int i = 1; i < dim4.capacity(); i += 2) { mF4.set(i, FALSE); }
         
         assertDotProductFalse(mF324, mF4);

@@ -2,7 +2,9 @@ package kodkod.engine.bool;
 
 import static kodkod.engine.bool.BooleanConstant.FALSE;
 import static kodkod.engine.bool.BooleanConstant.TRUE;
-import static kodkod.engine.bool.Operator.*;
+import static kodkod.engine.bool.Operator.AND;
+import static kodkod.engine.bool.Operator.OR;
+
 import java.util.Iterator;
 
 import kodkod.util.ints.IndexedEntry;

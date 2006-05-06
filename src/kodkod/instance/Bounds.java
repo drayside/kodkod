@@ -232,7 +232,7 @@ public final class Bounds  {
 	 * @return a copy of this Bounds object.
 	 */
 	public Bounds copy() {
-		return new Bounds(factory, new HashMap<Relation, BoundPair>(bounds), new TreeSequence<TupleSet>(cards), EMPTY);
+		return new Bounds(factory, new HashMap<Relation, BoundPair>(bounds), null/*new TreeSeq<TupleSet>(cards)*/, EMPTY);
 	}
 	
 	public String toString() {

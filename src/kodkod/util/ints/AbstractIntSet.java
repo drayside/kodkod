@@ -1,6 +1,7 @@
 package kodkod.util.ints;
 
 import java.util.AbstractSet;
+import java.util.Collection;
 import java.util.NoSuchElementException;
 
 /**
@@ -141,6 +142,80 @@ public abstract class AbstractIntSet extends AbstractSet<Integer> implements Int
 	 */
 	public boolean add(Integer o) {
 		return add(o.intValue());
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see java.util.Collection#containsAll(java.util.Collection)
+	 */
+	@SuppressWarnings("unchecked")
+	public boolean containsAll(Collection<?> c) {
+		if (c instanceof IntSet) {
+			final IntSet s = (IntSet) c;
+			if (size() < s.size()) 
+				return false;
+			for(IntIterator iter = s.iterator(); iter.hasNext(); ) {
+				if (!contains(iter.nextInt()))
+					return false;
+			}
+			return true;
+		}
+		return super.containsAll(c);
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.util.ints.IntSet#addAll(java.util.Collection)
+	 */
+	@SuppressWarnings("unchecked")
+	public boolean addAll(Collection<? extends Integer> c) {
+		if (c instanceof IntSet) {
+			final IntSet s = (IntSet) c;
+			final int oldSize = size();
+			for(IntIterator iter = s.iterator(); iter.hasNext(); ) {
+				add(iter.nextInt());
+			}
+			return size()!=oldSize;
+		}
+		return super.addAll(c);
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see java.util.Collection#retainAll(java.util.Collection)
+	 */
+	@SuppressWarnings("unchecked")
+	public boolean retainAll(Collection<?> c) {
+		if (c instanceof IntSet) {
+			final IntSet s = (IntSet) c;
+			final int oldSize =  size();
+			for(IntIterator iter = iterator(); iter.hasNext(); ) {
+				if (!s.contains(iter.nextInt())) {
+					iter.remove();
+				}
+			}
+			return size()!=oldSize;
+		}
+		return super.retainAll(c);
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see java.util.Collection#removeAll(java.util.Collection)
+	 */
+	@SuppressWarnings("unchecked")
+	public boolean removeAll(Collection<?> c) {
+		if (c instanceof IntSet) {
+			final IntSet s = (IntSet) c;
+			final int oldSize =  size();
+			for(IntIterator iter = s.iterator(); iter.hasNext(); ) {
+				int i = iter.nextInt();
+				if (contains(i))
+					remove(i);
+			}
+			return size()!=oldSize;
+		}
+		return super.removeAll(c);
 	}
 	
 	/**
