@@ -3,11 +3,11 @@ package kodkod.engine.bool;
 import static kodkod.engine.bool.BooleanConstant.FALSE;
 import static kodkod.engine.bool.BooleanConstant.TRUE;
 import static kodkod.engine.bool.Operator.AND;
-import static kodkod.engine.bool.Operator.OR;
+import static kodkod.engine.bool.Operator.CONST;
 import static kodkod.engine.bool.Operator.ITE;
 import static kodkod.engine.bool.Operator.NOT;
+import static kodkod.engine.bool.Operator.OR;
 import static kodkod.engine.bool.Operator.VAR;
-import static kodkod.engine.bool.Operator.CONST;
 
 import java.util.Iterator;
 import java.util.Set;
@@ -15,6 +15,8 @@ import java.util.Set;
 import kodkod.engine.bool.Operator.Nary;
 import kodkod.util.collections.CacheSet;
 import kodkod.util.collections.IdentityHashSet;
+import kodkod.util.ints.IntSet;
+import kodkod.util.ints.Ints;
 
 
 /**
@@ -400,14 +402,63 @@ public final class BooleanFactory {
 	}
 	
 	/**
-	 * Returns a BooleanMatrix with the given dimensions, zero, and this 
-	 * as the factory for its non-zero components.  
-	 * @throws NullPointerException - any of the arguments are null 
-	 * @return { m: BooleanMatrix | no m.elements && m.factory = this && m.dimensions = dims && m.zero = zero }
+	 * Returns a BooleanMatrix with the given dimensions and this 
+	 * as the factory for its non-FALSE components.  
+	 * @throws NullPointerException - d = null
+	 * @return { m: BooleanMatrix | m.factory = this && m.dimensions = d && m.elements = [0..d.capacity) -> one FALSE }
 	 */
-	public BooleanMatrix matrix(Dimensions d, BooleanConstant c) {
-		if (d == null || c == null) throw new NullPointerException();
-		return new BooleanMatrix(d, c, this);
+	public BooleanMatrix matrix(Dimensions d) {
+		if (d == null ) throw new NullPointerException();
+		return new BooleanMatrix(d, this);
+	}
+	
+	/**
+	 * Returns a BooleanMatrix with the given dimensions, this
+	 * as its factory, and the given set of indices initialized to TRUE.  
+	 * The returned matrix can store any value from this.components. 
+	 * @return { m: BooleanMatrix |  m.factory = this && m.dimensions = dims && 
+	 *           m.elements = [0..d.capacity()-1] ->one FALSE ++ indices->TRUE }
+	 * @throws IllegalArgumentException - indices !in [0..d.capacity())
+	 * @throws NullPointerException - d = null || indices = null	 	 
+	 */
+	public BooleanMatrix matrix(Dimensions d, IntSet indices) {
+		if (!indices.isEmpty()) {
+			if (!d.validate(indices.min()) ||	!d.validate(indices.max()))
+				throw new IllegalArgumentException();
+		}
+		return new BooleanMatrix(d, this, indices, false);
+	}
+	
+	/**
+	 * Returns a BooleanMatrix with the given dimensions and this
+	 * as its factory.  
+	 * The returned matrix can store only constant values. 
+	 * @return { m: BooleanMatrix |  m.factory = this && m.dimensions = dims && 
+	 *           m.elements = [0..d.capacity()-1] ->one FALSE }
+	 * @throws IllegalArgumentException - indices !in [0..d.capacity())
+	 * @throws NullPointerException - d = null || indices = null	 	 
+	 */
+	public BooleanMatrix constantMatrix(Dimensions d) {
+		return new BooleanMatrix(d, this, Ints.bestSet(d.capacity()), true);
+	}
+	
+	/**
+	 * Returns a BooleanMatrix with the given dimensions, this
+	 * as its factory, and the given set of indices initialized to TRUE.  
+	 * The returned matrix can store only constant values. 
+	 * @return { m: BooleanMatrix |  m.factory = this && m.dimensions = dims && 
+	 *           m.elements = [0..d.capacity()-1] ->one FALSE ++ indices->TRUE }
+	 * @throws IllegalArgumentException - indices !in [0..d.capacity())
+	 * @throws NullPointerException - d = null || indices = null	 	 
+	 */
+	public BooleanMatrix constantMatrix(Dimensions d, IntSet indices) { 
+		final IntSet copy = Ints.bestSet(d.capacity());
+		copy.addAll(indices);
+		if (!indices.isEmpty()) {
+			if (!d.validate(indices.min()) ||	!d.validate(indices.max()))
+				throw new IllegalArgumentException();
+		}
+		return new BooleanMatrix(d, this, copy, true);
 	}
 	
 	/**

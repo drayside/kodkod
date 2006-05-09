@@ -101,7 +101,7 @@ final class GroundValueGenerator {
             if (curIndex % density != prevIndex % density || env.get(var)==null) {
                 if (curIndex % density == 0) { translIters[i] = transls[i].iterator(); }
                 index[i] = translIters[i].next().index();
-                BooleanMatrix varValue = factory.matrix(transls[i].dimensions(), BooleanConstant.FALSE);
+                BooleanMatrix varValue = factory.constantMatrix(transls[i].dimensions());
                 varValue.set(index[i], BooleanConstant.TRUE);
                 env.bind(var, varValue);
             }

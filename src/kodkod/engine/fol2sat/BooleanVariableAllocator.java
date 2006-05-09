@@ -11,7 +11,6 @@ import java.util.Set;
 
 import kodkod.ast.Relation;
 import kodkod.ast.RelationPredicate;
-import kodkod.engine.bool.BooleanConstant;
 import kodkod.engine.bool.BooleanFactory;
 import kodkod.engine.bool.BooleanMatrix;
 import kodkod.engine.bool.Dimensions;
@@ -153,12 +152,12 @@ final class BooleanVariableAllocator extends BooleanFormulaAllocator {
 		
 		final IntSet lowerBound = bounds.lowerBound(r).indexView();
 				
-		final BooleanMatrix m = factory.matrix(Dimensions.square(r.arity(), bounds.universe().size()), BooleanConstant.FALSE);
+		final BooleanMatrix m = factory.matrix(Dimensions.square(r.arity(), bounds.universe().size()), lowerBound);
 		
 		for (IntIterator indeces = bounds.upperBound(r).indexView().iterator(); indeces.hasNext();) {
 			int tupleIndex = indeces.nextInt();
-			if (lowerBound.contains(tupleIndex)) m.set(tupleIndex, BooleanConstant.TRUE);
-			else m.set(tupleIndex, factory.variable(varId++));
+			if (!lowerBound.contains(tupleIndex))  
+				m.set(tupleIndex, factory.variable(varId++));
 		}
 		
 		return m;

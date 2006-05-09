@@ -118,7 +118,6 @@ public final class Toughnut {
 	
 	/**
 	 * Usage: java examples.Toughnut [size of one side of the board; optional]
-	 * @return
 	 */
 	public static void main(String[] args) {
 		try {

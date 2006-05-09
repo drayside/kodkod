@@ -35,21 +35,21 @@ public interface IntSet extends Set<Integer> {
 	
 	/**
 	 * Returns the largest element in this set that 
-	 * is smaller than i.  If this is emtpy or i is less than this.min(),
+	 * is smaller than or equal to i.  If this is emtpy or i is less than this.min(),
 	 * NoSuchElementException is thrown.
-	 * @return {j: this.ints | j < i && no k: this.ints - j | k > j && k < i}
-	 * @throws NoSuchElementException - no this.ints || i <= this.min()
+	 * @return {j: this.ints | j <= i && no k: this.ints - j | k > j && k <= i}
+	 * @throws NoSuchElementException - no this.ints || i < this.min()
 	 */
-//	public abstract int predecessor(int i);
+	public abstract int floor(int i);
 	
 	/**
 	 * Returns the smallest element in this set that 
-	 * is greater than i.  If this is emtpy or i is greater than this.max(),
+	 * is greater than or equal to i.  If this is emtpy or i is greater than this.max(),
 	 * NoSuchElementException is thrown.
-	 * @return {j: this.ints | j > i && no k: this.ints - j | k < j && k > i}
-	 * @throws NoSuchElementException - no this.ints || i >= this.max()
+	 * @return {j: this.ints | j >= i && no k: this.ints - j | k < j && k >= i}
+	 * @throws NoSuchElementException - no this.ints || i > this.max()
 	 */
-//	public abstract int successor(int i);
+	public abstract int ceil(int i);
 	
 	/**
 	 * Returns an iterator over the integers in this set,
@@ -98,5 +98,15 @@ public interface IntSet extends Set<Integer> {
 	 * c contains an element that is out of bounds
 	 */
 	public abstract boolean addAll(Collection<? extends Integer> c);
+	
+	/**
+	 * Returns a copy of this IntSet.  The copy is independent of this 
+	 * IntSet unless this is a singleton or an immutable set, in which case
+	 * clone() may return this.  An implementing class that does not support
+	 * cloning may throw a CloneNotSupportedException.
+	 * @return a copy of this IntSet.
+	 * @throws CloneNotSupportedException - this is not cloneable
+	 */
+	public abstract IntSet clone() throws CloneNotSupportedException;
 
 }

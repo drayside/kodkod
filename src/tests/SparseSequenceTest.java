@@ -3,9 +3,13 @@ package tests;
 import java.util.Iterator;
 
 import junit.framework.TestCase;
+import kodkod.util.ints.ArraySequence;
 import kodkod.util.ints.IndexedEntry;
-import kodkod.util.ints.TreeSequence;
+import kodkod.util.ints.IntSet;
+import kodkod.util.ints.Ints;
+import kodkod.util.ints.RangeSequence;
 import kodkod.util.ints.SparseSequence;
+import kodkod.util.ints.TreeSequence;
 
 /**
  * Tests sparse sequence implementation(s).
@@ -74,6 +78,16 @@ public class SparseSequenceTest extends TestCase {
 		assertFalse(iter.hasNext());
 	}
 	
+	public void testRange() {
+		s0 = new RangeSequence<Integer>();
+		s0.put(16, 0);
+		s0.put(17, 0);
+		//System.out.println(s0);
+		s0.put(16, 1);
+		s0.put(17, 2);
+		//System.out.println(s0);
+	}
+	
 	public void testRemove() {
 //		for(int i = 0; i < 4; i++) 
 //			s0.put(i, i+1);
@@ -104,5 +118,26 @@ public class SparseSequenceTest extends TestCase {
 //			e0 = s0.successor(e0.index());
 //		}
 //	}
+	
+	public void testClone() {
+		final IntSet s = Ints.bestSet(3);
+		s.add(1); s.add(2);
+		s0 = new ArraySequence<Integer>(s);
+		s0.put(1, 0);
+		s0.put(2, 0);
+		try {
+			SparseSequence<Integer> s1 = s0.clone();
+			assertTrue(s1.equals(s0));
+			assertNotSame(s1, s0);
+			SparseSequence<Integer> s2 = new ArraySequence<Integer>(s);
+			s2.putAll(s0);
+			s1.remove(1);
+			assertTrue(s2.equals(s0));
+			assertFalse(s1.equals(s0));
+		} catch (CloneNotSupportedException e) {
+			assert false;
+		}
+		
+	}
 	
 }

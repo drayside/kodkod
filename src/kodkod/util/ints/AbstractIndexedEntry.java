@@ -14,7 +14,7 @@ package kodkod.util.ints;
  */
 public abstract class AbstractIndexedEntry<V> implements IndexedEntry<V> {
 
-	final int index;
+	int index;
 	V value;
 	
 	/**
@@ -62,13 +62,9 @@ public abstract class AbstractIndexedEntry<V> implements IndexedEntry<V> {
 	 * @return o in IndexedEntry && o.index = this.index && o.value = this.value
 	 */
 	public boolean equals(Object o) {
-		if (!(o instanceof IndexedEntry)) return false;
 		if (o==this) return true;
-		final IndexedEntry<?> e = (IndexedEntry<?>) o;
-		if (index==e.index()) {
-			return value==null ? e.value()==null : value.equals(e.value());
-		}
-		return false;
+		if (!(o instanceof IndexedEntry)) return false;
+		return AbstractSparseSequence.equal(this, (IndexedEntry<?>)o);
 	}
 	
 	/**
@@ -80,7 +76,7 @@ public abstract class AbstractIndexedEntry<V> implements IndexedEntry<V> {
 	 * Object.hashCode.
 	 */
 	public int hashCode() {
-		return index ^ (value==null ? 0 : value.hashCode());
+		return AbstractSparseSequence.hashCode(this);
 	}
 	
 	public String toString() {

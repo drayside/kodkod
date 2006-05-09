@@ -1,6 +1,5 @@
 package kodkod.engine.fol2sat;
 
-import static kodkod.engine.bool.BooleanConstant.FALSE;
 import static kodkod.engine.bool.BooleanConstant.TRUE;
 
 import java.util.ArrayList;
@@ -182,9 +181,8 @@ final class Fol2Bool {
 				if (vars==null)
 					vars = Ints.bestSet(1, Integer.MAX_VALUE-1);
 			}
-			final BooleanValue nonZeroConstant = factory.not(translation.zero());
 			for(IndexedEntry<BooleanValue> e: translation) {
-				if (e.value() != nonZeroConstant)
+				if (e.value() != TRUE)
 					vars.add(StrictMath.abs(((BooleanFormula)e.value()).label()));
 			}
 			varUsage.put(expr, vars);
@@ -352,18 +350,15 @@ final class Fol2Bool {
 			final BooleanMatrix ret;
 			final int univSize = allocator.universe().size();
 			if (constExpr==Expression.UNIV) {
-				ret= allocator.factory().matrix(Dimensions.square(1, univSize), FALSE);
-				for(int i = 0; i < univSize; i++) {
-					ret.set(i, TRUE);
-				}
+				ret= allocator.factory().constantMatrix(Dimensions.square(1, univSize), Ints.rangeSet(Ints.range(0, univSize-1)));
 			} else if (constExpr==Expression.IDEN) {
 				final Dimensions dim2 = Dimensions.square(2, univSize);
-				ret = allocator.factory().matrix(dim2, FALSE);
+				ret = allocator.factory().constantMatrix(dim2);
 				for(int i = 0; i < univSize; i++) {
 					ret.set(i*univSize + i, TRUE);
 				}			
 			} else if (constExpr==Expression.NONE) {
-				ret = allocator.factory().matrix(Dimensions.square(1, univSize), FALSE);
+				ret = allocator.factory().constantMatrix(Dimensions.square(1, univSize));
 			} else {
 				throw new IllegalArgumentException("unknown constant expression: " + constExpr);
 			}
@@ -390,7 +385,7 @@ final class Fol2Bool {
 			switch(op) {
 			case UNION        	: ret = left.or(right); break;
 			case INTERSECTION	: ret = left.and(right); break;
-			case DIFFERENCE 		: ret = left.and(right.not()); break;
+			case DIFFERENCE 		: ret = left.difference(right); break;
 			case OVERRIDE 		: ret = left.override(right); break;
 			case JOIN 			: ret = left.dot(right); break;
 			case PRODUCT			: ret = left.cross(right); break;
@@ -444,7 +439,7 @@ final class Fol2Bool {
 				dims = dims.cross(declTransls.get(i).dimensions());
 			}
 			
-			ret = factory.matrix(dims, FALSE);
+			ret = factory.matrix(dims);
 			
 			while(generator.hasNext()) {
 				env = generator.next(factory);
@@ -626,15 +621,6 @@ final class Fol2Bool {
 		}
 		
 		/**
-		 * Generates a formula stating that every entry in left implies the corresponding entry in right.
-		 * 
-		 * @return left.not().or(right).andFold()
-		 */
-		private BooleanValue subset(final BooleanMatrix left, final BooleanMatrix right) {
-			return left.not().or(right).andFold();
-		}
-		
-		/**
 		 * @return let tLeft = translate(compFormula.left), tRight = translate(compFormula.right) | 
 		 *          compFormula.op = SUBSET => 
 		 *           tLeft.not().or(tRight).conjunctiveFold(),
@@ -649,8 +635,8 @@ final class Fol2Bool {
 			final ComparisonFormula.Operator op = compFormula.op();
 			
 			switch(op) {
-			case SUBSET	: ret = subset(left, right); break;
-			case EQUALS	: ret = allocator.factory().and(subset(left, right), subset(right, left)); break;
+			case SUBSET	: ret = left.subset(right); break;
+			case EQUALS	: ret = left.equivalent(right); break;
 			default : 
 				throw new IllegalArgumentException("Unknown operator: " + compFormula.op());
 			}

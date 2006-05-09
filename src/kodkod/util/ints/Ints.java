@@ -19,7 +19,7 @@ import kodkod.util.ints.IntRange.TwoPointRange;
  * @author Emina Torlak
  */
 public final class Ints {
-	/** An unmodifiable empty int set. */
+	/** An immutable empty int set. The clone method returns the empty set itself. */
 	public static final IntSet EMPTY_SET = 
 		new AbstractIntSet() {
 			public boolean contains(int i) { return false; }
@@ -34,6 +34,9 @@ public final class Ints {
 				};
 			}
 			public int size() {	return 0; }
+			public int floor(int i) { throw new NoSuchElementException(); }
+			public int ceil(int i) { throw new NoSuchElementException(); }
+			public IntSet clone() { return EMPTY_SET;}
 	};
 	
 	private static final int SHORT = 0x0000ffff;
@@ -70,7 +73,8 @@ public final class Ints {
 	 * allows modules to provide users with "read-only" access to internal int sets.
 	 * Query operations on the returned set "read through" to the specified set, and 
 	 * attempts to modify the returned set, whether direct or via its iterator, result 
-	 * in an UnsupportedOperationException.
+	 * in an UnsupportedOperationException.  The clone() method of the returned set
+	 * returns the result of calling s.clone().
 	 * @return an unmodifiable view of s
 	 * @throws NullPointerException - s = null
 	 */
@@ -85,7 +89,8 @@ public final class Ints {
 	
 	/**
 	 * Returns an unmodifiable IntSet whose sole
-	 * element is the given integer.
+	 * element is the given integer.  The clone method
+	 * of the returned set returns the set itself.
 	 * @return {s: IntSet | s.ints = i}
 	 */
 	public static IntSet singleton(final int i) {
@@ -94,7 +99,8 @@ public final class Ints {
 	
 	/**
 	 * Returns an unmodifiable IntSet that contains
-	 * all the elements in the given range.
+	 * all the elements in the given range.  The clone
+	 * method of the returned set returns the set itself.
 	 * @return {s: IntSet | s.ints = [range.min()..range.max()] }
 	 */
 	public static IntSet rangeSet(IntRange range) {
@@ -138,7 +144,8 @@ public final class Ints {
 	 * allows modules to provide users with "read-only" access to internal sparse sequences.
 	 * Query operations on the returned sequence "read through" to the specified sequence, and 
 	 * attempts to modify the returned sequence, whether direct or via its iterator, result 
-	 * in an UnsupportedOperationException.
+	 * in an UnsupportedOperationException.  The clone() method of the returned sequence
+	 * returns the result of calling s.clone().
 	 * @return an unmodifiable view of s
 	 * @throws NullPointerException - s = null
 	 */
@@ -268,6 +275,17 @@ public final class Ints {
 		}
 		public int size() {	return range.size(); }
 		public IntSet copy() { return this; }
+		public int floor(int i) {
+			if (i<range.min())
+				throw new NoSuchElementException();
+			return StrictMath.min(i, range.max());
+		}
+		public int ceil(int i) {
+			if (i>range.max())
+				throw new NoSuchElementException();
+			return StrictMath.max(i, range.min());
+		}
+		public IntSet clone() { return this; }
 	}
 	
 	/**
@@ -308,6 +326,15 @@ public final class Ints {
 				return super.equals(o);
 		}
 		public int hashCode() { return i; }
+		public int floor(int j) {
+			if (i<=j) return i;
+			else throw new NoSuchElementException();
+		}
+		public int ceil(int j) {
+			if (i>=j) return i;
+			else throw new NoSuchElementException();
+		}
+		public IntSet clone() { return this; }
 	}
 	
 	/**
@@ -346,7 +373,10 @@ public final class Ints {
 				return s.equals(((UnmodifiableIntSet) o).s);
 			} else return s.equals(o); 	
 		}
-		public int hashCode() { 	return s.hashCode();	}	
+		public int hashCode() { 	return s.hashCode();	}
+		public int floor(int i) { return s.floor(i); }
+		public int ceil(int i) { return s.ceil(i); }
+		public IntSet clone() throws CloneNotSupportedException { return s.clone(); }
 	}
 	
 	/**
@@ -415,20 +445,16 @@ public final class Ints {
 			return s.last();
 		}
 
-		public IndexedEntry<V> successor(int index) {
-			return s.successor(index);
-		}
-
-		public IndexedEntry<V> predecessor(int index) {
-			return s.predecessor(index);
-		}
-
 		public IndexedEntry<V> ceil(int index) {
 			return s.ceil(index);
 		}
 
 		public IndexedEntry<V> floor(int index) {
 			return s.floor(index);
+		}
+		
+		public SparseSequence<V> clone() throws CloneNotSupportedException {
+			return s.clone();
 		}
 		
 	}

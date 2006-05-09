@@ -5,37 +5,40 @@
 package kodkod.util.ints;
 
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 
-import kodkod.util.collections.Iterators;
 
 /**
  * An implementation of a sparse sequence based on an array.
- * This implementation can be used only when the indeces 
- * of the sequence are known in advance.  The indeces with
+ * This implementation can be used only when the indices 
+ * of the sequence are known in advance.  The indices with
  * which an ArraySequence is construct remain fixed throughout.
- * The remove operation is therefore not supported, and the 
- * put operation fails whenever its index argument is not one
- * of the sequence's pre-set indeces.
+ * The put operation fails whenever its index argument is not one
+ * of the sequence's pre-set indices, and iteration is proportional
+ * to the number of the pre-set indices.  This sequence does not
+ * allow null values.
  * 
  * @specfield indeces: set int
- * @specfield entries: indeces -> one V
+ * @specfield entries: indeces -> lone (V - null)
  * @author Emina Torlak
  */
-public final class ArraySequence<V> extends AbstractSparseSequence<V> {
+public final class ArraySequence<V> extends AbstractSparseSequence<V> implements Cloneable {
 	private final SimpleEntry<V>[] entries;
+	private int size;
+	
 	/**
 	 * Constructs an array sequence that contains 
-	 * the given indeces.  All indeces are initially
-	 * mapped to the specified defaultValue.
-	 * @effects this.indeces' = indeces && this.entries' = indeces -> defaultValue
+	 * the given indeces.  
+	 * @effects this.indeces' = indeces && no this.entries'
 	 * @throws NullPointerException - indeces = null
 	 */
 	@SuppressWarnings("unchecked")
-	public ArraySequence(IntSet indeces, V defaultValue) {
-		this.entries = new SimpleEntry[indeces.size()];
-		final IntIterator indexIter = indeces.iterator();
+	public ArraySequence(IntSet indices) {
+		this.entries = new SimpleEntry[indices.size()];
+		this.size = indices.size();
+		final IntIterator indexIter = indices.iterator();
 		for(int i = 0; indexIter.hasNext(); i++) {
-			entries[i] = new SimpleEntry<V>(indexIter.nextInt(), defaultValue);
+			entries[i] = new SimpleEntry<V>(indexIter.nextInt(), null);
 		}
 	}
 	
@@ -43,23 +46,40 @@ public final class ArraySequence<V> extends AbstractSparseSequence<V> {
 	 * Constructs a new array sequence with the same index/value mappings
 	 * as the given sequence.
 	 * @effects this.entries' = s.entries
-	 * @throws NullPointerException - s = null
+	 * @throws NullPointerException - s = null || null in s
 	 */
 	@SuppressWarnings("unchecked")
 	public ArraySequence(SparseSequence<? extends V> s) {
 		this.entries = new SimpleEntry[s.size()];
+		this.size = s.size();
 		int i = 0;
 		for(IndexedEntry<?> entry : s) {
+			if (entry.value()==null)
+				throw new NullPointerException();
 			entries[i++] = new SimpleEntry<V>(entry.index(), (V)entry.value());
 		}
 	}
+	
+	/**
+	 * Copy constructor.
+	 * @effects constructs a deep copy of the original array sequence.
+	 */
+	@SuppressWarnings("unchecked")
+	private ArraySequence(ArraySequence<V> original) {
+		this.size = original.size;
+		this.entries = new SimpleEntry[original.entries.length];
+		int i = 0;
+		for(SimpleEntry<V> e : original.entries)
+			this.entries[i++] = new SimpleEntry<V>(e.index, e.value);
+	}
+	
 	/**
 	 * Returns the number of entries in this sequence.
 	 * @return #this.entries
 	 * @see kodkod.util.ints.SparseSequence#size()
 	 */
 	public int size() {
-		return entries.length;
+		return size;
 	}
 	
 	/**
@@ -68,16 +88,17 @@ public final class ArraySequence<V> extends AbstractSparseSequence<V> {
 	 * @see kodkod.util.ints.SparseSequence#isEmpty()
 	 */
 	public boolean isEmpty() {
-		return entries.length==0;
+		return size==0;
 	}
 	
-	/** 
-	 * This operation is not supported for array sequences.
-	 * @throws UnsupportedOperationException
+	/**
+	 * {@inheritDoc}
 	 * @see kodkod.util.ints.SparseSequence#clear()
 	 */
 	public void clear() {
-		throw new UnsupportedOperationException();
+		for(SimpleEntry<V> e : entries) {
+			e.value = null;
+		}
 	}
 	
 	/**  
@@ -116,12 +137,16 @@ public final class ArraySequence<V> extends AbstractSparseSequence<V> {
 	 * @effects this.entries' = this.entries + index->value
 	 * @return this.entries[index]
 	 * @throws IndexOutOfBoundsException - index !in this.indeces
+	 * @throws NullPointerException - value = null
 	 * @see kodkod.util.ints.SparseSequence#put(int, Object)
 	 */
 	public V put(int index, V value) {
+		if (value==null)
+			throw new NullPointerException();
 		final int position = search(index);
 		if (position < 0)
 			throw new IndexOutOfBoundsException(""+index);
+		if (entries[position]==null) size++;
 		return entries[position].setValue(value);
 	}
 	
@@ -136,12 +161,18 @@ public final class ArraySequence<V> extends AbstractSparseSequence<V> {
 		return position < 0 ? null : entries[position].value;
 	}
 	
-	/** 
-	 * This operation is not supported for array sequences.
+	/**
+	 * {@inheritDoc}
 	 * @see kodkod.util.ints.SparseSequence#remove(int)
 	 */
 	public V remove(int index) {
-		throw new UnsupportedOperationException();
+		final int position = search(index);
+		if (position < 0)  
+			return null;
+		else {
+			if (entries[position].value!=null) size--;
+			return entries[position].setValue(null);
+		}
 	}
 	
 	/**
@@ -151,40 +182,8 @@ public final class ArraySequence<V> extends AbstractSparseSequence<V> {
 	 * @see kodkod.util.ints.SparseSequence#containsIndex(int)
 	 */
 	public boolean containsIndex(int index) {
-		return search(index) >= 0;
-	}
-	
-	/**
-	 * Returns true if this sequence has an entry with the given value;
-	 * otherwise returns false.
-	 * @return some this.entries.value
-	 * @see kodkod.util.ints.SparseSequence#contains(java.lang.Object)
-	 */
-	public boolean contains(Object value) {
-		if (value==null) {
-			for(SimpleEntry<V> entry : entries) {
-				if (entry==null)
-					return true;
-			}
-		} else {
-			for(SimpleEntry<V> entry : entries) {
-				if (value.equals(entry.value))
-					return true;
-			}
-		}
-		return false;
-	}
-	
-	/**
-	 * Returns an iterator over the entries in this sequence
-	 * in the ascending order of indeces, starting at this.first().
-	 * The returned iterator does not support removal.
-	 * @return an iterator over this.entries starting at the entry
-	 * with the smallest index
-	 * @see kodkod.util.ints.SparseSequence#iterator()
-	 */
-	public Iterator<IndexedEntry<V>> iterator() {
-		return Iterators.iterate(entries);
+		final int position = search(index);
+		return position >= 0 && entries[position].value!=null;
 	}
 	
 	/**
@@ -201,21 +200,7 @@ public final class ArraySequence<V> extends AbstractSparseSequence<V> {
 	 * @see kodkod.util.ints.SparseSequence#iterator(int, int)
 	 */
 	public Iterator<IndexedEntry<V>> iterator(int from, int to) {
-		final int fromPos = search(from);
-		final int toPos = search(to);
-		int start = entries.length, end = start;
-		if (from==to && fromPos >= 0) {
-			start = fromPos;
-			end = toPos+1;
-		} else if (from < to && fromPos < entries.length && fromPos > -entries.length-1) {
-			start = fromPos < 0 ? -fromPos-1 : fromPos;
-			end = toPos < 0 ? -toPos-1 : toPos + 1;
-		} else if (from > to && (fromPos > 0 || fromPos < -1)) {
-			start = fromPos > 0 ? fromPos : -fromPos-2;
-			end = toPos < 0 ? -toPos-2 : toPos - 1;
-		}
-//		System.out.println(this + " start, end: " + start + ", " + end + " from, to: " + from + ", " + to + " fromPos, toPos: " + fromPos + ", " + toPos);
-		return Iterators.iterate(start,end,entries);
+		return from <= to ? new AscendingIterator(from, to) : new DescendingIterator(from, to);
 	}
 	
 	/**
@@ -226,7 +211,13 @@ public final class ArraySequence<V> extends AbstractSparseSequence<V> {
 	 * @see kodkod.util.ints.SparseSequence#first()
 	 */
 	public IndexedEntry<V> first() {
-		return entries.length==0 ? null : entries[0];
+		if (size==0)
+			return null;
+		for(SimpleEntry<V> e : entries) {
+			if (e.value!=null)
+				return e;
+		}
+		throw new InternalError();
 	}
 	
 	/**
@@ -237,39 +228,15 @@ public final class ArraySequence<V> extends AbstractSparseSequence<V> {
 	 * @see kodkod.util.ints.SparseSequence#last()
 	 */
 	public IndexedEntry<V> last() {
-		return entries.length==0 ? null : entries[entries.length-1];
+		if (size==0)
+			return null;
+		for(int i = entries.length-1; i>=0; i--) {
+			if (entries[i].value!=null)
+				return entries[i];
+		}
+		throw new InternalError();
 	}
 	
-	/**
-	 * Returns the entry whose index is the smallest number mapped by this sequence that is
-	 * larger than the given index.  If no such entry exists, null is returned.
-	 * @return {e: IndexedEntry | e.value = this.entries[e.index] && e.index in this.entries.E &&
-	 *                            no i: this.entries.E - e.index | index < i < e.index }
-	 * @see kodkod.util.ints.SparseSequence#successor(int)
-	 */
-	public IndexedEntry<V> successor(int index) {
-		final int position = search(index);
-		if (position < entries.length-1 && position > -entries.length-1)
-			return position < 0 ? entries[-position-1] : entries[position+1];
-		else return null;
-	}
-	
-	/**
-	 * Returns the entry whose index is the largest number mapped by this sequence that is
-	 * smaller than the given index.  If no such entry exists, null is returned.
-	 * @return {e: IndexedEntry | e.value = this.entries[e.index] && e.index in this.entriess.E &&
-	 *                            no i: this.entries.E - e.index | index > i > e.index }
-	 * @see kodkod.util.ints.SparseSequence#predecessor(int)
-	 */
-	public IndexedEntry<V> predecessor(int index) {
-		final int position = search(index);
-		if (position < -1) 
-			return entries[-position-2];
-		else if (position > 0) 
-			return entries[position-1];
-		else return null;
-	}
-		
 	/**
 	 * If an entry for the given index exists, it is returned.  Otherwise, 
 	 * successor(index) is returned.
@@ -280,9 +247,11 @@ public final class ArraySequence<V> extends AbstractSparseSequence<V> {
 	 */
 	public IndexedEntry<V> ceil(int index) {
 		final int position = search(index);
-		if (position < entries.length && position > -entries.length-1)
-			return position < 0 ? entries[-position-1] : entries[position];
-		else return null;
+		for(int i = position < 0 ? -position-1 : position; i < entries.length; i++) {
+			if (entries[i].value!=null)
+				return entries[i];
+		}
+		return null;
 	}
 	
 	/**
@@ -295,22 +264,115 @@ public final class ArraySequence<V> extends AbstractSparseSequence<V> {
 	 */
 	public IndexedEntry<V> floor(int index) {
 		final int position = search(index);
-		if (position < -1) 
-			return entries[-position-2];
-		else if (position > 0) 
-			return entries[position];
-		else return null;
+		for(int i = position < -1 ? -position-2 : position; i >=0 ; i--) {
+			if (entries[i].value!=null)
+				return entries[i];
+		}
+		return null;
 	}
 	
 	/**
-	 * A simple indexed entry that adds no additional 
-	 * fields/functionality to the base implementation.
+	 * {@inheritDoc}
+	 * @see java.lang.Object#clone()
+	 */
+	public ArraySequence<V> clone() { 
+		return new ArraySequence<V>(this);
+	}
+	
+	/**
+	 * A simple indexed entry.
 	 * @author Emina Torlak
 	 */
 	@SuppressWarnings("hiding")
 	private static final class SimpleEntry<V> extends AbstractIndexedEntry<V> {
+		/**
+		 * Constructs an indexed entry with the given index and value
+		 * @effects this.index' = index && this.value' = value
+		 */
 		protected SimpleEntry(int index, V value) {
-			super(index, value);
+			super(index,value);
+		}	
+	}
+	
+	/**
+	 * An iterator that traverses this sequence in the ascending order.
+	 * 
+	 * @author Emina Torlak
+	 */
+	private final class AscendingIterator implements Iterator<IndexedEntry<V>> {
+		final int endIndex;
+		IndexedEntry<V> lastReturned = null;
+		int cursor;
+		
+		/**
+		 * @requires from <= to
+		 */
+		AscendingIterator(int from, int to) {
+			final int fromPos = search(from);
+			final int toPos = search(to);
+			cursor = fromPos < 0 ? -fromPos-1 : fromPos;
+			endIndex = toPos < -1 ? -toPos-2 : toPos;
+		}
+		
+		public boolean hasNext() {
+			while (cursor < entries.length && entries[cursor].value==null)
+				cursor++;
+			return cursor<=endIndex;
+		}
+
+		public IndexedEntry<V> next() {
+			if (!hasNext())
+				throw new NoSuchElementException();
+			return lastReturned=entries[cursor++];
+		}
+
+		public void remove() {
+			if (lastReturned==null)
+				throw new IllegalStateException();
+			entries[lastReturned.index()].value = null;
+			lastReturned = null;
 		}
 	}
+	
+	/**
+	 * An iterator that traverses this sequence in the descending order.
+	 * 
+	 * @author Emina Torlak
+	 */
+	private final class DescendingIterator implements Iterator<IndexedEntry<V>> {
+		final int endIndex;
+		IndexedEntry<V> lastReturned = null;
+		int cursor;
+		
+		/**
+		 * @requires from >= to
+		 */
+		DescendingIterator(int from , int to) {
+			final int fromPos = search(from);
+			final int toPos = search(to);
+			cursor = fromPos < -1 ? -fromPos-2 : fromPos;
+			endIndex = toPos < 0 ? -toPos-1 : toPos;
+		}
+		
+		public boolean hasNext() {
+			while (cursor >= 0 && entries[cursor].value==null)
+				cursor--;
+			return cursor>=endIndex;
+		}
+
+		public IndexedEntry<V> next() {
+			if (!hasNext())
+				throw new NoSuchElementException();
+			return lastReturned=entries[cursor--];
+		}
+
+		public void remove() {
+			if (lastReturned==null)
+				throw new IllegalStateException();
+			entries[lastReturned.index()].value = null;
+			lastReturned = null;
+		}
+		
+	}
+	
 }

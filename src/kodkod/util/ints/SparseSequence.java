@@ -8,7 +8,7 @@ import java.util.Iterator;
  * elements at indices 10, 2121, and 3000, without having any elements
  * in between.  This specification of sparse sequences also supports
  * negative indeces.  Formally, the following methods specify a partial
- * function from integers to values of type E.</p>
+ * function from integers to values of type V.</p>
  * 
  * <p>Sequence implementations are not required to support mutation.
  * All mutating operations are optional and may 
@@ -92,7 +92,7 @@ public interface SparseSequence<V> extends Iterable<IndexedEntry<V>> {
 	/**
 	 * Returns the set of all indices mapped by this sparse sequence.
 	 * The returned set supports removal iff this is not an unmodifiable
-	 * sparse sequence.
+	 * sparse sequence.  The returned set may be uncloneable.
 	 * @return {s: IntSet | s.ints = this.entries.V}
 	 */
 	public abstract IntSet indices();
@@ -143,22 +143,6 @@ public interface SparseSequence<V> extends Iterable<IndexedEntry<V>> {
 	public abstract IndexedEntry<V> last();
 	
 	/**
-	 * Returns the entry whose index is the smallest number mapped by this sequence that is
-	 * larger than the given index.  If no such entry exists, null is returned.
-	 * @return {e: IndexedEntry | e.value = this.entries[e.index] && e.index in this.entries.E &&
-	 *                            no i: this.entries.E - e.index | index < i < e.index }
-	 */
-	public abstract IndexedEntry<V> successor(int index);
-	
-	/**
-	 * Returns the entry whose index is the largest number mapped by this sequence that is
-	 * smaller than the given index.  If no such entry exists, null is returned.
-	 * @return {e: IndexedEntry | e.value = this.entries[e.index] && e.index in this.entriess.E &&
-	 *                            no i: this.entries.E - e.index | index > i > e.index }
-	 */
-	public abstract IndexedEntry<V> predecessor(int index);
-	
-	/**
 	 * If an entry for the given index exists, it is returned.  Otherwise, 
 	 * successor(index) is returned.
 	 * @return this.containsIndex(index) => 
@@ -195,5 +179,15 @@ public interface SparseSequence<V> extends Iterable<IndexedEntry<V>> {
 	 * @return hash code for this sparse sequence
 	 */
 	public abstract int hashCode();
+	
+	/**
+	 * Returns a copy of this sparse sequence.  The copy is independent of this 
+	 * sequence unless this is a singleton or immutable, in which case
+	 * clone() may return this.  An implementing class that does not support
+	 * cloning may throw a CloneNotSupportedException.
+	 * @return a copy of this sparse sequence.
+	 * @throws CloneNotSupportedException - this is not cloneable
+	 */
+	public abstract SparseSequence<V> clone() throws CloneNotSupportedException;
 	
 }

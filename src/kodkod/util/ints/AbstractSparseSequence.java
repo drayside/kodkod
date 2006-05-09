@@ -58,7 +58,7 @@ public abstract class AbstractSparseSequence<V> implements SparseSequence<V> {
 	/**
 	 * Returns the set of all indices mapped by this sparse sequence.
 	 * The returned set supports removal iff this is not an unmodifiable
-	 * sparse sequence.
+	 * sparse sequence.  The returned set is not cloneable.
 	 * @return {s: IntSet | s.ints = this.entries.V}
 	 */
 	public IntSet indices() {
@@ -103,6 +103,21 @@ public abstract class AbstractSparseSequence<V> implements SparseSequence<V> {
 				AbstractSparseSequence.this.remove(i);
 				return isMapped;
 			}
+			public int floor(int i) {
+				final IndexedEntry<V> floor = AbstractSparseSequence.this.floor(i);
+				if (floor==null)
+					throw new NoSuchElementException();
+				return floor.index();
+			}
+			public int ceil(int i) {
+				final IndexedEntry<V> ceil = AbstractSparseSequence.this.ceil(i);
+				if (ceil==null)
+					throw new NoSuchElementException();
+				return ceil.index();
+			}
+			public IntSet clone() throws CloneNotSupportedException { 
+				throw new CloneNotSupportedException(); 
+			}
 		};
 	}
 	
@@ -119,6 +134,15 @@ public abstract class AbstractSparseSequence<V> implements SparseSequence<V> {
 				return true;
 		}
 		return false;
+	}
+	
+	/**
+	 * Returns the result of calling super.clone().
+	 * @see java.lang.Object#clone()
+	 */
+	@SuppressWarnings("unchecked")
+	public SparseSequence<V> clone() throws CloneNotSupportedException {
+		return (SparseSequence<V>) super.clone();
 	}
 	
 	/*---------- adapted from java.util.AbstractMap -----------*/
@@ -144,6 +168,15 @@ public abstract class AbstractSparseSequence<V> implements SparseSequence<V> {
 	 */
 	static boolean equal(Object o1, Object o2) {
 		return o1==null ? o2==null : o1.equals(o2);
+	}
+	
+	/**
+	 * Returns true if the indexed entries e0 and e1 are equal to each other.
+	 * @requires e0 != null && e1 != null
+	 * @return e0.index = e1.index && e0.value = e1.value
+	 */
+	static boolean equal(IndexedEntry<?> e0, IndexedEntry<?> e1) {
+		return e0.index()==e1.index() && equal(e0.value(), e1.value());
 	}
 	
 	/**
@@ -173,8 +206,7 @@ public abstract class AbstractSparseSequence<V> implements SparseSequence<V> {
 		try {
 			final Iterator<IndexedEntry<V>> i1 = iterator(), i2 = s.iterator();
 			while (i1.hasNext()) {
-				IndexedEntry<V> e1 = i1.next(), e2 = i2.next();
-				if (e1.index() != e2.index() || !equal(e1.value(), e2.value())) 
+				if (!equal(i1.next(), i2.next())) 
 					return false;
 			}
 		} catch(ClassCastException unused) {
@@ -184,6 +216,15 @@ public abstract class AbstractSparseSequence<V> implements SparseSequence<V> {
 		}
 		
 		return true;
+	}
+	
+	/**
+	 * Returns the hashcode for an indexed entry.
+	 * @requires e !=  null
+	 * @return e.index ^ e.value.hashCode()
+	 */
+	static int hashCode(IndexedEntry<?> e) {
+		return e.index() ^ (e.value()==null ? 0 : e.value().hashCode());
 	}
 	
 	/**
@@ -200,7 +241,7 @@ public abstract class AbstractSparseSequence<V> implements SparseSequence<V> {
 	public int hashCode() {
 		int h = 0;
 		for (IndexedEntry<V> e : this)
-			h += e.hashCode();
+			h += hashCode(e);
 		return h;
 	}
 	

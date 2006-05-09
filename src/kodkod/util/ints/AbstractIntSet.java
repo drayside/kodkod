@@ -77,24 +77,6 @@ public abstract class AbstractIntSet extends AbstractSet<Integer> implements Int
 	}
 	
 	/**
-	 * Returns the first element returned by this.iterator(i-1, Integer.MIN_VALUE).
-	 * @return {j: this.ints | j < i && no k: this.ints - j | k > j && k < i}
-	 * @throws NoSuchElementException - no this.ints || i <= this.min()
-	 */
-//	public int predecessor(int i) {
-//		return iterator(i-1, Integer.MIN_VALUE).nextInt();
-//	}
-	
-	/**
-	 * Returns the first element returned by this.iterator(i+1, Integer.MAX_VALUE).
-	 * @return {j: this.ints | j > i && no k: this.ints - j | k < j && k > i}
-	 * @throws NoSuchElementException - no this.ints || i >= this.max()
-	 */
-//	public int successor(int i) {
-//		return iterator(i+i, Integer.MAX_VALUE).nextInt();
-//	}
-	
-	/**
 	 * Throws an UnsupportedOperationException.
 	 * @throws UnsupportedOperationException
 	 */
@@ -229,5 +211,25 @@ public abstract class AbstractIntSet extends AbstractSet<Integer> implements Int
 	 */
 	public boolean remove(Object o) {
 		return remove(((Integer)o).intValue());
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	public boolean equals(Object o) {
+		if (this==o) return true;
+		if (o instanceof IntSet) {
+			final IntSet s = (IntSet) o;
+			return size()==s.size() && containsAll(s);
+		} else return super.equals(o);
+	}
+	
+	/**
+	 * Returns the result of calling super.clone().
+	 * @see java.lang.Object#clone()
+	 */
+	public IntSet clone() throws CloneNotSupportedException {
+		return (IntSet) super.clone();
 	}
 }

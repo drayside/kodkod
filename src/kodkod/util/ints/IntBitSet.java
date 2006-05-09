@@ -15,7 +15,7 @@ import java.util.NoSuchElementException;
  * @invariant all i: this.ints | 0 <= i < capacity
  * @author Emina Torlak
  */
-public final class IntBitSet extends AbstractIntSet {
+public final class IntBitSet extends AbstractIntSet implements Cloneable {
 	// implementation adapted from java.util.JumboEnumSet
 	private final int capacity;
 	/*
@@ -64,54 +64,49 @@ public final class IntBitSet extends AbstractIntSet {
 	}
 
 	/**
-	 * Returns the smallest element in this set that 
-	 * is greater than i.  If this is emtpy or i is greater than this.max(),
-	 * NoSuchElementException is thrown.
-	 * @return {j: this.ints | j > i && no k: this.ints - j | k < j && k > i}
-	 * @throws NoSuchElementException - no this.ints || i >= this.max()
-	 * @see kodkod.util.IntSet#successor(int)
+	 * {@inheritDoc}
+	 * @see kodkod.util.ints.IntSet#ceil(int)
 	 */
-//	public int successor(int i) {
-//		if (i < 0) 
-//			return min();
-//		int wordIndex = wordIndex(i);
-//		long word = 0;
-//		if (wordIndex < elements.length && bitMask(i) > Long.MIN_VALUE) {
-//			word = (extendedMask(i+1) & elements[wordIndex]);
-//		}
-//		while(word==0 && wordIndex < elements.length-1) {
-//			word = elements[++wordIndex];
-//		}
-//		if (word==0)
-//			throw new NoSuchElementException();
-//		else 
-//			return (wordIndex << 6) + Long.numberOfTrailingZeros(word);
-//	}
+	public int ceil(int i) {
+		if (i <= 0)
+			return min();
+		int wordIndex = wordIndex(i);
+		long word = 0;
+		if (wordIndex < elements.length) {
+			word = (extendedMask(i) & elements[wordIndex]);
+		}
+		while(word==0 && wordIndex < elements.length-1) {
+			word = elements[++wordIndex];
+		}
+		if (word==0)
+			throw new NoSuchElementException();
+		else 
+			return (wordIndex << 6) + Long.numberOfTrailingZeros(word);
+	}
 	
 	/**
-	 * Returns the largest element in this set that 
-	 * is smaller than i.  If this is emtpy or i is less than this.min(),
-	 * NoSuchElementException is thrown.
-	 * @return {j: this.ints | j < i && no k: this.ints - j | k > j && k < i}
-	 * @throws NoSuchElementException - no this.ints || i <= this.min()
-	 * @see kodkod.util.IntSet#predecessor(int)
+	 * {@inheritDoc}
+	 * @see kodkod.util.ints.IntSet#floor(int)
 	 */
-//	public int predecessor(int i) {
-//		if (i < 0)
-//			throw new NoSuchElementException();
-//		int wordIndex = wordIndex(i);
-//		long word = 0;
-//		if (wordIndex < elements.length && bitMask(i) != 1) {
-//			word = ((~extendedMask(i)) & elements[wordIndex]);
-//		}
-//		while(word==0 && wordIndex > 0) {
-//			word = elements[--wordIndex];
-//		}
-//		if (word==0)
-//			throw new NoSuchElementException();
-//		else 
-//			return (wordIndex << 6) + 63 - Long.numberOfLeadingZeros(word);
-//	}
+	public int floor(int i) {
+		if (i < 0)
+			throw new NoSuchElementException();
+		int wordIndex = wordIndex(i);
+		long word = 0;
+		if (wordIndex < elements.length) {
+			word = ((~extendedMask(i+1)) & elements[wordIndex]);
+		} else {
+			wordIndex = elements.length-1;
+			word = elements[wordIndex];
+		}
+		while(word==0 && wordIndex > 0) {
+			word = elements[--wordIndex];
+		}
+		if (word==0)
+			throw new NoSuchElementException();
+		else 
+			return (wordIndex << 6) + 63 - Long.numberOfLeadingZeros(word);
+	}
 	
 	/**
 	 * {@inheritDoc}
@@ -230,10 +225,18 @@ public final class IntBitSet extends AbstractIntSet {
         return false;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 * @see java.util.Collection#isEmpty()
+	 */
 	public boolean isEmpty() {
 		return size==0;
 	}
 	
+	/**
+	 * {@inheritDoc}
+	 * @see java.util.Collection#containsAll(java.util.Collection)
+	 */
 	public boolean containsAll(Collection<?> c) {
 		if (c instanceof IntBitSet) {
 			final IntBitSet s = (IntBitSet) c;
@@ -261,6 +264,10 @@ public final class IntBitSet extends AbstractIntSet {
         return size!=oldSize;
     }
     
+    /**
+     * {@inheritDoc}
+     * @see kodkod.util.ints.IntSet#addAll(java.util.Collection)
+     */
 	public boolean addAll(Collection<? extends Integer> c) {
 		if (c instanceof IntBitSet) {
 			final IntBitSet s = (IntBitSet) c;
@@ -276,6 +283,10 @@ public final class IntBitSet extends AbstractIntSet {
 		return super.addAll(c);
 	}
 
+	/**
+	 * {@inheritDoc}
+	 * @see java.util.Collection#retainAll(java.util.Collection)
+	 */
 	public boolean retainAll(Collection<?> c) {
 		if (c instanceof IntBitSet) {
 			final IntBitSet s = (IntBitSet) c;
@@ -292,6 +303,10 @@ public final class IntBitSet extends AbstractIntSet {
 		return super.retainAll(c);
 	}
 
+	/**
+	 * {@inheritDoc}
+	 * @see java.util.Collection#removeAll(java.util.Collection)
+	 */
 	public boolean removeAll(Collection<?> c) {
 		if (c instanceof IntBitSet) {
 			final IntBitSet s = (IntBitSet) c;
@@ -304,15 +319,38 @@ public final class IntBitSet extends AbstractIntSet {
 		return super.removeAll(c);
 	}
 
+	/**
+	 * {@inheritDoc}
+	 * @see java.util.Collection#clear()
+	 */
 	public void clear() {
 		Arrays.fill(elements, 0);
         size = 0;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
 	public boolean equals(Object o) {
 		return (o instanceof IntBitSet) ? 
 			   Arrays.equals(elements, ((IntBitSet)o).elements) :
 			   super.equals(o);
+		
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see java.lang.Object#clone()
+	 */
+	public IntBitSet clone() {
+		try {
+			final IntBitSet ret = (IntBitSet) super.clone();
+			ret.elements = (long[]) this.elements.clone();
+			return ret;
+		} catch (CloneNotSupportedException e) {
+			throw new InternalError(); // unreachable code
+		}
 		
 	}
 	

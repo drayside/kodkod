@@ -106,11 +106,11 @@ final class Bool2Cnf {
 				final int e = itegate.input(2).accept(this, arg)[0];
 				ternaryClause[0] = -i; ternaryClause[1] = -t; ternaryClause[2] = oLit;
 				solver.addClause(ternaryClause);
-				ternaryClause[1] = t; ternaryClause[2] = -oLit;
+				ternaryClause[0] = -i; ternaryClause[1] = t; ternaryClause[2] = -oLit;
 				solver.addClause(ternaryClause);
 				ternaryClause[0] = i; ternaryClause[1] = -e; ternaryClause[2] = oLit;
 				solver.addClause(ternaryClause);
-				ternaryClause[1] = e; ternaryClause[2] = -oLit;
+				ternaryClause[0] = i; ternaryClause[1] = e; ternaryClause[2] = -oLit;
 				solver.addClause(ternaryClause);
 			}
 			unaryClause[0] = oLit;

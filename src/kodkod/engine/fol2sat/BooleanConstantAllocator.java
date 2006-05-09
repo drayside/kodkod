@@ -5,7 +5,6 @@
 package kodkod.engine.fol2sat;
 
 import kodkod.ast.Relation;
-import kodkod.engine.bool.BooleanConstant;
 import kodkod.engine.bool.BooleanFactory;
 import kodkod.engine.bool.BooleanMatrix;
 import kodkod.engine.bool.Dimensions;
@@ -13,7 +12,6 @@ import kodkod.instance.Bounds;
 import kodkod.instance.Instance;
 import kodkod.instance.TupleSet;
 import kodkod.instance.Universe;
-import kodkod.util.ints.IntIterator;
 
 /** 
  * Uses {@link kodkod.engine.bool.BooleanConstant boolean constants} to 
@@ -70,13 +68,7 @@ abstract class BooleanConstantAllocator extends BooleanFormulaAllocator {
 			throw new IllegalArgumentException(r + " is not bound.");
 		}
 		
-		final BooleanMatrix m = factory.matrix(Dimensions.square(r.arity(), universe().size()), BooleanConstant.FALSE);
-		
-		for (IntIterator indeces = tuples.indexView().iterator(); indeces.hasNext(); ) {
-			m.set(indeces.nextInt(), BooleanConstant.TRUE);
-		}
-		
-		return m;
+		return factory.constantMatrix(Dimensions.square(r.arity(), universe().size()), tuples.indexView());
 	}
 	
 	
