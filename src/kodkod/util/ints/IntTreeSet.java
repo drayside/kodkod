@@ -1,10 +1,15 @@
 /**
- * 
+ * IntTreeSet.java
+ * Created on 12:27:00 PM
  */
 package kodkod.util.ints;
 
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.NoSuchElementException;
+
+import kodkod.util.ints.TreeSequence.Entry;
+
 
 /**
  * An implementation of the IntTreeSet interface based 
@@ -14,23 +19,22 @@ import java.util.NoSuchElementException;
  * @author Emina Torlak
  */
 public final class IntTreeSet extends AbstractIntSet {
-	/* The endpoints of the ranges in the tree do not touch, and they are 
-	 * sorted by their right endpoints.
-	 * @invariant all n: tree.nodes | n.max = n.key && n.min <= n.max && 
-	 *              all n': tree.nodes - n | n'.max < n.min - 1 || n'.min > n.max + 1
+	/* @invariant all e: ints.entries | e.index <= e.value && 
+	 *            all e': ints.entries - e | e'.value < e.index - 1 ||
+	 *                                       e'.index > e.value + 1
 	 */
-	private final IntTree<Range> tree;
+	private final TreeSequence<MutableInteger> ints;
 	private int size;
-
+	
 	/**
 	 * Constructs an empty int set.
 	 * @effects no this.ints'
 	 */
 	public IntTreeSet() {
-		tree = new IntTree<Range>();
-		size = 0;
+		this.ints = new TreeSequence<MutableInteger>();
+		this.size = 0;
 	}
-
+	
 	/**
 	 * Constructs a new int set containing the elements
 	 * in the specified collection.
@@ -42,122 +46,162 @@ public final class IntTreeSet extends AbstractIntSet {
 		addAll(c);
 	}
 	
-	public String toString() {
-		return tree.toString();
-	}
-	
 	/**
-	 * {@inheritDoc}
-	 * @see kodkod.util.ints.AbstractIntSet#iterator(int, int)
-	 */
-	@Override
-	public IntIterator iterator(int from, int to) {
-		return from <= to ? new AscendingIterator(from, to) : new DescendingIterator(from, to);
-	}
-
-	/**
-	 * {@inheritDoc}
-	 * @see java.util.AbstractCollection#size()
+	 * Returns the number of integers in this int set.
+	 * @return #this.size
 	 */
 	@Override
 	public int size() {
 		return size;
 	}
-	
+
 	/**
-	 * {@inheritDoc}
-	 * @see java.util.Collection#isEmpty()
+	 * Returns true if this set is empty, otherwise returns false.
+	 * @return no this.ints
 	 */
 	@Override
 	public boolean isEmpty() {
-		return size==0;
-	}
-	
-	/**
-	 * {@inheritDoc}
-	 * @see kodkod.util.ints.IntSet#contains(int)
-	 */
-	@Override
-	public boolean contains(int i) {
-		final Range r = tree.searchGTE(i);
-		return r != null && r.min <= i;
+		return ints.isEmpty();
 	}
 
 	/**
 	 * {@inheritDoc}
-	 * @see kodkod.util.ints.IntSet#min()
+	 * @see kodkod.util.ints.IntSet#contains(int)
 	 */
-	@Override
-	public int min() {
-		checkNonEmpty();
-		return tree.min().min;
+	public boolean contains(int i) {
+		final Entry<MutableInteger> range = ints.floor(i);
+		return (range != null && i <= range.value.intValue);
 	}
 	
 	/**
 	 * {@inheritDoc}
+	 * @see kodkod.util.ints.IntSet#min()
+	 */
+	public int min() {
+		checkNonEmpty();
+		return ints.min(ints.root()).index;
+	}
+
+	/**
+	 * {@inheritDoc}
 	 * @see kodkod.util.ints.IntSet#max()
 	 */
-	@Override
 	public int max() {
 		checkNonEmpty();
-		return tree.max().key;
+		return ints.max(ints.root()).value.intValue;
+	}
+
+	/**
+	 * Returns the smallest element in this set that 
+	 * is greater than i.  If this is emtpy or i is greater than this.max(),
+	 * NoSuchElementException is thrown.
+	 * @return {j: this.ints | j > i && no k: this.ints - j | k < j && k > i}
+	 * @throws NoSuchElementException - no this.ints || i >= this.max()
+	 * @see kodkod.util.IntSet#successor(int)
+	 */
+//	public int successor(int i) {
+//		Entry<MutableInteger> e = ints.floor(i);
+//		if (e==null) 
+//			return min();
+//		else if (i >= e.value.intValue) {
+//			e = ints.successor(e);
+//			if (e==null)
+//				throw new NoSuchElementException();
+//			return e.index;
+//		}
+//		return i+1;
+//	}
+	
+	/**
+	 * Returns the largest element in this set that 
+	 * is smaller than i.  If this is emtpy or i is less than this.min(),
+	 * NoSuchElementException is thrown.
+	 * @return {j: this.ints | j < i && no k: this.ints - j | k > j && k < i}
+	 * @throws NoSuchElementException - no this.ints || i <= this.min()
+	 * @see kodkod.util.IntSet#predecessor(int)
+	 */
+//	public int predecessor(int i) {
+//		Entry<MutableInteger> e = ints.floor(i);
+//		if (e != null && i==e.index) {
+//			e = ints.predecessor(e);
+//		}
+//		if (e==null)
+//			throw new NoSuchElementException();
+//		return e.value.intValue < i ? e.value.intValue : i-1;
+//	}
+	
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public IntIterator iterator() {
+		return new AscendingIterator(Integer.MIN_VALUE,Integer.MAX_VALUE);
+	}
+	
+	/**
+	 * Returns the elements in this.set that are in the closed range
+	 * [from..to].
+	 * The returned view supports all the mutating operations as this
+	 * set, with the exception that an attempt to add to it an element
+	 * out of the the range [from..to] will cause an IllegalArgumentException.
+	 * @return s: IntSet | s.ints = { j: this.ints | from <= j <= to }
+	 * @throws IllegalArgumentException - from > to
+	 */
+	public IntIterator iterator(int from, int to) {
+		return from > to ? new DescendingIterator(from, to) : new AscendingIterator(from,to);
 	}
 	
 	/**
 	 * {@inheritDoc}
 	 * @see kodkod.util.ints.IntSet#add(int)
 	 */
-	@Override
 	public boolean add(int i) {
-		final Range ceil = tree.searchGTE(i);
-		if (ceil==null || ceil.min > i) {
+		final Entry<MutableInteger> floor = ints.floor(i);
 
-			final Range floor = tree.searchLTE(i);
+		if (floor==null || floor.value.intValue < i) {
+			final Entry<MutableInteger> ceil = ints.ceil(i);
+			int key = i, value = i;
 			
-			if (floor != null && floor.key==i-1) {			
-				if (ceil != null && ceil.min==i+1) {
-					tree.delete(ceil);
-					floor.key = ceil.key;
-				} else {
-					floor.key = i;
-				}
-			} else if (ceil != null && ceil.min==i+1) {
-				ceil.min = i;
-			} else {
-				tree.insert(new Range(i,i));
-			}
+			if (floor != null && floor.value.intValue == i - 1)  {
+				key = floor.index;
+			} 		
+			if (ceil != null && ceil.index == i + 1) {
+				value = ints.remove(ceil.index).intValue;
+			} 
+		
+			if (key != i) floor.value.intValue = value;
+			else ints.put(key, new MutableInteger(value));
+
 			size++;
 			return true;
-		}
+		}	
 		
 		return false;
+		
 	}
 	
 	/**
 	 * {@inheritDoc}
 	 * @see kodkod.util.ints.IntSet#remove(int)
 	 */
-	@Override
 	public boolean remove(int i) {
-		final Range ceil = tree.searchGTE(i);
+		final Entry<MutableInteger> floor = ints.floor(i);
 		
-		if (ceil != null && i >= ceil.min) {
-			if (ceil.min==ceil.key) {
-				tree.delete(ceil);
-			} else if (i==ceil.min) {
-				ceil.min++;
-			} else if (i==ceil.key) {
-				ceil.key = i-1;
-			} else { // split the range in two
-				tree.insert(new Range(ceil.min, i-1));
-				ceil.min = i+1;
+		if (floor!=null && i <= floor.value.intValue) {
+			if (floor.index==floor.value.intValue) {
+				ints.remove(floor.index);
+			} else if (i==floor.index) {
+				ints.put(i+1, ints.remove(floor.index));
+			} else if (i==floor.value.intValue) {
+				floor.value.intValue = i-1;
+			} else {
+				ints.put(i+1, new MutableInteger(floor.value.intValue));
+				floor.value.intValue = i-1;
 			}
 			size--;
-			assert size >= 0;
 			return true;
 		}
-		
-		return false;		
+		return false;
 	}
 	
 	/**
@@ -171,10 +215,9 @@ public final class IntTreeSet extends AbstractIntSet {
 		if (c instanceof IntTreeSet) {
 			IntTreeSet s = (IntTreeSet) c;
 			if (size>=s.size) {
-				for(Range r1 = s.tree.min(); r1 != null; r1 = s.tree.successor(r1)) {
-					Range r0 = tree.searchGTE(r1.key);
-					if (r0==null || r1.min < r0.min)
-						return false;
+				for(IndexedEntry<MutableInteger> srange : s.ints) {
+					Entry<MutableInteger> floor = ints.floor(srange.index());
+					if (floor==null || floor.value.intValue<srange.value().intValue) return false;
 				}
 				return true;
 			}
@@ -182,77 +225,260 @@ public final class IntTreeSet extends AbstractIntSet {
 		}
 		return super.containsAll(c);
 	}
+
+	/**
+	 * Adds the ints from min to max, inclusive, to this intset.
+	 * @requires min <= max 
+	 * @effects this.ints' = this.ints + {i: int |  min<=t.index()<=max }
+	 */
+	private void addRange(int min, int max) {
+		final Entry<MutableInteger> minFloor = ints.floor(min);
+		
+		if (minFloor==null || minFloor.value.intValue < max) {
+			
+			int key = min, value = max, sizeDelta = value - key + 1;
+			
+			if (minFloor != null && min <= minFloor.value.intValue + 1) {
+				key = minFloor.index;
+				sizeDelta -= (minFloor.value.intValue - min + 1);
+			}
+			
+			Entry<MutableInteger> succ = ints.successor(key);
+			
+			while(succ!=null && succ.value.intValue < max) {
+				sizeDelta += (succ.value.intValue - succ.index + 1);
+				ints.remove(succ.index);
+				succ = ints.successor(succ.index);
+				
+			}
+			
+			if (succ!=null && succ.index <= max + 1) {
+				value = succ.value.intValue;
+				sizeDelta -= (max - succ.index + 1);
+				ints.remove(succ.index);
+			}	
+			
+			if (minFloor!=null && minFloor.index==key) 
+				minFloor.value.intValue=value;
+			else 
+				ints.put(key, new MutableInteger(value));		
+			
+			size += sizeDelta;
+		}	
+		
+	}
+	/**
+	 * Returns true if all ints in this are smaller than then
+	 * the smallest tuple in s.  Otherwise returns false.
+	 * @requires s != null && s.size > 0 && this.size > 0
+	 * @return all t: Tuple | t in this.ints => t.index() < min(s.ints.index())
+	 */
+	private boolean precedes(IntTreeSet s) {
+		return ints.last().value.intValue < s.ints.first().index;
+	}
 	
 	/**
-	 * {@inheritDoc}
-	 * @see java.util.Collection#clear()
+	 * Adds all of the elements in the specified collection to this set 
+	 * if they're not already presen. If the specified 
+	 * collection is also a set, the addAll operation effectively modifies 
+	 * this set so that its intValue is the union of the two sets.
+	 * @effects this.ints' = this.ints + c.elements 
+	 * @return this.ints' != this.ints
+	 * @throws NullPointerException - c = null || null in c.elements
+	 */
+	public boolean addAll(Collection<? extends Integer> c) {
+		if (c instanceof IntTreeSet) {
+			IntTreeSet s = (IntTreeSet) c;
+			if (!s.isEmpty()) {
+				if (isEmpty() || this.precedes(s) || s.precedes(this)) {
+					// can't use putAll -- must make a deep copy of mutable parts
+					for(IndexedEntry<MutableInteger> e : s.ints) {
+						ints.put(e.index(), new MutableInteger(e.value().intValue));
+					}
+					size += s.size();
+					return true;
+				} else {
+					final int oldSize = size;
+					for(IndexedEntry<MutableInteger> srange : s.ints) {
+						addRange(srange.index(), srange.value().intValue);
+					}
+					return oldSize != size;
+				}
+			}
+			return false;
+		}
+		return super.addAll(c);
+	}
+
+	/**
+	 * Retains only the elements in this set that are contained in the specified 
+	 * collection. In other words, removes from this set all of its elements that
+	 * are not contained in the specified collection. If the specified collection 
+	 * is also a set, this operation effectively modifies this set so that its intValue 
+	 * is the intersection of the two sets.
+	 * @effects this.ints' = this.ints & c.elements
+	 * @return this.ints != this.ints'
+	 * @throws NullPointerException - c = null || null in c.elements
+	 * @throws ClassCastException - some e: c.elements | e !in Integer
+	 */
+	public boolean retainAll(Collection<?> c) {
+		if (c instanceof IntTreeSet) {
+			IntTreeSet s = (IntTreeSet) c;
+			if (!isEmpty()) {
+				if (s.isEmpty() || this.precedes(s) || s.precedes(this)) {
+					clear();
+					return true;
+				} else {
+					final int oldSize = size;
+					final Entry<MutableInteger> first = s.ints.first();
+					int lastMax = first.index==Integer.MIN_VALUE ? 
+							      first.value.intValue + 1 : Integer.MIN_VALUE;
+					for(Iterator<IndexedEntry<MutableInteger>> sIter = s.ints.iterator(lastMax, Integer.MAX_VALUE); 
+					    sIter.hasNext();) {
+						IndexedEntry<MutableInteger> srange = sIter.next();
+						removeRange(lastMax, srange.index()-1);
+						lastMax = srange.value().intValue + 1;
+					}
+					if (s.ints.last().value.intValue < Integer.MAX_VALUE) 
+						removeRange(lastMax, Integer.MAX_VALUE);
+					return oldSize != size;
+				}
+			}
+			return false;
+		}
+		return super.retainAll(c);
+	}
+
+	/**
+	 * Removes the ints whose indices range from min to max, inclusive, from this tupleset.
+	 * @requires min <= max 
+	 * @effects this.ints' = this.ints - {i: int |  min<=i<=max }
+	 */
+	private void removeRange(int min, int max) {
+		int sizeDelta = 0;
+		final Entry<MutableInteger> minFloor = ints.floor(min);
+//		System.out.println(min + ".... "  + max + " " + ints + " " + minFloor);
+		if (minFloor!=null && min<=minFloor.value.intValue) {
+			
+			if (minFloor.index==min) { 
+				ints.remove(minFloor.index);
+				if (max < minFloor.value.intValue) {
+					sizeDelta += max - min + 1;
+					ints.put(max + 1, minFloor.value);
+				} else {
+					sizeDelta += minFloor.value.intValue - min + 1;
+				}
+			} else {
+				if (max < minFloor.value.intValue) {
+					sizeDelta += max - min + 1;
+					ints.put(max + 1, new MutableInteger(minFloor.value.intValue));
+				} else {
+					sizeDelta += minFloor.value.intValue - min + 1;
+				}
+				minFloor.value.intValue = min-1;
+			}
+		}
+	
+		Entry<MutableInteger> succ = ints.successor(min);
+		
+		while(succ!=null && succ.value.intValue <= max) {
+			sizeDelta += (succ.value.intValue - succ.index + 1);
+			ints.remove(succ.index);
+			succ = ints.successor(succ.index);
+			
+		}
+		
+		if (succ!=null && succ.index<=max) {
+			sizeDelta += (max - succ.index + 1);
+			ints.put(max + 1, ints.remove(succ.index));
+		}
+		
+
+		size -= sizeDelta;
+	}
+	
+	/**
+	 * Removes all elements in the given collection from this.  If
+	 * c is also a set, this method implements the set difference
+	 * operator.
+	 * @effects this.ints' = this.ints - c.elements
+	 * @return this.ints != this.ints'
+	 * @throws NullPointerException - c = null || null in c.elements
+	 * @throws ClassCastException - some e: c.elements | e !in Integer
+	 */
+	public boolean removeAll(Collection<?> c) {
+		if (c instanceof IntTreeSet) {
+			IntTreeSet s = ((IntTreeSet) c);
+			if (!s.isEmpty() && !isEmpty()) {
+				if (this.precedes(s) || s.precedes(this)) return false;
+				else {
+					final int oldSize = size;
+					for(IndexedEntry<MutableInteger> srange : s.ints) {
+						removeRange(srange.index(), srange.value().intValue);
+					}
+					return oldSize != size;
+				}
+			}
+			return false;
+		}
+		return super.removeAll(c);
+	}
+
+	/**
+	 * Removes all integers from this set.
+	 * @effects no this.ints'
 	 */
 	public void clear() {
-		tree.clear();
+		ints.clear();
 		size = 0;
 	}
 	
 	/**
-	 * A range of integers in an int set.
-	 * @specfield min: int
-	 * @specfield max: int
-	 * @invariant min <= max
-	 * @invariant max = key
-	 * @author Emina Torlak
-	 */
-	private static final class Range extends IntTree.Node<Range> {
-		private int min;
-		
-		Range(int min, int max) {
-			super(max);
-			this.min = min;
-		}
-		
-	}
-	
-	/**
-	 * An iterator that traverses the ints in this set in the 
-	 * ascending order.
-	 * @author Emina Torlak
+	 * Implementation of an ascending iterator over (a subset of) this set.
 	 */
 	private final class AscendingIterator implements IntIterator {
-		Range next;
-		final int endpoint;
-		int currentMax;
-		long cursor, lastReturned;
+		Entry<MutableInteger> next;
+		final int endIndex;
+		int endpoint, cursor, lastReturned;
 		
 		/**
+		 * Constructs an ascending iterator that returns elements between
+		 * from and to.  
 		 * @requires from <= to
 		 */
 		AscendingIterator(int from, int to) {
-			endpoint = to;
-			lastReturned = Long.MIN_VALUE;
-			next = tree.searchGTE(from);
-			if (next==null) {
-				cursor = 0;
-				currentMax = -1;
+			endIndex = to;
+			lastReturned = -1;
+			next = ints.floor(from);
+			if (next != null && from <= next.value.intValue) {
+				cursor = from;
+				endpoint = next.value.intValue;
+				next = ints.successor(next);
 			} else {
-				cursor = StrictMath.max(next.min, from);
-				currentMax = next.key;
-				next = tree.successor(next);
+				next = ints.ceil(from);
+				if (next==null) next = ints.NIL;
+				cursor = 0;
+				endpoint = -1;
 			}
 		}
 		
 		public boolean hasNext() {
-			if (cursor > currentMax) {
-				if (next==null) return false;
-				this.cursor = next.min;
-				this.currentMax = next.key; 
-				next = tree.successor(next);
+			if (cursor > endpoint) {
+				if (next==ints.NIL) return false;
+				this.cursor = next.index;
+				this.endpoint = next.value.intValue; 
+				next = ints.successor(next);
 			}
-			return cursor <= endpoint;
+			return cursor <= endIndex;
 		}
 
 		public int nextInt() {
-			if (!hasNext())
+			if (!hasNext()) {
+				System.out.println(ints + " : " + size);
 				throw new NoSuchElementException();
+			}
 			lastReturned = cursor++;
-			return (int)lastReturned;
+			return lastReturned;
 		}
 
 		public Integer next() {
@@ -260,63 +486,57 @@ public final class IntTreeSet extends AbstractIntSet {
 		}
 
 		public void remove() {
-			if ((lastReturned & Long.MIN_VALUE) > 0) 
-				throw new IllegalStateException();
-			IntTreeSet.this.remove((int)lastReturned);
-			next = tree.searchGTE((int)cursor);
-			lastReturned |= Long.MIN_VALUE;
+			if (lastReturned < 0) throw new IllegalStateException();
+			IntTreeSet.this.remove(lastReturned);
+			next = ints.successor(cursor);
+			if (next==null) next = ints.NIL;
+			lastReturned = -1;
 		}
 		
 	}
 	
 	/**
-	 * An iterator that traverses the ints in this set in the 
-	 * descending order.
-	 * @author Emina Torlak
+	 * Implementation of a descending iterator over (a subset of) this set.
 	 */
 	private final class DescendingIterator implements IntIterator {
-		Range next;
-		final int endpoint;
-		int currentMin;
-		long cursor, lastReturned;
+		Entry<MutableInteger> next;
+		final int endIndex;
+		int endpoint, cursor, lastReturned;
 		
 		/**
+		 * Constructs a descending iterator that returns elements between
+		 * from and to.  
 		 * @requires from >= to
 		 */
 		DescendingIterator(int from, int to) {
-			endpoint = to;
-			lastReturned = Long.MIN_VALUE;
-			next = tree.searchGTE(from);
-			if (next==null || next.min > from) {
-				next = tree.searchLTE(from);
-				if (next==null) {
-					cursor = -1;
-					currentMin = 0;
-				} else {
-					cursor = StrictMath.min(next.key, from);
-					currentMin = next.min;
-				}
+			endIndex = to;
+			lastReturned = -1;
+			next = ints.floor(from);
+			if (next==null) next = ints.NIL;
+			else if (from <= next.value.intValue) {
+				cursor = from;
+				endpoint = next.index;
+				next = ints.predecessor(next);
 			} else {
-				cursor = StrictMath.min(next.key, from);
-				currentMin = next.min;
+				cursor = -1;
+				endpoint = 0;
 			}
 		}
 		
 		public boolean hasNext() {
-			if (cursor < currentMin) {
-				if (next==null) return false;
-				this.cursor = next.key;
-				this.currentMin = next.min;
-				next = tree.predecessor(next);
+			if (cursor < endpoint) {
+				if (next==ints.NIL) return false;
+				this.cursor = next.value.intValue;
+				this.endpoint = next.index; 
+				next = ints.predecessor(next);
 			}
-			return cursor >= endpoint;
+			return cursor >= endIndex;
 		}
 
 		public int nextInt() {
-			if (!hasNext()) 
-				throw new NoSuchElementException();
+			if (!hasNext()) throw new NoSuchElementException();
 			lastReturned = cursor--;
-			return (int)lastReturned;
+			return lastReturned;
 		}
 
 		public Integer next() {
@@ -324,14 +544,42 @@ public final class IntTreeSet extends AbstractIntSet {
 		}
 
 		public void remove() {
-			if ((lastReturned & Long.MIN_VALUE) > 0) 
-				throw new IllegalStateException();
-			IntTreeSet.this.remove((int)lastReturned);
-			next = tree.searchLTE((int)cursor);
-			lastReturned |= Long.MIN_VALUE;
+			if (lastReturned < 0) throw new IllegalStateException();
+			IntTreeSet.this.remove(lastReturned);
+			next = ints.predecessor(cursor);
+			if (next==null) next = ints.NIL;
+			lastReturned = -1;
 		}
 		
 	}
 	
-	
+	/**
+	 * A mutable wrapper for a primitive int.
+	 */
+	private static final class MutableInteger {
+		int intValue;
+		
+		/**
+		 * Constructs a mutable wrapper for the given intValue.
+		 */
+		MutableInteger(int i) {
+			intValue = i;
+		}
+		
+		public boolean equals(Object o) {
+			if (o==this) return true;
+			if (o instanceof MutableInteger) {
+				return ((MutableInteger)o).intValue==intValue;
+			}
+			return false;
+		}
+		
+		public int hashCode() {
+			return intValue;
+		}
+		
+		public String toString() {
+			return String.valueOf(intValue);
+		}
+	}
 }
