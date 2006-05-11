@@ -72,6 +72,7 @@ import kodkod.instance.Universe;
  * pred game() {
  *  rules() && puzzle()
  * }
+ * </pre>
  */
 public final class Sudoku {
 
