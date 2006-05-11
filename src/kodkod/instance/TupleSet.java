@@ -28,7 +28,7 @@ import kodkod.util.ints.Ints;
  * 
  * @author Emina Torlak
  */
-public final class TupleSet extends AbstractSet<Tuple>{
+public final class TupleSet extends AbstractSet<Tuple> implements Cloneable {
 	private final Universe universe;
 	private final int arity;
 	private final IntSet tuples;
@@ -102,6 +102,21 @@ public final class TupleSet extends AbstractSet<Tuple>{
 		} else {
 			tuples = tupleIndeces;
 		}
+	}
+	
+	/**
+	 * Copy constructor.
+	 * @effects constructs a deep copy of the given tupleset
+	 */
+	private TupleSet(TupleSet original) {
+		this.universe = original.universe;
+		this.arity = original.arity;
+		try {
+			this.tuples = original.tuples.clone();
+		} catch (CloneNotSupportedException e) {
+			throw new InternalError(); // unreachable code
+		}
+		this.indexView = null;
 	}
 	
 	/**
@@ -205,13 +220,12 @@ public final class TupleSet extends AbstractSet<Tuple>{
 	}
 	
 	/**
-	 * Returns a shallow copy of this tuple set (the tuples themselves are not copied).  
+	 * Returns a deep copy of this tuple set. 
 	 * @return {s: TupleSet - this | s.universe = this.universe && s.tuples = this.tuples }
 	 */
-	public TupleSet copy() {
-		final TupleSet ret = new TupleSet(universe(), arity());
-		ret.addAll(this);
-		return ret;
+	public TupleSet clone() {
+		// ok to use a copy constructor to clone a final class
+		return new TupleSet(this);
 	}
 	
 	/**

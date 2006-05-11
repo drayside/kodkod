@@ -151,13 +151,16 @@ final class BooleanVariableAllocator extends BooleanFormulaAllocator {
 		int varId = literals.containsKey(r) ? literals.get(r).min() : 0; // no vars allocated to r
 		
 		final IntSet lowerBound = bounds.lowerBound(r).indexView();
-				
-		final BooleanMatrix m = factory.matrix(Dimensions.square(r.arity(), bounds.universe().size()), lowerBound);
+		final IntSet upperBound = bounds.upperBound(r).indexView();
 		
-		for (IntIterator indeces = bounds.upperBound(r).indexView().iterator(); indeces.hasNext();) {
-			int tupleIndex = indeces.nextInt();
-			if (!lowerBound.contains(tupleIndex))  
-				m.set(tupleIndex, factory.variable(varId++));
+		final BooleanMatrix m = factory.matrix(Dimensions.square(r.arity(), bounds.universe().size()), upperBound, lowerBound);
+		
+		if (upperBound.size() > lowerBound.size()) {
+			for (IntIterator indeces = upperBound.iterator(); indeces.hasNext();) {
+				int tupleIndex = indeces.nextInt();
+				if (!lowerBound.contains(tupleIndex))  
+					m.set(tupleIndex, factory.variable(varId++));
+			}
 		}
 		
 		return m;

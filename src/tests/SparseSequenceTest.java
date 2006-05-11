@@ -6,6 +6,7 @@ import junit.framework.TestCase;
 import kodkod.util.ints.ArraySequence;
 import kodkod.util.ints.IndexedEntry;
 import kodkod.util.ints.IntSet;
+import kodkod.util.ints.IntTreeSet;
 import kodkod.util.ints.Ints;
 import kodkod.util.ints.RangeSequence;
 import kodkod.util.ints.SparseSequence;
@@ -89,24 +90,21 @@ public class SparseSequenceTest extends TestCase {
 	}
 	
 	public void testRemove() {
-//		for(int i = 0; i < 4; i++) 
-//			s0.put(i, i+1);
-//		System.out.println(s0);
-//		s0.remove(1);
-//		System.out.println(s0);
-//		s0.remove(3);
-//		System.out.println(s0);
-//		s0.clear();
-//		System.out.println(s0);
-//		s0.put(0,0);
-//		System.out.println(s0);
-//		s0.remove(0);
-////		System.out.println(s0);
-//		for(int i = 0; i < 7; i++) 
-//			s0.put(i, i+1);
-//		System.out.println(s0);
-//		s0.remove(3);
-//		System.out.println(s0);
+		// [2597 b NIL [2630 r [2616 b [2604 b NIL NIL] [2623 b NIL NIL]] 
+		// [2658 b [2644 r [2637 b NIL NIL] [2651 b NIL [2655 r NIL NIL]]] [2660 b NIL NIL]]]]
+		s0 = new TreeSequence<Integer>();
+		s0.put(2597, 0);
+		s0.put(2630, 0);
+		s0.put(2616, 0);
+		s0.put(2604, 0);
+		s0.put(2623, 0);
+		s0.put(2658, 0);
+		s0.put(2644, 0);
+		s0.put(2637, 0);
+		s0.put(2651, 0);
+		System.out.println(s0);
+		s0.remove(2616);
+		System.out.println(s0);
 	}
 	
 //	public void testFirstLast() {
@@ -138,6 +136,16 @@ public class SparseSequenceTest extends TestCase {
 			assert false;
 		}
 		
+	}
+	
+	public void testIntTreeSet() {
+		IntTreeSet s = new IntTreeSet();
+		s.add(1);
+		System.out.println(s);
+		s.add(3);
+		System.out.println(s);
+		s.add(2);
+		System.out.println(s);
 	}
 	
 }

@@ -285,10 +285,10 @@ final class IntTree<N extends IntTree.Node<N>> implements Cloneable {
 		Node y = (z.left==NIL || z.right==NIL ? z : successor(z));
 		Node x = (y.left != NIL ? y.left : y.right);
 		
-		final Node yparent = y.parent;
+		Node yparent = y.parent;
 		final boolean yleft = (y==y.parent.left);
 		final boolean ycolor = y.color;
-		
+				
 		if (x!=NIL)						{ x.parent = yparent; }
 		
 		if (yparent == NIL)				{ root = x; }
@@ -311,6 +311,7 @@ final class IntTree<N extends IntTree.Node<N>> implements Cloneable {
 		if (ycolor==BLACK) {
 			if (x!=NIL)					{ deleteFixUp(x); }
 			else { // use z as a phantom child of y, since we cannot change pointers of NIL
+				if (z==yparent) yparent = y; // y, z's successor, is z's right child
 				z.color = BLACK;
 				z.left = z.right = NIL;
 				z.parent = yparent;
@@ -577,7 +578,7 @@ final class IntTree<N extends IntTree.Node<N>> implements Cloneable {
 			if (this==NIL) 
 				return "NIL";
 			else 
-				return "[" + getClass() +" " + key + " " + (color ? "b" : "r") + " " + (left==this ? key : left) + " "+ 
+				return "[" + key + " " + (color ? "b" : "r") + " " + (left==this ? key : left) + " "+ 
 				        (right==this ? key : right)  + "]";
 				      
 		}

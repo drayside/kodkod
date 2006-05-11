@@ -68,7 +68,7 @@ abstract class BooleanConstantAllocator extends BooleanFormulaAllocator {
 			throw new IllegalArgumentException(r + " is not bound.");
 		}
 		
-		return factory.constantMatrix(Dimensions.square(r.arity(), universe().size()), tuples.indexView());
+		return factory.matrix(Dimensions.square(r.arity(), universe().size()), tuples.indexView(), tuples.indexView());
 	}
 	
 	

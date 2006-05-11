@@ -114,6 +114,10 @@ final class ZChaff implements SATSolver {
 		if (lits==null)
 			throw new NullPointerException();
 		else if (lits.length > 0) {
+//			for(int i : lits) {
+//				System.out.print(i + " ");
+//			}
+//			System.out.println(0);
 			addClause(zchaff, lits);
 		}
 	}

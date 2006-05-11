@@ -57,11 +57,10 @@ public final class Translator {
 	public static Translation translate(Formula formula, Bounds bounds, Options options) throws TrivialFormulaException {
 //		System.out.println("analyzing structure...");
 		NodeAnalyzer.FormulaAnnotations notes = NodeAnalyzer.annotate(formula);
-		bounds = bounds.copy();
+		bounds = bounds.clone();
 		Set<IntSet> symmetricParts = BoundsOptimizer.optimize(bounds, notes.relations(), 
 					                                          notes.topLevelOrders(), notes.topLevelAcyclics());
 //		System.out.println("Symmetry classes: " + symmetricParts);
-//		System.out.println(bounds);
 		final Map<Decl, Relation> skolems;
 		if (options.skolemize()) {
 //			System.out.println("skolemizing...");
@@ -95,17 +94,16 @@ public final class Translator {
 			}
 			varUsage = new IdentityHashMap<Node, IntSet>(allocator.allocationMap().size());
 		}
-	//	System.out.println(circuit);
-	//	System.out.println(allocator.allocationMap());
+	
 		notes = null; // release structural information
 		
 		for(Map.Entry<Relation, IntRange> e: allocator.allocationMap().entrySet()) {
 			varUsage.put(e.getKey(), Ints.rangeSet(e.getValue()));
 		}
-		
 //		System.out.println("breaking symmetry...");
+	
 		circuit = factory.and(circuit, SymmetryBreaker.generateSBP(symmetricParts, allocator, options));
-		
+	
 		allocator = null; symmetricParts = null; // release the allocator and symmetric partitions
 		
 		if (options.flatten()) {
@@ -116,15 +114,15 @@ public final class Translator {
 			// release the factory itself
 			factory = null;
 		}
-		//System.out.println(circuit);
+	
 		if (circuit==BooleanConstant.TRUE || circuit==BooleanConstant.FALSE) {
 			throw new TrivialFormulaException(formula, (BooleanConstant)circuit, bounds, skolems);
 		}
 		
 //		System.out.println("translating to cnf...");
+		
 		final SATSolver cnf = Bool2Cnf.definitional((BooleanFormula)circuit, options.solver(), numPrimaryVariables);
 		cnf.setTimeout(options.timeout());
-		
 		return new Translation(cnf, bounds, skolems, Collections.unmodifiableMap(varUsage), numPrimaryVariables, options.trackVars());
 	}
 	

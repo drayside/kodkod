@@ -16,7 +16,6 @@ import kodkod.engine.bool.Operator.Nary;
 import kodkod.util.collections.CacheSet;
 import kodkod.util.collections.IdentityHashSet;
 import kodkod.util.ints.IntSet;
-import kodkod.util.ints.Ints;
 
 
 /**
@@ -403,7 +402,9 @@ public final class BooleanFactory {
 	
 	/**
 	 * Returns a BooleanMatrix with the given dimensions and this 
-	 * as the factory for its non-FALSE components.  
+	 * as the factory for its non-FALSE components.  The returned matrix 
+	 * can store any value from this.components at all
+	 * indices between 0, inclusive, and d.capacity(), exclusive.  
 	 * @throws NullPointerException - d = null
 	 * @return { m: BooleanMatrix | m.factory = this && m.dimensions = d && m.elements = [0..d.capacity) -> one FALSE }
 	 */
@@ -413,52 +414,42 @@ public final class BooleanFactory {
 	}
 	
 	/**
-	 * Returns a BooleanMatrix with the given dimensions, this
-	 * as its factory, and the given set of indices initialized to TRUE.  
-	 * The returned matrix can store any value from this.components. 
-	 * @return { m: BooleanMatrix |  m.factory = this && m.dimensions = dims && 
-	 *           m.elements = [0..d.capacity()-1] ->one FALSE ++ indices->TRUE }
 	 * @throws IllegalArgumentException - indices !in [0..d.capacity())
-	 * @throws NullPointerException - d = null || indices = null	 	 
 	 */
-	public BooleanMatrix matrix(Dimensions d, IntSet indices) {
+	private static void validate(IntSet indices, Dimensions d) {
 		if (!indices.isEmpty()) {
 			if (!d.validate(indices.min()) ||	!d.validate(indices.max()))
 				throw new IllegalArgumentException();
 		}
-		return new BooleanMatrix(d, this, indices, false);
 	}
 	
 	/**
-	 * Returns a BooleanMatrix with the given dimensions and this
-	 * as its factory.  
-	 * The returned matrix can store only constant values. 
-	 * @return { m: BooleanMatrix |  m.factory = this && m.dimensions = dims && 
-	 *           m.elements = [0..d.capacity()-1] ->one FALSE }
-	 * @throws IllegalArgumentException - indices !in [0..d.capacity())
-	 * @throws NullPointerException - d = null || indices = null	 	 
-	 */
-	public BooleanMatrix constantMatrix(Dimensions d) {
-		return new BooleanMatrix(d, this, Ints.bestSet(d.capacity()), true);
-	}
-	
-	/**
-	 * Returns a BooleanMatrix with the given dimensions, this
-	 * as its factory, and the given set of indices initialized to TRUE.  
-	 * The returned matrix can store only constant values. 
+	 * Returns a BooleanMatrix <tt>m</tt> with the given dimensions, this
+	 * as its factory, and the indices from the set <tt>trueIndices</tt> initialized
+	 * to TRUE.  An IndexOutOfBoundsException may be thrown
+	 * if {@link BooleanMatrix#set(int, BooleanValue)} is called on <tt>m</tt> with an index 
+	 * not contained in <tt>allIndices</tt>.  If <tt>allIndices.equals(trueIndices)</tt>, 
+	 * <tt>m</tt> may be a constant matrix; that is, an IllegalArgumentException may be
+	 * thrown if {@link BooleanMatrix#set(int, BooleanValue)} is called on <tt>m</tt> with
+	 * a non-constant value.  Finally, if cloning <tt>trueIndices</tt> results in an immutable
+	 * set, then {@link BooleanMatrix#set(int, BooleanValue) m.set(int, BooleanValue)} may throw
+	 * an UnsupportedOperationException when called with a member of <tt>trueIndices</tt>.
+	 * @requires allIndices.containsAll(trueIndices)
 	 * @return { m: BooleanMatrix |  m.factory = this && m.dimensions = dims && 
 	 *           m.elements = [0..d.capacity()-1] ->one FALSE ++ indices->TRUE }
-	 * @throws IllegalArgumentException - indices !in [0..d.capacity())
-	 * @throws NullPointerException - d = null || indices = null	 	 
+	 * @throws IllegalArgumentException - allIndices !in [0..d.capacity())
+	 * @throws IllegalArgumentException - one of the input sets is not cloneable
+	 * @throws NullPointerException - d = null || allIndices = null || trueIndices = null	 	 
 	 */
-	public BooleanMatrix constantMatrix(Dimensions d, IntSet indices) { 
-		final IntSet copy = Ints.bestSet(d.capacity());
-		copy.addAll(indices);
-		if (!indices.isEmpty()) {
-			if (!d.validate(indices.min()) ||	!d.validate(indices.max()))
-				throw new IllegalArgumentException();
+	public BooleanMatrix matrix(Dimensions d, IntSet allIndices, IntSet trueIndices) {
+		assert allIndices.size() >= trueIndices.size(); // sanity check
+		validate(allIndices, d); validate(trueIndices, d);
+		try {
+			return new BooleanMatrix(d, this, allIndices, trueIndices.clone());
+		} catch (CloneNotSupportedException e) {
+			throw new IllegalArgumentException();
 		}
-		return new BooleanMatrix(d, this, copy, true);
+	
 	}
 	
 	/**

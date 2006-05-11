@@ -755,7 +755,7 @@ factory.tuple(list2));
 			}
 		}
 		
-		final TupleSet tdivcopy = tdiv.copy();
+		final TupleSet tdivcopy = tdiv.clone();
 		for(int i = -3; i <=6; i ++) {
 			for(int j = -3; j <=6; j++) {
 				if (j != 0) {

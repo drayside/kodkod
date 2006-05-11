@@ -217,7 +217,7 @@ public final class ArraySequence<V> extends AbstractSparseSequence<V> implements
 			if (e.value!=null)
 				return e;
 		}
-		throw new InternalError();
+		throw new InternalError(); // unreachable code
 	}
 	
 	/**
@@ -234,7 +234,7 @@ public final class ArraySequence<V> extends AbstractSparseSequence<V> implements
 			if (entries[i].value!=null)
 				return entries[i];
 		}
-		throw new InternalError();
+		throw new InternalError(); // unreachable code
 	}
 	
 	/**

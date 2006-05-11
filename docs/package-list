@@ -1,3 +1,4 @@
+examples
 kodkod.ast
 kodkod.ast.visitor
 kodkod.engine
@@ -5,5 +6,6 @@ kodkod.engine.bool
 kodkod.engine.fol2sat
 kodkod.engine.satlab
 kodkod.instance
-kodkod.util
+kodkod.util.collections
+kodkod.util.ints
 zchaff

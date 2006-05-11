@@ -28,8 +28,9 @@ import kodkod.util.ints.TreeSequence;
  * to the same factory as the values in the receiver matrix. </p>
  * 
  * <p>Some instances can store only constant values, or can only store
- * values at particular indices.  If this is the case, an attempt to call {@link #set(int, BooleanValue) }
- * with invalid parameters will cause an IllegalArgumentException. </p>
+ * values at particular indices ({@see kodkod.engine.bool.BooleanFactory#matrix(Dimensions, IntSet, IntSet)}).  
+ * If this is the case, an attempt to call {@link #set(int, BooleanValue) }
+ * with invalid parameters will cause an IllegalArgumentException or an IndexOutOfBoundsException. </p>
  * 
  * @specfield dimensions: Dimensions
  * @specfield factory: BooleanFactory
@@ -38,7 +39,7 @@ import kodkod.util.ints.TreeSequence;
  * @author Emina Torlak  
  */
 public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>, Cloneable {
-	/* these fields are intended to be used only be instances of BooleanMatrix */
+	
 	private final Dimensions dims;
 	private final BooleanFactory factory;
 	private final SparseSequence<BooleanValue> cells;
@@ -76,23 +77,27 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	 * Constructs a new matrix with the given dimensions and factory, 
 	 * and initializes the indices in the given set to TRUE.
 	 * The constructed matrix will be capable of storing only constants
-	 * if the constant flag is on, otherwise, it will be able to store any kind of BooleanValue.
+	 * iff trueIndeces.equals(allIndices).  Otherwise, it will be able to store any kind of BooleanValue
+	 * ONLY at the indices given by allIndices.  Any attempt to call {@link #set(int, BooleanValue) } on
+	 * an index outside of allIndices may result in an IndexOutOfBoundsException.
 	 * 
-	 * @requires constant => trueIndices is not modifiable using an external handle
-	 * @requires dimensions != null && factory != null && trueIndices != null
-	 * @requires dimensions.validate(trueIndices.min()) && dimensions.validate(trueIndices.max())
+	 * @requires allIndices.containsAll(trueIndices)
+	 * @requires trueIndices is not modifiable using an external handle
+	 * @requires dimensions != null && factory != null && trueIndices != null && allIndices != null
+	 * @requires dimensions.validate(allIndices.min()) && dimensions.validate(allIndices.max())
 	 * @effects this.dimensions' = dimensions && this.factory' = factory && 
 	 *          this.elements' = [0..dimensions.capacity)->one FALSE ++ trueIndices -> one TRUE
 	 */
-	BooleanMatrix(Dimensions dims, BooleanFactory factory, IntSet trueIndices, boolean constant) {
+	BooleanMatrix(Dimensions dims, BooleanFactory factory, IntSet allIndices, IntSet trueIndices) {
 		this.dims = dims;
 		this.factory = factory;
-		if (constant)
+		final int tsize = trueIndices.size(), asize = allIndices.size();
+		if (tsize==asize)
 			this.cells = new HomogenousSequence<BooleanValue>(TRUE, trueIndices);
-		else if (trueIndices.isEmpty())
+		else if (tsize==0)
 			this.cells = new TreeSequence<BooleanValue>();
 		else {
-			this.cells = new RangeSequence<BooleanValue>();
+			this.cells = new  RangeSequence<BooleanValue>();
 			for(IntIterator iter = trueIndices.iterator(); iter.hasNext(); ) {
 				cells.put(iter.nextInt(), TRUE);
 			}
@@ -108,7 +113,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	private static SparseSequence<BooleanValue> make(SparseSequence<BooleanValue> s0, SparseSequence<BooleanValue> s1) {
 		final Class<?> c0 = s0.getClass(), c1 = s1.getClass();
 		if (c0!=c1 || c0==RangeSequence.class) 
-			return new RangeSequence<BooleanValue>();
+			return new  RangeSequence<BooleanValue>();
 		else if (c0==HomogenousSequence.class) 
 			return new HomogenousSequence<BooleanValue>(TRUE); 
 		else 
@@ -224,14 +229,9 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	public final BooleanMatrix and(BooleanMatrix  other) {
 		checkFactory(other.factory); checkDimensions(other.dims);
 		final BooleanMatrix ret = new BooleanMatrix(dims, factory, make(cells, other.cells));
-		final  SparseSequence<BooleanValue> small, big;
-		if (cells.size()<=other.cells.size()) {
-			small = cells; big = other.cells;
-		} else {
-			small = other.cells; big = cells;
-		}
-		for(IndexedEntry<BooleanValue> e0 : small) {
-			BooleanValue v1 = big.get(e0.index());
+		final  SparseSequence<BooleanValue> s1 = other.cells;
+		for(IndexedEntry<BooleanValue> e0 : cells) {
+			BooleanValue v1 = s1.get(e0.index());
 			if (v1!=null)
 				ret.fastSet(e0.index(), factory.fastCompose(AND, e0.value(), v1));
 		}
@@ -587,23 +587,43 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 			return FALSE; 
 		else {
 			final int density = cells.size();
+//			final BooleanAccumulator g = BooleanAccumulator.treeGate(OR);
+//			UPDATEg : for (int i = 0; i < density; i++) { // g contains the outermost disjunction
+//				Iterator<IndexedEntry<BooleanValue>> entries = cells.iterator();
+//				BooleanAccumulator v = BooleanAccumulator.treeGate(AND); // v contains the individual conjunctions
+//				for(int j = 0; j < i; j++) {
+//					if (v.add(entries.next().value().negation())==FALSE) {
+//						continue UPDATEg;
+//					}
+//				}
+//				if (v.add(entries.next().value())==FALSE) continue;
+//				for(int j = i+1; j < density; j++) {
+//					if (v.add(entries.next().value().negation())==FALSE) {
+//						continue UPDATEg;
+//					}
+//				}
+//				if (g.add(factory.fastAdopt(v))==TRUE) return TRUE;
+//			}
+//			return factory.fastAdopt(g);
+			
 			final BooleanAccumulator g = BooleanAccumulator.treeGate(OR);
 			UPDATEg : for (int i = 0; i < density; i++) { // g contains the outermost disjunction
 				Iterator<IndexedEntry<BooleanValue>> entries = cells.iterator();
-				BooleanAccumulator v = BooleanAccumulator.treeGate(AND); // v contains the individual conjunctions
+				BooleanAccumulator v = BooleanAccumulator.treeGate(OR); // v contains the individual disjunctions
 				for(int j = 0; j < i; j++) {
-					if (v.add(entries.next().value().negation())==FALSE) {
+					if (v.add(entries.next().value())==TRUE) {
 						continue UPDATEg;
 					}
 				}
-				if (v.add(entries.next().value())==FALSE) continue;
+				if (v.add(entries.next().value().negation())==TRUE) continue;
 				for(int j = i+1; j < density; j++) {
-					if (v.add(entries.next().value().negation())==FALSE) {
+					if (v.add(entries.next().value())==TRUE) {
 						continue UPDATEg;
 					}
 				}
-				if (g.add(factory.fastAdopt(v))==TRUE) return TRUE;
+				if (g.add(factory.fastAdopt(v).negation())==TRUE) return TRUE;
 			}
+			
 			return factory.fastAdopt(g);
 		}
 	}
@@ -621,17 +641,19 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
      * Sets the value at the specified index to the given value;
      * returns the value previously at the specified position.  
      * 
+     * @requires value in this.factory.components
      * @return this.elements[index]
-     * @effects this.elements'[index] = formula
-     * @throws NullPointerException - formula = null
-     * @throws IllegalArgumentException - formula !in this.factory.components
-     * @throws IndexOutOfBoundsException - index < 0 || index >= this.dimensions.capacity
+     * @effects this.elements'[index] = value
+     * @throws NullPointerException - value = null
+     * @throws IllegalArgumentException - the given is a formula, and this matrix accepts only constants
+     * @throws IndexOutOfBoundsException - the given index does not belong to the set of indices at which
+     * this matrix can store non-FALSE values.
      */
-	public final BooleanValue set(final int index, final BooleanValue formula) {
+	public final BooleanValue set(final int index, final BooleanValue value) {
 		if (!dims.validate(index)) throw new IndexOutOfBoundsException("index < 0 || index >= this.dimensions.capacity");
-		if (formula==null) throw new NullPointerException("formula=null");
-		if (formula==FALSE) return maskNull(cells.remove(index));
-		else return maskNull(cells.put(index,formula));
+		if (value==null) throw new NullPointerException("formula=null");
+		if (value==FALSE) return maskNull(cells.remove(index));
+		else return maskNull(cells.put(index,value));
 	}
 	
 	/**

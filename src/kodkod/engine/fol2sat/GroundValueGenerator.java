@@ -12,11 +12,12 @@ import java.util.NoSuchElementException;
 import kodkod.ast.Decl;
 import kodkod.ast.Decls;
 import kodkod.ast.Variable;
-import kodkod.engine.bool.BooleanConstant;
 import kodkod.engine.bool.BooleanFactory;
 import kodkod.engine.bool.BooleanMatrix;
 import kodkod.engine.bool.BooleanValue;
 import kodkod.util.ints.IndexedEntry;
+import kodkod.util.ints.IntSet;
+import kodkod.util.ints.Ints;
 
 
 /** 
@@ -101,9 +102,8 @@ final class GroundValueGenerator {
             if (curIndex % density != prevIndex % density || env.get(var)==null) {
                 if (curIndex % density == 0) { translIters[i] = transls[i].iterator(); }
                 index[i] = translIters[i].next().index();
-                BooleanMatrix varValue = factory.constantMatrix(transls[i].dimensions());
-                varValue.set(index[i], BooleanConstant.TRUE);
-                env.bind(var, varValue);
+                IntSet indices = Ints.singleton(index[i]);
+                env.bind(var, factory.matrix(transls[i].dimensions(), indices, indices));
             }
             
             curIndex = curIndex / density;

@@ -57,7 +57,11 @@ public final class IntTreeSet extends AbstractIntSet implements Cloneable {
 	}
 	
 //	public String toString() {
-//		return tree.toString();
+//		for(Range next = tree.min(); next != null; next = tree.successor(next) ) { 
+//			System.out.print("[" + next.min + " .. " + next.key+ "] ");
+//		}
+//		System.out.println("");
+//		return "";
 //	}
 	
 	/**
@@ -164,6 +168,7 @@ public final class IntTreeSet extends AbstractIntSet implements Cloneable {
 			} else {
 				tree.insert(new Range(i,i));
 			}
+			
 			size++;
 			return true;
 		}

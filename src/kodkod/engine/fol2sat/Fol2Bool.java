@@ -350,15 +350,17 @@ final class Fol2Bool {
 			final BooleanMatrix ret;
 			final int univSize = allocator.universe().size();
 			if (constExpr==Expression.UNIV) {
-				ret= allocator.factory().constantMatrix(Dimensions.square(1, univSize), Ints.rangeSet(Ints.range(0, univSize-1)));
+				final IntSet all =  Ints.rangeSet(Ints.range(0, univSize-1));
+				ret= allocator.factory().matrix(Dimensions.square(1, univSize), all, all);
 			} else if (constExpr==Expression.IDEN) {
 				final Dimensions dim2 = Dimensions.square(2, univSize);
-				ret = allocator.factory().constantMatrix(dim2);
+				final IntSet iden = Ints.bestSet(dim2.capacity());
 				for(int i = 0; i < univSize; i++) {
-					ret.set(i*univSize + i, TRUE);
+					iden.add(i*univSize + i);
 				}			
+				ret = allocator.factory().matrix(dim2, iden, iden);
 			} else if (constExpr==Expression.NONE) {
-				ret = allocator.factory().constantMatrix(Dimensions.square(1, univSize));
+				ret = allocator.factory().matrix(Dimensions.square(1, univSize), Ints.EMPTY_SET, Ints.EMPTY_SET);
 			} else {
 				throw new IllegalArgumentException("unknown constant expression: " + constExpr);
 			}
