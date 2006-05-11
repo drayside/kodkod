@@ -11,6 +11,7 @@ import kodkod.util.ints.HomogenousSequence;
 import kodkod.util.ints.IndexedEntry;
 import kodkod.util.ints.IntIterator;
 import kodkod.util.ints.IntSet;
+import kodkod.util.ints.Ints;
 import kodkod.util.ints.RangeSequence;
 import kodkod.util.ints.SparseSequence;
 import kodkod.util.ints.TreeSequence;
@@ -53,10 +54,29 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	 * @effects this.dimensions' = dimensions && this.factory' = factory && 
 	 *          this.elements' = [0..dimensions.capacity)->one FALSE 
 	 */
-	private BooleanMatrix(final Dimensions dimensions, final BooleanFactory factory, SparseSequence<BooleanValue> seq) {
+	private BooleanMatrix(Dimensions dimensions, BooleanFactory factory, SparseSequence<BooleanValue> seq) {
 		this.dims = dimensions;
 		this.factory = factory;
 		this.cells = seq;
+	}
+	
+	/**
+	 * Constructs a new matrix with the given dimensions and factory, 
+	 * backed by a sparse sequence which can most efficiently hold
+	 * the elements storable in the sparse sequences s0 and s1.
+	 * @effects this.dimensions' = dimensions && this.factory' = factory && 
+	 *          this.elements' = [0..dimensions.capacity)->one FALSE 
+	 */
+	private BooleanMatrix(Dimensions d, BooleanFactory f, SparseSequence<BooleanValue> s0, SparseSequence<BooleanValue> s1) {
+		this.dims = d;
+		this.factory = f;
+		final Class<?> c0 = s0.getClass(), c1 = s1.getClass();
+		if (c0!=c1 || c0==RangeSequence.class) 
+			this.cells = new  RangeSequence<BooleanValue>();
+		else if (c0==HomogenousSequence.class) 
+			this.cells = new HomogenousSequence<BooleanValue>(TRUE, Ints.bestSet(d.capacity())); 
+		else 
+			this.cells = new TreeSequence<BooleanValue>();	
 	}
 	
 	/**  
@@ -102,23 +122,6 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 				cells.put(iter.nextInt(), TRUE);
 			}
 		}
-	}
-	
-	/**
-	 * Returns a new empty sparse sequence which can most efficiently hold
-	 * the elements storable in the sparse sequences s0 and s1.
-	 * @return a new empty sparse sequence which can most efficiently hold
-	 * the elements storable in the sparse sequences s0 and s1.
-	 */
-	private static SparseSequence<BooleanValue> make(SparseSequence<BooleanValue> s0, SparseSequence<BooleanValue> s1) {
-		final Class<?> c0 = s0.getClass(), c1 = s1.getClass();
-		if (c0!=c1 || c0==RangeSequence.class) 
-			return new  RangeSequence<BooleanValue>();
-		else if (c0==HomogenousSequence.class) 
-			return new HomogenousSequence<BooleanValue>(TRUE); 
-		else 
-			return new TreeSequence<BooleanValue>();	
-		
 	}
 	
 	/**
@@ -188,7 +191,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
      *                              all i: [0..m.dimensions.capacity) | m.elements[i] = !this.elements[i] }
      */
 	public final BooleanMatrix not() {
-		final BooleanMatrix negation = new BooleanMatrix(dims, factory, make(cells, cells));
+		final BooleanMatrix negation = new BooleanMatrix(dims, factory, cells, cells);
 		
 		for (int i = 0, max = dims.capacity(); i < max; i++) {
 			BooleanValue v = cells.get(i);
@@ -228,7 +231,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	 */
 	public final BooleanMatrix and(BooleanMatrix  other) {
 		checkFactory(other.factory); checkDimensions(other.dims);
-		final BooleanMatrix ret = new BooleanMatrix(dims, factory, make(cells, other.cells));
+		final BooleanMatrix ret = new BooleanMatrix(dims, factory, cells, other.cells);
 		final  SparseSequence<BooleanValue> s1 = other.cells;
 		for(IndexedEntry<BooleanValue> e0 : cells) {
 			BooleanValue v1 = s1.get(e0.index());
@@ -251,7 +254,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	 */
 	public final BooleanMatrix or(BooleanMatrix  other) {
 		checkFactory(other.factory); checkDimensions(other.dims);
-		final BooleanMatrix ret = new BooleanMatrix(dims, factory, make(cells, other.cells));
+		final BooleanMatrix ret = new BooleanMatrix(dims, factory, cells, other.cells);
 		final SparseSequence<BooleanValue> retSeq = ret.cells;
 		for(IndexedEntry<BooleanValue> e0 : cells) {
 			BooleanValue v1 = other.cells.get(e0.index());
@@ -279,7 +282,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	public final BooleanMatrix cross(final BooleanMatrix other) {
 		checkFactory(other.factory);
 		
-		final BooleanMatrix ret =  new BooleanMatrix(dims.cross(other.dims), factory, make(cells, other.cells));
+		final BooleanMatrix ret =  new BooleanMatrix(dims.cross(other.dims), factory, cells, other.cells);
 		if (cells.isEmpty() || other.cells.isEmpty()) return ret;
 		
 		final int ocap = other.dims.capacity();
@@ -318,7 +321,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	public final BooleanMatrix dot(final BooleanMatrix other) {  
 		checkFactory(other.factory);
 		
-		final BooleanMatrix ret =  new BooleanMatrix(dims.dot(other.dims), factory, make(cells, other.cells));
+		final BooleanMatrix ret =  new BooleanMatrix(dims.dot(other.dims), factory, cells, other.cells);
 		if (cells.isEmpty() || other.cells.isEmpty()) return ret;
 		
 		final SparseSequence<BooleanValue> retCells = ret.cells;
@@ -421,7 +424,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	 */
 	public final BooleanMatrix difference(BooleanMatrix other) {
 		checkFactory(other.factory); checkDimensions(other.dims);
-		final BooleanMatrix ret = new BooleanMatrix(dims, factory, make(cells, other.cells));
+		final BooleanMatrix ret = new BooleanMatrix(dims, factory, cells, other.cells);
 		for(IndexedEntry<BooleanValue> e0 : cells) {
 			ret.fastSet(e0.index(), factory.fastCompose(AND, e0.value(), other.fastGet(e0.index()).negation()));
 		}
@@ -466,7 +469,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
      * @throws UnsupportedOperationException - #this.dimensions != 2
      */
 	public final BooleanMatrix transpose() {
-		final BooleanMatrix ret = new BooleanMatrix(dims.transpose(), factory, make(cells, cells));
+		final BooleanMatrix ret = new BooleanMatrix(dims.transpose(), factory, cells, cells);
 		final int rows = dims.dimension(0), cols = dims.dimension(1);
 		for (IndexedEntry<BooleanValue> e0 : cells) {
 			ret.cells.put((e0.index()%cols)*rows + (e0.index()/cols), e0.value());
@@ -538,7 +541,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	public final BooleanMatrix override(BooleanMatrix other) {
 		checkFactory(other.factory); checkDimensions(other.dims);
 		if (other.cells.isEmpty()) return this.clone();
-		final BooleanMatrix ret = new BooleanMatrix(dims, factory, make(cells, other.cells));
+		final BooleanMatrix ret = new BooleanMatrix(dims, factory, cells, other.cells);
 		ret.cells.putAll(other.cells);
 		final int rowLength = dims.capacity() / dims.dimension(0);
 		int row = -1;
