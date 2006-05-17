@@ -302,7 +302,8 @@ final class IntTree<N extends IntTree.Node<N>> implements Cloneable {
 			y.left = z.left;
 			y.right = z.right;
 			y.parent = z.parent;
-			z.left.parent = z.right.parent = y; 
+			if (z.left!=NIL) 			{ z.left.parent = y; }
+			if (z.right!=NIL) 			{ z.right.parent = y; }
 			if (z.parent==NIL) 			{ root = y; }
 			else if (z == z.parent.left) 	{ z.parent.left = y; }
 			else 						{ z.parent.right = y; }
