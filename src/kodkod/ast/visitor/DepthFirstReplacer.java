@@ -6,6 +6,7 @@ package kodkod.ast.visitor;
 
 import kodkod.ast.BinaryExpression;
 import kodkod.ast.BinaryFormula;
+import kodkod.ast.BinaryIntExpression;
 import kodkod.ast.ComparisonFormula;
 import kodkod.ast.Comprehension;
 import kodkod.ast.ConstantExpression;
@@ -15,6 +16,10 @@ import kodkod.ast.Decls;
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
 import kodkod.ast.IfExpression;
+import kodkod.ast.IntCastExpression;
+import kodkod.ast.IntComparisonFormula;
+import kodkod.ast.IntConstant;
+import kodkod.ast.IntExpression;
 import kodkod.ast.Multiplicity;
 import kodkod.ast.MultiplicityFormula;
 import kodkod.ast.Node;
@@ -23,6 +28,7 @@ import kodkod.ast.QuantifiedFormula;
 import kodkod.ast.Relation;
 import kodkod.ast.RelationPredicate;
 import kodkod.ast.UnaryExpression;
+import kodkod.ast.UnaryIntExpression;
 import kodkod.ast.Variable;
 
 
@@ -32,39 +38,31 @@ import kodkod.ast.Variable;
  * A depth first replacer.  The default implementation
  * returns the tree to which it is applied.  Reference 
  * equality is used to determine if two nodes are the same.
- * Subclasses may choose to cache replacements for certain
- * nodes by properly implementing the lookup and cache
- * methods.  The default implementation does not perform
- * any caching.
- * @specfield cache: Node lone->lone Node
+ * 
+ * @specfield cached: set Node // result of visiting these nodes will be cached
+ * @specfield cache: cached ->lone Node
  * @author Emina Torlak 
  */
-public abstract class DepthFirstReplacer implements ReturnVisitor<Expression, Formula, Decls> {
+public abstract class DepthFirstReplacer implements ReturnVisitor<Expression, Formula, Decls, IntExpression> {
 	
 	protected DepthFirstReplacer() { }
 	
 	/**
 	 * If the given node has already been visited and its replacement
 	 * cached, the cached value is returned.  Otherwise, null is returned.
-	 * The default implementation does not perform any caching so this
-	 * method simply returns null.
 	 * @return this.cache[node]
 	 */
-	protected <N extends Node> N lookup(N node) {
-		return null;
-	}
+	protected abstract <N extends Node> N lookup(N node) ;
 	
 	/**
 	 * Caches the given replacement for the specified node, if this is 
 	 * a caching visitor.  Otherwise does nothing.  The method returns
-	 * the replacement node.  The default implemention just returns
-	 * the replacement node.
-	 * @effects this.cache' = this.cache ++ node->replacement || this.cache' = this.cache
+	 * the replacement node.  
+	 * @effects node in this.cached => this.cache' = this.cache ++ node->replacement,
+	 *           this.cache' = this.cache
 	 * @return replacement
 	 */
-	protected <N extends Node> N cache(N node, N replacement) {
-		return replacement;
-	}
+	protected abstract <N extends Node> N cache(N node, N replacement);
 	
 	/** 
 	 * Calls lookup(decls) and returns the cached value, if any.  
@@ -222,6 +220,87 @@ public abstract class DepthFirstReplacer implements ReturnVisitor<Expression, Fo
 		return cache(ifExpr,ret);
 	}
 
+	/** 
+	 * Calls lookup(castExpr) and returns the cached value, if any.  
+	 * If a replacement has not been cached, visits the expression's 
+	 * child.  If nothing changes, the argument is cached and
+	 * returned, otherwise a replacement expression is cached and returned.
+	 * @return { i: IntCastExpression | i.intexpr = castExpr.intexpr.accept(this)}
+	 */
+    public Expression visit(IntCastExpression castExpr) {
+    		Expression ret = lookup(castExpr);
+    		if (ret==null) {
+    			final IntExpression intexpr = castExpr.intexpr().accept(this);
+    			ret = intexpr==castExpr.intexpr() ? castExpr : 
+    				  intexpr.toExpression();
+    		}
+    		return cache(castExpr, ret);
+    }
+    
+    /** 
+	 * Calls lookup(intconst) and returns the cached value, if any.  
+	 * If a replacement has not been cached, the constant is cached and returned.
+	 * @return intconst
+	 */
+    public IntExpression visit(IntConstant intconst) {
+    		IntExpression ret = lookup(intconst);
+    		return ret==null ? cache(intconst, intconst) : intconst;
+    }
+    
+    /** 
+	 * Calls lookup(intExpr) and returns the cached value, if any.  
+	 * If a replacement has not been cached, visits the expression's 
+	 * child.  If nothing changes, the argument is cached and
+	 * returned, otherwise a replacement expression is cached and returned.
+	 * @return { i: UnaryIntExpression | i.expression = intExpr.expression.accept(this)}
+	 */
+    public IntExpression visit(UnaryIntExpression intExpr) {
+    		IntExpression ret = lookup(intExpr);
+    		if (ret==null) {
+    			final Expression expr = intExpr.expression().accept(this);
+    			ret = expr==intExpr.expression() ? intExpr : expr.apply(intExpr.op());
+    		}
+    		return cache(intExpr, ret);
+    }
+    /** 
+	 * Calls lookup(intExpr) and returns the cached value, if any.  
+	 * If a replacement has not been cached, visits the expression's 
+	 * children.  If nothing changes, the argument is cached and
+	 * returned, otherwise a replacement expression is cached and returned.
+	 * @return { b: BinaryIntExpression | b.left = intExpr.left.accept(this) &&
+	 *                                    b.right = intExpr.right.accept(this) && b.op = intExpr.op }
+	 */
+    public IntExpression visit(BinaryIntExpression intExpr) {
+    		IntExpression ret = lookup(intExpr);
+		if (ret==null) {
+			final IntExpression left  = intExpr.left().accept(this);
+			final IntExpression right = intExpr.right().accept(this);
+			ret = (left==intExpr.left() && right==intExpr.right()) ?
+					intExpr : left.compose(intExpr.op(), right);
+		}
+		return cache(intExpr,ret);
+    }
+    /** 
+     * 
+	 * Calls lookup(intComp) and returns the cached value, if any.  
+	 * If a replacement has not been cached, visits the formula's 
+	 * children.  If nothing changes, the argument is cached and
+	 * returned, otherwise a replacement formula is cached and returned.
+	 * @return { c: IntComparisonFormula | c.left = intComp.left.accept(this) &&
+	 *                                     c.right = intComp.right.accept(this) &&
+	 *                                     c.op = intComp.op }
+	 */
+    public Formula visit(IntComparisonFormula intComp) {
+    		Formula ret = lookup(intComp);
+		if (ret==null) {
+			final IntExpression left  = intComp.left().accept(this);
+			final IntExpression right = intComp.right().accept(this);
+			ret =  (left==intComp.left() && right==intComp.right()) ? 
+					intComp : left.compare(intComp.op(), right);
+		}
+		return cache(intComp,ret);
+    }
+	
 	/**
 	 * Returns the constant.
 	 * @return constant

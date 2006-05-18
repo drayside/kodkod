@@ -1,5 +1,6 @@
 package kodkod.ast;
 
+
 import kodkod.ast.visitor.ReturnVisitor;
 import kodkod.ast.visitor.VoidVisitor;
 
@@ -74,9 +75,10 @@ public abstract class ConstantExpression extends LeafExpression {
      * @see kodkod.ast.Node#accept(kodkod.ast.visitor.ReturnVisitor)
      */
 	@Override
-	public <E, F, D> E accept(ReturnVisitor<E, F, D> visitor) {
+	public <E, F, D, I> E accept(ReturnVisitor<E, F, D, I> visitor) {
 		return visitor.visit(this);
 	}
+	
 	
 	/**
      * Accepts the given visitor.

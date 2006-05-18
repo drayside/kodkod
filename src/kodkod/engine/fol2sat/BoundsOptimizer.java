@@ -12,6 +12,7 @@ import java.util.Set;
 
 import kodkod.ast.Relation;
 import kodkod.ast.RelationPredicate;
+import static kodkod.ast.RelationPredicate.Name.*;
 import kodkod.instance.Bounds;
 import kodkod.instance.TupleFactory;
 import kodkod.instance.TupleSet;
@@ -79,6 +80,43 @@ final class BoundsOptimizer {
 				
 		final BoundsOptimizer opt = new BoundsOptimizer(bounds, relations);
 		opt.computePartitions();
+		
+		for(RelationPredicate.TotalOrdering pred : 
+			opt.sort(totals.toArray(new RelationPredicate.TotalOrdering[totals.size()]))) {
+			opt.minimizeTotalOrder(pred);
+		}
+		
+		for(RelationPredicate.Acyclic pred : 
+			opt.sort(acyclics.toArray(new RelationPredicate.Acyclic[acyclics.size()]))) {
+			opt.minimizeAcyclic(pred);
+		}
+		
+		// convert the list of remaining partitions into a set of unmodifiable partitions
+		final Set<IntSet> partSet = new IdentityHashSet<IntSet>(opt.parts.size());
+		for(IntSet s : opt.parts) {
+			partSet.add(Ints.unmodifiableIntSet(s));
+		}
+		
+		return partSet;
+	}
+	
+	/**
+	 * Optimizes the given bounds as described above, and returns
+	 * the partitions on which symmetries have not been broken.
+	 * @return the partitions on which symmetries have not been broken
+	 * @effects optimizes the given bounds
+	 * @throws NullPointerException - any of the arguments are null
+	 * @throws UnsupportedOperationException - bounds is unmodifiable
+	 * @throws IllegalArgumentException - some relations - bounds.relations
+	 * @throws IllegalArgumentException - some relations - preds[TOTAL_ORDERING].(relation + first + last + ordered)
+	 * @throws IllegalArgumentException - some relations - preds[ACYCLIC].relation
+	 */
+	static Set<IntSet> optimize(Bounds bounds, Set<Relation> relations, 
+			Map<RelationPredicate.Name, Set<RelationPredicate>> preds) {
+		final BoundsOptimizer opt = new BoundsOptimizer(bounds, relations);
+		opt.computePartitions();
+		final Set<RelationPredicate> totals = preds.get(TOTAL_ORDERING);
+		final Set<RelationPredicate> acyclics = preds.get(ACYCLIC);
 		
 		for(RelationPredicate.TotalOrdering pred : 
 			opt.sort(totals.toArray(new RelationPredicate.TotalOrdering[totals.size()]))) {

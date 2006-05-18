@@ -11,6 +11,7 @@ import java.util.Set;
 
 import kodkod.ast.BinaryExpression;
 import kodkod.ast.BinaryFormula;
+import kodkod.ast.BinaryIntExpression;
 import kodkod.ast.ComparisonFormula;
 import kodkod.ast.Comprehension;
 import kodkod.ast.ConstantExpression;
@@ -20,6 +21,9 @@ import kodkod.ast.Decls;
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
 import kodkod.ast.IfExpression;
+import kodkod.ast.IntCastExpression;
+import kodkod.ast.IntComparisonFormula;
+import kodkod.ast.IntConstant;
 import kodkod.ast.Multiplicity;
 import kodkod.ast.MultiplicityFormula;
 import kodkod.ast.Node;
@@ -28,6 +32,7 @@ import kodkod.ast.QuantifiedFormula;
 import kodkod.ast.Relation;
 import kodkod.ast.RelationPredicate;
 import kodkod.ast.UnaryExpression;
+import kodkod.ast.UnaryIntExpression;
 import kodkod.ast.Variable;
 import kodkod.ast.visitor.ReturnVisitor;
 import kodkod.engine.bool.BooleanAccumulator;
@@ -53,31 +58,29 @@ final class Fol2Bool {
 	private Fol2Bool() {}
 	
 	/**
-	 * Translates the given first order formula or expression into a boolean
-	 * formula or matrix, using the provided allocator and structural information.
-	 * @requires sharedInternalNodes = {n: Node | #(n.~children & node.*children) > 1 } 
-	 * @requires allocator.relations = n.*children & Relation
+	 * Translates the given annotated formula or expression into a boolean
+	 * formula or matrix, using the provided allocator.
+	 * @requires allocator.relations = AnnotatedNode.relations(annotated)
 	 * @return {transl: T | 
-	 *           node in Formula => transl in BooleanValue, 
-	 *           node in Expression => transl in BooleanMatrix}
+	 *           annotated.node in Formula => transl in BooleanValue, 
+	 *           annotated.node in Expression => transl in BooleanMatrix}
 	 */
 	@SuppressWarnings("unchecked")
-	static final <T> T translate(Node node, Set<Node> sharedInternalNodes, BooleanFormulaAllocator allocator) {
-		return (T) node.accept(new Translator(allocator, node, sharedInternalNodes));
+	static final <T> T translate(AnnotatedNode<? extends Node> annotated, BooleanFormulaAllocator allocator) {
+		return (T) annotated.node().accept(new Translator(annotated, allocator));
 	}
 	
 	/**
-	 * Translates the given first order formula into a boolean circuit using
+	 * Translates the given annotated formula into a boolean circuit using
 	 * the provided allocator and structural information.  Additionally, it 
 	 * keeps track of which variables comprise the descendents of the formula,
 	 * and which of its descendents are reduced to constants during translation.
-	 * @requires sharedInternalNodes = {n: Node | #(n.~children & node.*children) > 1 } 
-	 * @requires allocator.relations = n.*children & Relation
+	 * @requires allocator.relations = AnnotatedNode.relations(annotated)
 	 * @return {c: AnnotatedCircuit | c.formula = formula } 
 	 */
-	static final AnnotatedCircuit translateAndTrack(Formula formula, Set<Node> sharedInternalNodes, BooleanFormulaAllocator allocator) {
-		final TrackingTranslator t = new TrackingTranslator(allocator, formula, sharedInternalNodes);
-		return new AnnotatedCircuit(formula.accept(t), t.varUsage, t.trueFormulas, t.falseFormulas);
+	static final AnnotatedCircuit translateAndTrack(AnnotatedNode<Formula> annotated, BooleanFormulaAllocator allocator) {
+		final TrackingTranslator t = new TrackingTranslator(annotated, allocator);
+		return new AnnotatedCircuit(annotated.node().accept(t), t.varUsage, t.trueFormulas, t.falseFormulas);
 	}
 	
 	/**
@@ -146,12 +149,10 @@ final class Fol2Bool {
 		
 		/**
 		 * Constructs a new translator that will use the given allocator to perform the 
-		 * translation of the specified node.  The set sharedInternalNodes is used to 
-		 * determine which translations should be cached.
-		 * @requires sharedInternalNodes = {n: Node | #(n.~children & node.*children) > 1 } 
+		 * translation of the specified annotated node.
 		 */    
-		TrackingTranslator(BooleanFormulaAllocator allocator, Node node, Set<Node> sharedInternalNodes) {
-			super(allocator, node, sharedInternalNodes);
+		TrackingTranslator(AnnotatedNode<? extends Node> annotated, BooleanFormulaAllocator allocator) {
+			super(annotated, allocator);
 			this.varUsage = new IdentityHashMap<Node,IntSet>();
 			this.trueFormulas = new IdentityHashSet<Formula>();
 			this.falseFormulas = new IdentityHashSet<Formula>();
@@ -228,7 +229,7 @@ final class Fol2Bool {
 	 * The helper class that performs the translation.  This
 	 * version of the translator does not track variables.
 	 */
-	private static class Translator implements ReturnVisitor<BooleanMatrix, BooleanValue, Object> {
+	private static class Translator implements ReturnVisitor<BooleanMatrix, BooleanValue, Object, BooleanValue[]> {
 		
 		final BooleanFormulaAllocator allocator;
 		
@@ -237,20 +238,17 @@ final class Fol2Bool {
 		Environment<BooleanMatrix> env;
 		
 		final TranslationCache cache;
-		
+	
 		/**
 		 * Constructs a new translator that will use the given allocator to perform the 
-		 * translation of the specified node.  The set sharedInternalNodes is used to 
-		 * determine which translations should be cached.
-		 * @requires sharedInternalNodes = {n: Node | #(n.~children & node.*children) > 1 } 
-		 */    
-		Translator(final BooleanFormulaAllocator allocator, Node node, Set<Node> sharedInternalNodes) {
-			if (allocator==null) throw new NullPointerException("allocator==null");
+		 * translation of the specified annotated node. 
+		 */   
+		Translator(AnnotatedNode<? extends Node> annotated, BooleanFormulaAllocator allocator) {
 			this.allocator = allocator;
 			this.env = new Environment<BooleanMatrix>();
-			this.cache = new TranslationCache(node, sharedInternalNodes);
+			this.cache = new TranslationCache(annotated);
 		}
-	
+		
 		/**
 		 * Retrieves the cached translation for the given node, if any.
 		 * Otherwise returns null.
@@ -678,6 +676,26 @@ final class Fol2Bool {
 		public final BooleanValue visit(RelationPredicate pred) {
 			BooleanValue ret = retrieve(pred);
 			return ret != null ? ret : record(pred, pred.toConstraints().accept(this));
+		}
+
+		public BooleanMatrix visit(IntCastExpression castExpr) {
+			throw new UnsupportedOperationException("ints not supported");
+		}
+
+		public BooleanValue[] visit(IntConstant intConst) {
+			throw new UnsupportedOperationException("ints not supported");
+		}
+
+		public BooleanValue[] visit(UnaryIntExpression intExpr) {
+			throw new UnsupportedOperationException("ints not supported");
+		}
+
+		public BooleanValue[] visit(BinaryIntExpression intExpr) {
+			throw new UnsupportedOperationException("ints not supported");
+		}
+
+		public BooleanValue visit(IntComparisonFormula intComp) {
+			throw new UnsupportedOperationException("ints not supported");
 		}
 	}
 }

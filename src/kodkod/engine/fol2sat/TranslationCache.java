@@ -9,6 +9,7 @@ import java.util.Set;
 
 import kodkod.ast.BinaryExpression;
 import kodkod.ast.BinaryFormula;
+import kodkod.ast.BinaryIntExpression;
 import kodkod.ast.ComparisonFormula;
 import kodkod.ast.Comprehension;
 import kodkod.ast.ConstantExpression;
@@ -17,6 +18,9 @@ import kodkod.ast.Decl;
 import kodkod.ast.Decls;
 import kodkod.ast.Formula;
 import kodkod.ast.IfExpression;
+import kodkod.ast.IntCastExpression;
+import kodkod.ast.IntComparisonFormula;
+import kodkod.ast.IntConstant;
 import kodkod.ast.MultiplicityFormula;
 import kodkod.ast.Node;
 import kodkod.ast.NotFormula;
@@ -24,6 +28,7 @@ import kodkod.ast.QuantifiedFormula;
 import kodkod.ast.Relation;
 import kodkod.ast.RelationPredicate;
 import kodkod.ast.UnaryExpression;
+import kodkod.ast.UnaryIntExpression;
 import kodkod.ast.Variable;
 import kodkod.ast.visitor.ReturnVisitor;
 import kodkod.engine.bool.BooleanConstant;
@@ -52,14 +57,13 @@ final class TranslationCache {
 	private final Map<Node,TranslationInfo> cache;
 	
 	/**
-	 * Constructs a new translation cache for the given node,
-	 * using the provided structural information.
-	 * @requires sharedInternalNodes = {n: Node | #(n.~children & node.*children) > 1 }
-	 * @effects this.node' = node 
+	 * Constructs a new translation cache for the given annotated node.
+	 * @effects this.node' = annotated.node 
 	 */
-	@SuppressWarnings("unchecked") TranslationCache(Node node, Set<Node> sharedInternalNodes) {
-		final Collector collector = new Collector(sharedInternalNodes);
-		node.accept(collector);
+	@SuppressWarnings("unchecked") 
+	TranslationCache(AnnotatedNode<? extends Node> annotated) {
+		final Collector collector = new Collector(annotated.sharedNodes());
+		annotated.node().accept(collector);
 		for(Map.Entry<Node, Object> e :  ((Map<Node, Object>)((Map)collector.cachingInfo())).entrySet()) {
 			Set<Variable> freeVars = (Set<Variable>)e.getValue();
 			if (freeVars.isEmpty())
@@ -68,7 +72,6 @@ final class TranslationCache {
 				e.setValue(new MultiVarTranslationInfo(freeVars));
 		}
 		this.cache = (Map<Node, TranslationInfo>)((Map) collector.cachingInfo());
-//		System.out.println(cache);
 	}
 
 	/**
@@ -227,7 +230,7 @@ final class TranslationCache {
 	 * @specfield: node: Node // node for which we are collecting caching information
 	 * @specfield freeVarMap: Node -> lone Set<Variable>
 	 */
-	private static final class Collector implements ReturnVisitor<Set<Variable>,Set<Variable>,Set<Variable>> {
+	private static final class Collector implements ReturnVisitor<Set<Variable>,Set<Variable>,Set<Variable>,Set<Variable>> {
 		/* Holds the variables that are currently in scope, with the
 		 * variable at the top of the stack being the last declared variable. */
 		private final ArrayStack<Variable> varsInScope;
@@ -264,7 +267,7 @@ final class TranslationCache {
 		 * Otherwise, null is returned.
 		 * @return freeVarMap[node]
 		 */
-		private final Set<Variable> cachedVars(Node node) {
+		private final Set<Variable> lookup(Node node) {
 			return freeVarMap.get(node);
 		}
 		
@@ -323,7 +326,7 @@ final class TranslationCache {
 		 */
 		@SuppressWarnings("unchecked")
 		public Set<Variable> visit(Decls decls) {
-			Set<Variable> vars = cachedVars(decls);
+			Set<Variable> vars = lookup(decls);
 			if (vars != null) return vars;
 			
 			vars = setOfSize(decls.size());
@@ -339,7 +342,7 @@ final class TranslationCache {
 		 * @return freeVars(decl.expression)
 		 */
 		public Set<Variable> visit(Decl decl) {
-			final Set<Variable> vars = cachedVars(decl);
+			final Set<Variable> vars = lookup(decl);
 			return vars != null ? vars : 
 				   cache(decl, decl.expression().accept(this));
 		}
@@ -374,7 +377,7 @@ final class TranslationCache {
 		 * @return freeVars(binExpr.left) + freeVars(bin.right)
 		 */
 		public Set<Variable> visit(BinaryExpression binExpr) {
-			Set<Variable> vars = cachedVars(binExpr);
+			Set<Variable> vars = lookup(binExpr);
 			if (vars != null) return vars;
 			
 			final Set<Variable> left = binExpr.left().accept(this);
@@ -390,7 +393,7 @@ final class TranslationCache {
 		 * @return freeVars(unaryExpr.expression)
 		 */
 		public Set<Variable> visit(UnaryExpression unaryExpr) {
-			final Set<Variable> vars = cachedVars(unaryExpr);
+			final Set<Variable> vars = lookup(unaryExpr);
 			return vars != null ? vars : 
 				   cache(unaryExpr, unaryExpr.expression().accept(this));
 		}
@@ -402,7 +405,7 @@ final class TranslationCache {
 		 */
 		@SuppressWarnings("unchecked")
 		private Set<Variable> visit(Node creator, Decls decls, Formula formula) {
-			Set<Variable> vars = cachedVars(creator);
+			Set<Variable> vars = lookup(creator);
 			if (vars!=null) return vars;
 			
 			// collect the free variables in the declaration expressions;
@@ -449,7 +452,7 @@ final class TranslationCache {
 		 * @return freeVars(ifExpr.condition) + freeVars(ifExpr.thenExpr) + freeVars(ifExpr.elseExpr)
 		 */
 		public Set<Variable> visit(IfExpression ifExpr) {
-			Set<Variable> vars = cachedVars(ifExpr);
+			Set<Variable> vars = lookup(ifExpr);
 			if (vars != null) return vars;
 			
 			final Set<Variable> condition = ifExpr.condition().accept(this);
@@ -476,7 +479,7 @@ final class TranslationCache {
 		 * @return freeVars(binFormula.left) + freeVars(binFormula.right) 
 		 */
 		public Set<Variable> visit(BinaryFormula binFormula) {
-			Set<Variable> vars = cachedVars(binFormula);
+			Set<Variable> vars = lookup(binFormula);
 			if (vars != null) return vars;
 			
 			final Set<Variable> left = binFormula.left().accept(this);
@@ -492,7 +495,7 @@ final class TranslationCache {
 		 * @return freeVars(not.formula)
 		 */
 		public Set<Variable> visit(NotFormula not) {
-			final Set<Variable> vars = cachedVars(not);
+			final Set<Variable> vars = lookup(not);
 			return vars != null ? vars :  
 				   cache(not, not.formula().accept(this));
 		}
@@ -510,7 +513,7 @@ final class TranslationCache {
 		 * @return freeVars(compFormula.left) + freeVars(compFormula.right) 
 		 */
 		public Set<Variable> visit(ComparisonFormula compFormula) {
-			Set<Variable> vars = cachedVars(compFormula);
+			Set<Variable> vars = lookup(compFormula);
 			if (vars != null) return vars;
 			
 			final Set<Variable> left = compFormula.left().accept(this);
@@ -526,7 +529,7 @@ final class TranslationCache {
 		 * @return freeVars(multFormula.expression)
 		 */
 		public Set<Variable> visit(MultiplicityFormula multFormula) {
-			final Set<Variable> vars = cachedVars(multFormula);
+			final Set<Variable> vars = lookup(multFormula);
 			return vars != null ? vars : 
 				   cache(multFormula, multFormula.expression().accept(this));
 		}
@@ -538,7 +541,7 @@ final class TranslationCache {
 		public Set<Variable> visit(RelationPredicate pred) {
 			if (pred.name() != RelationPredicate.Name.FUNCTION) 
 				return Collections.emptySet();
-			Set<Variable> vars = cachedVars(pred);
+			Set<Variable> vars = lookup(pred);
 			if (vars != null) return vars;
 			
 			final RelationPredicate.Function fp = (RelationPredicate.Function) pred;
@@ -548,6 +551,47 @@ final class TranslationCache {
 			vars.addAll(domain);
 			vars.addAll(range);
 			return cache(pred, vars);
+		}
+
+		/**
+		 * Returns the empty set.
+		 * @return {}
+		 */
+		public Set<Variable> visit(IntCastExpression castExpr) {
+			return Collections.emptySet();
+		}
+
+		/**
+		 * Returns the empty set.
+		 * @return {}
+		 */
+		public Set<Variable> visit(IntConstant intConst) {
+			return Collections.emptySet();
+		}
+
+		/**
+		 * Returns the free variables in intExpr.expression.
+		 * @return freeVars(intExpr.expression)
+		 */
+		public Set<Variable> visit(UnaryIntExpression intExpr) {
+			Set<Variable> ret = lookup(intExpr);
+			return ret != null ? ret : cache(intExpr, intExpr.expression().accept(this));
+		}
+
+		/**
+		 * Returns the empty set.
+		 * @return {}
+		 */
+		public Set<Variable> visit(BinaryIntExpression intExpr) {
+			return Collections.emptySet();
+		}
+
+		/**
+		 * Returns the empty set.
+		 * @return {}
+		 */
+		public Set<Variable> visit(IntComparisonFormula intComp) {
+			return Collections.emptySet();
 		}
 	}
 }

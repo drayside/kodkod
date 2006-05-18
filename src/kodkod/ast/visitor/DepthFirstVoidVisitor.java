@@ -2,6 +2,7 @@ package kodkod.ast.visitor;
 
 import kodkod.ast.BinaryExpression;
 import kodkod.ast.BinaryFormula;
+import kodkod.ast.BinaryIntExpression;
 import kodkod.ast.ComparisonFormula;
 import kodkod.ast.Comprehension;
 import kodkod.ast.ConstantExpression;
@@ -9,165 +10,260 @@ import kodkod.ast.ConstantFormula;
 import kodkod.ast.Decl;
 import kodkod.ast.Decls;
 import kodkod.ast.IfExpression;
+import kodkod.ast.IntCastExpression;
+import kodkod.ast.IntComparisonFormula;
+import kodkod.ast.IntConstant;
 import kodkod.ast.MultiplicityFormula;
+import kodkod.ast.Node;
 import kodkod.ast.NotFormula;
 import kodkod.ast.QuantifiedFormula;
 import kodkod.ast.Relation;
 import kodkod.ast.RelationPredicate;
 import kodkod.ast.UnaryExpression;
+import kodkod.ast.UnaryIntExpression;
 import kodkod.ast.Variable;
 
 /** 
- * Implements the depth first traversal of the AST.  Each node is
- * visited once for each parent.  That is, if a node has exactly one
- * parent, it is visited exactly once.  If it is status by two parents,
- * it is visited twice, following each of the parents' child pointers.
+ * Implements a depth first traversal of the kodkod AST.  
  *
  * @author Emina Torlak 
  */
 public abstract class DepthFirstVoidVisitor implements VoidVisitor {
-
+	
 	protected DepthFirstVoidVisitor() {}
-
+	
 	/**
-	 * Visits all the children of the given declarations node.
+	 * Returns true if this node has already been visited. 
+	 * Otherwise returns false.  
+	 * @return true if this node has already been visited. 
+	 */
+	protected abstract boolean visited(Node n) ;
+	
+	/**
+	 * Visits all the children of the given declarations node if
+	 * this.visited(decls) returns false.  Otherwise does nothing.
 	 * @effects all d: declarations.declarations | d.variable.accept(this) && d.expression.accept(this)
 	 */
 	public void visit(Decls decls) {
-		for (Decl decl : decls) {
-			decl.accept(this);
+		if (!visited(decls)) {
+			for (Decl decl : decls) {
+				decl.accept(this);
+			}
 		}
 	}
-
+	
 	/**
-	 * Visits the variable and expression of this decl.
+	 * Visits the variable and expression of this decl if
+	 * this.visited(decl) returns false.  Otherwise does nothing.
 	 * @effects decl.variable.accept(this) && decl.expression.accept(this)
 	 */
 	public void visit(Decl decl) {
-		decl.variable().accept(this);
-		decl.expression().accept(this);
+		if (!visited(decl)) {
+			decl.variable().accept(this);
+			decl.expression().accept(this);
+		}
 	}
-
+	
 	/**
 	 * Does nothing.
 	 */
 	public void visit(Relation relation) {}
-
+	
 	/**
 	 * Does nothing.
 	 */
 	public void visit(Variable variable) {}
-
+	
 	/**
 	 * Does nothing.
 	 */
 	public void visit(ConstantExpression constExpr) {}
-
+	
 	/**
-	 * Visits the left and right subexpressions.
+	 * Visits the left and right subexpressions  if
+	 * this.visited(binExpr) returns false.  Otherwise does nothing.
 	 * @effects binExpr.left.accept(this) && binExpr.right.accept(this)
 	 */
 	public void visit(BinaryExpression binExpr) {
-		binExpr.left().accept(this);
-		binExpr.right().accept(this);
+		if (!visited(binExpr)) {
+			binExpr.left().accept(this);
+			binExpr.right().accept(this);
+		}
 	}
-
+	
 	/**
-	 * Visits the subexpression.
+	 * Visits the subexpression  if
+	 * this.visited(unaryExpr) returns false.  Otherwise does nothing.
 	 * @effects unaryExpr.expression.accept(this)
 	 */
 	public void visit(UnaryExpression unaryExpr) {
-		unaryExpr.expression().accept(this);
+		if (!visited(unaryExpr)) {
+			unaryExpr.expression().accept(this);
+		}
 	}
-
+	
 	/**
-	 * Visits the declarations and the formula.
+	 * Visits the declarations and the formula  if
+	 * this.visited(comprehension) returns false.  Otherwise does nothing.
 	 * @effects comprehension.declarations.accept(this) && comprehension.formula.accept(this)
 	 */
 	public void visit(Comprehension comprehension) {
-		comprehension.declarations().accept(this);
-		comprehension.formula().accept(this);
+		if (!visited(comprehension)) {
+			comprehension.declarations().accept(this);
+			comprehension.formula().accept(this);
+		}
 	}
-
+	
 	/**
-	 * Visits the if-condition, the then-expression, and the else-expression.
+	 * Visits the if-condition, the then-expression, and the else-expression  if
+	 * this.visited(ifExpr) returns false.  Otherwise does nothing.
 	 * @effects ifExpr.condition.accept(this) && ifExpr.thenExpr.accept(this) &&
 	 *          ifExpr.elseExpr.accept(this)
 	 */
 	public void visit(IfExpression ifExpr) {
-		ifExpr.condition().accept(this);
-		ifExpr.thenExpr().accept(this);
-		ifExpr.elseExpr().accept(this);
+		if (!visited(ifExpr)) {
+			ifExpr.condition().accept(this);
+			ifExpr.thenExpr().accept(this);
+			ifExpr.elseExpr().accept(this);
+		}
 	}
-
+	
 	/**
-	 * Visits the declarations and the formula.
+	 * Visits the intexpr  if
+	 * this.visited(castExpr) returns false.  Otherwise does nothing.
+	 * @effects castExpr.intexpr.accept(this)
+	 */
+	public void visit(IntCastExpression castExpr) {
+		if (!visited(castExpr)) {
+			castExpr.intexpr().accept(this);
+		}
+	}
+	
+	/**
+	 * Does nothing.
+	 */
+	public void visit(IntConstant intConst) {}
+	
+	/**
+	 * Visits intExpr.expression  if
+	 * this.visited(intExpr) returns false.  Otherwise does nothing.
+	 * @effects intExpr.expression.accept(this)
+	 */
+	public void visit(UnaryIntExpression intExpr) {
+		if (!visited(intExpr)) {
+			intExpr.expression().accept(this);
+		}
+	}
+	
+	/**
+	 * Visits the children of the given binary integer expression  if
+	 * this.visited(intExpr) returns false.  Otherwise does nothing.
+	 * @effects intExpr.left.accept(this) && intExpr.right.accept(this)
+	 */
+	public void visit(BinaryIntExpression intExpr) {
+		if (!visited(intExpr)) {
+			intExpr.left().accept(this);
+			intExpr.right().accept(this);
+		}
+	}
+	
+	/**
+	 * Visits the children of the given integer comparison formula  if
+	 * this.visited(intCpmp) returns false.  Otherwise does nothing.
+	 * @effects intComp.left.accept(this) && intComp.right.accept(this)
+	 */
+	public void visit(IntComparisonFormula intComp) {
+		if (!visited(intComp)) {
+			intComp.left().accept(this);
+			intComp.right().accept(this);
+		}
+	}
+	
+	/**
+	 * Visits the declarations and the formula  if
+	 * this.visited(quantFormula) returns false.  Otherwise does nothing.
 	 * @effects quantFormula.declarations.accept(this) && quantFormula.formula.accept(this)
 	 */
 	public void visit(QuantifiedFormula quantFormula) {
-		quantFormula.declarations().accept(this);
-		quantFormula.formula().accept(this);
+		if (!visited(quantFormula)) {
+			quantFormula.declarations().accept(this);
+			quantFormula.formula().accept(this);
+		}
 	}
-
+	
 	/**
-	 * Visits the left and right children.
+	 * Visits the left and right children  if
+	 * this.visited(binFormula) returns false.  Otherwise does nothing.
 	 * @effects binFormula.left.accept(this) && binFormula.right.accept(this)
 	 */
 	public void visit(BinaryFormula binFormula) {
-		binFormula.left().accept(this);
-		binFormula.right().accept(this);
+		if (!visited(binFormula)) {
+			binFormula.left().accept(this);
+			binFormula.right().accept(this);
+		}
 	}
-
+	
 	/**
-	 * Visits the subformula.
+	 * Visits the subformula  if
+	 * this.visited(not) returns false.  Otherwise does nothing.
 	 * @effects not.formula.accept(this)
 	 */
 	public void visit(NotFormula not) {
-		not.formula().accept(this);
+		if (!visited(not)) {
+			not.formula().accept(this);
+		}
 	}
-
+	
 	/**
 	 * Does nothing.
 	 */
 	public void visit(ConstantFormula constant) {}
-
+	
 	/**
-	 * Visits the left and right children.
+	 * Visits the left and right children  if
+	 * this.visited(compFormula) returns false.  Otherwise does nothing.
 	 * @effects compFormula.left.accept(this) && compFormula.right.accept(this)
 	 */
 	public void visit(ComparisonFormula compFormula) {
-		compFormula.left().accept(this);
-		compFormula.right().accept(this);
+		if (!visited(compFormula)) {
+			compFormula.left().accept(this);
+			compFormula.right().accept(this);
+		}
 	}
-
+	
 	/**
-	 * Visits the formula.
+	 * Visits the formula  if
+	 * this.visited(multFormula) returns false.  Otherwise does nothing.
 	 * @effects multFormula.expression.accept(this)
 	 */
 	public void visit(MultiplicityFormula multFormula) {
-		multFormula.expression().accept(this);
+		if (!visited(multFormula)) {
+			multFormula.expression().accept(this);
+		}
 	}
-
+	
 	/**
-	 * Visits the children of the predicate.
+	 * Visits the children of the predicate  if
+	 * this.visited(pred) returns false.  Otherwise does nothing.
 	 * @effects pred.relation.accept(this) && 
 	 *          (pred.name = FUNCTION => pred.domain.accept(this) && pred.range.accept(this)) && 
 	 *          (pred.name = TOTAL_ORDERING => 
 	 *            pred.ordered.accept(this) && pred.first.accept(this) && pred.last.accept(this) )
 	 */
 	public void visit(RelationPredicate pred) {
-		pred.relation().accept(this);
-		if (pred.name()==RelationPredicate.Name.FUNCTION) {
-			final RelationPredicate.Function fp = (RelationPredicate.Function) pred;
-			fp.domain().accept(this);
-			fp.range().accept(this);
-		} else if (pred.name()==RelationPredicate.Name.TOTAL_ORDERING) {
-			final RelationPredicate.TotalOrdering tp = (RelationPredicate.TotalOrdering) pred;
-			tp.ordered().accept(this);
-			tp.first().accept(this);
-			tp.last().accept(this);
+		if (!visited(pred)) {
+			pred.relation().accept(this);
+			if (pred.name()==RelationPredicate.Name.FUNCTION) {
+				final RelationPredicate.Function fp = (RelationPredicate.Function) pred;
+				fp.domain().accept(this);
+				fp.range().accept(this);
+			} else if (pred.name()==RelationPredicate.Name.TOTAL_ORDERING) {
+				final RelationPredicate.TotalOrdering tp = (RelationPredicate.TotalOrdering) pred;
+				tp.ordered().accept(this);
+				tp.first().accept(this);
+				tp.last().accept(this);
+			}
 		}
-
 	}
-
+	
 }

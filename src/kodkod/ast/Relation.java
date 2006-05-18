@@ -4,6 +4,7 @@
  */
 package kodkod.ast;
 
+
 import kodkod.ast.visitor.ReturnVisitor;
 import kodkod.ast.visitor.VoidVisitor;
 
@@ -78,10 +79,11 @@ public class Relation extends LeafExpression {
      * Accepts the given visitor and returns the result.
      * @see kodkod.ast.Node#accept(kodkod.ast.visitor.ReturnVisitor)
      */
-	public <E, F, D> E accept(ReturnVisitor<E, F, D> visitor) {
+	public <E, F, D, I> E accept(ReturnVisitor<E, F, D, I> visitor) {
 		return visitor.visit(this);
 	}
 	
+    
 	/**
      * Accepts the given visitor.
      * @see kodkod.ast.Node#accept(kodkod.ast.visitor.VoidVisitor)

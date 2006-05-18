@@ -57,10 +57,11 @@ final class BooleanVariableAllocator extends BooleanFormulaAllocator {
 	 * The function predicates are used to determine which relations 
 	 * can be compactly represented.
 	 * 
+	 * @requires preds.name() = RelationPredicate.Name.FUNCTION
 	 * @requires preds.relation in bounds.relations
 	 * @effects no this.formulas' 
 	 */
-	BooleanVariableAllocator(Bounds bounds, Set<RelationPredicate.Function> preds) {
+	BooleanVariableAllocator(Bounds bounds, Set<RelationPredicate> preds) {
 		this.bounds = bounds;
 		this.literals = new HashMap<Relation,IntRange>();
 		this.factory = BooleanFactory.factory(assignLiterals(bounds,literals));
@@ -70,7 +71,7 @@ final class BooleanVariableAllocator extends BooleanFormulaAllocator {
 	/**
 	 * @return preds.relation
 	 */
-	private static Set<Relation> extractRelations(Set<RelationPredicate.Function> preds) {
+	private static Set<Relation> extractRelations(Set<RelationPredicate> preds) {
 		final Set<Relation> rels = new IdentityHashSet<Relation>(preds.size());
 		for(RelationPredicate p : preds)
 			rels.add(p.relation());

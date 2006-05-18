@@ -61,9 +61,10 @@ public final class BinaryFormula extends Formula {
      * Accepts the given visitor and returns the result.
      * @see kodkod.ast.Node#accept(kodkod.ast.visitor.ReturnVisitor)
      */
-    public <E, F, D> F accept(ReturnVisitor<E, F, D> visitor) {
+    public <E, F, D, I> F accept(ReturnVisitor<E, F, D, I> visitor) {
         return visitor.visit(this);
     }
+    
     
     /**
      * Accepts the given visitor.
@@ -105,5 +106,7 @@ public final class BinaryFormula extends Formula {
         IMPLIES { public String toString() { return "=>"; }},
         IFF { public String toString() { return "<=>"; }}
     }
+
+   
 
 }

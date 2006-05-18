@@ -4,6 +4,7 @@
  */
 package kodkod.ast;
 
+
 import kodkod.ast.visitor.ReturnVisitor;
 import kodkod.ast.visitor.VoidVisitor;
 
@@ -64,9 +65,10 @@ public final class UnaryExpression extends Expression {
      * Accepts the given visitor and returns the result.
      * @see kodkod.ast.Node#accept(kodkod.ast.visitor.ReturnVisitor)
      */
-    public <E, F, D> E accept(ReturnVisitor<E, F, D> visitor){
-        return visitor.visit(this);
-    }
+    public <E, F, D, I> E accept(ReturnVisitor<E, F, D, I> visitor) {
+		return visitor.visit(this);
+	}
+   
     
     /**
      * Accepts the given visitor.
@@ -104,11 +106,7 @@ public final class UnaryExpression extends Expression {
         
         TRANSPOSE { public String toString() { return "~";}},
         CLOSURE { public String toString() { return "^";}},
-        REFLEXIVE_CLOSURE { public String toString() { return "*";}},
-        CARDINALITY { public String toString() { return "#";} 
-                      boolean applicable(int childArity) { return childArity > 0; }
-                      int arity(int childArity) { return 1; }
-        };
+        REFLEXIVE_CLOSURE { public String toString() { return "*";}};
         
         /**
          * @return true if this operator can be applied to an expression with the given arity.

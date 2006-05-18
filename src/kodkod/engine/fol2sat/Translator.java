@@ -4,6 +4,8 @@
  */
 package kodkod.engine.fol2sat;
 
+import static kodkod.ast.RelationPredicate.Name.FUNCTION;
+
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Map;
@@ -14,6 +16,7 @@ import kodkod.ast.ComparisonFormula;
 import kodkod.ast.Decl;
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
+import kodkod.ast.IntComparisonFormula;
 import kodkod.ast.MultiplicityFormula;
 import kodkod.ast.Node;
 import kodkod.ast.QuantifiedFormula;
@@ -27,6 +30,7 @@ import kodkod.engine.bool.BooleanFactory;
 import kodkod.engine.bool.BooleanFormula;
 import kodkod.engine.bool.BooleanMatrix;
 import kodkod.engine.bool.BooleanValue;
+import kodkod.engine.bool.Operator;
 import kodkod.engine.satlab.SATSolver;
 import kodkod.instance.Bounds;
 import kodkod.instance.Instance;
@@ -43,7 +47,7 @@ import kodkod.util.ints.Ints;
  */
 public final class Translator {
 	private Translator() {}
-
+	
 	/**
 	 * Translates the given formula using the specified bounds and options.
 	 * @return a Translation whose solver is a SATSolver instance initalized with the 
@@ -54,58 +58,56 @@ public final class Translator {
 	 * @throws IllegalArgumentExeption - the formula refers to an undeclared variable or a 
 	 *                                   relation not mapped by the given bounds.
 	 */
-	public static Translation translate(Formula formula, Bounds bounds, Options options) throws TrivialFormulaException {
-//		System.out.println("analyzing structure...");
-		NodeAnalyzer.FormulaAnnotations notes = NodeAnalyzer.annotate(formula);
+	public static Translation translate(Formula formula, Bounds bounds, Options options) 
+	throws TrivialFormulaException {
+		AnnotatedNode<Formula> annotated = new AnnotatedNode<Formula>(formula);
+		Map<RelationPredicate.Name, Set<RelationPredicate>> preds = AnnotatedNode.predicates(annotated);
 		bounds = bounds.clone();
-		Set<IntSet> symmetricParts = BoundsOptimizer.optimize(bounds, notes.relations(), 
-					                                          notes.topLevelOrders(), notes.topLevelAcyclics());
-//		System.out.println("Symmetry classes: " + symmetricParts);
+		Set<IntSet> symmetricParts = BoundsOptimizer.optimize(bounds, AnnotatedNode.relations(annotated), preds);
+		
 		final Map<Decl, Relation> skolems;
 		if (options.skolemize()) {
 //			System.out.println("skolemizing...");
-			Skolemizer.SkolemizedFormula sf = Skolemizer.skolemize(formula, notes.sharedNodes(), bounds);
-			formula = sf.formula();
-			skolems = sf.skolems();
+			Skolemizer skolemizer = Skolemizer.skolemize(annotated, bounds);
+			annotated = skolemizer.skolemized();
+			skolems = skolemizer.skolems();
 		} else {
 			skolems = null;
 		}
 		
-		BooleanVariableAllocator allocator = new BooleanVariableAllocator(bounds, notes.topLevelFunctions());
+		BooleanVariableAllocator allocator = new BooleanVariableAllocator(bounds, preds.get(FUNCTION));
 		BooleanFactory factory = allocator.factory();
 		final int numPrimaryVariables = factory.maxVariableLabel();
 		
-//		System.out.println("translating to sat...");
 		final Map<Node, IntSet> varUsage;
 		BooleanValue circuit;
 		if (options.trackVars()) {
-			Fol2Bool.AnnotatedCircuit acircuit = Fol2Bool.translateAndTrack(formula, notes.sharedNodes(), allocator);
+			Fol2Bool.AnnotatedCircuit acircuit = Fol2Bool.translateAndTrack(annotated, allocator);
 			circuit = acircuit.translation();
-			if (circuit==BooleanConstant.TRUE || circuit==BooleanConstant.FALSE) {
-				throw new TrivialFormulaException(Reducer.reduce(formula, acircuit, notes), 
-						                         (BooleanConstant)circuit, bounds, skolems);
+			if (circuit.op()==Operator.CONST) {
+				throw new TrivialFormulaException(Reducer.reduce(annotated,preds,acircuit), 
+						(BooleanConstant)circuit, bounds, skolems);
 			}
 			varUsage = new IdentityHashMap<Node, IntSet>(allocator.allocationMap().size() + acircuit.variableUsage().size());
 			varUsage.putAll(acircuit.variableUsage());
 		} else {
-			circuit = Fol2Bool.translate(formula, notes.sharedNodes(), allocator);
-			if (circuit==BooleanConstant.TRUE || circuit==BooleanConstant.FALSE) {
+			circuit = Fol2Bool.translate(annotated, allocator);
+			if (circuit.op()==Operator.CONST) {
 				throw new TrivialFormulaException(formula, (BooleanConstant)circuit, bounds, skolems);
 			}
 			varUsage = new IdentityHashMap<Node, IntSet>(allocator.allocationMap().size());
 		}
-	
-		notes = null; // release structural information
+		
+		annotated = null; // release structural information
 		
 		for(Map.Entry<Relation, IntRange> e: allocator.allocationMap().entrySet()) {
 			varUsage.put(e.getKey(), Ints.rangeSet(e.getValue()));
 		}
-//		System.out.println("breaking symmetry...");
-	
-		circuit = factory.and(circuit, SymmetryBreaker.generateSBP(symmetricParts, allocator, options));
-	
-		allocator = null; symmetricParts = null; // release the allocator and symmetric partitions
 		
+		circuit = factory.and(circuit, SymmetryBreaker.generateSBP(symmetricParts, allocator, options));
+		
+		allocator = null; symmetricParts = null; // release the allocator and symmetric partitions
+
 		if (options.flatten()) {
 //			System.out.println("flattening...");
 			// remove everything but the variables from the factory
@@ -114,8 +116,8 @@ public final class Translator {
 			// release the factory itself
 			factory = null;
 		}
-	
-		if (circuit==BooleanConstant.TRUE || circuit==BooleanConstant.FALSE) {
+		
+		if (circuit.op()==Operator.CONST) {
 			throw new TrivialFormulaException(formula, (BooleanConstant)circuit, bounds, skolems);
 		}
 		
@@ -124,6 +126,7 @@ public final class Translator {
 		final SATSolver cnf = Bool2Cnf.definitional((BooleanFormula)circuit, options.solver(), numPrimaryVariables);
 		cnf.setTimeout(options.timeout());
 		return new Translation(cnf, bounds, skolems, Collections.unmodifiableMap(varUsage), numPrimaryVariables, options.trackVars());
+
 	}
 	
 	/**
@@ -135,7 +138,7 @@ public final class Translator {
 	 */
 	@SuppressWarnings("unchecked")
 	static <T> T evaluate(Node node, BooleanConstantAllocator allocator) {
-		return (T) Fol2Bool.translate(node, NodeAnalyzer.detectSharing(node), allocator);//node.accept(new Fol2Sat(allocator, node, NodeAnalyzer.detectSharing(node)));
+		return (T) Fol2Bool.translate(new AnnotatedNode<Node>(node), allocator);
 	}
 	
 	/**
@@ -169,62 +172,50 @@ public final class Translator {
 	private static final class Reducer extends DepthFirstReplacer {
 		private final Set<Formula> trues, falses;
 		private final Map<Node,Node> cache;
+		
 		/**
-		 * Constructs a reducer for the given formula using the specified values.
-		 * @requires notes.formula = formula && acircuit.formula = formula &&
-		 * acircuit.translation in BooleanConstant
+		 * Constructs a reducer for the given annotated formula, using the provided
+		 * sets of formulas to guide the reduction.
 		 */
-		private Reducer(Formula reducible, Fol2Bool.AnnotatedCircuit acircuit,
-	                    NodeAnalyzer.FormulaAnnotations notes) {
+		private Reducer(AnnotatedNode<Formula> reducible,Fol2Bool.AnnotatedCircuit acircuit) {
 			this.trues = acircuit.formulasThatAre(BooleanConstant.TRUE);
 			this.falses = acircuit.formulasThatAre(BooleanConstant.FALSE);
-			this.cache = new IdentityHashMap<Node,Node>(notes.sharedNodes().size());
-			for(Node n: notes.sharedNodes()) {
+			this.cache = new IdentityHashMap<Node,Node>(reducible.sharedNodes().size());
+			for(Node n: reducible.sharedNodes()) {
 				cache.put(n,null);
 			}
 		}
 		
-		private static <T extends RelationPredicate> 
-			Formula predicates(Set<Relation> rels, Set<T> formulaPreds,
-					           Set<T> reducedPreds) {
+		private Formula predicates(Set<RelationPredicate> formulaPreds, Set<RelationPredicate> reducedPreds) {
 			Formula ret = Formula.TRUE;
-			for(T p: formulaPreds) {
-				if (!reducedPreds.contains(p) && rels.contains(p.relation()))
+			for(RelationPredicate p: formulaPreds) {
+				if (!reducedPreds.contains(p) && isConstant(p))
 					ret = ret.and(p);
 			}
 		    return ret;
 		}
-				 
+			
 		/**
-		 * Reduces the given formula to the subformula that causes it to simplify
+		 * Reduces the node of the given annotated formula to the subformula that causes it to simplify
 		 * to a constant.
-		 * @requires notes.formula = formula && acircuit.formula = formula &&
-		 * acircuit.translation in BooleanConstant
+		 * @requires preds = AnnotatedNode.predicates(reducible)
+		 * @requires acircuit.formula = reducible.node
 		 * @return the subformula of the given formula that causes it to simplify
 		 * to a constant.
 		 */
-		static Formula reduce(Formula reducible, Fol2Bool.AnnotatedCircuit acircuit,
-				              NodeAnalyzer.FormulaAnnotations notes) {
-			final Reducer r = new Reducer(reducible, acircuit, notes );
-			Formula reduced = reducible.accept(r);
-			if (reduced != reducible && 
-					(!notes.topLevelOrders().isEmpty()
-					|| !notes.topLevelAcyclics().isEmpty() || 
-					!notes.topLevelFunctions().isEmpty())) {
-				final NodeAnalyzer.FormulaAnnotations rnotes = NodeAnalyzer.annotate(reduced);
-				final Set<Relation> rrels = rnotes.relations();
-				final Set<RelationPredicate.TotalOrdering> rords = rnotes.topLevelOrders();
-				for(RelationPredicate.TotalOrdering p: notes.topLevelOrders()) {
-					if (!rords.contains(p) && r.trues.contains(p) &&
-						(rrels.contains(p.relation()) || rrels.contains(p.first()) ||
-						 rrels.contains(p.last()) || rrels.contains(p.ordered())))
-						reduced = reduced.and(p);
-				}
-				reduced = reduced.and(predicates(rrels, notes.topLevelAcyclics(), rnotes.topLevelAcyclics()));
-				reduced = reduced.and(predicates(rrels, notes.topLevelFunctions(), rnotes.topLevelFunctions()));
+		static Formula reduce(AnnotatedNode<Formula> reducible, Map<RelationPredicate.Name, Set<RelationPredicate>> preds, 
+				Fol2Bool.AnnotatedCircuit acircuit) {
+			final Reducer r = new Reducer(reducible, acircuit);
+			Formula reduced = reducible.node().accept(r);
+			final Map<RelationPredicate.Name, Set<RelationPredicate>> rpreds = 
+				AnnotatedNode.predicates(new AnnotatedNode<Formula>(reduced));
+			
+			for(Map.Entry<RelationPredicate.Name, Set<RelationPredicate>> e : preds.entrySet()) {
+				reduced = reduced.and(r.predicates(e.getValue(), rpreds.get(e.getKey())));
 			}
 			return reduced;
 		}
+		
 		
 		/**
 		 * If the given node is shared and its replacement
@@ -333,6 +324,16 @@ public final class Translator {
 			}
 			return cache(pred,ret);
 		}
+		
+		public Formula visit(IntComparisonFormula intComp) {
+			Formula ret = lookup(intComp);
+			if (ret==null) {
+				ret = intComp; // no expression reduction
+			}
+			return cache(intComp,ret);
+		}
 	}
 
 }
+
+

@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
+
 import kodkod.ast.visitor.ReturnVisitor;
 import kodkod.ast.visitor.VoidVisitor;
 
@@ -95,9 +96,11 @@ public class Decls implements Node, Iterable<Decl> {
      * Accepts the given visitor and returns the result.
      * @see kodkod.ast.Node#accept(kodkod.ast.visitor.ReturnVisitor)
      */
-    public <E, F, D> D accept(ReturnVisitor<E, F, D> visitor) {
+    public <E, F, D, I> D accept(ReturnVisitor<E, F, D, I> visitor) {
         return visitor.visit(this);
     }
+    
+   
     
     /**
      * Accepts the given visitor.

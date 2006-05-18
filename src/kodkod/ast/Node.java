@@ -22,14 +22,12 @@ public interface Node {
      * of the visit (i.e. the result of the call visitor.visit(this))
      * @return the result of being visited by the given visitor
      * @throws NullPointerException visitor = null
-     * @see kodkod.ast.Node#accept(kodkod.ast.visitor.ReturnVisitor)
      */
-    public <E, F, D> Object accept(ReturnVisitor<E, F, D> visitor);
-    
+    public <E, F, D, I> Object accept(ReturnVisitor<E, F, D, I> visitor);
+   
     /**
      * Accepts the given void visitor by calling visitor.visit(this).
      * @throws NullPointerException visitor = null
-     * @see kodkod.ast.Node#accept(kodkod.ast.visitor.VoidVisitor)
      */
     public void accept(VoidVisitor visitor);
 }

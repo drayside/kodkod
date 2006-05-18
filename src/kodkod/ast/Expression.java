@@ -132,17 +132,6 @@ public abstract class Expression implements Node {
     }
     
     /**
-     * Returns the cardinality of this expression.  
-     * @return #this
-     * @see kodkod.instance.Bounds#bound(int, TupleSet)
-     * @see kodkod.instance.Bounds#cardBound(int)
-     * @see kodkod.instance.Bounds#cards()
-     */
-    public final Expression count() {
-    		return apply(UnaryExpression.Operator.CARDINALITY);
-    }
-    
-    /**
      * Returns the expression that results from applying the given unary operator
      * to this.  
      * @return {e: Expression | e = op this }
@@ -150,6 +139,37 @@ public abstract class Expression implements Node {
      */
     public Expression apply(UnaryExpression.Operator op) {
     	return new UnaryExpression(op, this);
+    }
+    
+    /**
+     * Returns the cardinality of this expression.  The effect of this 
+     * method is the same
+     * as calling this.apply(UnaryIntExpression.Operator.CARDINALITY).
+     * @return {e: IntExpresion | e = #this }
+     */
+    public final IntExpression count() {
+    		return apply(UnaryIntExpression.Operator.CARDINALITY);
+    }
+    
+    /**
+     * Returns an integer expression representing the sum of all
+     * atoms bound to integers that comprise the relational value of this expression.  The effect of this 
+     * method is the same
+     * as calling this.apply(UnaryIntExpression.Operator.SUM).
+     * @return {e: IntExpresion | e = $this }
+     * @throws IllegalArgumentException - this.arity != 1
+     */
+    public final IntExpression sum() {
+    		return apply(UnaryIntExpression.Operator.SUM);
+    }
+    
+    /**
+     * Returns the int expression that results from applying the given  operator
+     * to this.  
+     * @return {e: IntExpression | e = op this }
+     */
+    public IntExpression apply(UnaryIntExpression.Operator op) {
+    		return new UnaryIntExpression(op, this);
     }
     
     /**
@@ -237,6 +257,5 @@ public abstract class Expression implements Node {
      * Accepts the given visitor and returns the result.
      * @see kodkod.ast.Node#accept(kodkod.ast.visitor.ReturnVisitor)
      */
-    public abstract <E, F, D> E accept(ReturnVisitor<E, F, D> visitor);
-       
-}
+    public abstract <E, F, D, I> E accept(ReturnVisitor<E, F, D, I> visitor);
+ }

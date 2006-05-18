@@ -1,5 +1,6 @@
 package kodkod.ast;
 
+
 import kodkod.ast.visitor.ReturnVisitor;
 import kodkod.ast.visitor.VoidVisitor;
 
@@ -49,9 +50,11 @@ public abstract class RelationPredicate extends Formula {
 	public abstract Formula toConstraints(); 
 	
 	@Override
-	public <E, F, D> F accept(ReturnVisitor<E, F, D> visitor) {
-		return visitor.visit(this);
-	}
+	 public <E, F, D, I> F accept(ReturnVisitor<E, F, D, I> visitor) {
+        return visitor.visit(this);
+    }
+	
+    
 	/**
      * Accepts the given visitor.
      * @see kodkod.ast.Node#accept(kodkod.ast.visitor.VoidVisitor)

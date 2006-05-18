@@ -4,6 +4,7 @@
  */
 package kodkod.ast;
 
+
 import kodkod.ast.visitor.ReturnVisitor;
 import kodkod.ast.visitor.VoidVisitor;
 
@@ -84,9 +85,9 @@ public abstract class ConstantFormula extends Formula {
      * @see kodkod.ast.Node#accept(kodkod.ast.visitor.ReturnVisitor)
      */
 	@Override
-	public <E, F, D> F accept(ReturnVisitor<E, F, D> visitor) {
-		return visitor.visit(this);
-	}
+	 public <E, F, D, I> F accept(ReturnVisitor<E, F, D, I> visitor) {
+        return visitor.visit(this);
+    }
 	
 	/**
      * Accepts the given visitor.

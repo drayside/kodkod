@@ -92,20 +92,39 @@ public class SparseSequenceTest extends TestCase {
 	public void testRemove() {
 		// [2597 b NIL [2630 r [2616 b [2604 b NIL NIL] [2623 b NIL NIL]] 
 		// [2658 b [2644 r [2637 b NIL NIL] [2651 b NIL [2655 r NIL NIL]]] [2660 b NIL NIL]]]]
-		s0 = new TreeSequence<Integer>();
-		s0.put(2597, 0);
-		s0.put(2630, 0);
-		s0.put(2616, 0);
-		s0.put(2604, 0);
-		s0.put(2623, 0);
-		s0.put(2658, 0);
-		s0.put(2644, 0);
-		s0.put(2637, 0);
-		s0.put(2651, 0);
+//		s0 = new TreeSequence<Integer>();
+//		s0.put(2597, 0);
+//		s0.put(2630, 0);
+//		s0.put(2616, 0);
+//		s0.put(2604, 0);
+//		s0.put(2623, 0);
+//		s0.put(2658, 0);
+//		s0.put(2644, 0);
+//		s0.put(2637, 0);
+//		s0.put(2651, 0);
+//		System.out.println(s0);
+//		s0.remove(2616);
+//		System.out.println(s0);
+		
+//		root:  [221 b [51 r [45 b NIL NIL] [168 b NIL NIL]] [331 b NIL NIL]]
+//		z:     [51 b null null]
+//		root:  [221 b [168 b [45 r NIL NIL] NIL] [331 b NIL NIL]]
+		s0.clear();
+
+		s0.put(331, 0);
+		s0.put(221,0);
+		s0.put(168, 0);
+//		s0.put(48, 0);
+//		s0.put(42, 0);
+		s0.put(45, 0);
+		s0.put(51, 0);
+		
 		System.out.println(s0);
-		s0.remove(2616);
+		s0.remove(51);
 		System.out.println(s0);
 	}
+	
+	
 	
 //	public void testFirstLast() {
 //		for(int i = 0; i < 10; i++)
@@ -140,11 +159,23 @@ public class SparseSequenceTest extends TestCase {
 	
 	public void testIntTreeSet() {
 		IntTreeSet s = new IntTreeSet();
-		s.add(1);
+//		s.add(1);
+//		System.out.println(s);
+//		s.add(3);
+//		System.out.println(s);
+//		s.add(2);
+//		System.out.println(s);
+		s.add(331);
+		s.add(221);
+		for(int i = 42; i <=45; i++) 
+			s.add(i);
+		for(int i = 47; i <=51; i++) 
+			s.add(i);
+		s.add(167); s.add(168);
+		s.add(220); 
+		
 		System.out.println(s);
-		s.add(3);
-		System.out.println(s);
-		s.add(2);
+		s.add(46);
 		System.out.println(s);
 	}
 	

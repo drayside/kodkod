@@ -1,40 +1,21 @@
 package kodkod.engine.fol2sat;
 
-import static kodkod.ast.BinaryFormula.Operator.AND;
-import static kodkod.ast.BinaryFormula.Operator.IFF;
-import static kodkod.ast.BinaryFormula.Operator.IMPLIES;
-import static kodkod.ast.BinaryFormula.Operator.OR;
-import static kodkod.ast.QuantifiedFormula.Quantifier.ALL;
-import static kodkod.ast.QuantifiedFormula.Quantifier.SOME;
-
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
 
-import kodkod.ast.BinaryExpression;
-import kodkod.ast.BinaryFormula;
-import kodkod.ast.ComparisonFormula;
 import kodkod.ast.Comprehension;
-import kodkod.ast.ConstantExpression;
-import kodkod.ast.ConstantFormula;
 import kodkod.ast.Decl;
 import kodkod.ast.Decls;
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
-import kodkod.ast.IfExpression;
 import kodkod.ast.LeafExpression;
-import kodkod.ast.MultiplicityFormula;
 import kodkod.ast.Node;
-import kodkod.ast.NotFormula;
 import kodkod.ast.QuantifiedFormula;
 import kodkod.ast.Relation;
-import kodkod.ast.RelationPredicate;
-import kodkod.ast.UnaryExpression;
 import kodkod.ast.Variable;
 import kodkod.ast.visitor.DepthFirstReplacer;
-import kodkod.ast.visitor.DepthFirstVoidVisitor;
-import kodkod.ast.visitor.ReturnVisitor;
 import kodkod.engine.bool.BooleanMatrix;
 import kodkod.engine.bool.BooleanValue;
 import kodkod.instance.Bounds;
@@ -52,72 +33,83 @@ import kodkod.util.ints.Ints;
  * r_x in E && some r_x && F(r_x), where r_x is a freshly
  * allocated relation (i.e. skolem constant). 
  * 
+ * @specfield original: AnnotatedNode<Formula>
+ * @specfield skolemized: AnnotatedNode<Formula>
+ * @specfield skolems: original.^children & Decl -> lone Relation
+ * 
  * @author Emina Torlak
  */
 final class Skolemizer {
-
-	private Skolemizer() {}
+	private final AnnotatedNode<Formula> skolemized;
+	private final Map<Decl, Relation> skolems;
 	
 	/**
-	 * Skolemizes the given formula using the given bounds and the information about its
-	 * structure.
-	 * @requires sharedNodes = {n: Node | #(n.~children & formula.*children) > 1 }
-	 * @requires Relation & formula.^children in bounds.relations
-	 * @effects sharedNodes are modified to reflect the structure of the returned (skolemized) formula
-	 * @effects upper bound mappings for skolem constants are added to the bounds
-	 * @return skolemization of the given formula
+	 * Constructs a new skolemizer with the given values.
+	 * @effects this.skolemized' = annotated && this.skolems' = skolems
+	 */
+	private Skolemizer(AnnotatedNode<Formula> annotated, Map<Decl, Relation> skolems) {
+		this.skolemized = annotated;
+		this.skolems = skolems;
+	}
+	
+	/**
+	 * Returns the skolemized version of this.original.
+	 * @return this.skolemized
+	 */
+	AnnotatedNode<Formula> skolemized() {
+		return skolemized;
+	}
+	
+	/**
+	 * Returns a map from the existentially quantified declarations
+	 * in this.original to their corresponding skolem constants  in this.skolemized.
+	 * @return this.skolems
+	 */
+	Map<Decl, Relation> skolems() {
+		return skolems;
+	}
+	
+	/**
+	 * Skolemizes the given annotated formula using the given bounds.
+	 * @effects upper bound mappings for skolem constants, if any, are added to the bounds
+	 * @return a Skolemizer whose skolemized field is a skolemized version of the given formula,
+	 * and whose skolem field contains the generated skolem constants
 	 * @throws NullPointerException - any of the arguments are null
-	 * @throws IllegalArgumentException - some Relation & this.formula.^children - bounds.relations
-	 * @throws UnsupportedOperationException - sharedNodes or bounds are unmodifiable
+	 * @throws IllegalArgumentException - some Relation & annotated.node.^children - bounds.relations
+	 * @throws UnsupportedOperationException - bounds is unmodifiable
 	 */
 	@SuppressWarnings("unchecked")
-	static SkolemizedFormula skolemize(Formula formula, Set<Node> sharedNodes, Bounds bounds) {
-		
-		final EQFDetector detector = new EQFDetector(sharedNodes);
-		formula.accept(detector);
-		if (detector.formulas.isEmpty()) {
-			return new SkolemizedFormula(formula, Collections.EMPTY_MAP);
+	static Skolemizer skolemize(AnnotatedNode<Formula> annotated, Bounds bounds) {
+		final Set<QuantifiedFormula> formulas = AnnotatedNode.existentials(annotated);
+		if (formulas.isEmpty()) {
+			return new Skolemizer(annotated, Collections.EMPTY_MAP);
 		} else {
-			final EQFReplacer replacer = new EQFReplacer(detector.formulas, bounds, sharedNodes);
-			final Formula ret = formula.accept(replacer);
-			return new SkolemizedFormula(ret.and(replacer.skolemFormula), replacer.skolems);
+			final EQFReplacer replacer = new EQFReplacer(formulas, bounds, annotated.sharedNodes());
+			final Formula f = annotated.node().accept(replacer).and(replacer.skolemFormula);
+			if (identityMapping(replacer.cache)) {
+				return new Skolemizer(new AnnotatedNode<Formula>(f, annotated.sharedNodes()), replacer.skolems);
+			} else {
+				final Set<Node> newSharedNodes = new IdentityHashSet<Node>(annotated.sharedNodes().size());
+				for (Map.Entry<Node, Node> e : replacer.cache.entrySet()) {
+					newSharedNodes.add(e.getValue());
+				}
+				return new Skolemizer(new AnnotatedNode<Formula>(f, newSharedNodes), replacer.skolems);
+			}
 		}
 	}
 	
 	/**
-	 * Stores the results of the {@link Skolemizer#skolemize(Formula, Set, Bounds)}
-	 * method:  the skolemized formula and the generated skolem constants.
-	 * @specfield originalFormula: Formula 
+	 * Returns true if the given map is an identity mapping.
+	 * @return all o: Object | map.containsKey(o) => map.get(o) = o
 	 */
-	static final class SkolemizedFormula {
-		private final Formula formula;
-		private final Map<Decl, Relation> skolems;
-		private SkolemizedFormula(Formula formula, Map<Decl, Relation> skolems) {
-			this.formula = formula;
-			this.skolems = Collections.unmodifiableMap(skolems);
+	private static boolean identityMapping(Map<?, ?> map) {
+		for (Map.Entry<?,?> e : map.entrySet()) {
+			if (e.getKey()!=e.getValue())
+				return false;
 		}
-		
-		/**
-		 * Returns the skolemized version of this.originalFormula.
-		 * @return the skolemized version of this.originalFormula.
-		 */
-		Formula formula() {
-			return formula;
-		}
-		
-		/**
-		 * Returns a map from the existentially quantified declarations
-		 * in this.original formula to their corresponding skolem
-		 * constants.
-		 * @return a mapping from the existentially quantified declarations
-		 * in this.original formula to their corresponding skolem
-		 * constants.
-		 */
-		Map<Decl, Relation> skolems() {
-			return skolems;
-		}
+		return true;
 	}
-	
+
 	/**
 	 * Given a set of existentially quantified formulas, s, and a Bounds b,
 	 * an EQFReplacer replaces the given formulas with their skolemizations and
@@ -137,11 +129,12 @@ final class Skolemizer {
 	 */
 	private static final class EQFReplacer extends DepthFirstReplacer {
 		private final Set<QuantifiedFormula> eqfs;
-		private final Map<Node,Node> cache;
 		private Environment<LeafExpression> env;
 		/* the allocator used to determine the upper bounds for skolem constants;
 		 * the upper bounds for skolem constants will be added to allocator.bounds */
 		private final BooleanConstantAllocator.Overapproximating allocator;
+		/* the cache used for storing the replacements for shared nodes */
+		final Map<Node,Node> cache;
 		/* the conjunction that constrains all the skolem constants; i.e.
 		 * for each decl->r in this.skolems, the conjunction contains the formula
 		 * 'r in decl.expression and one r'  */
@@ -318,376 +311,5 @@ final class Skolemizer {
 			return cache(quantFormula,ret);
 		}
 		
-	}
-	
-	/**
-	 * Detects top-level formulas in a given formula that are,
-	 * semantically, existentially quantified.  Specifically, given a formula f,
-	 * the visitor collects the members of the following set (assuming that all
-	 * implications are interpreted as disjunctions):
-	 * 
-	 * { q: f.*children & QuantifiedFormula | 
-	 *     all path: children | q in f.*path => 
-	 *       all q': f.*path | 
-	 *         (q'.quantifier = SOME => #{f.*path & NotFormula} % 2 = 0) &&
-	 *         (q'.quantifier = ALL => #{f.*path & NotFormula} % 2 = 1) }
-	 */
-	private static final class EQFDetector extends DepthFirstVoidVisitor {
-		
-		/* @invariant stores numbers [0..15] which represent the powerset 
-		 * of the set {FF, FT, TF, TT}. The numbers 1, 2, 4, 
-		 * and 8 represent the elements FF, FT, TF, and TT, respectively.  
-		 * The members of the power set are, therefore, represented 
-		 * as the bitwise OR of the elements they contain.
-		 */
-		private final Byte[] flagCombos;
-		
-		/* @invariant maps all nodes that have a quantified formula in their AST
-		 * and that are in the reflexive transitive closure of a shared node to a byte, depending on 
-		 * which combination of flags was active when the node was visited.
-		 * For example, if, during each visit to a node n, the flags negated
-		 * and topLevel were set to either FT or TT, visitedNodes
-		 * would map n to flagCombos[2 | 8] = flagCombos[10].  In the beginning,
-		 * all shared nodes are mapped to flagCombos[0].  
-		 */
-		private final Map<Node, Byte> visitedNodes;
-		
-		private final Set<Node> sharedNodes;
-		
-		final Set<QuantifiedFormula> formulas;
-		
-		private boolean negated, topLevel;
-		
-		EQFDetector(Set<Node> sharedNodes) {
-		    this.negated = false;
-			this.topLevel = true;
-			this.sharedNodes = sharedNodes;
-			this.formulas = new IdentityHashSet<QuantifiedFormula>();
-			this.flagCombos = new Byte[16];
-			for(int i = 0; i < 16; i++) {
-				flagCombos[i] = new Byte((byte)i);
-			}
-			// determine which shared nodes and their descendents
-			// have quantified formulas in their subtrees
-			final QFDescendentDetector qfd = new QFDescendentDetector();
-			for(Node n: sharedNodes) {
-				n.accept(qfd);
-			}
-			// prune away the nodes that have no quantified formulas as descendents
-			this.visitedNodes = new IdentityHashMap<Node,Byte>(qfd.numNodesWithQFDescendent);
-			for(Map.Entry<Node,Boolean> e : qfd.visitedNodes.entrySet()) {
-				if (e.getValue())
-					visitedNodes.put(e.getKey(), flagCombos[0]);
-			}
-		}
-		
-		/**
-		 * Translates the current value of the negated/topLevel flags
-		 * into an integral representation that glues the two bits
-		 * together, negated bit first.
-		 */
-		private final int flagCombo() {
-			return 1 << ((negated ? 2 : 0) | (topLevel ? 1 : 0));
-		}
-		
-		/**
-		 * Returns true if the given node has already been visited with 
-		 * the present combination of the flags.  If not, the present
-		 * combination is recorded and false is returned.  
-		 */
-		private final boolean visited(Node node) {
-			Byte status = visitedNodes.get(node);
-			if (status != null) {
-				final int current = flagCombo();
-				if ((status & current) == 0) { // not seen yet
-					// if the current value of the topLevel flag is false,
-					// we don't have to visit this node ever again, so we
-					// simply mark it as having been visited with all possible
-					// flag combinations
-					if (!topLevel)
-						visitedNodes.put(node, flagCombos[15]);
-					else
-						visitedNodes.put(node, flagCombos[status|current]);
-				} else { // combination seen
-					return true;
-				}
-			} else if (sharedNodes.contains(node)) {
-				// this is a shared node that has no quantified formulas as descendents;
-				// we can therefore mark it as having been visited with all possible flag combinations
-				visitedNodes.put(node, flagCombos[15]);
-			}
-			return false;
-		}
-		
-		
-		public void visit(QuantifiedFormula quantFormula) {
-			if (!visited(quantFormula)) { 
-				final boolean oldTop = topLevel;
-				topLevel = false;
-				quantFormula.declarations().accept(this);
-				topLevel = oldTop;
-				final QuantifiedFormula.Quantifier q = quantFormula.quantifier();
-				if (topLevel && (q==SOME && !negated || q==ALL && negated)) {
-					final Byte status = visitedNodes.get(quantFormula);
-					if (status==null || status==flagCombo()) {
-						formulas.add(quantFormula);
-					}
-				} else {
-					formulas.remove(quantFormula);
-					topLevel = false;
-				}
-				quantFormula.formula().accept(this);
-				topLevel = oldTop;
-			}
-		}
-		
-		/**
-		 * We have to visit the children of all binary formulas, regardless
-		 * of whether they are at the top level or not, in order to properly
-		 * handle potential sharing of quantified formula.  Specifically,
-		 * an existentially quantified formula is skolemizable iff it is 
-		 * at the top-level with respect to *all* of its parents.  Visiting
-		 * the non-top level children ensures that we detect the case when 
-		 * a formula is not at the top level with respect to some parent.
-		 */
-		public void visit(BinaryFormula binFormula) {
-			if (!visited(binFormula)) {
-				final boolean oldTop = topLevel;
-				final BinaryFormula.Operator op = binFormula.op();
-				if (op==IFF || negated && op==AND || !negated && (op==OR || op==IMPLIES)) {
-					topLevel = false;
-				}
-				if (op==IMPLIES) { // a => b = !a || b one negation on the left side
-					negated = !negated;
-					binFormula.left().accept(this);
-					negated = !negated;
-					binFormula.right().accept(this);
-				} else if (op==IFF) { // a<=>b = (!a || b) && (!b || a) both sides negated and not negated
-					negated = !negated;
-					super.visit(binFormula);
-					negated = !negated;
-					super.visit(binFormula);
-				} else { // op==AND || op==OR
-					super.visit(binFormula);
-				}
-				topLevel = oldTop;
-			}
-		}
-		
-		public void visit(NotFormula not) {
-			if (!visited(not)) {
-				negated = !negated;
-				not.formula().accept(this);
-				negated = !negated;
-			}
-		}
-		
-		public void visit(ComparisonFormula compFormula) {
-			if (!visited(compFormula)) {
-				final boolean oldTop = topLevel;
-				topLevel = false;
-				super.visit(compFormula);
-				topLevel = oldTop;
-			}
-		}
-		
-		public void visit(MultiplicityFormula multFormula) {
-			if (!visited(multFormula)) {
-				final boolean oldTop = topLevel;
-				topLevel = false;
-				super.visit(multFormula);
-				topLevel = oldTop;
-			}
-		}
-		
-		public void visit(RelationPredicate pred) {
-			if (!visited(pred)) {
-				final boolean oldTop = topLevel;
-				topLevel = false;
-				super.visit(pred);
-				topLevel = oldTop;
-			}
-		}
-
-		public void visit(Decls decls) {
-			if (!visited(decls))
-				super.visit(decls);
-		}
-
-		public void visit(Decl decl) {
-			if (!visited(decl))
-				super.visit(decl);
-		}
-
-		public void visit(BinaryExpression binExpr) {
-			if (!visited(binExpr))
-				super.visit(binExpr);
-		}
-
-		public void visit(UnaryExpression unaryExpr) {
-			if (!visited(unaryExpr))
-				super.visit(unaryExpr);
-		}
-
-		public void visit(Comprehension comprehension) {
-			if (!visited(comprehension))
-				super.visit(comprehension);	
-		}
-
-		public void visit(IfExpression ifExpr) {
-			if (!visited(ifExpr))
-				super.visit(ifExpr);
-		}		
-	}
-	
-	/**
-	 * Starting at a given root, a QFDescendentDetector determines which nodes in its
-	 * reflexive transitive closure have quantified formulas in their subtrees.
-	 */
-	private static final class QFDescendentDetector implements ReturnVisitor<Boolean, Boolean, Boolean> {
-		/**
-		 * Maps each visited node to TRUE, if it has a quantified formula
-		 * as a descendent, and to FALSE otherwise.
-		 */
-		final Map<Node, Boolean> visitedNodes;
-		int numNodesWithQFDescendent = 0;
-		/**
-		 * Constructs a new QFDescendentDetector.
-		 */
-		QFDescendentDetector() {
-			this.visitedNodes = new IdentityHashMap<Node,Boolean>();
-		}
-		
-		/**
-		 * Returns null if the node has not been visited before.
-		 * If it has, returns a Boolean value that represents
-		 * the presence or absence of a quantified formula in
-		 * the node's subtree.
-		 */
-		private Boolean visited(Node node) {
-			return visitedNodes.get(node);
-		}
-		
-		/**
-		 * Records the presence or absence of a quantified formula
-		 * in the node's subtree as given by hasQFDescendent and returns it.
-		 */
-		private Boolean recordVisit(Node node, boolean hasQFDescendent) {
-			final Boolean record = Boolean.valueOf(hasQFDescendent);
-			visitedNodes.put(node, record);
-			if (hasQFDescendent) numNodesWithQFDescendent++;
-			return record;
-		}
-		
-		public Boolean visit(Decls decls) {
-			Boolean hasQFDescendent = visited(decls);
-			if (hasQFDescendent!=null) 
-				return hasQFDescendent;
-			boolean qfd = false;
-			for(Decl d: decls) {
-				qfd = qfd | visit(d);
-			}
-			return recordVisit(decls, qfd);
-		}
-
-		public Boolean visit(Decl decl) {
-			Boolean hasQFDescendent = visited(decl);
-			if (hasQFDescendent!=null)
-				return hasQFDescendent;
-			return recordVisit(decl, decl.expression().accept(this));
-		}
-
-		public Boolean visit(Relation relation) {
-			return Boolean.FALSE;
-		}
-
-		public Boolean visit(Variable variable) {
-			return Boolean.FALSE;
-		}
-
-		public Boolean visit(ConstantExpression constExpr) {
-			return Boolean.FALSE;
-		}
-
-		public Boolean visit(BinaryExpression binExpr) {
-			Boolean hasQFDescendent = visited(binExpr);
-			if (hasQFDescendent!=null)
-				return hasQFDescendent;
-			return recordVisit(binExpr, binExpr.left().accept(this) | binExpr.right().accept(this));
-		}
-
-		public Boolean visit(UnaryExpression unaryExpr) {
-			Boolean hasQFDescendent = visited(unaryExpr);
-			if (hasQFDescendent!=null)
-				return hasQFDescendent;
-			return recordVisit(unaryExpr, unaryExpr.expression().accept(this));
-		}
-
-		public Boolean visit(Comprehension comprehension) {
-			Boolean hasQFDescendent = visited(comprehension);
-			if (hasQFDescendent!=null)
-				return hasQFDescendent;
-			return recordVisit(comprehension, comprehension.declarations().accept(this) | comprehension.formula().accept(this));
-		}
-
-		public Boolean visit(IfExpression ifExpr) {
-			Boolean hasQFDescendent = visited(ifExpr);
-			if (hasQFDescendent!=null)
-				return hasQFDescendent;
-			return recordVisit(ifExpr, ifExpr.condition().accept(this) | 
-					                   ifExpr.thenExpr().accept(this) | ifExpr.elseExpr().accept(this));
-		}
-
-		public Boolean visit(QuantifiedFormula quantFormula) {
-			Boolean hasQFDescendent = visited(quantFormula);
-			if (hasQFDescendent!=null)
-				return hasQFDescendent;
-			quantFormula.declarations().accept(this);
-			quantFormula.formula().accept(this);
-			return recordVisit(quantFormula, true);
-		}
-
-		public Boolean visit(BinaryFormula binFormula) {
-			Boolean hasQFDescendent = visited(binFormula);
-			if (hasQFDescendent!=null)
-				return hasQFDescendent;
-			return recordVisit(binFormula, binFormula.left().accept(this) | binFormula.right().accept(this));
-		}
-
-		public Boolean visit(NotFormula not) {
-			Boolean hasQFDescendent = visited(not);
-			if (hasQFDescendent!=null)
-				return hasQFDescendent;
-			return recordVisit(not, not.formula().accept(this));
-		}
-
-		public Boolean visit(ConstantFormula constant) {
-			return Boolean.FALSE;
-		}
-
-		public Boolean visit(ComparisonFormula compFormula) {
-			Boolean hasQFDescendent = visited(compFormula);
-			if (hasQFDescendent!=null)
-				return hasQFDescendent;
-			return recordVisit(compFormula, compFormula.left().accept(this) | compFormula.right().accept(this));
-		}
-
-		public Boolean visit(MultiplicityFormula multFormula) {
-			Boolean hasQFDescendent = visited(multFormula);
-			if (hasQFDescendent!=null)
-				return hasQFDescendent;
-			return recordVisit(multFormula, multFormula.expression().accept(this));
-		}
-
-		public Boolean visit(RelationPredicate predicate) {
-			Boolean hasQFDescendent = visited(predicate);
-			if (hasQFDescendent!=null)
-				return hasQFDescendent;
-			if (predicate.name()==RelationPredicate.Name.FUNCTION) {
-				final RelationPredicate.Function fun = (RelationPredicate.Function) predicate;
-				return recordVisit(fun, fun.domain().accept(this) | fun.range().accept(this));
-			}
-			return recordVisit(predicate, false);
-		}	
 	}
 }
