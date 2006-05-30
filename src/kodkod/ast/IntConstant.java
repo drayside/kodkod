@@ -39,16 +39,16 @@ public final class IntConstant extends IntExpression {
 		return value;
 	}
 	
-	/**
-	 * {@inheritDoc}
-	 * @see kodkod.ast.IntExpression#compose(kodkod.ast.BinaryIntExpression.Operator, kodkod.ast.IntExpression)
-	 */
-	public IntExpression compose(BinaryIntExpression.Operator op, IntExpression intexpr) {
-		if (intexpr instanceof IntConstant)
-			return constant(op.apply(value, ((IntConstant)intexpr).value));
-		else 
-			return super.compose(op, intexpr);
-	}
+//	/**
+//	 * {@inheritDoc}
+//	 * @see kodkod.ast.IntNode#compose(kodkod.ast.BinaryIntExpression.Operator, kodkod.ast.IntNode)
+//	 */
+//	public IntNode compose(BinaryIntExpression.Operator op, IntNode intexpr) {
+//		if (intexpr instanceof IntConstant)
+//			return constant(op.apply(value, ((IntConstant)intexpr).value));
+//		else 
+//			return super.compose(op, intexpr);
+//	}
 	
 	/**
 	 * {@inheritDoc}

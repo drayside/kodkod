@@ -10,6 +10,7 @@ import kodkod.engine.satlab.SATFactory;
  * @specfield solver: SATFactory // SAT solver factory to use
  * @specfield timeout:  int // SAT solver timeout, in seconds
  * @specfield symmetryBreaking: int // the amount of symmetry breaking to perform
+ * @specfield bitwidth: int // max # of bits used for translating {@link kodkod.ast.IntNode int nodes}
  * @specfield skolemize: boolean // skolemize existential quantifiers?
  * @specfield flatten: boolean // eliminate extraneous intermediate variables?
  * @specfield logEncodeFunctions: boolean // use a compact encoding for functions?
@@ -20,11 +21,11 @@ public final class Options {
 	private SATFactory solver = SATFactory.DefaultSAT4J;
 	private int timeout = Integer.MAX_VALUE;
 	private int symmetryBreaking = 20;
+	private int bitwidth = 4;
 	private boolean skolemize = true;
 	private boolean flatten = true;
-	private boolean logEncodeFunctions = true;
+	private boolean logEncodeFunctions = false;
 	private boolean trackVars = false;
-	
 	
 	/**
 	 * Constructs an Options object initalized with 
@@ -32,9 +33,10 @@ public final class Options {
 	 * @effects this.solver' = SATFactory.DefaultSAT4J
 	 *          this.timeout' = Integer.MAX_VALUE 
 	 *          this.symmetryBreaking' = 20
+	 *          this.bitwidth' = 4
 	 *          this.skolemize' = true
 	 *          this.flatten' = true
-	 *          this.logEncodeFunctions' = true
+	 *          this.logEncodeFunctions' = false
 	 *          this.trackVars' = false
 	 */
 	public Options() {}
@@ -47,6 +49,7 @@ public final class Options {
 	 *          this.seed' = 0
 	 *          this.timeout' = Integer.MAX_VALUE
 	 *          this.symmetryBreaking' = 20
+	 *          this.bitwidth' = 4
 	 *          this.skolemize' = true
 	 *          this.flatten' = true
 	 *          this.logEncodeFunctions' = true
@@ -79,6 +82,15 @@ public final class Options {
 	}
 	
 	/**
+	 * @throws IllegalArgumentException - arg !in [min..max]
+	 */
+	private void checkRange(int arg, int min, int max) {
+		if (arg < min || arg > max)
+			throw new IllegalArgumentException(arg + " !in [" + min + ".." + max + "]");
+	}
+	
+	
+	/**
 	 * Returns the number of seconds that the 
 	 * SAT solver is allowed to spend on any given problem.
 	 * The default is Integer.MAX_VALUE:  the 
@@ -92,14 +104,6 @@ public final class Options {
 	}
 	
 	/**
-	 * @throws IllegalArgumentException - arg !in [min..max]
-	 */
-	private void checkRange(int arg, int min, int max) {
-		if (arg < min || arg > max)
-			throw new IllegalArgumentException(arg + " !in [" + min + ".." + max + "]");
-	}
-	
-	/**
 	 * Sets the timeout option to the given value.
 	 * @effects  this.timeout' = timeout
 	 * @throws IllegalArgumentException - timeout !in [0..Integer.MAX_VALUE]
@@ -107,6 +111,30 @@ public final class Options {
 	public void setTimeout(int timeout) {
 		checkRange(timeout, 0, Integer.MAX_VALUE);
 		this.timeout = timeout;
+	}
+	
+	/**
+	 * Returns the number of bits used for translating {@link kodkod.ast.IntNode int nodes}.
+	 * That is, all IntNodes will be represented with at most bitwidth bits; if more bits 
+	 * are needed, a runtime exception is thrown during translation.  For example, 
+	 * let bitwidth be 3, x be a set with
+	 * 7 elements and y be a set with 9 elements.  Then, calling solve the formula #x < #y will
+	 * result in a runtime exception since #y cannot be represented with 3 bits. The default is 4 bits.
+	 * @return this.bitwidth
+	 */
+	public int bitwidth() {
+		return bitwidth;
+	}
+	
+	/**
+	 * Sets the bitwidth to the given value.
+	 * @effects this.bitwidth' = bitwidth
+	 * @throws IllegalArgumentException - bitwidth < 1
+	 */
+	public void setBitwidth(int bitwidth) {
+		if (bitwidth < 1)
+			throw new IllegalArgumentException("bitwidth < 1: " + bitwidth);
+		this.bitwidth = bitwidth;
 	}
 	
 	/**
@@ -164,6 +192,7 @@ public final class Options {
 	 * Returns the value of the skolemization flag, which
 	 * controls whether or not existentially quantified variables are
 	 * skolemized.  Skolemization is turned on by default.
+	 * It must be off if the tracking of variables is enabled.
 	 * @return this.skolemize
 	 */
 	public boolean skolemize() {
@@ -173,8 +202,11 @@ public final class Options {
 	/**
 	 * Sets the skolemization flag to the given value.
 	 * @effects this.skolemize = skolemize
+	 * @throws IllegalArgumentException - this.trackVars && skolemize
 	 */
 	public void setSkolemize(boolean skolemize) {
+		if (trackVars && skolemize)
+			throw new IllegalStateException("trackVars enabled:  skolemization must be off.");
 		this.skolemize = skolemize;
 	}
 	
@@ -185,7 +217,7 @@ public final class Options {
 	 * respectively.  (The regular encoding uses N*M variables.)  Although
 	 * the compact encoding reduces the number of boolean variables, it
 	 * increases the number of clauses which may slow down the SAT solver.  
-	 * The default value of this flag is <code>true</code>.
+	 * The default value of this flag is <code>false</code>.
 	 * @return this.logEncodeFunctions
 	 */
 	public boolean logEncodeFunctions() {
@@ -204,7 +236,7 @@ public final class Options {
 	 * Returns true if a mapping from non-leaf nodes to boolean variables that
 	 * represent them should be generated during translation.  This is useful
 	 * for determining which formulas/expressions occur in the unsat core of an 
-	 * unsatisfiable formula.  The flatten flag must be off whenever 
+	 * unsatisfiable formula.  The flatten and skolemization flags must be off whenever 
 	 * this flag is enabled.  Variable tracking is off by default, since 
 	 * it incurs a non-trivial memory overheaad.
 	 * @return this.trackVars
@@ -215,13 +247,15 @@ public final class Options {
 	
 	/**
 	 * Sets the value of the variable tracking flag.  If the 
-	 * flag is turned on, flatten is automatically set to false.
+	 * flag is turned on, flatten and skolemize are automatically set to false.
 	 * @effects this.trackVars' = trackVars &&
-	 *          trackVars => this.flatten' = false
+	 *          trackVars => this.flatten' = false && this.skolemize' = false
 	 */
 	public void setTrackVars(boolean trackVars) {
-		if (trackVars)
+		if (trackVars) {
 			flatten = false;
+			skolemize = false;
+		}
 		this.trackVars = trackVars;
 	}
 	

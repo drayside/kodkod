@@ -142,34 +142,11 @@ public abstract class Expression implements Node {
     }
     
     /**
-     * Returns the cardinality of this expression.  The effect of this 
-     * method is the same
-     * as calling this.apply(UnaryIntExpression.Operator.CARDINALITY).
-     * @return {e: IntExpresion | e = #this }
+     * Returns the cardinality of this expression.  
+     * @return {e: IntNode | e = #this }
      */
     public final IntExpression count() {
-    		return apply(UnaryIntExpression.Operator.CARDINALITY);
-    }
-    
-    /**
-     * Returns an integer expression representing the sum of all
-     * atoms bound to integers that comprise the relational value of this expression.  The effect of this 
-     * method is the same
-     * as calling this.apply(UnaryIntExpression.Operator.SUM).
-     * @return {e: IntExpresion | e = $this }
-     * @throws IllegalArgumentException - this.arity != 1
-     */
-    public final IntExpression sum() {
-    		return apply(UnaryIntExpression.Operator.SUM);
-    }
-    
-    /**
-     * Returns the int expression that results from applying the given  operator
-     * to this.  
-     * @return {e: IntExpression | e = op this }
-     */
-    public IntExpression apply(UnaryIntExpression.Operator op) {
-    		return new UnaryIntExpression(op, this);
+    		return new Cardinality(this);
     }
     
     /**

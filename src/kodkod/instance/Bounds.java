@@ -6,9 +6,6 @@ import java.util.Map;
 import java.util.Set;
 
 import kodkod.ast.Relation;
-import kodkod.util.ints.Ints;
-import kodkod.util.ints.SparseSequence;
-import kodkod.util.ints.TreeSequence;
 
 
 /**
@@ -29,42 +26,25 @@ import kodkod.util.ints.TreeSequence;
  * @author Emina Torlak
  **/
 public final class Bounds implements Cloneable {
-	private final TupleSet EMPTY;
-	
 	private final TupleFactory factory;
 	private final Map<Relation, BoundPair> bounds;
-	/*
-	 * <p>
-	 * A Bounds also maps cardinalities to atoms that represent them.  For example, suppose that a Bounds <i>b</i>
-	 * the integer <i>i</i> to the unary tupleset <i>s</i>.  Then, all the cardinality
-	 * expressions for relations with <i>i</i> atoms will evaluate to <i>s</i>. 
-	 * </p>
-	 * @specfield cardBound: int -> one TupleSet
-	 * @invariant int.cardBound.arity = 1
-	 */
-	private final SparseSequence<TupleSet> cards;
 	
 	/**
 	 * Constructs a Bounds object with the given factory and mappings.
 	 */
-	private Bounds(TupleFactory factory, Map<Relation, BoundPair> bounds, SparseSequence<TupleSet> cards, TupleSet EMPTY) {
+	private Bounds(TupleFactory factory, Map<Relation, BoundPair> bounds) {
 		this.factory = factory;
 		this.bounds = bounds;
-		this.cards = cards;
-		this.EMPTY = EMPTY;
 	}
 	
 	/**
 	 * Constructs new Bounds over the given universe.
-	 * @effects this.universe' = universe && no this.relations' &&
-	 *          this.cardBound' = int -> {t: TupleSet | t.arity = 1 && t.size() = 0}
+	 * @effects this.universe' = universe && no this.relations'
 	 * @throws NullPointerException - universe = null
 	 */
 	public Bounds(Universe universe) {
 		this.factory = universe.factory();
 		bounds = new LinkedHashMap<Relation, BoundPair>();
-		this.cards = new TreeSequence<TupleSet>();
-		this.EMPTY = new TupleSet(factory.universe(), 1, Ints.EMPTY_SET, false);
 	}
 	
 	/**
@@ -78,13 +58,12 @@ public final class Bounds implements Cloneable {
 	 * Returns the set of all relations bound by this Bounds.
 	 * The returned set does not support the add operation.
 	 * It supports removal iff this is not an unmodifiable
-	 * Bounds instance.
+	 * Bounds.
 	 * @return this.relations
 	 */
 	public Set<Relation> relations() {
 		return bounds.keySet();
 	}
-	
 	
 	/**
 	 * Returns the set of tuples that r must contain (the lower bound on r's contents).
@@ -181,51 +160,14 @@ public final class Bounds implements Cloneable {
 		bounds.put(r, new BoundPair(factory.noneOf(r.arity()).unmodifiableView(), upper.clone().unmodifiableView()));
 	}
 	
-	/**
-	 * Bounds the given cardinality to the specified tupleset.  In particular, 
-	 * all cardinality expressions for sets with <tt>card</tt> elements will evaluate to <tt>bound</tt>. 
-	 * @requires card >= 0
-	 * @requires bound.arity = 1 && bound.universe = this.universe
-	 * @effects this.cardBound' = this.cardBound ++ card->bound
-	 * @throws IllegalArgumentException - card < 0 || bound.arity != 1 ||& bound.universe != this.universe
-	 * @throws NullPointerException - bound = null
-	 */
-//	public void bound(int card, TupleSet bound) {
-//		checkBound(1, bound);
-//		if (card < 0) 
-//			throw new IllegalArgumentException("card < 0: " + card);
-//		if (bound.isEmpty())
-//			cards.remove(card);
-//		else 
-//			cards.put(card, bound.clone().unmodifiableView());
-//	}
 	
-	/**
-	 * Returns the tupleset representing the given cardinality. 
-	 * @return card.cardBound
-	 */
-//	public TupleSet cardBound(int card) {
-//		final TupleSet ret = cards.get(card);
-//		return ret==null ? EMPTY : ret;
-//	}
-	
-	/**
-	 * Returns the set of all cardinalities represented by a non-empty
-	 * tupleset.  The returned set does not support the add operation.
-	 * It supports removal iff this is not an unmodifiable
-	 * Bounds instance.
-	 * @return {i: int | i.cardBound.size() > 0 }
-	 */
-//	public IntSet cards() {
-//		return cards.indices();
-//	}
 
 	/**
 	 * Returns an unmodifiable view of this Bounds object.
 	 * @return an unmodifiable view of his Bounds object.
 	 */
 	public Bounds unmodifiableView() {
-		return new Bounds(factory, Collections.unmodifiableMap(bounds), Ints.unmodifiableSequence(cards), EMPTY);
+		return new Bounds(factory, Collections.unmodifiableMap(bounds));
 	}
 	
 	/**
@@ -233,16 +175,11 @@ public final class Bounds implements Cloneable {
 	 * @return a deep copy of this Bounds object.
 	 */
 	public Bounds clone() {
-		// ok to use a copy constructor to clone a final class
-		try {
-			return new Bounds(factory, new LinkedHashMap<Relation, BoundPair>(bounds), cards.clone(), EMPTY);
-		} catch (CloneNotSupportedException e) {
-			throw new InternalError(); // unreachable code
-		}
+		return new Bounds(factory, new LinkedHashMap<Relation, BoundPair>(bounds));
 	}
 	
 	public String toString() {
-		return "relation bounds: " + bounds.toString() + "\ncardinality bounds: " + cards.toString();
+		return bounds.toString();
 	}
 	
 	/**

@@ -9,7 +9,6 @@ import java.util.Set;
 
 import kodkod.ast.BinaryExpression;
 import kodkod.ast.BinaryFormula;
-import kodkod.ast.BinaryIntExpression;
 import kodkod.ast.ComparisonFormula;
 import kodkod.ast.Comprehension;
 import kodkod.ast.ConstantExpression;
@@ -18,7 +17,6 @@ import kodkod.ast.Decl;
 import kodkod.ast.Decls;
 import kodkod.ast.Formula;
 import kodkod.ast.IfExpression;
-import kodkod.ast.IntCastExpression;
 import kodkod.ast.IntComparisonFormula;
 import kodkod.ast.IntConstant;
 import kodkod.ast.MultiplicityFormula;
@@ -28,7 +26,7 @@ import kodkod.ast.QuantifiedFormula;
 import kodkod.ast.Relation;
 import kodkod.ast.RelationPredicate;
 import kodkod.ast.UnaryExpression;
-import kodkod.ast.UnaryIntExpression;
+import kodkod.ast.Cardinality;
 import kodkod.ast.Variable;
 import kodkod.ast.visitor.ReturnVisitor;
 import kodkod.engine.bool.BooleanConstant;
@@ -42,7 +40,7 @@ import kodkod.util.collections.ArrayStack;
  * to cache, when to throw them out of the cache, etc. 
  * 
  * @specfield node: Node // node being translated
- * @specfield cached: node.*children - LeafExpression // the nodes whose translations we'll cache
+ * @specfield cached: node.*children  // the nodes whose translations we'll cache
  * @specfield cache: cached -> (BooleanMatrix + BooleanValue + List<BooleanMatrix>) -> Environment
  * @invariant all n: cached | 
  *             n in Expression + Decl => cache[n] in BooleanMatrix -> Environment,
@@ -557,14 +555,6 @@ final class TranslationCache {
 		 * Returns the empty set.
 		 * @return {}
 		 */
-		public Set<Variable> visit(IntCastExpression castExpr) {
-			return Collections.emptySet();
-		}
-
-		/**
-		 * Returns the empty set.
-		 * @return {}
-		 */
 		public Set<Variable> visit(IntConstant intConst) {
 			return Collections.emptySet();
 		}
@@ -573,25 +563,24 @@ final class TranslationCache {
 		 * Returns the free variables in intExpr.expression.
 		 * @return freeVars(intExpr.expression)
 		 */
-		public Set<Variable> visit(UnaryIntExpression intExpr) {
+		public Set<Variable> visit(Cardinality intExpr) {
 			Set<Variable> ret = lookup(intExpr);
 			return ret != null ? ret : cache(intExpr, intExpr.expression().accept(this));
 		}
 
 		/**
-		 * Returns the empty set.
-		 * @return {}
-		 */
-		public Set<Variable> visit(BinaryIntExpression intExpr) {
-			return Collections.emptySet();
-		}
-
-		/**
-		 * Returns the empty set.
-		 * @return {}
+		 * Returns the free variables of intComp, if any.
+		 * @return freeVars(intComp.left) + freeVars(intComp.right)
 		 */
 		public Set<Variable> visit(IntComparisonFormula intComp) {
-			return Collections.emptySet();
+			Set<Variable> vars = lookup(intComp);
+			if (vars != null) return vars;
+			final Set<Variable> left = intComp.left().accept(this);
+			final Set<Variable> right = intComp.right().accept(this);
+			vars = setOfSize(left.size() + right.size());
+			vars.addAll(left);
+			vars.addAll(right);
+			return cache(intComp, vars);
 		}
 	}
 }

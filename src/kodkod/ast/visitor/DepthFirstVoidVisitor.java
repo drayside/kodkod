@@ -2,7 +2,6 @@ package kodkod.ast.visitor;
 
 import kodkod.ast.BinaryExpression;
 import kodkod.ast.BinaryFormula;
-import kodkod.ast.BinaryIntExpression;
 import kodkod.ast.ComparisonFormula;
 import kodkod.ast.Comprehension;
 import kodkod.ast.ConstantExpression;
@@ -10,7 +9,6 @@ import kodkod.ast.ConstantFormula;
 import kodkod.ast.Decl;
 import kodkod.ast.Decls;
 import kodkod.ast.IfExpression;
-import kodkod.ast.IntCastExpression;
 import kodkod.ast.IntComparisonFormula;
 import kodkod.ast.IntConstant;
 import kodkod.ast.MultiplicityFormula;
@@ -20,7 +18,7 @@ import kodkod.ast.QuantifiedFormula;
 import kodkod.ast.Relation;
 import kodkod.ast.RelationPredicate;
 import kodkod.ast.UnaryExpression;
-import kodkod.ast.UnaryIntExpression;
+import kodkod.ast.Cardinality;
 import kodkod.ast.Variable;
 
 /** 
@@ -128,17 +126,7 @@ public abstract class DepthFirstVoidVisitor implements VoidVisitor {
 		}
 	}
 	
-	/**
-	 * Visits the intexpr  if
-	 * this.visited(castExpr) returns false.  Otherwise does nothing.
-	 * @effects castExpr.intexpr.accept(this)
-	 */
-	public void visit(IntCastExpression castExpr) {
-		if (!visited(castExpr)) {
-			castExpr.intexpr().accept(this);
-		}
-	}
-	
+
 	/**
 	 * Does nothing.
 	 */
@@ -149,21 +137,9 @@ public abstract class DepthFirstVoidVisitor implements VoidVisitor {
 	 * this.visited(intExpr) returns false.  Otherwise does nothing.
 	 * @effects intExpr.expression.accept(this)
 	 */
-	public void visit(UnaryIntExpression intExpr) {
+	public void visit(Cardinality intExpr) {
 		if (!visited(intExpr)) {
 			intExpr.expression().accept(this);
-		}
-	}
-	
-	/**
-	 * Visits the children of the given binary integer expression  if
-	 * this.visited(intExpr) returns false.  Otherwise does nothing.
-	 * @effects intExpr.left.accept(this) && intExpr.right.accept(this)
-	 */
-	public void visit(BinaryIntExpression intExpr) {
-		if (!visited(intExpr)) {
-			intExpr.left().accept(this);
-			intExpr.right().accept(this);
 		}
 	}
 	

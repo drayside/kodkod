@@ -11,7 +11,6 @@ import java.util.Set;
 
 import kodkod.ast.BinaryExpression;
 import kodkod.ast.BinaryFormula;
-import kodkod.ast.BinaryIntExpression;
 import kodkod.ast.ComparisonFormula;
 import kodkod.ast.Comprehension;
 import kodkod.ast.ConstantExpression;
@@ -21,7 +20,6 @@ import kodkod.ast.Decls;
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
 import kodkod.ast.IfExpression;
-import kodkod.ast.IntCastExpression;
 import kodkod.ast.IntComparisonFormula;
 import kodkod.ast.IntConstant;
 import kodkod.ast.Multiplicity;
@@ -32,7 +30,7 @@ import kodkod.ast.QuantifiedFormula;
 import kodkod.ast.Relation;
 import kodkod.ast.RelationPredicate;
 import kodkod.ast.UnaryExpression;
-import kodkod.ast.UnaryIntExpression;
+import kodkod.ast.Cardinality;
 import kodkod.ast.Variable;
 import kodkod.ast.visitor.ReturnVisitor;
 import kodkod.engine.bool.BooleanAccumulator;
@@ -678,19 +676,12 @@ final class Fol2Bool {
 			return ret != null ? ret : record(pred, pred.toConstraints().accept(this));
 		}
 
-		public BooleanMatrix visit(IntCastExpression castExpr) {
-			throw new UnsupportedOperationException("ints not supported");
-		}
-
+		
 		public BooleanValue[] visit(IntConstant intConst) {
 			throw new UnsupportedOperationException("ints not supported");
 		}
 
-		public BooleanValue[] visit(UnaryIntExpression intExpr) {
-			throw new UnsupportedOperationException("ints not supported");
-		}
-
-		public BooleanValue[] visit(BinaryIntExpression intExpr) {
+		public BooleanValue[] visit(Cardinality intExpr) {
 			throw new UnsupportedOperationException("ints not supported");
 		}
 

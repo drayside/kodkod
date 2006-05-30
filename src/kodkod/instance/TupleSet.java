@@ -76,10 +76,7 @@ public final class TupleSet extends AbstractSet<Tuple> implements Cloneable {
 	 * Returns a set of the given arity that contains all tuples whose indeces
 	 * are contained in the given int set.  Throws an IllegalArgumentException
 	 * if the set contains an index that is either negative or greater than
-	 * this.universe.size()^arity - 1.  This constructor makes a local copy 
-	 * of the tupleIndeces set iff the copyIndeces flag is set to true.  Otherwise,
-	 * the set is not copied so all changes to it will be reflected in the constructed
-	 * TupleSet.  An attempt to iterate over a tuple set backed by an invalid index
+	 * this.universe.size()^arity - 1.  An attempt to iterate over a tuple set backed by an invalid index
 	 * set will result in a runtime exception.  
 	 * @return {s: TupleSet | s.universe = this.universe && s.arity = arity &&
 	 *                        s.tuples = {t: Tuple | t.index() in tupleIndeces} }
@@ -87,7 +84,7 @@ public final class TupleSet extends AbstractSet<Tuple> implements Cloneable {
 	 * @throws IllegalArgumentException - arity < 1
 	 * @throws IllegalArgumentException - tupleIndeces.min() < 0 || tupleIndeces.max() >= this.universe.size()^arity 
 	 */
-	TupleSet(Universe universe, int arity, IntSet tupleIndeces, boolean copyIndeces) {
+	TupleSet(Universe universe, int arity, IntSet tupleIndeces) {
 		if (universe==null) throw new NullPointerException("universe==null");
 		if (arity < 1) throw new IllegalArgumentException("arity < 1");
 		this.universe = universe;
@@ -96,12 +93,7 @@ public final class TupleSet extends AbstractSet<Tuple> implements Cloneable {
 			if (tupleIndeces.min()<0 || tupleIndeces.max() >= capacity())
 				throw new IllegalArgumentException(tupleIndeces.min() + "<0 || " + tupleIndeces.max()+">="+universe.size()+"^"+arity);
 		}
-		if (copyIndeces){
-			tuples = Ints.bestSet(capacity());
-			tuples.addAll(tupleIndeces);
-		} else {
-			tuples = tupleIndeces;
-		}
+		tuples = tupleIndeces;
 	}
 	
 	/**
@@ -173,7 +165,7 @@ public final class TupleSet extends AbstractSet<Tuple> implements Cloneable {
 	 * @return an unmodifiable view of the this tupleset
 	 */
 	public TupleSet unmodifiableView() {
-		return new TupleSet(universe,arity,indexView(),false);
+		return new TupleSet(universe,arity,indexView());
 	}
 	
 	/**
@@ -216,7 +208,7 @@ public final class TupleSet extends AbstractSet<Tuple> implements Cloneable {
 		for(IntIterator indexIter = tuples.iterator(); indexIter.hasNext();) {
 			projection.add(factory.project(indexIter.nextInt(), arity, dimension));
 		}
-		return new TupleSet(universe,1,projection,false);
+		return new TupleSet(universe,1,projection);
 	}
 	
 	/**

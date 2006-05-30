@@ -88,6 +88,7 @@ final class BooleanFormulaFlattener {
 			return parent==null ? v : parent.add(v);
 		}
 		
+		
 		public BooleanValue visit(MultiGate multigate, BooleanAccumulator parent) {
 			final Operator.Nary op = multigate.op();
 			if (flattenable.contains(multigate.label())) { // multigate's inputs are absorbed into its parent's inputs

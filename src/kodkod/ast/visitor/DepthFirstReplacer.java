@@ -6,7 +6,6 @@ package kodkod.ast.visitor;
 
 import kodkod.ast.BinaryExpression;
 import kodkod.ast.BinaryFormula;
-import kodkod.ast.BinaryIntExpression;
 import kodkod.ast.ComparisonFormula;
 import kodkod.ast.Comprehension;
 import kodkod.ast.ConstantExpression;
@@ -16,7 +15,6 @@ import kodkod.ast.Decls;
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
 import kodkod.ast.IfExpression;
-import kodkod.ast.IntCastExpression;
 import kodkod.ast.IntComparisonFormula;
 import kodkod.ast.IntConstant;
 import kodkod.ast.IntExpression;
@@ -28,7 +26,7 @@ import kodkod.ast.QuantifiedFormula;
 import kodkod.ast.Relation;
 import kodkod.ast.RelationPredicate;
 import kodkod.ast.UnaryExpression;
-import kodkod.ast.UnaryIntExpression;
+import kodkod.ast.Cardinality;
 import kodkod.ast.Variable;
 
 
@@ -219,23 +217,6 @@ public abstract class DepthFirstReplacer implements ReturnVisitor<Expression, Fo
 		}
 		return cache(ifExpr,ret);
 	}
-
-	/** 
-	 * Calls lookup(castExpr) and returns the cached value, if any.  
-	 * If a replacement has not been cached, visits the expression's 
-	 * child.  If nothing changes, the argument is cached and
-	 * returned, otherwise a replacement expression is cached and returned.
-	 * @return { i: IntCastExpression | i.intexpr = castExpr.intexpr.accept(this)}
-	 */
-    public Expression visit(IntCastExpression castExpr) {
-    		Expression ret = lookup(castExpr);
-    		if (ret==null) {
-    			final IntExpression intexpr = castExpr.intexpr().accept(this);
-    			ret = intexpr==castExpr.intexpr() ? castExpr : 
-    				  intexpr.toExpression();
-    		}
-    		return cache(castExpr, ret);
-    }
     
     /** 
 	 * Calls lookup(intconst) and returns the cached value, if any.  
@@ -254,32 +235,15 @@ public abstract class DepthFirstReplacer implements ReturnVisitor<Expression, Fo
 	 * returned, otherwise a replacement expression is cached and returned.
 	 * @return { i: UnaryIntExpression | i.expression = intExpr.expression.accept(this)}
 	 */
-    public IntExpression visit(UnaryIntExpression intExpr) {
+    public IntExpression visit(Cardinality intExpr) {
     		IntExpression ret = lookup(intExpr);
     		if (ret==null) {
     			final Expression expr = intExpr.expression().accept(this);
-    			ret = expr==intExpr.expression() ? intExpr : expr.apply(intExpr.op());
+    			ret = expr==intExpr.expression() ? intExpr : expr.count();
     		}
     		return cache(intExpr, ret);
     }
-    /** 
-	 * Calls lookup(intExpr) and returns the cached value, if any.  
-	 * If a replacement has not been cached, visits the expression's 
-	 * children.  If nothing changes, the argument is cached and
-	 * returned, otherwise a replacement expression is cached and returned.
-	 * @return { b: BinaryIntExpression | b.left = intExpr.left.accept(this) &&
-	 *                                    b.right = intExpr.right.accept(this) && b.op = intExpr.op }
-	 */
-    public IntExpression visit(BinaryIntExpression intExpr) {
-    		IntExpression ret = lookup(intExpr);
-		if (ret==null) {
-			final IntExpression left  = intExpr.left().accept(this);
-			final IntExpression right = intExpr.right().accept(this);
-			ret = (left==intExpr.left() && right==intExpr.right()) ?
-					intExpr : left.compose(intExpr.op(), right);
-		}
-		return cache(intExpr,ret);
-    }
+ 
     /** 
      * 
 	 * Calls lookup(intComp) and returns the cached value, if any.  

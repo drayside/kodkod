@@ -20,101 +20,64 @@ public abstract class IntExpression implements Node {
 	IntExpression() {}
 
 	/**
-     * Returns the sum of this and the specified int expression.  The effect
-     * of this method is the same as calling this.compose(BinaryIntExpression.Operator.PLUS, intexpr).
-     * @return {e : IntExpression | e = this + intexpr}
-     */
-	public final IntExpression plus(IntExpression intexpr) {
-		return compose(BinaryIntExpression.Operator.PLUS, intexpr);
-	}
-	
-	/**
-     * Returns the difference of this and the specified int expression.  The effect
-     * of this method is the same as calling this.compose(BinaryIntExpression.Operator.MINUS, intexpr).
-     * @return {e : IntExpression | e = this + intexpr}
-     */
-	public final IntExpression minus(IntExpression intexpr) {
-		return compose(BinaryIntExpression.Operator.MINUS, intexpr);
-	}
-	
-	/**
-     * Returns the composition of this and the specified expression, using the
-     * given binary operator.
-     * @return {e: IntExpression | e = this op intexpr }
-     */
-	public IntExpression compose(BinaryIntExpression.Operator op, IntExpression intexpr) {
-		if (op==null || intexpr==null)
-			throw new NullPointerException();
-		return new BinaryIntExpression(this, op, intexpr);	
-	}
-	
-	/**
 	 * Returns a formula stating that the given int expression and 
 	 * this have the same value.  The effect
-     * of this method is the same as calling this.compose(IntComparisonFormula.Operator.EQ, intexpr).
+     * of this method is the same as calling this.compose(IntComparisonFormula.Operator.EQ, intnode).
 	 * @return {f: Formula | f <=> this = other }
 	 */
-	public final Formula eq(IntExpression intexpr) {
-		return this.compare(IntComparisonFormula.Operator.EQ, intexpr);
+	public final Formula eq(IntExpression intnode) {
+		return this.compare(IntComparisonFormula.Operator.EQ, intnode);
 	}
 	
 	/**
 	 * Returns a formula stating that the value of this int expression is less than the 
 	 * value of the given int expression  The effect
-     * of this method is the same as calling this.compose(IntComparisonFormula.Operator.LT, intexpr).
+     * of this method is the same as calling this.compose(IntComparisonFormula.Operator.LT, intnode).
 	 * @return {f: Formula | f <=> this < other }
 	 */
-	public final Formula lt(IntExpression intexpr) {
-		return this.compare(IntComparisonFormula.Operator.LT, intexpr);
+	public final Formula lt(IntExpression intnode) {
+		return this.compare(IntComparisonFormula.Operator.LT, intnode);
 	}
 	
 	/**
 	 * Returns a formula stating that the value of this int expression is less than
 	 * or equal to the  value of the given int expression  The effect
-     * of this method is the same as calling this.compose(IntComparisonFormula.Operator.LTE, intexpr).
+     * of this method is the same as calling this.compose(IntComparisonFormula.Operator.LTE, intnode).
 	 * @return {f: Formula | f <=> this <= other }
 	 */
-	public final Formula lte(IntExpression intexpr) {
-		return this.compare(IntComparisonFormula.Operator.LTE, intexpr);
+	public final Formula lte(IntExpression intnode) {
+		return this.compare(IntComparisonFormula.Operator.LTE, intnode);
 	}
 	
 	/**
 	 * Returns a formula stating that the value of this int expression is greater than the 
 	 * value of the given int expression  The effect
-     * of this method is the same as calling this.compose(IntComparisonFormula.Operator.GT, intexpr).
+     * of this method is the same as calling this.compose(IntComparisonFormula.Operator.GT, intnode).
 	 * @return {f: Formula | f <=> this > other }
 	 */
-	public final Formula gt(IntExpression intexpr) {
-		return this.compare(IntComparisonFormula.Operator.GT, intexpr);
+	public final Formula gt(IntExpression intnode) {
+		return this.compare(IntComparisonFormula.Operator.GT, intnode);
 	}
 	
 	/**
 	 * Returns a formula stating that the value of this int expression is greater than
 	 * or equal to the  value of the given int expression  The effect
-     * of this method is the same as calling this.compose(IntComparisonFormula.Operator.GTE, intexpr).
+     * of this method is the same as calling this.compose(IntComparisonFormula.Operator.GTE, intnode).
 	 * @return {f: Formula | f <=> this >= other }
 	 */
-	public final Formula gte(IntExpression intexpr) {
-		return this.compare(IntComparisonFormula.Operator.GTE, intexpr);
+	public final Formula gte(IntExpression intnode) {
+		return this.compare(IntComparisonFormula.Operator.GTE, intnode);
 	}
 	
 	/**
 	 * Returns a formula comparing this and the given integer expression using the
 	 * specified operatior.
-	 * @return {f: Formula | f <=> this op intexpr }
+	 * @return {f: Formula | f <=> this op intnode }
 	 */
-	public Formula compare(IntComparisonFormula.Operator op, IntExpression intexpr) {
-		if (op==null || intexpr==null)
+	public Formula compare(IntComparisonFormula.Operator op, IntExpression intnode) {
+		if (op==null || intnode==null)
 			throw new NullPointerException();
-		return new IntComparisonFormula(this, op, intexpr);	
-	}
-	
-	/**
-	 * Converts this int expression into an expression and returns the result.
-	 * @return {e: Expresssion | e.sum() = this }
-	 */
-	public Expression toExpression() {
-		return new IntCastExpression(this);
+		return new IntComparisonFormula(this, op, intnode);	
 	}
 	
 	/**

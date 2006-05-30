@@ -151,15 +151,22 @@ public final class TupleFactory {
 	 * Returns a set of the given arity that contains all tuples whose indeces
 	 * are contained in the given int set.  Throws an IllegalArgumentException
 	 * if the set contains an index that is either negative or greater than
-	 * this.universe.size()^arity - 1.
+	 * this.universe.size()^arity - 1.  The returned TupleSet is backed by a clone
+	 * of tupleIndices.  
+	 * @requires tupleIndices is cloneable
 	 * @return {s: TupleSet | s.universe = this.universe && s.arity = arity &&
-	 *                        s.tuples = {t: Tuple | t.index() in tupleIndeces} }
-	 * @throws NullPointerException - tupleIndeces = null
+	 *                        s.tuples = {t: Tuple | t.index() in tupleIndices} }
+	 * @throws NullPointerException - tupleIndices = null
+	 * @throws IllegalArgumentException - tupleIndices is uncloneable
 	 * @throws IllegalArgumentException - arity < 1
-	 * @throws IllegalArgumentException - tupleIndeces.min() < 0 || tupleIndeces.max() >= this.universe.size()^arity 
+	 * @throws IllegalArgumentException - tupleIndices.min() < 0 || tupleIndices.max() >= this.universe.size()^arity 
 	 */
-	public TupleSet setOf(int arity, IntSet tupleIndeces) {
-		return new TupleSet(universe,arity,tupleIndeces,true);
+	public TupleSet setOf(int arity, IntSet tupleIndices) {
+		try {
+			return new TupleSet(universe,arity,tupleIndices.clone());
+		} catch (CloneNotSupportedException cne){
+			throw new IllegalArgumentException("uncloneable int set");
+		}
 	}
 	
 	/**
