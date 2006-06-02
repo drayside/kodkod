@@ -284,6 +284,18 @@ public final class BooleanFactory {
 	}
 	
 	/**
+	 * Returns an Int that represents the given number as a string
+	 * of boolean values using the specified encoding.
+	 * @return an Int that represents the given number as a string
+	 * of boolean values using the specified encoding.
+	 * @throws IllegalArgumentException - the number cannot be represented using 
+	 * the specified encoding
+	 */
+	public Int integer(int number, Int.Encoding encoding) {
+		return new Int(this, encoding, number);
+	}
+	
+	/**
 	 * Converts the given accumulator into an immutable boolean value and adds it to this.components.
 	 * This method requires that all of g's inputs are in this.components.  If g has no inputs,
 	 * its operator's identity constant is returned.  If g has one input, that input is returned.

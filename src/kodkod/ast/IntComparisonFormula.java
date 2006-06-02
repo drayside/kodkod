@@ -105,34 +105,35 @@ public final class IntComparisonFormula extends Formula {
 		/** `=' operator */
 		EQ { 
 			public String toString() { return "="; }
-			boolean apply(int i0, int i1) { return i0==i1; }
+			public boolean apply(int i0, int i1) { return i0==i1; }
 		},
 		/** `<' operator */
 		LT { 
 			public String toString() { return "<"; }
-			boolean apply(int i0, int i1) { return i0<i1; }
+			public boolean apply(int i0, int i1) { return i0<i1; }
 		},
 		/** `<=' operator */
 		LTE { 
 			public String toString() { return "<="; }
-			boolean apply(int i0, int i1) { return i0<=i1; }
+			public boolean apply(int i0, int i1) { return i0<=i1; }
 		},
 		/** `>' operator */
 		GT { 
 			public String toString() { return ">"; }
-			boolean apply(int i0, int i1) { return i0>i1; }
+			public boolean apply(int i0, int i1) { return i0>i1; }
 		},
 		/** `>=' operator */
 		GTE { 
 			public String toString() { return ">="; }
-			boolean apply(int i0, int i1) { return i0>=i1; }
+			public boolean apply(int i0, int i1) { return i0>=i1; }
 		};
 
 		/**
-		 * Returns the result of comparing the given integers.
+		 * Returns the result of comparing the given integers
+		 * using this comparison operator.
 		 * @return i0 op i1
 		 */
-		abstract boolean apply(int i0, int i1);
+		public abstract boolean apply(int i0, int i1);
 	}
 	
 }

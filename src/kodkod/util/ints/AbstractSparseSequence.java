@@ -1,5 +1,7 @@
 package kodkod.util.ints;
 
+import java.util.AbstractCollection;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
@@ -117,6 +119,46 @@ public abstract class AbstractSparseSequence<V> implements SparseSequence<V> {
 			}
 			public IntSet clone() throws CloneNotSupportedException { 
 				throw new CloneNotSupportedException(); 
+			}
+		};
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.util.ints.SparseSequence#values()
+	 */
+	public Collection<V> values() {
+		return new AbstractCollection<V>() {
+
+			public int size() {
+				return AbstractSparseSequence.this.size();
+			}
+
+			public boolean isEmpty() {
+				return AbstractSparseSequence.this.isEmpty();
+			}
+
+			public boolean contains(Object arg0) {
+				return AbstractSparseSequence.this.contains(arg0);
+			}
+
+			public Iterator<V> iterator() {
+				return new Iterator<V>() {
+					Iterator<IndexedEntry<V>> iter = AbstractSparseSequence.this.iterator();
+					public boolean hasNext() {
+						return iter.hasNext();
+					}
+					public V next() {
+						return iter.next().value();
+					}
+					public void remove() {
+						iter.remove();
+					}
+				};
+			}
+			
+			public void clear() {
+				AbstractSparseSequence.this.clear();
 			}
 		};
 	}

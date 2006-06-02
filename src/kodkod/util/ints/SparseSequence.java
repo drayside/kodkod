@@ -1,5 +1,6 @@
 package kodkod.util.ints;
 
+import java.util.Collection;
 import java.util.Iterator;
 
 /**
@@ -103,6 +104,15 @@ public interface SparseSequence<V> extends Iterable<IndexedEntry<V>> {
 	 * @return some this.entries.value
 	 */
 	public abstract boolean contains(Object value);
+	
+	/**
+	 * Returns a Collection view of the values stored in this sequence.
+	 * The returned collection supports removal iff this is not an
+	 * unmodifiable sparse sequence.
+	 * @return {c: Collection | c.size()=this.size() && 
+	 *          all v: V | c.contains(v) <=> this.contains(v) }
+	 */
+	public abstract Collection<V> values();
 	
 	/**
 	 * Returns an iterator over the entries in this sequence

@@ -82,7 +82,7 @@ public final class Translator {
 		final Map<Node, IntSet> varUsage;
 		BooleanValue circuit;
 		if (options.trackVars()) {
-			Fol2Bool.AnnotatedCircuit acircuit = Fol2Bool.translateAndTrack(annotated, allocator);
+			Fol2Bool.AnnotatedCircuit acircuit = Fol2Bool.translateAndTrack(annotated, allocator, options.intEncoding());
 			circuit = acircuit.translation();
 			if (circuit.op()==Operator.CONST) {
 				throw new TrivialFormulaException(Reducer.reduce(annotated,preds,acircuit), 
@@ -91,7 +91,7 @@ public final class Translator {
 			varUsage = new IdentityHashMap<Node, IntSet>(allocator.allocationMap().size() + acircuit.variableUsage().size());
 			varUsage.putAll(acircuit.variableUsage());
 		} else {
-			circuit = Fol2Bool.translate(annotated, allocator);
+			circuit = Fol2Bool.translate(annotated, allocator, options.intEncoding());
 			if (circuit.op()==Operator.CONST) {
 				throw new TrivialFormulaException(formula, (BooleanConstant)circuit, bounds, skolems);
 			}
@@ -138,7 +138,7 @@ public final class Translator {
 	 */
 	@SuppressWarnings("unchecked")
 	static <T> T evaluate(Node node, BooleanConstantAllocator allocator) {
-		return (T) Fol2Bool.translate(new AnnotatedNode<Node>(node), allocator);
+		return (T) Fol2Bool.translate(new AnnotatedNode<Node>(node), allocator, Options.IntEncoding.TWOS_COMPLEMENT);
 	}
 	
 	/**

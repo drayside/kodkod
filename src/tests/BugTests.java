@@ -40,6 +40,10 @@ public class BugTests extends TestCase {
 //			System.out.println(e); 
 //	}
 	
+//	public final void testStuff() {
+//		System.out.println(Integer.toBinaryString(-1));
+//		System.out.println(Integer.toBinaryString(1));
+//	}
 	
 	public final void testVincent_03182006_reduced() {
 		final Relation pCourses = Relation.binary("pCourses"),

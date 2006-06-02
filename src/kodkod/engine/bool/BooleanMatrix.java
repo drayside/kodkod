@@ -35,7 +35,7 @@ import kodkod.util.ints.TreeSequence;
  * 
  * @specfield dimensions: Dimensions
  * @specfield factory: BooleanFactory
- * @specfield elements: [0..dimensions.capacity) -> one BooleanValue
+ * @specfield elements: [0..dimensions.capacity) -> one factory.components
  *
  * @author Emina Torlak  
  */
@@ -144,12 +144,12 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	public final int density() { return cells.size(); }
 	
 	/**
-	 * Returns an IndexedEntry-based view of the non-zero entries in this matrix.  The returned
+	 * Returns an IndexedEntry-based view of the non-FALSE entries in this matrix.  The returned
 	 * iterator enumerates indexed entries that represent the non-FALSE entries in the matrix, in the ascending
 	 * order of indeces.  For example, suppose that the elements of this are 0->FALSE, 1->(a & b), 2->FALSE, 3->(c | d).  Then,
 	 * the Iterator will return two IndexedEntries, c1 then c2, such that c1.index=1 && c1.value = a & b and
 	 * c2.index=3 && c.value = c | d.  Calling {@link Iterator#remove()} on the returned iterator has the same effect
-	 * as setting the entry obtained through the last call to {@link Iterator#next()} to this.zero.
+	 * as setting the entry obtained through the last call to {@link Iterator#next()} to FALSE.
 	 * @return an iterator over IndexedEntries representing the non-FALSE entries in this matrix.
 	 */
 	public final Iterator<IndexedEntry<BooleanValue>> iterator() {
@@ -391,7 +391,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	 * @throws NullPointerException -  other = null 
 	 * @throws IllegalArgumentException - !other.dimensions.equals(this.dimensions) || this.factory != other.factory           
 	 */
-	public final BooleanValue equivalent(BooleanMatrix other) {
+	public final BooleanValue eq(BooleanMatrix other) {
 		/* the following encoding usually generates smaller cnfs that are harder to solve than
 		 * simply conjoining the mutual subset constraint. */
 //		checkFactory(other.factory); checkDimensions(other.dims);
@@ -559,6 +559,16 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	}
 	
 	/**
+	 * Returns an Int that represents the cardinality (number of non-FALSE entries) of this
+	 * matrix using the given encoding.     
+	 * @return {i: Int | [[i]] = sum({v: elements[int] | if [[v]] then 1 else 0}) }  
+	 * @requires encoding in { UNARY, BINARY, TWOS_COMPLEMENT }
+	 */
+	public final Int cardinality(Int.Encoding encoding) {
+		return new Int(factory, encoding, cells.values());
+	}
+	
+	/**
 	 * Returns a BooleanValue that constrains at least one value in this.elements to be true.  The
 	 * effect of this method is the same as calling this.orFold().
 	 * @return { f: BooleanValue | f <=> this.elements[0] || ... || this.elements[this.dimensions.capacity-1] }
@@ -590,25 +600,6 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 			return FALSE; 
 		else {
 			final int density = cells.size();
-//			final BooleanAccumulator g = BooleanAccumulator.treeGate(OR);
-//			UPDATEg : for (int i = 0; i < density; i++) { // g contains the outermost disjunction
-//				Iterator<IndexedEntry<BooleanValue>> entries = cells.iterator();
-//				BooleanAccumulator v = BooleanAccumulator.treeGate(AND); // v contains the individual conjunctions
-//				for(int j = 0; j < i; j++) {
-//					if (v.add(entries.next().value().negation())==FALSE) {
-//						continue UPDATEg;
-//					}
-//				}
-//				if (v.add(entries.next().value())==FALSE) continue;
-//				for(int j = i+1; j < density; j++) {
-//					if (v.add(entries.next().value().negation())==FALSE) {
-//						continue UPDATEg;
-//					}
-//				}
-//				if (g.add(factory.fastAdopt(v))==TRUE) return TRUE;
-//			}
-//			return factory.fastAdopt(g);
-			
 			final BooleanAccumulator g = BooleanAccumulator.treeGate(OR);
 			UPDATEg : for (int i = 0; i < density; i++) { // g contains the outermost disjunction
 				Iterator<IndexedEntry<BooleanValue>> entries = cells.iterator();
@@ -641,22 +632,22 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	}
 	
 	/**
-     * Sets the value at the specified index to the given value;
-     * returns the value previously at the specified position.  
+     * Sets the specified index to the given value.
      * 
      * @requires value in this.factory.components
-     * @return this.elements[index]
      * @effects this.elements'[index] = value
      * @throws NullPointerException - value = null
      * @throws IllegalArgumentException - the given is a formula, and this matrix accepts only constants
      * @throws IndexOutOfBoundsException - the given index does not belong to the set of indices at which
      * this matrix can store non-FALSE values.
      */
-	public final BooleanValue set(final int index, final BooleanValue value) {
+	public final void set(final int index, final BooleanValue value) {
 		if (!dims.validate(index)) throw new IndexOutOfBoundsException("index < 0 || index >= this.dimensions.capacity");
 		if (value==null) throw new NullPointerException("formula=null");
-		if (value==FALSE) return maskNull(cells.remove(index));
-		else return maskNull(cells.put(index,value));
+		if (value==FALSE) 
+			cells.remove(index);
+		else 
+			cells.put(index,value);
 	}
 	
 	/**

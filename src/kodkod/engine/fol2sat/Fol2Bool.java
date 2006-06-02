@@ -11,6 +11,7 @@ import java.util.Set;
 
 import kodkod.ast.BinaryExpression;
 import kodkod.ast.BinaryFormula;
+import kodkod.ast.Cardinality;
 import kodkod.ast.ComparisonFormula;
 import kodkod.ast.Comprehension;
 import kodkod.ast.ConstantExpression;
@@ -30,9 +31,9 @@ import kodkod.ast.QuantifiedFormula;
 import kodkod.ast.Relation;
 import kodkod.ast.RelationPredicate;
 import kodkod.ast.UnaryExpression;
-import kodkod.ast.Cardinality;
 import kodkod.ast.Variable;
 import kodkod.ast.visitor.ReturnVisitor;
+import kodkod.engine.Options;
 import kodkod.engine.bool.BooleanAccumulator;
 import kodkod.engine.bool.BooleanConstant;
 import kodkod.engine.bool.BooleanFactory;
@@ -40,6 +41,7 @@ import kodkod.engine.bool.BooleanFormula;
 import kodkod.engine.bool.BooleanMatrix;
 import kodkod.engine.bool.BooleanValue;
 import kodkod.engine.bool.Dimensions;
+import kodkod.engine.bool.Int;
 import kodkod.engine.bool.Operator;
 import kodkod.util.collections.IdentityHashSet;
 import kodkod.util.ints.IndexedEntry;
@@ -57,27 +59,27 @@ final class Fol2Bool {
 	
 	/**
 	 * Translates the given annotated formula or expression into a boolean
-	 * formula or matrix, using the provided allocator.
+	 * formula or matrix, using the provided allocator and integer encoding.
 	 * @requires allocator.relations = AnnotatedNode.relations(annotated)
 	 * @return {transl: T | 
 	 *           annotated.node in Formula => transl in BooleanValue, 
 	 *           annotated.node in Expression => transl in BooleanMatrix}
 	 */
 	@SuppressWarnings("unchecked")
-	static final <T> T translate(AnnotatedNode<? extends Node> annotated, BooleanFormulaAllocator allocator) {
-		return (T) annotated.node().accept(new Translator(annotated, allocator));
+	static final <T> T translate(AnnotatedNode<? extends Node> annotated, BooleanFormulaAllocator allocator, Options.IntEncoding encoding) {
+		return (T) annotated.node().accept(new Translator(annotated, allocator, encoding));
 	}
 	
 	/**
 	 * Translates the given annotated formula into a boolean circuit using
-	 * the provided allocator and structural information.  Additionally, it 
+	 * the provided allocator and integer encoding.  Additionally, it 
 	 * keeps track of which variables comprise the descendents of the formula,
 	 * and which of its descendents are reduced to constants during translation.
 	 * @requires allocator.relations = AnnotatedNode.relations(annotated)
 	 * @return {c: AnnotatedCircuit | c.formula = formula } 
 	 */
-	static final AnnotatedCircuit translateAndTrack(AnnotatedNode<Formula> annotated, BooleanFormulaAllocator allocator) {
-		final TrackingTranslator t = new TrackingTranslator(annotated, allocator);
+	static final AnnotatedCircuit translateAndTrack(AnnotatedNode<Formula> annotated, BooleanFormulaAllocator allocator, Options.IntEncoding encoding) {
+		final TrackingTranslator t = new TrackingTranslator(annotated, allocator, encoding);
 		return new AnnotatedCircuit(annotated.node().accept(t), t.varUsage, t.trueFormulas, t.falseFormulas);
 	}
 	
@@ -149,8 +151,8 @@ final class Fol2Bool {
 		 * Constructs a new translator that will use the given allocator to perform the 
 		 * translation of the specified annotated node.
 		 */    
-		TrackingTranslator(AnnotatedNode<? extends Node> annotated, BooleanFormulaAllocator allocator) {
-			super(annotated, allocator);
+		TrackingTranslator(AnnotatedNode<? extends Node> annotated, BooleanFormulaAllocator allocator, Options.IntEncoding encoding) {
+			super(annotated, allocator, encoding);
 			this.varUsage = new IdentityHashMap<Node,IntSet>();
 			this.trueFormulas = new IdentityHashSet<Formula>();
 			this.falseFormulas = new IdentityHashSet<Formula>();
@@ -174,7 +176,7 @@ final class Fol2Bool {
 			final BooleanFactory factory = allocator.factory();
 			IntSet vars;
 			if (env.parent()==null) { // top-level expression
-				vars = Ints.bestSet(1, factory.maxFormulaLabel());		
+				vars = Ints.bestSet(1, StrictMath.max(1, factory.maxFormulaLabel()));		
 			} else { // not a top-level expression
 				vars = varUsage.get(expr);
 				if (vars==null)
@@ -227,7 +229,8 @@ final class Fol2Bool {
 	 * The helper class that performs the translation.  This
 	 * version of the translator does not track variables.
 	 */
-	private static class Translator implements ReturnVisitor<BooleanMatrix, BooleanValue, Object, BooleanValue[]> {
+	private static class Translator implements ReturnVisitor<BooleanMatrix, BooleanValue, Object, Int> {
+		final Int.Encoding encoding;
 		
 		final BooleanFormulaAllocator allocator;
 		
@@ -241,10 +244,17 @@ final class Fol2Bool {
 		 * Constructs a new translator that will use the given allocator to perform the 
 		 * translation of the specified annotated node. 
 		 */   
-		Translator(AnnotatedNode<? extends Node> annotated, BooleanFormulaAllocator allocator) {
+		Translator(AnnotatedNode<? extends Node> annotated, BooleanFormulaAllocator allocator, Options.IntEncoding encoding) {
 			this.allocator = allocator;
 			this.env = new Environment<BooleanMatrix>();
 			this.cache = new TranslationCache(annotated);
+			switch(encoding) {
+			case UNARY : this.encoding = Int.Encoding.UNARY; break;
+			case BINARY : this.encoding = Int.Encoding.BINARY; break;
+			case TWOS_COMPLEMENT : this.encoding = Int.Encoding.TWOS_COMPLEMENT; break;
+			default:
+				throw new IllegalArgumentException("Unknown encoding: " + encoding);
+			}
 		}
 		
 		/**
@@ -621,8 +631,7 @@ final class Fol2Bool {
 		/**
 		 * @return let tLeft = translate(compFormula.left), tRight = translate(compFormula.right) | 
 		 *          compFormula.op = SUBSET => 
-		 *           tLeft.not().or(tRight).conjunctiveFold(),
-		 *           tLeft.not().or(tRight).and(tRight.not().or(tLeft)).conjunctiveFold()              
+		 *           tLeft.subset(tRight), tleft.eq(tRight)          
 		 */
 		public final BooleanValue visit(ComparisonFormula compFormula) {
 			BooleanValue ret = retrieve(compFormula);
@@ -634,7 +643,7 @@ final class Fol2Bool {
 			
 			switch(op) {
 			case SUBSET	: ret = left.subset(right); break;
-			case EQUALS	: ret = left.equivalent(right); break;
+			case EQUALS	: ret = left.eq(right); break;
 			default : 
 				throw new IllegalArgumentException("Unknown operator: " + compFormula.op());
 			}
@@ -676,17 +685,43 @@ final class Fol2Bool {
 			return ret != null ? ret : record(pred, pred.toConstraints().accept(this));
 		}
 
-		
-		public BooleanValue[] visit(IntConstant intConst) {
-			throw new UnsupportedOperationException("ints not supported");
+		/**
+		 * @return factory.integer(intConst.value, this.encoding)
+		 */
+		public Int visit(IntConstant intConst) {
+			return allocator.factory().integer(intConst.value(), encoding);
 		}
 
-		public BooleanValue[] visit(Cardinality intExpr) {
-			throw new UnsupportedOperationException("ints not supported");
+		/**
+		 * @return translate(intExpr.expression).cardinality(this.encoding)
+		 */
+		public Int visit(Cardinality intExpr) {
+			Int ret = retrieve(intExpr);
+			if (ret!=null) return ret;
+			return record(intExpr, intExpr.expression().accept(this).cardinality(encoding));
 		}
 
+		/**
+		 * @return translate(intComp.left) intComp.op translate(intComp.right)
+		 */
 		public BooleanValue visit(IntComparisonFormula intComp) {
-			throw new UnsupportedOperationException("ints not supported");
+			BooleanValue ret = retrieve(intComp);
+			if (ret!=null) return ret;
+			final Int left = intComp.left().accept(this);
+			final Int right = intComp.right().accept(this);
+			switch(intComp.op()) {
+			case EQ  : ret = left.eq(right); break;
+			case LT  : ret = left.lt(right); break;
+			case LTE : ret = left.lte(right); break;
+			case GT  : ret = left.gt(right); break;
+			case GTE : ret = left.gte(right); break;
+			default: 
+				throw new IllegalArgumentException("Unknown operator: " + intComp.op());
+			}
+//			System.out.println(intComp.left() + ": " + left);
+//			System.out.println(intComp.right() + ": " + right);
+//			System.out.println(ret);
+			return record(intComp, ret);
 		}
 	}
 }
