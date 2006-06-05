@@ -41,12 +41,12 @@ public class ExamplesTest extends TestCase {
 		final Bigconfig model = new Bigconfig(4);
 		final Solution sol = solve(model.show(), model.bounds(1, 9, 10));
 //		SATISFIABLE
-//		p cnf 2227 8278
+//		p cnf 2227 4171
 //		primary variables: 100
 		assertEquals(Solution.Outcome.SATISFIABLE,sol.outcome());
 		assertEquals(100, sol.stats().primaryVariables());
 		assertEquals(2227, sol.stats().variables());
-		assertEquals(8278, sol.stats().clauses());
+		assertEquals(4171, sol.stats().clauses());
 	}
 	
 	/**
@@ -57,12 +57,12 @@ public class ExamplesTest extends TestCase {
 		final Formula assertion = model.declarations().and(model.belowTooDoublePrime());
 		final Solution sol = solve(assertion, model.bounds(6, 6));
 //		UNSATISFIABLE
-//		p cnf 1686 6436
+//		p cnf 1686 3447
 //		primary variables: 90
 		assertEquals(Solution.Outcome.UNSATISFIABLE, sol.outcome());
 		assertEquals(90, sol.stats().primaryVariables());
 		assertEquals(1686, sol.stats().variables());
-		assertEquals(6436, sol.stats().clauses());
+		assertEquals(3447, sol.stats().clauses());
 	}
 	
 	/**
@@ -73,12 +73,12 @@ public class ExamplesTest extends TestCase {
 		final Formula noDeadlocks = model.declarations().and(model.dijkstraPreventsDeadlocks().not());
 		final Solution sol = solve(noDeadlocks, model.bounds(6,6,6));
 //		UNSATISFIABLE
-//		p cnf 4341 25526
+//		p cnf 4341 18623
 //		primary variables: 444
 		assertEquals(Solution.Outcome.UNSATISFIABLE, sol.outcome());
 		assertEquals(444, sol.stats().primaryVariables());
 		assertEquals(4341, sol.stats().variables());
-		assertEquals(25526, sol.stats().clauses());
+		assertEquals(18623, sol.stats().clauses());
 	}
 	
 	/**
@@ -89,12 +89,12 @@ public class ExamplesTest extends TestCase {
 		final Formula show = model.declarations().and(model.pigeonPerHole());
 		final Solution sol = solve(show, model.bounds(10,9));
 //		UNSATISFIABLE
-//		p cnf 983 3567
+//		p cnf 983 1613
 //		primary variables: 90
 		assertEquals(Solution.Outcome.UNSATISFIABLE, sol.outcome());
 		assertEquals(90, sol.stats().primaryVariables());
 		assertEquals(983, sol.stats().variables());
-		assertEquals(3567, sol.stats().clauses());
+		assertEquals(1613, sol.stats().clauses());
 	}
 	
 	/**
@@ -105,12 +105,12 @@ public class ExamplesTest extends TestCase {
 		final Formula checkAtMostOneElected = model.declsAndFacts().and(model.atMostOneElected().not());
 		final Solution sol = solve(checkAtMostOneElected, model.bounds(5,10));
 //		UNSATISFIABLE
-//		p cnf 8654 36743
+//		p cnf 8654 29705
 //		primary variables: 325
 		assertEquals(Solution.Outcome.UNSATISFIABLE, sol.outcome());
 		assertEquals(325, sol.stats().primaryVariables());
 		assertEquals(8654, sol.stats().variables());
-		assertEquals(36743, sol.stats().clauses());
+		assertEquals(29705, sol.stats().clauses());
 	}
 
 	/**
@@ -120,12 +120,12 @@ public class ExamplesTest extends TestCase {
 		final Sudoku model = new Sudoku(3);
 		final Solution sol = solve(model.rules(), model.puzzle1());
 //		SATISFIABLE
-//		p cnf 1544 9006
+//		p cnf 1544 6974
 //		primary variables: 702
 		assertEquals(Solution.Outcome.SATISFIABLE, sol.outcome());
 		assertEquals(702, sol.stats().primaryVariables());
 		assertEquals(1544, sol.stats().variables());
-		assertEquals(9006, sol.stats().clauses());
+		assertEquals(6974, sol.stats().clauses());
 	}
 	
 	/**
