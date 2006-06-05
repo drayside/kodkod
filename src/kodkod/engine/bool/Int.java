@@ -204,6 +204,18 @@ public final class Int {
 		return new Int(factory, encoding, encoding.plus(factory, bits, other.bits));
 	}
 	
+	/**
+	 * Returns an Int that represents the difference between this and the given Int.
+	 * @requires this.factory = other.factory && this.encoding = other.encoding
+	 * @return an Int that represents the difference between this and the given Int
+	 * @throws IllegalArgumentException - this.factory != other.factory || this.encoding = other.encoding
+	 * @throws UnsupportedOperationException - this.encoding does not allow subtraction
+	 */
+	public Int minus(Int other) {
+		validate(other);
+		return new Int(factory, encoding, encoding.minus(factory, bits, other.bits));
+	}
+	
 	
 	/**
 	 * @throws IllegalArgumentException - other.factory != this.factory || other.encoding != this.encoding
@@ -351,6 +363,14 @@ public final class Int {
 				}
 				return plus;
 			}
+			
+			BooleanValue[] minus(BooleanFactory factory, BooleanValue[] bits0, BooleanValue[] bits1) {
+				final BooleanValue[] negBits = new BooleanValue[bits1.length];
+				for(int i = 0; i < bits1.length; i++) {
+					negBits[i] = bits1[i].negation();
+				}
+				return plus(factory, bits0, plus(factory, encode(1), negBits));
+			}
 		};
 		
 		/**
@@ -395,13 +415,25 @@ public final class Int {
 		/**
 		 * Returns an array of BooleanValues that encodes the sum of
 		 * the integers represented by the given arrays using this
-		 * encoding.  The default implementation treats the bits as 
-		 * though they were binary numbers.
+		 * encoding.  
 		 * @requires bits0[int] + bits1[int] in factory.components
 		 * @return an array of BooleanValues that encodes the sum of
 		 * the integers represented by the given arrays using this
 		 * encoding.
 		 */
 		abstract BooleanValue[] plus(BooleanFactory factory, BooleanValue[] bits0, BooleanValue[] bits1);
+		
+		/**
+		 * Returns an array of BooleanValues that encodes the difference between
+		 * the integers represented by the given arrays using this
+		 * encoding.  The default implementation throws an UnsupportedOperationException.
+		 * @requires bits0[int] + bits1[int] in factory.components
+		 * @return an array of BooleanValues that encodes the difference between 
+		 * the integers represented by the given arrays using this
+		 * encoding.
+		 */
+		BooleanValue[] minus(BooleanFactory factory, BooleanValue[] bits0, BooleanValue[] bits1) {
+			throw new UnsupportedOperationException(this + " encoding allows only addition of non-negative numbers.");
+		}
 	}	
 }

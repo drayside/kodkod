@@ -2,6 +2,8 @@ package kodkod.ast.visitor;
 
 import kodkod.ast.BinaryExpression;
 import kodkod.ast.BinaryFormula;
+import kodkod.ast.BinaryIntExpression;
+import kodkod.ast.Cardinality;
 import kodkod.ast.ComparisonFormula;
 import kodkod.ast.Comprehension;
 import kodkod.ast.ConstantExpression;
@@ -18,7 +20,6 @@ import kodkod.ast.QuantifiedFormula;
 import kodkod.ast.Relation;
 import kodkod.ast.RelationPredicate;
 import kodkod.ast.UnaryExpression;
-import kodkod.ast.Cardinality;
 import kodkod.ast.Variable;
 
 /** 
@@ -144,8 +145,20 @@ public abstract class DepthFirstVoidVisitor implements VoidVisitor {
 	}
 	
 	/**
+	 * Visits the children of the given integer expression  if
+	 * this.visited(intExpr) returns false.  Otherwise does nothing.
+	 * @effects intExpr.left.accept(this) && intExpr.right.accept(this)
+	 */
+	public void visit(BinaryIntExpression intExpr) {
+		if (!visited(intExpr)) {
+			intExpr.left().accept(this);
+			intExpr.right().accept(this);
+		}
+	}
+	
+	/**
 	 * Visits the children of the given integer comparison formula  if
-	 * this.visited(intCpmp) returns false.  Otherwise does nothing.
+	 * this.visited(intComp) returns false.  Otherwise does nothing.
 	 * @effects intComp.left.accept(this) && intComp.right.accept(this)
 	 */
 	public void visit(IntComparisonFormula intComp) {

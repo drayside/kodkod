@@ -39,17 +39,6 @@ public final class IntConstant extends IntExpression {
 		return value;
 	}
 	
-//	/**
-//	 * {@inheritDoc}
-//	 * @see kodkod.ast.IntNode#compose(kodkod.ast.BinaryIntExpression.Operator, kodkod.ast.IntNode)
-//	 */
-//	public IntNode compose(BinaryIntExpression.Operator op, IntNode intexpr) {
-//		if (intexpr instanceof IntConstant)
-//			return constant(op.apply(value, ((IntConstant)intexpr).value));
-//		else 
-//			return super.compose(op, intexpr);
-//	}
-	
 	/**
 	 * {@inheritDoc}
 	 * @see kodkod.ast.IntExpression#compare(kodkod.ast.IntComparisonFormula.Operator, kodkod.ast.IntExpression)
@@ -61,6 +50,16 @@ public final class IntConstant extends IntExpression {
 			return super.compare(op, intexpr);	
 	}
 	
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.ast.IntExpression#compose(kodkod.ast.BinaryIntExpression.Operator, kodkod.ast.IntExpression)
+	 */
+	public IntExpression compose(BinaryIntExpression.Operator op, IntExpression intexpr) {
+		if (intexpr instanceof IntConstant)
+			return constant(op.apply(value, ((IntConstant)intexpr).value));
+		else
+			return super.compose(op, intexpr);
+	}
 	/**
 	 * Return true if o is an IntConstant with the same value as this.
 	 * @return o in IntConstant && o.value = this.value

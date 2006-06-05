@@ -176,5 +176,85 @@ public class CardinalityTest extends TestCase {
 		testCardLtGt(TWOS_COMPLEMENT, GT);	
 	}
 	
+	private final void testCardPlus(Options.IntEncoding encoding) {
+		solver.options().setIntEncoding(encoding);
+		bounds.bound(r1, factory.setOf("15"), factory.setOf("15"));
+		Formula f = r1.count().plus(IntConstant.constant(1)).eq(IntConstant.constant(2));
+		Solution s = solve(f);
+		assertNotNull(s.instance());
+		assertEquals(Ints.singleton(15), s.instance().tuples(r1).indexView());
+		
+		f = r1.count().plus(IntConstant.constant(10)).lt(IntConstant.constant(11));
+		s = solve(f);
+		assertNull(s.instance());
+		
+		bounds.bound(r1, factory.setOf("15"), factory.allOf(1));
+		f = IntConstant.constant(3).plus(IntConstant.constant(2)).eq(r1.count());
+		s = solve(f);
+		assertNotNull(s.instance());
+		assertTrue(s.instance().tuples(r1).indexView().contains(15));
+		assertEquals(5, s.instance().tuples(r1).size());
+
+		bounds.bound(r2, factory.area(factory.tuple("0","8"), factory.tuple("8","15")));
 	
+		f = r2.count().plus(r1.count()).gte(IntConstant.constant(7));
+		s = solve(f);
+//		System.out.println(s.stats());
+		assertNotNull(s.instance());
+		assertTrue(s.instance().tuples(r2).size() + s.instance().tuples(r1).size() >= 7);
+		
+		f = IntConstant.constant(100000).plus(IntConstant.constant(9)).eq(IntConstant.constant(100009));
+		s = solve(f);
+		assertEquals(Solution.Outcome.TRIVIALLY_SATISFIABLE, s.outcome());
+	}
+	
+	public final void testCardPlus() {
+		testCardPlus(UNARY);
+		testCardPlus(BINARY);
+		testCardPlus(TWOS_COMPLEMENT);
+	}
+	
+	private final void testCardMinus(Options.IntEncoding encoding) {
+		solver.options().setIntEncoding(encoding);
+		bounds.bound(r1, factory.setOf("15"), factory.setOf("15"));
+		Formula f = r1.count().minus(IntConstant.constant(2)).eq(IntConstant.constant(-1));
+		Solution s = solve(f);
+		assertNotNull(s.instance());
+		assertEquals(Ints.singleton(15), s.instance().tuples(r1).indexView());
+		
+		f = r1.count().plus(IntConstant.constant(1)).lt(IntConstant.constant(0));
+		s = solve(f);
+		assertNull(s.instance());
+		
+		bounds.bound(r1, factory.setOf("15"), factory.allOf(1));
+		f = IntConstant.constant(23).minus(IntConstant.constant(20)).eq(r1.count());
+		s = solve(f);
+		assertNotNull(s.instance());
+		assertTrue(s.instance().tuples(r1).indexView().contains(15));
+		assertEquals(3, s.instance().tuples(r1).size());
+
+		bounds.bound(r2, factory.area(factory.tuple("0","8"), factory.tuple("8","15")));
+	
+		f = r2.count().minus(r1.count()).gte(IntConstant.constant(7));
+		s = solve(f);
+//		System.out.println(s.stats());
+		assertNotNull(s.instance());
+		assertTrue(s.instance().tuples(r2).size() + s.instance().tuples(r1).size() >= 7);
+		
+		f = IntConstant.constant(100000).minus(IntConstant.constant(9)).eq(IntConstant.constant(99991));
+		s = solve(f);
+		assertEquals(Solution.Outcome.TRIVIALLY_SATISFIABLE, s.outcome());
+	}
+	
+	public final void testCardMinus() {
+		try {
+			testCardMinus(UNARY);
+			fail();
+		} catch (UnsupportedOperationException unused) {	}
+		try {
+			testCardMinus(BINARY);
+			fail();
+		} catch (UnsupportedOperationException unused) { }
+		testCardMinus(TWOS_COMPLEMENT);
+	}
 }

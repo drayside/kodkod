@@ -11,6 +11,7 @@ import java.util.Set;
 
 import kodkod.ast.BinaryExpression;
 import kodkod.ast.BinaryFormula;
+import kodkod.ast.BinaryIntExpression;
 import kodkod.ast.Cardinality;
 import kodkod.ast.ComparisonFormula;
 import kodkod.ast.Comprehension;
@@ -702,6 +703,23 @@ final class Fol2Bool {
 		}
 
 		/**
+		 * @return translate(intExpr.left) intExpr.op translate(intExpr.right)
+		 */
+		public Int visit(BinaryIntExpression intExpr) {
+			Int ret = retrieve(intExpr);
+			if (ret!=null) return ret;
+			final Int left = intExpr.left().accept(this);
+			final Int right = intExpr.right().accept(this);
+			switch(intExpr.op()) {
+			case PLUS  : ret = left.plus(right); break;
+			case MINUS : ret = left.minus(right); break;
+			default    :
+				throw new IllegalArgumentException("Unknown operator: " + intExpr.op());
+			}
+			return record(intExpr, ret);
+		}
+		
+		/**
 		 * @return translate(intComp.left) intComp.op translate(intComp.right)
 		 */
 		public BooleanValue visit(IntComparisonFormula intComp) {
@@ -722,6 +740,6 @@ final class Fol2Bool {
 //			System.out.println(intComp.right() + ": " + right);
 //			System.out.println(ret);
 			return record(intComp, ret);
-		}
+		}	
 	}
 }

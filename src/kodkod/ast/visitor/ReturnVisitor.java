@@ -6,6 +6,8 @@ package kodkod.ast.visitor;
 
 import kodkod.ast.BinaryExpression;
 import kodkod.ast.BinaryFormula;
+import kodkod.ast.BinaryIntExpression;
+import kodkod.ast.Cardinality;
 import kodkod.ast.ComparisonFormula;
 import kodkod.ast.Comprehension;
 import kodkod.ast.ConstantExpression;
@@ -21,7 +23,6 @@ import kodkod.ast.QuantifiedFormula;
 import kodkod.ast.Relation;
 import kodkod.ast.RelationPredicate;
 import kodkod.ast.UnaryExpression;
-import kodkod.ast.Cardinality;
 import kodkod.ast.Variable;
 
 
@@ -91,9 +92,14 @@ public interface ReturnVisitor<E, F, D, I> {
     public I visit(IntConstant intConst);
     /**
      * Visits the given unary integer expression and returns the result.
-	 * @return the result of visiting <code>intexpr</code> 
+	 * @return the result of visiting <code>intExpr</code> 
      */
     public I visit(Cardinality intExpr);
+    /**
+     * Visits the given binary integer expression and returns the result.
+	 * @return the result of visiting <code>intExpr</code> 
+     */
+    public I visit(BinaryIntExpression intExpr);
     /**
      * Visits the given integer comparison formula and returns the result.
 	 * @return the result of visiting <code>intcomp</code> 

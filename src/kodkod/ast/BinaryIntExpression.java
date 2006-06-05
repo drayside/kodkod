@@ -4,31 +4,29 @@
 package kodkod.ast;
 
 
-
 import kodkod.ast.visitor.ReturnVisitor;
 import kodkod.ast.visitor.VoidVisitor;
 
-/** 
- * Represents a integer comparison formula, e.g. x = y, x <= y, etc.
- * 
+/**
+ * Represents a binary integer expression, e.g. x + y.
  * @specfield left: IntExpression
  * @specfield right: IntExpression
  * @specfield op: Operator
  * @invariant children = left + right
- * @author Emina Torlak 
+ * @author Emina Torlak
  */
-public final class IntComparisonFormula extends Formula {
+public final class BinaryIntExpression extends IntExpression {
 	private final Operator op;
 	private final IntExpression left, right;
 	private final int hashCode;
 	
 	/**  
-	 * Constructs a new int comparison formula: left op right
+	 * Constructs a new binary int formula: left op right
 	 * 
 	 * @effects this.left' = left && this.right' = right && this.op' = op
 	 * @throws NullPointerException - left = null || right = null || op = null
 	 */
-	IntComparisonFormula(final IntExpression left, final Operator op, final IntExpression right) {
+	public BinaryIntExpression(final IntExpression left, final Operator op, final IntExpression right) {
 		this.left = left;
 		this.right = right;
 		this.op = op;
@@ -68,8 +66,8 @@ public final class IntComparisonFormula extends Formula {
 	 */
 	public boolean equals(Object o) {
 		if (this == o) return true;
-		if (!(o instanceof IntComparisonFormula)) return false;
-		IntComparisonFormula that = (IntComparisonFormula)o;
+		if (!(o instanceof BinaryIntExpression)) return false;
+		BinaryIntExpression that = (BinaryIntExpression)o;
 		return op.equals(that.op) && left.equals(that.left) && right.equals(that.right);
 	}
 	
@@ -83,57 +81,58 @@ public final class IntComparisonFormula extends Formula {
 	
 	/**
 	 * {@inheritDoc}
-	 * @see kodkod.ast.Formula#accept(kodkod.ast.visitor.ReturnVisitor)
+	 * @see kodkod.ast.IntExpression#accept(kodkod.ast.visitor.ReturnVisitor)
 	 */
 	@Override
-	 public <E, F, D, I> F accept(ReturnVisitor<E, F, D, I> visitor) {
-        return visitor.visit(this);
-    }
+	public <E, F, D, I> I accept(ReturnVisitor<E, F, D, I> visitor) {
+		return visitor.visit(this);
+	}
 
 	/**
 	 * {@inheritDoc}
-	 * @see kodkod.ast.Node#accept(kodkod.ast.visitor.VoidVisitor)
+	 * @see kodkod.ast.IntExpression#accept(kodkod.ast.visitor.VoidVisitor)
 	 */
+	@Override
 	public void accept(VoidVisitor visitor) {
 		visitor.visit(this);
 	}
 
 	/**
-	 * Represents a binary comarison operator:  =, < , >, <=, >=.
+	 * Binary operators on integer expressions.
 	 */
 	public static enum Operator {
-		/** `=' operator */
-		EQ { 
-			public String toString() { return "="; }
-			public boolean apply(int i0, int i1) { return i0==i1; }
+		/** `+' operator */
+		PLUS {
+			/**
+			 * Returns the sum of i0 and i1.
+			 * @return i0 + i1
+			 */
+			public int apply(int i0, int i1) {
+				return i0 + i1;
+			}
+			public String toString() {
+				return "+";
+			}
 		},
-		/** `<' operator */
-		LT { 
-			public String toString() { return "<"; }
-			public boolean apply(int i0, int i1) { return i0<i1; }
-		},
-		/** `<=' operator */
-		LTE { 
-			public String toString() { return "<="; }
-			public boolean apply(int i0, int i1) { return i0<=i1; }
-		},
-		/** `>' operator */
-		GT { 
-			public String toString() { return ">"; }
-			public boolean apply(int i0, int i1) { return i0>i1; }
-		},
-		/** `>=' operator */
-		GTE { 
-			public String toString() { return ">="; }
-			public boolean apply(int i0, int i1) { return i0>=i1; }
+		/** `-' operator */
+		MINUS {
+			/**
+			 * Returns the difference of i0 and i1.
+			 * @return i0 - i1
+			 */
+			public int apply(int i0, int i1) {
+				return i0 - i1;
+			}
+			public String toString() {
+				return "-";
+			}
 		};
-
+		
 		/**
-		 * Returns the result of comparing the given integers
-		 * using this comparison operator.
+		 * Returns the result of combining the given integers
+		 * using this binary operator.
 		 * @return i0 op i1
 		 */
-		public abstract boolean apply(int i0, int i1);
+		public abstract int apply(int i0, int i1);
 	}
-	
 }

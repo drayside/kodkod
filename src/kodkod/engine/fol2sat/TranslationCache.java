@@ -9,6 +9,7 @@ import java.util.Set;
 
 import kodkod.ast.BinaryExpression;
 import kodkod.ast.BinaryFormula;
+import kodkod.ast.BinaryIntExpression;
 import kodkod.ast.ComparisonFormula;
 import kodkod.ast.Comprehension;
 import kodkod.ast.ConstantExpression;
@@ -581,6 +582,21 @@ final class TranslationCache {
 			vars.addAll(left);
 			vars.addAll(right);
 			return cache(intComp, vars);
+		}
+
+		/**
+		 * Returns the free variables of intExpr, if any.
+		 * @return freeVars(intExpr.left) + freeVars(intExpr.right)
+		 */
+		public Set<Variable> visit(BinaryIntExpression intExpr) {
+			Set<Variable> vars = lookup(intExpr);
+			if (vars != null) return vars;
+			final Set<Variable> left = intExpr.left().accept(this);
+			final Set<Variable> right = intExpr.right().accept(this);
+			vars = setOfSize(left.size() + right.size());
+			vars.addAll(left);
+			vars.addAll(right);
+			return cache(intExpr, vars);
 		}
 	}
 }

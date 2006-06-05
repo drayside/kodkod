@@ -6,6 +6,8 @@ package kodkod.ast.visitor;
 
 import kodkod.ast.BinaryExpression;
 import kodkod.ast.BinaryFormula;
+import kodkod.ast.BinaryIntExpression;
+import kodkod.ast.Cardinality;
 import kodkod.ast.ComparisonFormula;
 import kodkod.ast.Comprehension;
 import kodkod.ast.ConstantExpression;
@@ -26,7 +28,6 @@ import kodkod.ast.QuantifiedFormula;
 import kodkod.ast.Relation;
 import kodkod.ast.RelationPredicate;
 import kodkod.ast.UnaryExpression;
-import kodkod.ast.Cardinality;
 import kodkod.ast.Variable;
 
 
@@ -245,14 +246,29 @@ public abstract class DepthFirstReplacer implements ReturnVisitor<Expression, Fo
     }
  
     /** 
-     * 
+	 * Calls lookup(intExpr) and returns the cached value, if any.  
+	 * If a replacement has not been cached, visits the expression's 
+	 * children.  If nothing changes, the argument is cached and
+	 * returned, otherwise a replacement expression is cached and returned.
+	 * @return { c: IntExpression | [[c]] = intExpr.left.accept(this) op intExpr.right.accept(this) }
+	 */
+    public IntExpression visit(BinaryIntExpression intExpr) {
+    		IntExpression ret = lookup(intExpr);
+		if (ret==null) {
+			final IntExpression left  = intExpr.left().accept(this);
+			final IntExpression right = intExpr.right().accept(this);
+			ret =  (left==intExpr.left() && right==intExpr.right()) ? 
+					intExpr : left.compose(intExpr.op(), right);
+		}
+		return cache(intExpr,ret);
+    }
+    
+    /** 
 	 * Calls lookup(intComp) and returns the cached value, if any.  
 	 * If a replacement has not been cached, visits the formula's 
 	 * children.  If nothing changes, the argument is cached and
 	 * returned, otherwise a replacement formula is cached and returned.
-	 * @return { c: IntComparisonFormula | c.left = intComp.left.accept(this) &&
-	 *                                     c.right = intComp.right.accept(this) &&
-	 *                                     c.op = intComp.op }
+	 * @return { c: Formula | [[c]] = intComp.left.accept(this) op intComp.right.accept(this) }
 	 */
     public Formula visit(IntComparisonFormula intComp) {
     		Formula ret = lookup(intComp);
