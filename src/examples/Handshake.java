@@ -1,21 +1,32 @@
 package examples;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import kodkod.ast.Expression;
 import kodkod.ast.Formula;
 import kodkod.ast.Relation;
 import kodkod.ast.Variable;
+import kodkod.engine.Solution;
+import kodkod.engine.Solver;
+import kodkod.engine.TimeoutException;
+import kodkod.engine.satlab.SATFactory;
+import kodkod.instance.Bounds;
+import kodkod.instance.TupleFactory;
+import kodkod.instance.Universe;
 
 /**
  * KodKod encoding of shakehands.als.
  * 
  * @author Emina Torlak
  */
- final class Handshake {
-	private final Relation Person, /*Hilary, Jocelyn,*/ shaken, spouse;
+ public final class Handshake {
+	private final Relation Person, Hilary, Jocelyn, shaken, spouse;
 	
-	Handshake() {
+	public Handshake() {
 		Person = Relation.unary("Person");
-//		Hilary = Relation.unary("Hilary");
-//		Jocelyn = Relation.unary("Jocelyn");
+		Hilary = Relation.unary("Hilary");
+		Jocelyn = Relation.unary("Jocelyn");
 		shaken = Relation.binary("shaken");
 		spouse = Relation.binary("spouse");
 	}
@@ -28,11 +39,12 @@ import kodkod.ast.Variable;
 	 * one sig Jocelyn, Hilary extends Person {}
 	 * </pre>
 	 */
-	Formula declarations() {
+	public Formula declarations() {
 		return spouse.function(Person, Person);
 	}
 	
 	/**
+	 * Returns the ShakingProtocol fact.
 	 * @return
 	 * <pre>
 	 * fact ShakingProtocol {
@@ -43,7 +55,7 @@ import kodkod.ast.Variable;
 	 * }
 	 * </pre>
 	 */
-	Formula shakingProtocol() {
+	public Formula shakingProtocol() {
 		final Variable p = Variable.unary("p");
 		final Variable q = Variable.unary("q");
 		final Formula f1 = p.union(p.join(spouse)).intersection(p.join(shaken)).no().forAll(p.oneOf(Person));
@@ -52,6 +64,7 @@ import kodkod.ast.Variable;
 	}
 	
 	/**
+	 * Returns the Spouses fact.
 	 * @return 
 	 * <pre>
 	 * fact Spouses {
@@ -70,7 +83,7 @@ import kodkod.ast.Variable;
 	 * }
 	 * </pre>
 	 */
-	Formula spouses() {
+	public Formula spouses() {
 		final Variable p = Variable.unary("p");
 		final Variable q = Variable.unary("q");
 		final Formula f1 = p.join(spouse).eq(q).implies(q.join(spouse).eq(p));
@@ -81,20 +94,81 @@ import kodkod.ast.Variable;
 	}
 	
 	/**
+	 * Returns the Puzzle predicate
 	 * @return 
+	 * <pre>
 	 * pred Puzzle() {
 	 *  // everyone but Jocelyn has shaken a different number of hands
 	 *  all disj p,q: Person - Jocelyn | #p.shaken != #q.shaken
-	 *  // there are 10 persons
-	 *  //#Person = 10
 	 *  // Hilary's spouse is Jocelyn
 	 *  Hilary.spouse = Jocelyn
 	 * }
+	 * </pre>
 	 */
-//	Formula puzzle() {
-//		final Variable p = Variable.unary("p");
-//		final Variable q = Variable.unary("q");
-//		
-//	}
+	public Formula puzzle() {
+		final Variable p = Variable.unary("p");
+		final Variable q = Variable.unary("q");
+		final Formula f = p.eq(q).not().implies(p.join(shaken).count().eq(q.join(shaken).count()).not());
+		final Expression e = Person.difference(Jocelyn);
+		return f.forAll(p.oneOf(e).and(q.oneOf(e))).and(Hilary.join(spouse).eq(Jocelyn));
+	}
+	
+	/**
+	 * Returns the conjunction of the facts and the puzzle predicate.
+	 * @return declarations().and(shakingProtocol()).and(spouses()).and(puzzle())
+	 */
+	public Formula runPuzzle() {
+		return declarations().and(shakingProtocol()).and(spouses()).and(puzzle());
+	}
+	
+	/**
+	 * Returns a bounds for the given number of persons.
+	 * @return a bounds for the given number of persons.
+	 */
+	public Bounds bounds(int persons) {
+		final List<String> atoms = new ArrayList<String>(persons);
+		for(int i = 0; i < persons; i ++) {
+			atoms.add("Person" + i);
+		}
+		final Universe u = new Universe(atoms);
+		final TupleFactory f = u.factory();
+		final Bounds b = new Bounds(u);
+		b.boundExactly(Person, f.allOf(1));
+		b.boundExactly(Hilary, f.setOf("Person0"));
+		b.boundExactly(Jocelyn, f.setOf("Person1"));
+		b.bound(spouse, f.allOf(2));
+		b.bound(shaken, f.allOf(2));
+		return b;
+	}
+	
+	private static void usage() {
+		System.out.println("Usage: java examples.Handshake [# persons, must be >= 2]");
+		System.exit(1);
+	}
+	
+	/**
+	 * Usage: java examples.Handshake [# persons, must be >= 2]
+	 */
+	public static void main(String[] args) {
+		if (args.length < 1)
+			usage();
+		
+		final Handshake model =  new Handshake();
+		final Solver solver = new Solver();
+		solver.options().setSolver(SATFactory.ZChaff);
+		solver.options().setSymmetryBreaking(0);
+		try {
+			final int persons = Integer.parseInt(args[0]);
+			if (persons<2) usage();
+			final Bounds b = model.bounds(persons);
+			final Formula f = model.runPuzzle();
+			Solution sol = solver.solve(f, b);
+			System.out.println(sol);
+		} catch (NumberFormatException nfe) {
+			usage();
+		} catch (TimeoutException te) {
+			te.printStackTrace();
+		}
+	}
 	
 }

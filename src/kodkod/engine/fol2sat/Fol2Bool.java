@@ -1,10 +1,7 @@
 package kodkod.engine.fol2sat;
 
-import static kodkod.engine.bool.BooleanConstant.TRUE;
-
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -38,25 +35,34 @@ import kodkod.engine.Options;
 import kodkod.engine.bool.BooleanAccumulator;
 import kodkod.engine.bool.BooleanConstant;
 import kodkod.engine.bool.BooleanFactory;
-import kodkod.engine.bool.BooleanFormula;
 import kodkod.engine.bool.BooleanMatrix;
 import kodkod.engine.bool.BooleanValue;
 import kodkod.engine.bool.Dimensions;
 import kodkod.engine.bool.Int;
 import kodkod.engine.bool.Operator;
-import kodkod.util.collections.IdentityHashSet;
-import kodkod.util.ints.IndexedEntry;
 import kodkod.util.ints.IntSet;
 import kodkod.util.ints.Ints;
 
 /**
- * Translates a first order logic formula into a boolean circuit.
- * 
+ * Translates a first order logic formula into a boolean circuit, 
+ * and stores the translation and annotations computed by 
+ * {@link Fol2Bool#translateAndTrack(AnnotatedNode, BooleanFormulaAllocator, Options.IntEncoding)}. 
+ * @specfield node: AnnotatedNode<? extends Node> // the node being translated
+ * @specfield allocator: BooleanFormulaAllocator // the allocator used for translation	 
  * @author Emina Torlak
  */
 final class Fol2Bool {
-
-	private Fol2Bool() {}
+	private final BooleanValue translation;
+	private final Map<Node,IntSet> variableUsage;
+	private final Set<Formula> trueFormulas, falseFormulas;
+	
+	private Fol2Bool(BooleanValue translation, Map<Node,IntSet> varUsage, 
+            Set<Formula> trueFormulas, Set<Formula> falseFormulas) {
+		this.translation = translation;
+		this.variableUsage = Collections.unmodifiableMap(varUsage);
+		this.trueFormulas = Collections.unmodifiableSet(trueFormulas);
+		this.falseFormulas = Collections.unmodifiableSet(falseFormulas);
+	}
 	
 	/**
 	 * Translates the given annotated formula or expression into a boolean
@@ -68,7 +74,7 @@ final class Fol2Bool {
 	 */
 	@SuppressWarnings("unchecked")
 	static final <T> T translate(AnnotatedNode<? extends Node> annotated, BooleanFormulaAllocator allocator, Options.IntEncoding encoding) {
-		return (T) annotated.node().accept(new Translator(annotated, allocator, encoding));
+		return (T) annotated.node().accept(new Translator(new TranslationCache.Simple(annotated), allocator, encoding));
 	}
 	
 	/**
@@ -77,158 +83,58 @@ final class Fol2Bool {
 	 * keeps track of which variables comprise the descendents of the formula,
 	 * and which of its descendents are reduced to constants during translation.
 	 * @requires allocator.relations = AnnotatedNode.relations(annotated)
-	 * @return {c: AnnotatedCircuit | c.formula = formula } 
+	 * @return {ret: Fol2Bool | ret.node = annotated && ret.allocator = allocator } 
 	 */
-	static final AnnotatedCircuit translateAndTrack(AnnotatedNode<Formula> annotated, BooleanFormulaAllocator allocator, Options.IntEncoding encoding) {
-		final TrackingTranslator t = new TrackingTranslator(annotated, allocator, encoding);
-		return new AnnotatedCircuit(annotated.node().accept(t), t.varUsage, t.trueFormulas, t.falseFormulas);
+	static final Fol2Bool translateAndTrack(AnnotatedNode<Formula> annotated, BooleanFormulaAllocator allocator, Options.IntEncoding encoding) {
+		final TranslationCache.Tracking c = new TranslationCache.Tracking(annotated);
+		return new Fol2Bool(annotated.node().accept(new Translator(c, allocator, encoding)), 
+				            c.varUsage(), c.trueFormulas(), c.falseFormulas());
+	}
+	
+	
+	/**
+	 * Returns the translation of this.node to a boolean circuit.
+	 * @return the translation of this.node to a boolean circuit.
+	 */
+	BooleanValue translation() {
+		return translation;
 	}
 	
 	/**
-	 * Stores the translation and annotations computed by 
-	 * {@link Fol2Bool#translateAndTrack(Formula, Set, BooleanFormulaAllocator)}. 
-	 * 
-	 * @specfield formula: Formula // the formula being translated
-	 * @specfield allocator: BooleanFormulaAllocator // the allocator used for translation
+	 * Returns a map from the descendents of node to the 
+	 * literals representing the BooleanFormulas that comprise 
+	 * the descendents' translations.  Descendents that evaluate 
+	 * to BooleanConstants or BooleanMatrices comprised of BooleanConstants
+	 * are not mapped.
+	 * @return from the descendents of this.node to the 
+	 * literals representing the BooleanValues that comprise 
+	 * the descendents' translations.
 	 */
-	static final class AnnotatedCircuit {
-		private final BooleanValue translation;
-		private final Map<Node,IntSet> variableUsage;
-		private final Set<Formula> trueFormulas, falseFormulas;
-		
-		private AnnotatedCircuit(BooleanValue translation, Map<Node,IntSet> varUsage, 
-				                Set<Formula> trueFormulas, Set<Formula> falseFormulas) {
-			this.translation = translation;
-			this.variableUsage = Collections.unmodifiableMap(varUsage);
-			this.trueFormulas = Collections.unmodifiableSet(trueFormulas);
-			this.falseFormulas = Collections.unmodifiableSet(falseFormulas);
-		}
-		/**
-		 * Returns the translation of this.formula to a boolean circuit.
-		 * @return the translation of this.formula to a boolean circuit.
-		 */
-		BooleanValue translation() {
-			return translation;
-		}
-		
-		/**
-		 * Returns a map from the descendents of this.formula to the 
-		 * literals representing the BooleanFormulas that comprise 
-		 * the descendents' translations.  Descendents that evaluate 
-		 * to BooleanConstants or BooleanMatrices comprised of BooleanConstants
-		 * are not mapped.
-		 * @return from the descendents of this.formula to the 
-		 * literals representing the BooleanValues that comprise 
-		 * the descendents' translations.
-		 */
-		Map<Node, IntSet> variableUsage() {
-			return variableUsage;
-		}
-		
-		/**
-		 * Returns the set of descendents of this.formula that 
-		 * evaluate to the given constant.
-		 * @return {f: this.formula.*children & Formula | translate(f,this.allocator) = value}
-		 */
-		Set<Formula> formulasThatAre(BooleanConstant value) {
-			return value.booleanValue() ? trueFormulas : falseFormulas;
-		}
+	Map<Node, IntSet> variableUsage() {
+		return variableUsage;
 	}
 	
 	/**
-	 * A subclass of Translator that tracks variables in addition to 
-	 * translating nodes to circuits.
-	 * 
-	 * @specfield formula: Formula
-	 * @specfield varUsage: formula.*children & (Expression + Formula) -> set int
-	 * @specfield trueFormulas: set formula.*children & Formula
-	 * @specfield falseFormulas: set formula.*children & Formula
+	 * Returns the set of descendents of this.node that 
+	 * evaluate to TRUE.
+	 * @return {f: this.node.node.*children & Formula | translate(f,this.allocator) = TRUE}
 	 */
-	private static final class TrackingTranslator extends Translator {
-		final Map<Node, IntSet> varUsage;
-		final Set<Formula> trueFormulas, falseFormulas;
-		
-		/**
-		 * Constructs a new translator that will use the given allocator to perform the 
-		 * translation of the specified annotated node.
-		 */    
-		TrackingTranslator(AnnotatedNode<? extends Node> annotated, BooleanFormulaAllocator allocator, Options.IntEncoding encoding) {
-			super(annotated, allocator, encoding);
-			this.varUsage = new IdentityHashMap<Node,IntSet>();
-			this.trueFormulas = new IdentityHashSet<Formula>();
-			this.falseFormulas = new IdentityHashSet<Formula>();
-		}
-		
-		/**
-		 * If the given expression is one for which we are caching translations,
-		 * the provided translation is cached and returned.  Otherwise,
-		 * the translation is simply returned.  In addition, this method records
-		 * the labels of BooleanFormulas that comprise the dense regions of 
-		 * the translation in the varUsage map. 
-		 * @return translation
-		 * @effects if the expression is one for which we are caching translations,
-		 * the provided translation is cached.
-		 * @effects this.varUsage' = this.varUsage + 
-		 *           expr -> {i: int | some b: translation.elements[int] - BooleanConstant | 
-		 *                     i = |b.label| }
-		 */
-		@Override
-		protected BooleanMatrix record(Expression expr, BooleanMatrix translation) {
-			final BooleanFactory factory = allocator.factory();
-			IntSet vars;
-			if (env.parent()==null) { // top-level expression
-				vars = Ints.bestSet(1, StrictMath.max(1, factory.maxFormulaLabel()));		
-			} else { // not a top-level expression
-				vars = varUsage.get(expr);
-				if (vars==null)
-					vars = Ints.bestSet(1, Integer.MAX_VALUE-1);
-			}
-			for(IndexedEntry<BooleanValue> e: translation) {
-				if (e.value() != TRUE)
-					vars.add(StrictMath.abs(((BooleanFormula)e.value()).label()));
-			}
-			varUsage.put(expr, vars);
-			return cache.cache(expr, translation, env);
-		}
-		
-		/**
-		 * If the given formula is one for which we are caching translations,
-		 * the provided translation is cached and returned.  Otherwise,
-		 * the translation is simply returned. In addition, this method records
-		 * the label of the translation in the varUsage map, if the translation
-		 * is non-constant.  If it is constant, it records the formula as being
-		 * constant.  
-		 * @return translation
-		 * @effects if the formula is one for which we are caching translations,
-		 * the provided translation is cached.
-		 * @effects translation = BooleanConstant.TRUE => 
-		 * 	          this.trueFormulas' = this.trueFormulas + formula,
-		 *          translation = BooleanConstant.FALSE => 
-		 * 	          this.falseFormulas' = this.falseFormulas + formula,
-		 *          this.varUsage' = this.varUsage + formula -> |translation.label|
-		 */
-		@Override
-		protected BooleanValue record(Formula formula, BooleanValue translation) {
-			if (translation==BooleanConstant.TRUE) {
-				if (env.parent()==null) trueFormulas.add(formula);
-			} else if (translation==BooleanConstant.FALSE) {
-				if (env.parent()==null) falseFormulas.add(formula);
-			} else if (env.parent()==null) { // top-level formula
-				varUsage.put(formula, Ints.singleton(StrictMath.abs(((BooleanFormula)translation).label())));	
-			} else {
-				IntSet vars = varUsage.get(formula);
-				if (vars==null)
-					vars = Ints.bestSet(1, Integer.MAX_VALUE-1);
-				vars.add(StrictMath.abs(((BooleanFormula)translation).label()));
-				varUsage.put(formula, vars);
-			}
-			return cache.cache(formula, translation, env);
-		}
+	Set<Formula> trueFormulas() {
+		return trueFormulas;
 	}
 	
 	/**
-	 * The helper class that performs the translation.  This
-	 * version of the translator does not track variables.
+	 * Returns the set of descendents of this.node that 
+	 * evaluate to FALSE.
+	 * @return {f: this.node.node.*children & Formula | translate(f,this.allocator) = FALSE}
+	 */
+	Set<Formula> falseFormulas() {
+		return falseFormulas;
+	}
+
+	/**
+	 * Translates a FOL node to boolean
+	 * @specfield node: Node // the translated node
 	 */
 	private static class Translator implements ReturnVisitor<BooleanMatrix, BooleanValue, Object, Int> {
 		final Int.Encoding encoding;
@@ -242,13 +148,14 @@ final class Fol2Bool {
 		final TranslationCache cache;
 	
 		/**
-		 * Constructs a new translator that will use the given allocator to perform the 
-		 * translation of the specified annotated node. 
+		 * Constructs a new translator that will use the given allocator and cache to perform the 
+		 * translation.
+		 * @effects this.node' = cache.node
 		 */   
-		Translator(AnnotatedNode<? extends Node> annotated, BooleanFormulaAllocator allocator, Options.IntEncoding encoding) {
+		Translator(TranslationCache cache, BooleanFormulaAllocator allocator, Options.IntEncoding encoding) {
 			this.allocator = allocator;
 			this.env = new Environment<BooleanMatrix>();
-			this.cache = new TranslationCache(annotated);
+			this.cache = cache;
 			switch(encoding) {
 			case UNARY : this.encoding = Int.Encoding.UNARY; break;
 			case BINARY : this.encoding = Int.Encoding.BINARY; break;
@@ -264,7 +171,7 @@ final class Fol2Bool {
 		 * @return translation for the given node, if it has been recorded;
 		 * null if not.
 		 */
-		protected <T> T retrieve(Node node) {
+		<T> T lookup(Node node) {
 			return cache.get(node, env);
 		}
 		
@@ -276,7 +183,7 @@ final class Fol2Bool {
 		 * @effects if the node is one for which we are caching translations,
 		 * the provided translation is cached.
 		 */
-		protected <T> T record(Node node, T translation) {
+		<T> T record(Node node, T translation) {
 			return cache.cache(node, translation, env);
 		}
 		
@@ -288,7 +195,7 @@ final class Fol2Bool {
 		 * @effects if the expression is one for which we are caching translations,
 		 * the provided translation is cached.
 		 */
-		protected BooleanMatrix record(Expression expr, BooleanMatrix translation) {
+		BooleanMatrix record(Expression expr, BooleanMatrix translation) {
 			return cache.cache(expr, translation, env);
 		}
 		
@@ -300,7 +207,7 @@ final class Fol2Bool {
 		 * @effects if the formula is one for which we are caching translations,
 		 * the provided translation is cached.
 		 */
-		protected BooleanValue record(Formula formula, BooleanValue translation) {
+		BooleanValue record(Formula formula, BooleanValue translation) {
 			return cache.cache(formula, translation, env);
 		}
 		
@@ -308,7 +215,7 @@ final class Fol2Bool {
 		 * @return a list of BooleanMatrices A such that A[i] = decls.declarations[i].expression.accept(this) 
 		 */
 		public final List<BooleanMatrix> visit(Decls decls) {
-			List<BooleanMatrix> matrices = retrieve(decls);
+			List<BooleanMatrix> matrices = lookup(decls);
 			if (matrices!=null) return matrices;
 			
 			final List<Decl> dlist = decls.declarations();
@@ -324,7 +231,7 @@ final class Fol2Bool {
 		 * @return the BooleanMatrix that is the translation of decl.expression.
 		 */
 		public final BooleanMatrix visit(Decl decl) {
-			BooleanMatrix matrix = retrieve(decl);
+			BooleanMatrix matrix = lookup(decl);
 			return matrix==null ? record(decl, decl.expression().accept(this)) : matrix;
 		}
 		
@@ -384,7 +291,7 @@ final class Fol2Bool {
 		 *           binExpr.op = PRODUCT => tLeft.crossProduct(tRight)
 		 */
 		public final BooleanMatrix visit(BinaryExpression binExpr) {
-			BooleanMatrix ret = retrieve(binExpr);
+			BooleanMatrix ret = lookup(binExpr);
 			if (ret!=null) return ret;
 
 			final BooleanMatrix left = binExpr.left().accept(this);
@@ -410,7 +317,7 @@ final class Fol2Bool {
 		 *           unaryExpr.op = TRANSITIVE_CLOSURE => tChild.closure() 
 		 */
 		public final BooleanMatrix visit(UnaryExpression unaryExpr) {
-			BooleanMatrix ret = retrieve(unaryExpr);
+			BooleanMatrix ret = lookup(unaryExpr);
 			if (ret!=null) return ret;
 			
 			final BooleanMatrix child = unaryExpr.expression().accept(this);
@@ -430,7 +337,7 @@ final class Fol2Bool {
 		 * @return { translate(comprehension.declarations) | translate(comprehension.formula) }
 		 */
 		public final BooleanMatrix visit(Comprehension comprehension) {
-			BooleanMatrix ret = retrieve(comprehension);
+			BooleanMatrix ret = lookup(comprehension);
 			if (ret!=null) return ret;
 			
 			/* Let comprehension = { a: A, b: B, ..., x: X | F(a, b, ..., x) }.  It
@@ -474,7 +381,7 @@ final class Fol2Bool {
 		 * @return translate(ifExpr.condition) => translate(ifExpr.then), translate(ifExpr.else)
 		 */
 		public final BooleanMatrix visit(IfExpression ifExpr) {
-			BooleanMatrix ret = retrieve(ifExpr);
+			BooleanMatrix ret = lookup(ifExpr);
 			if (ret!=null) return ret;
 			
 			final BooleanValue condition = ifExpr.condition().accept(this);
@@ -577,7 +484,7 @@ final class Fol2Bool {
 		 *           quant = SOME => translate(F(A_0, B_0, ..., X_0)) || ... || translate(F(A_|A|, B_|B|, ..., X_|X|))
 		 */
 		public final BooleanValue visit(QuantifiedFormula quantFormula) {
-			BooleanValue ret = retrieve(quantFormula);
+			BooleanValue ret = lookup(quantFormula);
 			if (ret!=null) return ret;
 
 			final QuantifiedFormula.Quantifier quantifier = quantFormula.quantifier();
@@ -600,7 +507,7 @@ final class Fol2Bool {
 		 *           binFormula.op = IFF => tLeft.not().or(tRight).and(tRight.not().or(tLeft)),
 		 */
 		public final BooleanValue visit(BinaryFormula binFormula) {
-			BooleanValue ret = retrieve(binFormula);
+			BooleanValue ret = lookup(binFormula);
 			if (ret!=null) return ret;
 			
 			final BooleanValue left = binFormula.left().accept(this);
@@ -624,7 +531,7 @@ final class Fol2Bool {
 		 * @return translate(not.child).not()
 		 */    
 		public final BooleanValue visit(NotFormula not) {
-			BooleanValue ret = retrieve(not);
+			BooleanValue ret = lookup(not);
 			return ret==null ? 
 				   record(not, allocator.factory().not(not.formula().accept(this))) : ret;
 		}
@@ -635,7 +542,7 @@ final class Fol2Bool {
 		 *           tLeft.subset(tRight), tleft.eq(tRight)          
 		 */
 		public final BooleanValue visit(ComparisonFormula compFormula) {
-			BooleanValue ret = retrieve(compFormula);
+			BooleanValue ret = lookup(compFormula);
 			if (ret!=null) return ret;
 			
 			final BooleanMatrix left = compFormula.left().accept(this);
@@ -660,7 +567,7 @@ final class Fol2Bool {
 		 *           multFormula.multiplicity = LONE => child.lone()
 		 */
 		public final BooleanValue visit(MultiplicityFormula multFormula) {
-			BooleanValue ret = retrieve(multFormula);
+			BooleanValue ret = lookup(multFormula);
 			if (ret!=null) return ret;
 			
 			final BooleanMatrix child = multFormula.expression().accept(this);
@@ -682,7 +589,7 @@ final class Fol2Bool {
 		 * @return translate(pred.toConstraints())
 		 */
 		public final BooleanValue visit(RelationPredicate pred) {
-			BooleanValue ret = retrieve(pred);
+			BooleanValue ret = lookup(pred);
 			return ret != null ? ret : record(pred, pred.toConstraints().accept(this));
 		}
 
@@ -697,7 +604,7 @@ final class Fol2Bool {
 		 * @return translate(intExpr.expression).cardinality(this.encoding)
 		 */
 		public Int visit(Cardinality intExpr) {
-			Int ret = retrieve(intExpr);
+			Int ret = lookup(intExpr);
 			if (ret!=null) return ret;
 			return record(intExpr, intExpr.expression().accept(this).cardinality(encoding));
 		}
@@ -706,7 +613,7 @@ final class Fol2Bool {
 		 * @return translate(intExpr.left) intExpr.op translate(intExpr.right)
 		 */
 		public Int visit(BinaryIntExpression intExpr) {
-			Int ret = retrieve(intExpr);
+			Int ret = lookup(intExpr);
 			if (ret!=null) return ret;
 			final Int left = intExpr.left().accept(this);
 			final Int right = intExpr.right().accept(this);
@@ -723,7 +630,7 @@ final class Fol2Bool {
 		 * @return translate(intComp.left) intComp.op translate(intComp.right)
 		 */
 		public BooleanValue visit(IntComparisonFormula intComp) {
-			BooleanValue ret = retrieve(intComp);
+			BooleanValue ret = lookup(intComp);
 			if (ret!=null) return ret;
 			final Int left = intComp.left().accept(this);
 			final Int right = intComp.right().accept(this);

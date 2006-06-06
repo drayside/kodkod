@@ -64,7 +64,6 @@ public final class Translator {
 		Map<RelationPredicate.Name, Set<RelationPredicate>> preds = AnnotatedNode.predicates(annotated);
 		bounds = bounds.clone();
 		Set<IntSet> symmetricParts = BoundsOptimizer.optimize(bounds, AnnotatedNode.relations(annotated), preds);
-		
 		final Map<Decl, Relation> skolems;
 		if (options.skolemize()) {
 //			System.out.println("skolemizing...");
@@ -82,7 +81,7 @@ public final class Translator {
 		final Map<Node, IntSet> varUsage;
 		BooleanValue circuit;
 		if (options.trackVars()) {
-			Fol2Bool.AnnotatedCircuit acircuit = Fol2Bool.translateAndTrack(annotated, allocator, options.intEncoding());
+			Fol2Bool acircuit = Fol2Bool.translateAndTrack(annotated, allocator, options.intEncoding());
 			circuit = acircuit.translation();
 			if (circuit.op()==Operator.CONST) {
 				throw new TrivialFormulaException(Reducer.reduce(annotated,preds,acircuit), 
@@ -103,9 +102,9 @@ public final class Translator {
 		for(Map.Entry<Relation, IntRange> e: allocator.allocationMap().entrySet()) {
 			varUsage.put(e.getKey(), Ints.rangeSet(e.getValue()));
 		}
-		
+
 		circuit = factory.and(circuit, SymmetryBreaker.generateSBP(symmetricParts, allocator, options));
-		
+	
 		allocator = null; symmetricParts = null; // release the allocator and symmetric partitions
 
 		if (options.flatten()) {
@@ -177,9 +176,9 @@ public final class Translator {
 		 * Constructs a reducer for the given annotated formula, using the provided
 		 * sets of formulas to guide the reduction.
 		 */
-		private Reducer(AnnotatedNode<Formula> reducible,Fol2Bool.AnnotatedCircuit acircuit) {
-			this.trues = acircuit.formulasThatAre(BooleanConstant.TRUE);
-			this.falses = acircuit.formulasThatAre(BooleanConstant.FALSE);
+		private Reducer(AnnotatedNode<Formula> reducible,Fol2Bool acircuit) {
+			this.trues = acircuit.trueFormulas();
+			this.falses = acircuit.falseFormulas();
 			this.cache = new IdentityHashMap<Node,Node>(reducible.sharedNodes().size());
 			for(Node n: reducible.sharedNodes()) {
 				cache.put(n,null);
@@ -204,7 +203,7 @@ public final class Translator {
 		 * to a constant.
 		 */
 		static Formula reduce(AnnotatedNode<Formula> reducible, Map<RelationPredicate.Name, Set<RelationPredicate>> preds, 
-				Fol2Bool.AnnotatedCircuit acircuit) {
+				Fol2Bool acircuit) {
 			final Reducer r = new Reducer(reducible, acircuit);
 			Formula reduced = reducible.node().accept(r);
 			final Map<RelationPredicate.Name, Set<RelationPredicate>> rpreds = 
