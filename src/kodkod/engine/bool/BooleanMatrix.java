@@ -493,17 +493,17 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 		else if (condition==FALSE) return other.clone();
 	
 		final BooleanMatrix ret =  new BooleanMatrix(dims, factory);
-		final SparseSequence<BooleanValue> retSeq = ret.cells, otherCells = other.cells;
+		final SparseSequence<BooleanValue> otherCells = other.cells;
 		for(IndexedEntry<BooleanValue> e0 : cells) {
 			BooleanValue v1 = otherCells.get(e0.index());
 			if (v1==null)
-				retSeq.put(e0.index(), factory.fastCompose(AND, condition, e0.value()));
+				ret.fastSet(e0.index(), factory.fastCompose(AND, condition, e0.value()));
 			else
-				retSeq.put(e0.index(), factory.fastITE(condition, e0.value(), v1));
+				ret.fastSet(e0.index(), factory.fastITE(condition, e0.value(), v1));
 		}
 		for(IndexedEntry<BooleanValue> e1 : other.cells) {
 			if (!cells.containsIndex(e1.index()))
-				retSeq.put(e1.index(), factory.fastCompose(AND, condition.negation(), e1.value()));
+				ret.fastSet(e1.index(), factory.fastCompose(AND, condition.negation(), e1.value()));
 		}
 		return ret;
 	}
