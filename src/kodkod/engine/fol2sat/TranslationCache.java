@@ -34,7 +34,6 @@ import kodkod.ast.UnaryExpression;
 import kodkod.ast.Variable;
 import kodkod.ast.visitor.ReturnVisitor;
 import kodkod.engine.bool.BooleanConstant;
-import kodkod.engine.bool.BooleanFactory;
 import kodkod.engine.bool.BooleanFormula;
 import kodkod.engine.bool.BooleanMatrix;
 import kodkod.engine.bool.BooleanValue;
@@ -210,10 +209,9 @@ abstract class TranslationCache {
 		 */
 		@Override
 		BooleanMatrix cache(Expression expr, BooleanMatrix translation, Environment<BooleanMatrix> env) {
-			final BooleanFactory factory = translation.factory();
 			IntSet vars;
 			if (env.parent()==null) { // top-level expression
-				vars = Ints.bestSet(1, StrictMath.max(1, factory.maxFormulaLabel()));		
+				vars = Ints.bestSet(1, Integer.MAX_VALUE-1);		
 			} else { // not a top-level expression
 				vars = varUsage.get(expr);
 				if (vars==null)

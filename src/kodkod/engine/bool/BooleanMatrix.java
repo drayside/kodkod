@@ -236,7 +236,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 		for(IndexedEntry<BooleanValue> e0 : cells) {
 			BooleanValue v1 = s1.get(e0.index());
 			if (v1!=null)
-				ret.fastSet(e0.index(), factory.fastCompose(AND, e0.value(), v1));
+				ret.fastSet(e0.index(), factory.and(e0.value(), v1));
 		}
 		return ret;
 	}
@@ -261,7 +261,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 			if (v1==null)
 				retSeq.put(e0.index(), e0.value());
 			else
-				retSeq.put(e0.index(), factory.fastCompose(OR, e0.value(), v1));
+				retSeq.put(e0.index(), factory.or(e0.value(), v1));
 		}
 		for(IndexedEntry<BooleanValue> e1 : other.cells) {
 			if (!cells.containsIndex(e1.index()))
@@ -289,7 +289,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 		for(IndexedEntry<BooleanValue> e0 : cells) {
 			int i = ocap * e0.index();
 			for(IndexedEntry<BooleanValue> e1: other.cells) {
-				BooleanValue conjunction = factory.fastCompose(AND, e0.value(), e1.value());
+				BooleanValue conjunction = factory.and(e0.value(), e1.value());
 				if (conjunction != FALSE)
 					ret.cells.put(i + e1.index(), conjunction);
 			}
@@ -334,7 +334,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 			int rowHead = (i % b)*c, rowTail = rowHead + c - 1;
 			for(Iterator<IndexedEntry<BooleanValue>> iter1 = other.cells.iterator(rowHead, rowTail); iter1.hasNext();) {
 				IndexedEntry<BooleanValue> e1 = iter1.next();
-				BooleanValue retVal = factory.fastCompose(AND, iVal, e1.value());
+				BooleanValue retVal = factory.and(iVal, e1.value());
 				if (retVal != FALSE) {
 					int k = (i / b)*c + e1.index()%c;
 					if (retVal==TRUE) retCells.put(k, TRUE);
@@ -355,7 +355,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 		// make mutable gates immutable
 		for(IndexedEntry<BooleanValue> e : ret.cells) {
 			if (e.value()!=TRUE) {
-				ret.cells.put(e.index(), factory.fastAdopt((BooleanAccumulator) e.value()));
+				ret.cells.put(e.index(), factory.accumulate((BooleanAccumulator) e.value()));
 			}
 		}
 		return ret;
@@ -374,10 +374,10 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 		checkFactory(other.factory); checkDimensions(other.dims);
 		final BooleanAccumulator a = BooleanAccumulator.treeGate(AND);
 		for(IndexedEntry<BooleanValue> e0: cells) {
-			if (a.add(factory.fastCompose(OR, e0.value().negation(), other.fastGet(e0.index())))==FALSE)
+			if (a.add(factory.or(e0.value().negation(), other.fastGet(e0.index())))==FALSE)
 				return FALSE;
 		}
-		return factory.fastAdopt(a);
+		return factory.accumulate(a);
 	}
 	
 	/**
@@ -407,7 +407,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 //					return FALSE;
 //		}
 //		return factory.fastAdopt(a);
-		return factory.fastCompose(AND, this.subset(other), other.subset(this));
+		return factory.and(this.subset(other), other.subset(this));
 	}
 	
 	/**
@@ -426,7 +426,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 		checkFactory(other.factory); checkDimensions(other.dims);
 		final BooleanMatrix ret = new BooleanMatrix(dims, factory, cells, other.cells);
 		for(IndexedEntry<BooleanValue> e0 : cells) {
-			ret.fastSet(e0.index(), factory.fastCompose(AND, e0.value(), other.fastGet(e0.index()).negation()));
+			ret.fastSet(e0.index(), factory.and(e0.value(), other.fastGet(e0.index()).negation()));
 		}
 		return ret;
 	}
@@ -497,13 +497,13 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 		for(IndexedEntry<BooleanValue> e0 : cells) {
 			BooleanValue v1 = otherCells.get(e0.index());
 			if (v1==null)
-				ret.fastSet(e0.index(), factory.fastCompose(AND, condition, e0.value()));
+				ret.fastSet(e0.index(), factory.and(condition, e0.value()));
 			else
-				ret.fastSet(e0.index(), factory.fastITE(condition, e0.value(), v1));
+				ret.fastSet(e0.index(), factory.ite(condition, e0.value(), v1));
 		}
 		for(IndexedEntry<BooleanValue> e1 : other.cells) {
 			if (!cells.containsIndex(e1.index()))
-				ret.fastSet(e1.index(), factory.fastCompose(AND, condition.negation(), e1.value()));
+				ret.fastSet(e1.index(), factory.and(condition.negation(), e1.value()));
 		}
 		return ret;
 	}
@@ -520,7 +520,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 			if (g.add(iter.next().value().negation())==FALSE) 
 				return FALSE;
 		}
-		return factory.fastAdopt(g);
+		return factory.accumulate(g);
 	}
 	
 	/**
@@ -552,8 +552,8 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 				row = e0row;
 				rowVal = other.nand(row*rowLength, (row+1)*rowLength);
 			}
-			ret.fastSet(e0.index(), factory.fastCompose(OR, ret.fastGet(e0.index()), 
-					   factory.fastCompose(AND, e0.value(), rowVal)));
+			ret.fastSet(e0.index(), factory.or(ret.fastGet(e0.index()), 
+					   factory.and(e0.value(), rowVal)));
 		}
 		return ret;
 	}
@@ -579,7 +579,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 			if (g.add(e.value())==TRUE) 
 				return TRUE;
 		}
-		return factory.fastAdopt(g);
+		return factory.accumulate(g);
 	}
 	
 	/**
@@ -588,7 +588,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	 * @return { f: BooleanValue | f <=> this.one() || this.none() }
 	 */
 	public final BooleanValue lone() {
-		return factory.fastCompose(OR, one(), none());
+		return factory.or(one(), none());
 	}
 	
 	/**
@@ -615,10 +615,10 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 						continue UPDATEg;
 					}
 				}
-				if (g.add(factory.fastAdopt(v).negation())==TRUE) return TRUE;
+				if (g.add(factory.accumulate(v).negation())==TRUE) return TRUE;
 			}
 			
-			return factory.fastAdopt(g);
+			return factory.accumulate(g);
 		}
 	}
 	

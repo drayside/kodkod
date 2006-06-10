@@ -11,8 +11,8 @@ import java.util.Iterator;
 
 /**
 * A string of {@link kodkod.engine.bool.BooleanValue boolean values}
-* representing an integer in {@link Int.Encoding#UNARY}, 
-* {@link Int.Encoding#BINARY}, or {@link Int.Encoding#TWOS_COMPLEMENT} form.
+* representing an integer in {@link Int.Encoding#UNARY} or
+* {@link Int.Encoding#BINARY} form.
 * 
 * @specfield factory: BooleanFactory
 * @specfield width: [1..)
@@ -120,7 +120,7 @@ public final class Int {
 			if (cmp.add(factory.iff(encoding.get(bits,i), encoding.get(other.bits,i)))==FALSE)
 				return FALSE;
 		}
-		return factory.fastAdopt(cmp);
+		return factory.accumulate(cmp);
 	}
 	
 	/**
@@ -156,9 +156,9 @@ public final class Int {
 		final BooleanValue leq = lte(other);
 		final BooleanAccumulator acc = BooleanAccumulator.treeGate(OR);
 		for(int i = 0, width = StrictMath.max(width(), other.width()); i < width; i++) {
-			acc.add(factory.fastCompose(AND, encoding.get(bits, i).negation(), encoding.get(other.bits, i)));
+			acc.add(factory.and(encoding.get(bits, i).negation(), encoding.get(other.bits, i)));
 		}
-		return factory.fastCompose(AND, leq, factory.fastAdopt(acc));
+		return factory.and(leq, factory.accumulate(acc));
 	}
 	
 	/**
@@ -257,7 +257,7 @@ public final class Int {
 				for(int i = 0, width = StrictMath.max(bits0.length, bits1.length); i < width; i++) {
 					cmp.add(factory.implies(get(bits0, i), get(bits1, i)));
 				}
-				return factory.fastAdopt(cmp);
+				return factory.accumulate(cmp);
 			}
 			
 			BooleanValue[] plus(BooleanFactory factory, BooleanValue[] bits0, BooleanValue[] bits1) {
@@ -268,59 +268,20 @@ public final class Int {
 					acc.add(get(bits0,i)); 
 					acc.add(get(bits1, i));
 					for(int j = 0; j < i; j++) {
-						acc.add(factory.fastCompose(AND, get(bits0, j), get(bits1, i - 1 - j)));
+						acc.add(factory.and( get(bits0, j), get(bits1, i - 1 - j)));
 					}
-					plus[i] = factory.fastAdopt(acc);
+					plus[i] = factory.accumulate(acc);
 				}
 				return plus;
 			}
 		
 		},
 		
-		/**
-		 * (Unsigned) binary encoding of integers permits comparisons
-		 * and addition of non-negative numbers.
-		 */
-		BINARY {
-		
-			BooleanValue[] encode(int number) {
-				if (number < 0) throw new IllegalArgumentException("number < 0: " + number);
-				final int width = 32 - Integer.numberOfLeadingZeros(number);
-				final BooleanValue[] bits = new BooleanValue[width];
-				for(int i = 0; i < width; i++) {
-					bits[i] = (number & (1<<i)) == 0 ? FALSE : TRUE;
-				}
-				return bits;
-			}
-			
-			BooleanValue lte(BooleanFactory factory, BooleanValue[] bits0, BooleanValue[] bits1) {
-				final BooleanAccumulator cmp = BooleanAccumulator.treeGate(Operator.AND);
-				BooleanValue prevEquals = TRUE;
-				for(int i = StrictMath.max(bits0.length, bits1.length)-1; i >= 0; i--) {
-					BooleanValue v0 = get(bits0, i), v1 = get(bits1, i);
-					cmp.add(factory.implies(prevEquals, factory.implies(v0, v1)));
-					prevEquals = factory.and(prevEquals, factory.iff(v0, v1));
-				}
-				return factory.fastAdopt(cmp);
-			}
-			
-			BooleanValue[] plus(BooleanFactory factory, BooleanValue[] bits0, BooleanValue[] bits1) {
-				final int width = 32 - Integer.numberOfLeadingZeros((1<<bits0.length)+(1<<bits1.length));
-				final BooleanValue[] plus = new BooleanValue[width];
-				BooleanValue carry = FALSE;
-				for(int i = 0; i < width; i++) {
-					BooleanValue v0 = get(bits0,i), v1 = get(bits1, i);
-					plus[i] = factory.xor(carry, factory.xor(v0, v1));
-					carry = factory.fastCompose(OR, factory.fastCompose(AND, v0, v1), factory.fastCompose(AND, carry, factory.fastCompose(OR, v0, v1)));
-				}
-				return plus;
-			}
-		},
 		/**
 		 * Two's-complement encoding of integers permits
 		 * comparisons, addition, and subtraction.
 		 */
-		TWOS_COMPLEMENT {
+		BINARY {
 	
 			BooleanValue[] encode(int number) {
 				final int width = 33 - Integer.numberOfLeadingZeros(number);
@@ -349,7 +310,7 @@ public final class Int {
 					cmp.add(factory.implies(prevEquals, factory.implies(v0, v1)));
 					prevEquals = factory.and(prevEquals, factory.iff(v0, v1));
 				}
-				return factory.fastAdopt(cmp);
+				return factory.accumulate(cmp);
 			}
 						
 			BooleanValue[] plus(BooleanFactory factory, BooleanValue[] bits0, BooleanValue[] bits1) {
@@ -359,7 +320,7 @@ public final class Int {
 				for(int i = 0; i < width; i++) {
 					BooleanValue v0 = get(bits0,i), v1 = get(bits1, i);
 					plus[i] = factory.xor(carry, factory.xor(v0, v1));
-					carry = factory.fastCompose(OR, factory.fastCompose(AND, v0, v1), factory.fastCompose(AND, carry, factory.fastCompose(OR, v0, v1)));
+					carry = factory.or(factory.and(v0, v1), factory.and(carry, factory.or(v0, v1)));
 				}
 				return plus;
 			}

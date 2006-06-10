@@ -16,6 +16,7 @@ import kodkod.ast.QuantifiedFormula;
 import kodkod.ast.Relation;
 import kodkod.ast.Variable;
 import kodkod.ast.visitor.DepthFirstReplacer;
+import kodkod.engine.Options;
 import kodkod.engine.bool.BooleanMatrix;
 import kodkod.engine.bool.BooleanValue;
 import kodkod.instance.Bounds;
@@ -70,7 +71,7 @@ final class Skolemizer {
 	}
 	
 	/**
-	 * Skolemizes the given annotated formula using the given bounds.
+	 * Skolemizes the given annotated formula using the given bounds and options.
 	 * @effects upper bound mappings for skolem constants, if any, are added to the bounds
 	 * @return a Skolemizer whose skolemized field is a skolemized version of the given formula,
 	 * and whose skolem field contains the generated skolem constants
@@ -79,12 +80,12 @@ final class Skolemizer {
 	 * @throws UnsupportedOperationException - bounds is unmodifiable
 	 */
 	@SuppressWarnings("unchecked")
-	static Skolemizer skolemize(AnnotatedNode<Formula> annotated, Bounds bounds) {
+	static Skolemizer skolemize(AnnotatedNode<Formula> annotated, Bounds bounds, Options options) {
 		final Set<QuantifiedFormula> formulas = AnnotatedNode.existentials(annotated);
 		if (formulas.isEmpty()) {
 			return new Skolemizer(annotated, Collections.EMPTY_MAP);
 		} else {
-			final EQFReplacer replacer = new EQFReplacer(formulas, bounds, annotated.sharedNodes());
+			final EQFReplacer replacer = new EQFReplacer(formulas, bounds, annotated.sharedNodes(), options);
 			final Formula f = annotated.node().accept(replacer).and(replacer.skolemFormula);
 			if (identityMapping(replacer.cache)) {
 				return new Skolemizer(new AnnotatedNode<Formula>(f, annotated.sharedNodes()), replacer.skolems);
@@ -151,9 +152,9 @@ final class Skolemizer {
 		 * @requires root.*children & Relation in allocator.bounds.relations
 		 * @effects this.eqfs' = eqfs && this.bounds' = bounds
 		 */
-		EQFReplacer(Set<QuantifiedFormula> eqfs, Bounds bounds, Set<Node> sharedNodes) {
+		EQFReplacer(Set<QuantifiedFormula> eqfs, Bounds bounds, Set<Node> sharedNodes, Options options) {
 			this.eqfs = eqfs;
-			this.allocator = new BooleanConstantAllocator.Overapproximating(bounds);
+			this.allocator = new BooleanConstantAllocator.Overapproximating(bounds, options);
 			this.skolems = new IdentityHashMap<Decl, Relation>(eqfs.size());
 			this.skolemFormula = Formula.TRUE;
 			this.cache = new IdentityHashMap<Node,Node>(sharedNodes.size());

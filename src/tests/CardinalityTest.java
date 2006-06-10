@@ -115,19 +115,16 @@ public class CardinalityTest extends TestCase {
 	public final void testCardEQ() {
 		testCardEqLteGte(UNARY, EQ);
 		testCardEqLteGte(BINARY, EQ);
-		testCardEqLteGte(TWOS_COMPLEMENT, EQ);	
 	}
 	
 	public final void testCardLTE() {
 		testCardEqLteGte(UNARY, LTE);
 		testCardEqLteGte(BINARY, LTE);
-		testCardEqLteGte(TWOS_COMPLEMENT, LTE);	
 	}
 	
 	public final void testCardGTE() {
 		testCardEqLteGte(UNARY, GTE);
 		testCardEqLteGte(BINARY, GTE);
-		testCardEqLteGte(TWOS_COMPLEMENT, GTE);	
 	}
 	
 	/**
@@ -167,13 +164,11 @@ public class CardinalityTest extends TestCase {
 	public final void testCardLT() {
 		testCardLtGt(UNARY, LT);
 		testCardLtGt(BINARY, LT);
-		testCardLtGt(TWOS_COMPLEMENT, LT);	
 	}
 	
 	public final void testCardGT() {
 		testCardLtGt(UNARY, GT);
 		testCardLtGt(BINARY, GT);
-		testCardLtGt(TWOS_COMPLEMENT, GT);	
 	}
 	
 	private final void testCardPlus(Options.IntEncoding encoding) {
@@ -211,7 +206,6 @@ public class CardinalityTest extends TestCase {
 	public final void testCardPlus() {
 		testCardPlus(UNARY);
 		testCardPlus(BINARY);
-		testCardPlus(TWOS_COMPLEMENT);
 	}
 	
 	private final void testCardMinus(Options.IntEncoding encoding) {
@@ -251,10 +245,6 @@ public class CardinalityTest extends TestCase {
 			testCardMinus(UNARY);
 			fail();
 		} catch (UnsupportedOperationException unused) {	}
-		try {
-			testCardMinus(BINARY);
-			fail();
-		} catch (UnsupportedOperationException unused) { }
-		testCardMinus(TWOS_COMPLEMENT);
+		testCardMinus(BINARY);
 	}
 }

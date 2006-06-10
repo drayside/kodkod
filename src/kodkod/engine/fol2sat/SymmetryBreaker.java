@@ -126,7 +126,7 @@ final class SymmetryBreaker {
 			sbp.add(lexLeaderPredicateFor(symIter.next()));
 			symIter.remove();
 		}
-		return allocator.factory().adopt(sbp);
+		return allocator.factory().accumulate(sbp);
 	}
 	
 	/**
@@ -178,7 +178,7 @@ final class SymmetryBreaker {
 			prevIndex = curIndex;
 		}
 		
-		return allocator.factory().adopt(lexLeader);
+		return allocator.factory().accumulate(lexLeader);
 	}
 	
 	/**
@@ -196,7 +196,7 @@ final class SymmetryBreaker {
 			cmp.add(f.implies(prevEquals, f.implies(l0.get(i), l1.get(i))));
 			prevEquals = f.and(prevEquals, f.iff(l0.get(i), l1.get(i)));
 		}
-		return f.adopt(cmp);
+		return f.accumulate(cmp);
 	}
 	
 	/**

@@ -11,6 +11,7 @@ import java.util.Set;
 
 import kodkod.ast.Relation;
 import kodkod.ast.RelationPredicate;
+import kodkod.engine.Options;
 import kodkod.engine.bool.BooleanFactory;
 import kodkod.engine.bool.BooleanMatrix;
 import kodkod.engine.bool.Dimensions;
@@ -55,16 +56,17 @@ final class BooleanVariableAllocator extends BooleanFormulaAllocator {
 	/**  
 	 * Constructs a new variable allocator for the given Bounds.  
 	 * The function predicates are used to determine which relations 
-	 * can be compactly represented.
+	 * can be compactly represented.  The options object is used to 
+	 * determine the bitwidth and encoding used by this.factory.
 	 * 
 	 * @requires preds.name() = RelationPredicate.Name.FUNCTION
 	 * @requires preds.relation in bounds.relations
 	 * @effects no this.formulas' 
 	 */
-	BooleanVariableAllocator(Bounds bounds, Set<RelationPredicate> preds) {
+	BooleanVariableAllocator(Bounds bounds, Set<RelationPredicate> preds, Options options) {
 		this.bounds = bounds;
 		this.literals = new HashMap<Relation,IntRange>();
-		this.factory = BooleanFactory.factory(assignLiterals(bounds,literals));
+		this.factory = BooleanFactory.factory(assignLiterals(bounds,literals), options);
 		this.functions = Collections.unmodifiableSet(extractRelations(preds));
 	}
 	

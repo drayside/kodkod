@@ -109,7 +109,7 @@ final class BooleanFormulaFlattener {
 							return op.shortCircuit();
 						}
 					}
-					replacement = factory.adopt(newGate);
+					replacement = factory.accumulate(newGate);
 					cache.put(multigate, replacement);
 				}
 				

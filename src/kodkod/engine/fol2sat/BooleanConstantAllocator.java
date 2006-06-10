@@ -5,6 +5,7 @@
 package kodkod.engine.fol2sat;
 
 import kodkod.ast.Relation;
+import kodkod.engine.Options;
 import kodkod.engine.bool.BooleanFactory;
 import kodkod.engine.bool.BooleanMatrix;
 import kodkod.engine.bool.Dimensions;
@@ -28,12 +29,12 @@ abstract class BooleanConstantAllocator extends BooleanFormulaAllocator {
 	
 	private final BooleanFactory factory;
 	/**  
-	 * Constructs a new BooleanConstantAllocator.
+	 * Constructs a new BooleanConstantAllocator using the specified options.
 	 * 
 	 * @effects this.factory.components' = BooleanConstant
 	 */
-	private BooleanConstantAllocator() {
-		this.factory = BooleanFactory.factory(0);
+	private BooleanConstantAllocator(Options options) {
+		this.factory = BooleanFactory.factory(0, options);
 	}
 	
 	public final BooleanFactory factory() { return factory; } 
@@ -86,11 +87,12 @@ abstract class BooleanConstantAllocator extends BooleanFormulaAllocator {
 		private final Instance instance;
 		
 		/**
-		 * Constructs a new instance based constant allocator.
+		 * Constructs a new instance based constant allocator using the given options.
 		 * @effects this.instance' = instance && this.factory.components' = BooleanConstant
 		 */
-		Exact(Instance instance) {
-			if (instance==null) throw new NullPointerException("instance=null");
+		Exact(Instance instance, Options options) {
+			super(options);
+			if (instance==null) throw new NullPointerException();
 			this.instance = instance;
 		}
 		
@@ -127,11 +129,12 @@ abstract class BooleanConstantAllocator extends BooleanFormulaAllocator {
 		private final Bounds bounds;
 		
 		/**
-		 * Constructs a new bounds based constant allocator.
+		 * Constructs a new bounds based constant allocator using the given options.
 		 * @effects this.bounds' = instance && this.factory.components' = BooleanConstant
 		 */
-		Overapproximating(Bounds bounds) {
-			if (bounds==null) throw new NullPointerException("bounds=null");
+		Overapproximating(Bounds bounds, Options options) {
+			super(options);
+			if (bounds==null) throw new NullPointerException();
 			this.bounds = bounds;
 		}
 		

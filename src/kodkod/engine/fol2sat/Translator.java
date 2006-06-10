@@ -67,16 +67,16 @@ public final class Translator {
 		final Map<Decl, Relation> skolems;
 		if (options.skolemize()) {
 //			System.out.println("skolemizing...");
-			Skolemizer skolemizer = Skolemizer.skolemize(annotated, bounds);
+			Skolemizer skolemizer = Skolemizer.skolemize(annotated, bounds, options);
 			annotated = skolemizer.skolemized();
 			skolems = skolemizer.skolems();
 		} else {
 			skolems = null;
 		}
 		
-		BooleanVariableAllocator allocator = new BooleanVariableAllocator(bounds, preds.get(FUNCTION));
+		BooleanVariableAllocator allocator = new BooleanVariableAllocator(bounds, preds.get(FUNCTION), options);
 		BooleanFactory factory = allocator.factory();
-		final int numPrimaryVariables = factory.maxVariableLabel();
+		final int numPrimaryVariables = factory.numberOfVariables();
 		
 		final Map<Node, IntSet> varUsage;
 		BooleanValue circuit;
@@ -137,31 +137,31 @@ public final class Translator {
 	 */
 	@SuppressWarnings("unchecked")
 	static <T> T evaluate(Node node, BooleanConstantAllocator allocator) {
-		return (T) Fol2Bool.translate(new AnnotatedNode<Node>(node), allocator, Options.IntEncoding.TWOS_COMPLEMENT);
+		return (T) Fol2Bool.translate(new AnnotatedNode<Node>(node), allocator, Options.IntEncoding.BINARY);
 	}
 	
 	/**
-	 * Evaluates the given formula to a BooleanConstant using the provided instance.  
+	 * Evaluates the given formula to a BooleanConstant using the provided instance and options.  
 	 * 
 	 * @return a BooleanConstant that represents the value of the formula.
-	 * @throws NullPointerException - formula = null || instance = null
+	 * @throws NullPointerException - formula = null || instance = null || options = null
 	 * @throws IllegalArgumentException - the formula refers to an undeclared variable or 
 	 *                                    a relation not mapped by the instance
 	 */
-	public static BooleanConstant evaluate(Formula formula, Instance instance) {
-		return evaluate(formula, new BooleanConstantAllocator.Exact(instance));
+	public static BooleanConstant evaluate(Formula formula, Instance instance, Options options) {
+		return evaluate(formula, new BooleanConstantAllocator.Exact(instance, options));
 	}
 	
 	/**
-	 * Evaluates the given expression to a BooleanMatrix using the provided instance.
+	 * Evaluates the given expression to a BooleanMatrix using the provided instance and options.
 	 * 
 	 * @return a BooleanMatrix whose TRUE entries represent the tuples contained by the expression.
-	 * @throws NullPointerException - formula = null || instance = null
+	 * @throws NullPointerException - formula = null || instance = null || options = null
 	 * @throws IllegalArgumentException - the expression refers to an undeclared variable or 
 	 *                                    a relation not mapped by the instance
 	 */
-	public static BooleanMatrix evaluate(Expression expression,Instance instance) {
-		return evaluate(expression, new BooleanConstantAllocator.Exact(instance));
+	public static BooleanMatrix evaluate(Expression expression,Instance instance, Options options) {
+		return evaluate(expression, new BooleanConstantAllocator.Exact(instance, options));
 	}
 	
 	/**

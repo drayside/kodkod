@@ -18,10 +18,8 @@ import org.sat4j.specs.TimeoutException;
 /** 
  * Implementation of a computational engine for solving relational formulae.
  * A {@link kodkod.ast.Formula formula} is solved with respect to given 
- * {@link kodkod.instance.Bounds bounds}.
+ * {@link kodkod.instance.Bounds bounds} and {@link kodkod.engine.Options options}.
  * 
- * @specfield solverName: SATSolverName // name of the SAT solver used by this solver
- * @specfield timeout: int // timeout for the solver, in seconds
  * @specfield options: Options 
  * @author Emina Torlak 
  */
@@ -147,12 +145,16 @@ public final class Solver {
 		}
 	}
 	
+	/**
+	 * {@inheritDoc}
+	 * @see java.lang.Object#toString()
+	 */
 	public String toString() {
 		return options.toString();
 	}
 	
-	public static void main(String[] args) {
-		System.out.print("stuff");
-	}
+//	public static void main(String[] args) {
+//		System.out.print("stuff");
+//	}
  
 }

@@ -11,13 +11,14 @@ import java.util.Arrays;
 import java.util.Iterator;
 
 import junit.framework.TestCase;
+import kodkod.engine.Options;
+import kodkod.engine.bool.BooleanAccumulator;
 import kodkod.engine.bool.BooleanConstant;
 import kodkod.engine.bool.BooleanFactory;
 import kodkod.engine.bool.BooleanMatrix;
 import kodkod.engine.bool.BooleanValue;
 import kodkod.engine.bool.BooleanVariable;
 import kodkod.engine.bool.Dimensions;
-import kodkod.engine.bool.BooleanAccumulator;
 import kodkod.engine.bool.Operator;
 import kodkod.util.ints.IndexedEntry;
 import kodkod.util.ints.IntRange;
@@ -41,7 +42,7 @@ public class BooleanMatrixTest extends TestCase {
 	    
 	    public BooleanMatrixTest(String arg0) {
 	        super(arg0);
-	        f = BooleanFactory.factory(NUM_VARS);
+	        f = BooleanFactory.factory(NUM_VARS, new Options());
 	        vars = new BooleanVariable[NUM_VARS];
 	        for (int i = 0; i < NUM_VARS; i++) { vars[i] = f.variable(i+1); }
 	        final int[] dims324 = { 3, 2, 4 }, dims43 = {4, 3}, dims4 = {4};
@@ -280,7 +281,7 @@ public class BooleanMatrixTest extends TestCase {
 	            }
 	        }
 	        for(int i = 0; i < result.length; i++) {
-	    			result[i] = f.adopt((BooleanAccumulator) result[i]);
+	    			result[i] = f.accumulate((BooleanAccumulator) result[i]);
 	        }
 	        
 	        assertTrue(equivalent(mF324.dot(mF43), result));
@@ -449,7 +450,7 @@ public class BooleanMatrixTest extends TestCase {
 	    		final BooleanAccumulator g = BooleanAccumulator.treeGate(Operator.AND);
 	    		for(int i = 0; i < 8; i++)
 	    			g.add(f.not(vars[i]));
-	    		final BooleanValue v3 = f.adopt(g);
+	    		final BooleanValue v3 = f.accumulate(g);
 	    		
 	    		for(int i = 16; i < 24; i++)
 	    			mFoT.set(i, f.or(f.and(v3, mF324.get(i)), mT324.get(i)));

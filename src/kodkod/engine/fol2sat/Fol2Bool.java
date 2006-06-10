@@ -159,7 +159,6 @@ final class Fol2Bool {
 			switch(encoding) {
 			case UNARY : this.encoding = Int.Encoding.UNARY; break;
 			case BINARY : this.encoding = Int.Encoding.BINARY; break;
-			case TWOS_COMPLEMENT : this.encoding = Int.Encoding.TWOS_COMPLEMENT; break;
 			default:
 				throw new IllegalArgumentException("Unknown encoding: " + encoding);
 			}
@@ -370,7 +369,7 @@ final class Fol2Bool {
 				//   translate(F(A_index[0], B_index[1], ..., X_index[index.length-1]))
 				conjunct.add(comprehension.formula().accept(this));
 				
-				ret.set(dims.convert(index), factory.adopt(conjunct)); 
+				ret.set(dims.convert(index), factory.accumulate(conjunct)); 
 			}	
 			env = generator.baseEnvironment();
 			
@@ -431,12 +430,12 @@ final class Fol2Bool {
 				//   translate(F(A_index[0], B_index[1], ..., X_index[index.length-1]))
 				disjunct.add(qf.formula().accept(this));
 				
-				conjunct.add(factory.adopt(disjunct));
+				conjunct.add(factory.accumulate(disjunct));
 				
 			}
 			env = generator.baseEnvironment();
 			
-			return factory.adopt(conjunct);
+			return factory.accumulate(conjunct);
 		}
 		
 		/**
@@ -471,11 +470,11 @@ final class Fol2Bool {
 				//   translate(F(A_index[0], B_index[1], ..., X_index[index.length-1]))
 				conjunct.add(qf.formula().accept(this));
 				
-				disjunct.add(factory.adopt(conjunct));	
+				disjunct.add(factory.accumulate(conjunct));	
 			}
 			env = generator.baseEnvironment();
 			
-			return factory.adopt(disjunct);
+			return factory.accumulate(disjunct);
 		}
 		
 		/** 

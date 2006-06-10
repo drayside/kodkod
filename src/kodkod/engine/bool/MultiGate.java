@@ -284,7 +284,7 @@ public abstract class MultiGate extends BooleanFormula {
 		 * Returns an integer k' such that 0 < |k'| < k and |k'| is the number of flattening
 		 * steps that need to be taken to determine that f is (not) an input to this circuit.
 		 * A positive k' indicates that f is found to be an input to this circuit in k' steps.
-		 * A negative k' indicatets that f is not an input to this circuit, when it is flattened
+		 * A negative k' indicates that f is not an input to this circuit, when it is flattened
 		 * using at most k steps.  
 		 * @requires k > 0
 		 * @return the number of flattening

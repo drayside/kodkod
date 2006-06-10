@@ -11,6 +11,7 @@ import kodkod.engine.satlab.SATFactory;
  * @specfield timeout:  int // SAT solver timeout, in seconds
  * @specfield symmetryBreaking: int // the amount of symmetry breaking to perform
  * @specfield intEncoding: IntEncoding // encoding to use for translating {@link kodkod.ast.IntExpression int expressions}
+ * @specfield bitwidth: int // the bitwidth to use for integer representation / arithmetic
  * @specfield skolemize: boolean // skolemize existential quantifiers?
  * @specfield flatten: boolean // eliminate extraneous intermediate variables?
  * @specfield logEncodeFunctions: boolean // use a compact encoding for functions?
@@ -22,6 +23,7 @@ public final class Options {
 	private int timeout = Integer.MAX_VALUE;
 	private int symmetryBreaking = 20;
 	private IntEncoding intEncoding = IntEncoding.BINARY;
+	private int bitwidth = 5;
 	private boolean skolemize = true;
 	private boolean flatten = true;
 	private boolean logEncodeFunctions = false;
@@ -33,7 +35,8 @@ public final class Options {
 	 * @effects this.solver' = SATFactory.DefaultSAT4J
 	 *          this.timeout' = Integer.MAX_VALUE 
 	 *          this.symmetryBreaking' = 20
-	 *          this.intEncoding = BINARY
+	 *          this.intEncoding' = BINARY
+	 *          this.bitwidth' = 5
 	 *          this.skolemize' = true
 	 *          this.flatten' = true
 	 *          this.logEncodeFunctions' = false
@@ -49,7 +52,8 @@ public final class Options {
 	 *          this.seed' = 0
 	 *          this.timeout' = Integer.MAX_VALUE
 	 *          this.symmetryBreaking' = 20
-	 *          this.intEncoding = BINARY
+	 *          this.intEncoding' = BINARY
+	 *          this.bitwidth' = 5
 	 *          this.skolemize' = true
 	 *          this.flatten' = true
 	 *          this.logEncodeFunctions' = true
@@ -116,8 +120,7 @@ public final class Options {
 	
 	/**
 	 * Returns the integer encoding that will be used for translating {@link kodkod.ast.IntExpression int nodes}.
-	 * The default is BINARY representation. TWOS_COMPLEMENT representations should be used when cardinalities 
-	 * will be combined with negative numbers using arithmetic operators.  UNARY representation is best suited to
+	 * The default is BINARY representation, which allows negative numbers.  UNARY representation is best suited to
 	 * problems with small scopes, in which cardinalities are only compared (and possibly added to each other or
 	 * non-negative numbers).   
 	 * @return this.intEncoding
@@ -134,6 +137,28 @@ public final class Options {
 	public void setIntEncoding(IntEncoding encoding) {
 		if (encoding==null) throw new NullPointerException();
 		this.intEncoding = encoding;
+	}
+	
+	/**
+	 * Returns the size of the integer representation.  For example, if this.intEncoding is 
+	 * BINARY and this.bitwidth = 5 (the default), then all operations will yield 
+	 * one of the five-bit numbers in the range [-16..15].  If this.intEncoding is UNARY and
+	 * this.bitwidth = 5, then all operations will yield one of the numbers in the
+	 * range [0..5].  
+	 * @return this.bitwidth
+	 */
+	public int bitwidth() {
+		return bitwidth;
+	}
+	
+	/**
+	 * Sets this.bitwidth to the given value.
+	 * @effects this.bitwidth' = bitwidth
+	 * @throws IllegalArgumentException - bitwidth < 1
+	 */
+	public void setBitwidth(int bitwidth) {
+		checkRange(bitwidth, 1, Integer.MAX_VALUE);
+		this.bitwidth = bitwidth;
 	}
 	
 	/**
@@ -271,6 +296,8 @@ public final class Options {
 		b.append(timeout);
 		b.append("\n intEncoding: ");
 		b.append(intEncoding);
+		b.append("\n bitwidth: ");
+		b.append(bitwidth);
 		b.append("\n flatten: ");
 		b.append(flatten);
 		b.append("\n symmetryBreaking: ");
@@ -295,15 +322,10 @@ public final class Options {
 		 */
 		UNARY,
 		/**
-		 * Unsigned binary encoding of integers permits comparisons
-		 * and addition of non-negative numbers.
-		 */
-		BINARY,
-		/**
 		 * Two's-complement encoding of integers permits
 		 * comparisons, addition, and subtraction.
 		 */
-		TWOS_COMPLEMENT
+		BINARY
 	}
 	
 }
