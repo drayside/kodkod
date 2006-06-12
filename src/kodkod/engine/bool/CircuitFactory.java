@@ -206,11 +206,11 @@ final class CircuitFactory {
 			final int hash = acc.op.hash((Iterator)acc.iterator());
 			for(Iterator<BooleanFormula> gates = opCache(acc.op).get(hash); gates.hasNext(); ) {
 				BooleanFormula g = gates.next();
-				if (g.size()==asize && ((MultiGate.NAry) g).sameInputs(acc.iterator())) { 
+				if (g.size()==asize && ((NaryGate) g).sameInputs(acc.iterator())) { 
 					return g;
 				}
 			}
-			final BooleanFormula ret = MultiGate.make(acc, label++, hash);
+			final BooleanFormula ret = new NaryGate(acc, label++, hash);	
 			opCache(acc.op).add(ret);
 			return ret;
 		}
@@ -271,7 +271,7 @@ final class CircuitFactory {
 					return gate;
 			}
 		}
-		final BooleanFormula ret = MultiGate.make(op, label++, hash, l, h);
+		final BooleanFormula ret = new BinaryGate(op, label++, hash, l, h);
 		opCache(op).add(ret);
 		return ret;
 	}

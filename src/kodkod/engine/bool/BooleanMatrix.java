@@ -560,12 +560,11 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	
 	/**
 	 * Returns an Int that represents the cardinality (number of non-FALSE entries) of this
-	 * matrix using the given encoding.     
+	 * matrix using this.factory.intEncoding.
 	 * @return {i: Int | [[i]] = sum({v: elements[int] | if [[v]] then 1 else 0}) }  
-	 * @requires encoding in { UNARY, BINARY, TWOS_COMPLEMENT }
 	 */
-	public final Int cardinality(Int.Encoding encoding) {
-		return new Int(factory, encoding, cells.values());
+	public final Int cardinality() {
+		return factory.sum(cells.values());
 	}
 	
 	/**

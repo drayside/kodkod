@@ -73,8 +73,8 @@ final class Fol2Bool {
 	 *           annotated.node in Expression => transl in BooleanMatrix}
 	 */
 	@SuppressWarnings("unchecked")
-	static final <T> T translate(AnnotatedNode<? extends Node> annotated, BooleanFormulaAllocator allocator, Options.IntEncoding encoding) {
-		return (T) annotated.node().accept(new Translator(new TranslationCache.Simple(annotated), allocator, encoding));
+	static final <T> T translate(AnnotatedNode<? extends Node> annotated, BooleanFormulaAllocator allocator) {
+		return (T) annotated.node().accept(new Translator(new TranslationCache.Simple(annotated), allocator));
 	}
 	
 	/**
@@ -85,9 +85,9 @@ final class Fol2Bool {
 	 * @requires allocator.relations = AnnotatedNode.relations(annotated)
 	 * @return {ret: Fol2Bool | ret.node = annotated && ret.allocator = allocator } 
 	 */
-	static final Fol2Bool translateAndTrack(AnnotatedNode<Formula> annotated, BooleanFormulaAllocator allocator, Options.IntEncoding encoding) {
+	static final Fol2Bool translateAndTrack(AnnotatedNode<Formula> annotated, BooleanFormulaAllocator allocator) {
 		final TranslationCache.Tracking c = new TranslationCache.Tracking(annotated);
-		return new Fol2Bool(annotated.node().accept(new Translator(c, allocator, encoding)), 
+		return new Fol2Bool(annotated.node().accept(new Translator(c, allocator)), 
 				            c.varUsage(), c.trueFormulas(), c.falseFormulas());
 	}
 	
@@ -137,8 +137,6 @@ final class Fol2Bool {
 	 * @specfield node: Node // the translated node
 	 */
 	private static class Translator implements ReturnVisitor<BooleanMatrix, BooleanValue, Object, Int> {
-		final Int.Encoding encoding;
-		
 		final BooleanFormulaAllocator allocator;
 		
 		/* When visiting the body of a quantified formula or a comprehension, this
@@ -152,16 +150,10 @@ final class Fol2Bool {
 		 * translation.
 		 * @effects this.node' = cache.node
 		 */   
-		Translator(TranslationCache cache, BooleanFormulaAllocator allocator, Options.IntEncoding encoding) {
+		Translator(TranslationCache cache, BooleanFormulaAllocator allocator) {
 			this.allocator = allocator;
 			this.env = new Environment<BooleanMatrix>();
 			this.cache = cache;
-			switch(encoding) {
-			case UNARY : this.encoding = Int.Encoding.UNARY; break;
-			case BINARY : this.encoding = Int.Encoding.BINARY; break;
-			default:
-				throw new IllegalArgumentException("Unknown encoding: " + encoding);
-			}
 		}
 		
 		/**
@@ -596,7 +588,7 @@ final class Fol2Bool {
 		 * @return factory.integer(intConst.value, this.encoding)
 		 */
 		public Int visit(IntConstant intConst) {
-			return allocator.factory().integer(intConst.value(), encoding);
+			return allocator.factory().integer(intConst.value());
 		}
 
 		/**
@@ -605,7 +597,7 @@ final class Fol2Bool {
 		public Int visit(Cardinality intExpr) {
 			Int ret = lookup(intExpr);
 			if (ret!=null) return ret;
-			return record(intExpr, intExpr.expression().accept(this).cardinality(encoding));
+			return record(intExpr, intExpr.expression().accept(this).cardinality());
 		}
 
 		/**

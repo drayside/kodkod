@@ -103,6 +103,8 @@ public class CardinalityTest extends TestCase {
 		f = r2.count().compare(op, r1.count());
 		s = solve(f);
 //		System.out.println(s.stats());
+//		System.out.println(bounds.upperBound(r2).size());
+//		System.out.println(bounds.upperBound(r1).size());
 		assertNotNull(s.instance());
 		assertTrue(op.apply(s.instance().tuples(r2).size(), s.instance().tuples(r1).size()));
 		
@@ -113,17 +115,23 @@ public class CardinalityTest extends TestCase {
 	
 	
 	public final void testCardEQ() {
+		solver.options().setBitwidth(17);
 		testCardEqLteGte(UNARY, EQ);
+		solver.options().setBitwidth(6);
 		testCardEqLteGte(BINARY, EQ);
 	}
 	
 	public final void testCardLTE() {
+		solver.options().setBitwidth(17);
 		testCardEqLteGte(UNARY, LTE);
+		solver.options().setBitwidth(8);
 		testCardEqLteGte(BINARY, LTE);
 	}
 	
 	public final void testCardGTE() {
+		solver.options().setBitwidth(17);
 		testCardEqLteGte(UNARY, GTE);
+		solver.options().setBitwidth(8);
 		testCardEqLteGte(BINARY, GTE);
 	}
 	
@@ -163,11 +171,13 @@ public class CardinalityTest extends TestCase {
 	
 	public final void testCardLT() {
 		testCardLtGt(UNARY, LT);
+		solver.options().setBitwidth(8);
 		testCardLtGt(BINARY, LT);
 	}
 	
 	public final void testCardGT() {
 		testCardLtGt(UNARY, GT);
+		solver.options().setBitwidth(8);
 		testCardLtGt(BINARY, GT);
 	}
 	
@@ -204,7 +214,9 @@ public class CardinalityTest extends TestCase {
 	}
 	
 	public final void testCardPlus() {
+		solver.options().setBitwidth(17);
 		testCardPlus(UNARY);
+		solver.options().setBitwidth(8);
 		testCardPlus(BINARY);
 	}
 	

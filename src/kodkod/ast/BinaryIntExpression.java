@@ -98,7 +98,7 @@ public final class BinaryIntExpression extends IntExpression {
 	}
 
 	/**
-	 * Binary operators on integer expressions.
+	 * BinaryGate operators on integer expressions.
 	 */
 	public static enum Operator {
 		/** `+' operator */

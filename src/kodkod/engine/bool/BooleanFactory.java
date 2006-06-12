@@ -2,7 +2,12 @@ package kodkod.engine.bool;
 
 import static kodkod.engine.bool.Operator.AND;
 import static kodkod.engine.bool.Operator.OR;
+
+import java.util.Collection;
+import java.util.Iterator;
+
 import kodkod.engine.Options;
+import kodkod.engine.Options.IntEncoding;
 import kodkod.util.ints.IntSet;
 
 
@@ -17,7 +22,7 @@ import kodkod.util.ints.IntSet;
  * @invariant no f1, f2: BooleanFactory | f1 != f2 => f1.components & f2.components = BooleanConstant
  * @author Emina Torlak
  */
-public final class BooleanFactory {
+public abstract class BooleanFactory {
 	/**
 	 * IMPLEMENTATION NOTE:  BooleanFactory is the facade and a mediator for this package.
 	 */
@@ -91,7 +96,12 @@ public final class BooleanFactory {
 		if (numVars < 0 || numVars == Integer.MAX_VALUE) 
 			throw new IllegalArgumentException("numVars < 0 || numVars = Integer.MAX_VALUE");
 		if (compDepth < 1) throw new IllegalArgumentException("checkToDepth < 1: " + compDepth);
-		return new BooleanFactory(numVars, compDepth, options.bitwidth());
+		switch(options.intEncoding()) {
+		case UNARY  : return new UnaryFactory(numVars, compDepth, options.bitwidth());
+		case BINARY : return new BinaryFactory(numVars, compDepth, options.bitwidth()); 
+		default :
+			throw new IllegalArgumentException("unknown encoding: " + options.intEncoding());
+		}
 	}
 	
 	/**
@@ -120,6 +130,12 @@ public final class BooleanFactory {
 	 * @return this.bitwidth
 	 */
 	public final int bitwidth() { return bitwidth; }
+	
+	/**
+	 * Returns the encoding used by this factory to represent integers.
+	 * @return this.intEncoding
+	 */
+	public abstract Options.IntEncoding intEncoding();
 	
 	/**
 	 * Returns true if v is in this.components.
@@ -229,6 +245,30 @@ public final class BooleanFactory {
 	}
 	
 	/**
+	 * Returns a boolean value whose meaning is the sum bit of a full binary adder.
+	 * The behavior of this method is unspecified if v0, v1, or cin are not components of this factory.
+	 * @requires v0 + v1 + cin in this.components 
+	 * @return { v: BooleanValue | [[v]] = [[cin]] xor [[v0]] xor [[v1]] }
+	 * @effects this.components' = this.components + v
+	 * @throws NullPointerException - any of the arguments are null
+	 */
+	public final BooleanValue sum(BooleanValue v0, BooleanValue v1, BooleanValue cin) {
+		return xor(cin, xor(v0, v1));
+	}
+	
+	/**
+	 * Returns a boolean value whose meaning is the carry out bit of a full binary adder.
+	 * The behavior of this method is unspecified if v0, v1, or cin are not components of this factory.
+	 * @requires v0 + v1 + cin in this.components 
+	 * @return { v: BooleanValue | [[v]] = ([[v0]] and [[v1]]) or ([[cin]] and ([[v0]] xor [[v1]]))  }
+	 * @effects this.components' = this.components + v
+	 * @throws NullPointerException - any of the arguments are null
+	 */
+	public final BooleanValue carry(BooleanValue v0, BooleanValue v1, BooleanValue cin) {
+		return or(and(v0, v1), and(cin, xor(v0, v1)));
+	}
+	
+	/**
 	 * Converts the given accumulator into an immutable boolean value and adds it to this.components.
 	 * This method requires that all of g's inputs are in this.components.  If g has no inputs,
 	 * its operator's identity constant is returned.  If g has one input, that input is returned.
@@ -245,17 +285,50 @@ public final class BooleanFactory {
 	}
 	
 	/**
-	 * Returns an Int that represents the given number as a string
-	 * of boolean values using the specified encoding.
-	 * @return an Int that represents the given number as a string
-	 * of boolean values using the specified encoding.
+	 * Returns an Int that represents the given number using this.intEncoding.
+	 * @return { i: Int | [[i]] = number && i.encoding && this.intEncoding && i.factory = this}
 	 * @throws IllegalArgumentException - the number cannot be represented using 
 	 * the specified encoding
 	 */
-	public Int integer(int number, Int.Encoding encoding) {
-		return new Int(this, encoding, number);
+	public abstract Int integer(int number);
+	
+	/**
+	 * Returns an Int that represents 0 or 1, depending on the value of the given bit.
+	 * The behavior of this method is unspecified if bit is not a component of this factory.
+	 * @return { i: Int | [[bit]] => [[i]] = 1, [[i]] = 0 && i.encoding = this.intEncoding && i.factory = this}
+	 */
+	public abstract Int integer(BooleanValue bit);
+	
+	/**
+	 * Returns an Int that represents the sum of the elements returned by the iterator,
+	 * using this.intEncoding.
+	 * @param lo the first element of the current partial sum. Initial should be 0.
+	 * @param hi the last element of the current partial sum.  Initial should be size-1, where size is the total
+	 * number of elements returned by the iterator.
+	 * @return  an Int that represents the sum of the elements returned by the iterator,
+	 * using this.intEncoding.
+	 */
+	private Int sum(Iterator<BooleanValue> values, int low, int high) {
+		if (low > high) 
+			return integer(0);
+		else if (low == high) 
+			return integer(values.next());
+		else {
+			final int mid = (low + high) / 2;
+			final Int lsum = sum(values, low, mid);
+			final Int hsum = sum(values, mid+1, high);
+			return lsum.plus(hsum);
+		}
 	}
-		
+	
+	/**
+	 * Returns an Int that represents the sum of all values in the given collection.
+	 * @return an Int that represents the sum of all values in the given collection.
+	 */
+	public final Int sum(Collection<BooleanValue> bits) {
+		return sum(bits.iterator(), 0, bits.size()-1);
+	}
+	
 	/**
 	 * Removes all formulas with one or more inputs from this.components.
 	 * @effects this.componets' = 
@@ -316,6 +389,112 @@ public final class BooleanFactory {
 		}
 	
 	}
+	
+	/**
+	 * BooleanFactory that produces UnaryInts.
+	 * @invariant encoding = UNARY
+	 * @author Emina Torlak
+	 */
+	private static final class UnaryFactory extends BooleanFactory {
 		
+		/**
+		 * Constructs a boolean factory with the given number of input variables.  Gates are
+		 * checked for semantic equality down to the given depth.  Integers are represented
+		 * using the given number of bits.
+		 * @requires 0 <= numVars < Integer.MAX_VALUE
+		 * @requires checkToDepth >= 0 && bitwidth > 0
+		 * @effects #this.components' = numInputVariables && this.components' in BooleanVariable 
+		 * @effects this.bitwidth' = bitwidth
+		 * @effects this.comparisonDepth' = comparisonDepth
+		 * @effects this.intEncoding' = UNARY
+		 */
+		UnaryFactory(int numVars, int comparisonDepth, int bitwidth) {
+			super(numVars, comparisonDepth, bitwidth);
+		}
+		
+		/**
+		 * Returns UNARY.
+		 * @return UNARY
+		 * @see kodkod.engine.bool.BooleanFactory#intEncoding()
+		 */
+		@Override
+		public IntEncoding intEncoding() {
+			return IntEncoding.UNARY;
+		}
+
+		/**
+		 * Returns a UnaryInt representing the given number.
+		 * @return a UnaryInt representing the given number.
+		 * @throws IllegalArgumentException - number < 0
+		 * @see kodkod.engine.bool.BooleanFactory#integer(int)
+		 */
+		@Override
+		public Int integer(int number) {
+			if (number < 0)
+				throw new IllegalArgumentException("negative numbers not supported: "  +number);
+			return new UnaryInt(this, number);
+		}
+
+		/**
+		 * {@inheritDoc}
+		 * @see kodkod.engine.bool.BooleanFactory#integer(kodkod.engine.bool.BooleanValue)
+		 */
+		@Override
+		public Int integer(BooleanValue bit) {
+			return new UnaryInt(this, bit);
+		}
+		
+	}
+	
+	/**
+	 * BooleanFactory that produces BinaryInts.
+	 * @invariant encoding = Binary
+	 * @author Emina Torlak
+	 */
+	private static final class BinaryFactory extends BooleanFactory {
+
+		/**
+		 * Constructs a boolean factory with the given number of input variables.  Gates are
+		 * checked for semantic equality down to the given depth.  Integers are represented
+		 * using the given number of bits.
+		 * @requires 0 <= numVars < Integer.MAX_VALUE
+		 * @requires checkToDepth >= 0 && bitwidth > 0
+		 * @effects #this.components' = numInputVariables && this.components' in BooleanVariable 
+		 * @effects this.bitwidth' = bitwidth
+		 * @effects this.comparisonDepth' = comparisonDepth
+		 * @effects this.intEncoding' = BINARY
+		 */
+		BinaryFactory(int numVars, int comparisonDepth, int bitwidth) {
+			super(numVars, comparisonDepth, bitwidth);
+		}
+		/**
+		 * Returns BINARY.
+		 * @return BINARY
+		 * @see kodkod.engine.bool.BooleanFactory#intEncoding()
+		 */
+		@Override
+		public IntEncoding intEncoding() {
+			return IntEncoding.BINARY;
+		}
+		
+		/**
+		 * {@inheritDoc}
+		 * @see kodkod.engine.bool.BooleanFactory#integer(int)
+		 */
+		@Override
+		public Int integer(int number) {
+			return new BinaryInt(this, number);
+		}
+		
+		/**
+		 * {@inheritDoc}
+		 * @see kodkod.engine.bool.BooleanFactory#integer(kodkod.engine.bool.BooleanValue)
+		 */
+		@Override
+		public Int integer(BooleanValue bit) {
+			return new BinaryInt(this, bit);
+		}
+		
+	}
 }
 
