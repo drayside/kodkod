@@ -101,6 +101,26 @@ public abstract class IntExpression implements Node {
 	}
 	
 	/**
+	 * Returns an IntExpression that represents the product of this and
+	 * the given int node.  The effect of this method is the same as calling
+	 * this.compose(BinaryIntExpression.Operator.MULTIPLY, intexpr).
+	 * @return {e: IntExpression | [[e]] = this * intexpr }
+	 */
+	public final IntExpression multiply(IntExpression intexpr) {
+		return compose(BinaryIntExpression.Operator.MULTIPLY, intexpr);
+	}
+	
+	/**
+	 * Returns an IntExpression that represents the ratio of this and
+	 * the given int node.  The effect of this method is the same as calling
+	 * this.compose(BinaryIntExpression.Operator.DIVIDE, intexpr).
+	 * @return {e: IntExpression | [[e]] = this / intexpr }
+	 */
+	public final IntExpression divide(IntExpression intexpr) {
+		return compose(BinaryIntExpression.Operator.DIVIDE, intexpr);
+	}
+	
+	/**
 	 * Returns an expression that combines this and the given integer expression using the
 	 * specified operatior.
 	 * @return {e: IntExpression | [[e]] = this op intexpr }

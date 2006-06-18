@@ -105,7 +105,7 @@ final class BinaryInt extends Int {
 		}
 		return factory.accumulate(cmp);
 	}
-
+	
 	/**
 	 * {@inheritDoc}
 	 * @see kodkod.engine.bool.Int#plus(kodkod.engine.bool.Int)
@@ -113,7 +113,7 @@ final class BinaryInt extends Int {
 	@Override
 	public Int plus(Int other) {
 		validate(other);
-		final int width = bitwidth(-(1<<width())-(1<<other.width()));
+		final int width = StrictMath.min(StrictMath.max(width(), other.width()) + 1, factory.bitwidth);
 		final BooleanValue[] plus = new BooleanValue[width];
 		BooleanValue carry = FALSE;
 		for(int i = 0; i < width; i++) {
@@ -131,7 +131,7 @@ final class BinaryInt extends Int {
 	@Override
 	public Int minus(Int other) {
 		validate(other);
-		final int width = bitwidth(-(1<<width())-(1<<other.width()));
+		final int width = StrictMath.min(StrictMath.max(width(), other.width()) + 1, factory.bitwidth);
 		final BooleanValue[] minus = new BooleanValue[width];
 		BooleanValue carry = TRUE;
 		for(int i = 0; i < width; i++) {
@@ -143,10 +143,157 @@ final class BinaryInt extends Int {
 	}
 
 	/**
+	 * Adds the newBit and the given carry to this.bits[index] and returns the new carry.
+	 * @requires 0 <= index < this.width
+	 * @effects this.bits'[index] = this.factory.sum(this.bits[index], newBit, cin)
+	 * @return this.factory.carry(this.bits[index], newBit, cin)
+	 */
+	private BooleanValue addAndCarry(int index, BooleanValue newBit, BooleanValue cin) {
+		BooleanValue oldBit = bits[index];
+		bits[index] = factory.sum(oldBit, newBit, cin);
+		return factory.carry(oldBit, newBit, cin);
+	}
+
+	
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.engine.bool.Int#multiply(kodkod.engine.bool.Int)
+	 */
+	@Override
+	public Int multiply(Int other) {
+		validate(other);
+		final int imax = StrictMath.max(width(), other.width())-1;
+		final int width = StrictMath.min(width()+other.width()-1, factory.bitwidth);
+		final BooleanValue[] mult = new BooleanValue[width];
+		final BinaryInt ret = new BinaryInt(factory, mult);
+		
+		/* first partial sum */
+		BooleanValue iBit = bit(0), carry;
+		for(int j = 0; j < width; j++) {
+			mult[j] = factory.and(iBit, other.bit(j));
+		}
+		
+		/* intermediate partial sums */
+		for(int i = 1; i < imax; i++) {
+			carry = FALSE;
+			iBit = bit(i);
+			for(int j = 0, jmax = width-i; j < jmax; j++) {
+				carry = ret.addAndCarry(j+i, factory.and(iBit, other.bit(j)), carry);
+			}
+		}
+		
+		/* last partial sum is subtracted (see http://en.wikipedia.org/wiki/Multiplication_ALU) */
+		carry = TRUE;
+		iBit = bit(imax);
+		for(int j = 0, jmax = width-imax; j < jmax; j++) {
+			carry = ret.addAndCarry(j+imax, factory.and(iBit, other.bit(j)).negation(), carry);
+		}
+		//System.out.println(ret);
+		return ret;
+	}
+	
+	/**
+	 * Returns an array of BooleanValues that represents the same
+	 * integer as this, but using extwidth bits.
+	 * @requires extwidth >= this.width()
+	 * @return an array of BooleanValues that represents the same
+	 * integer as this, but using extwidth bits.
+	 */
+	private BooleanValue[] extend(int extwidth) {
+		final BooleanValue[] ext = new BooleanValue[extwidth];
+		final int width = width();
+		for(int i = 0; i < width; i++) {
+			ext[i] = bits[i];
+		}
+		final BooleanValue sign = bits[width-1];
+		for(int i = width; i < extwidth; i++) {
+			ext[i] = sign;
+		}
+		return ext;
+	}
+
+	/**
+	 * Returns the disjunction of the given values.
+	 * @return the disjunction of the given values.
+	 */
+	private static BooleanValue or(BooleanValue[] values, BooleanFactory factory) {
+		final BooleanAccumulator acc = BooleanAccumulator.treeGate(Operator.OR);
+		for(int i = values.length-1; i >= 0; i--) {
+			if (acc.add(values[i])==TRUE)
+				return TRUE;
+		}
+		return factory.accumulate(acc);
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.engine.bool.Int#divide(kodkod.engine.bool.Int)
+	 */
+	@Override
+	public Int divide(Int other) {
+		validate(other);
+		// Non-restoring signed division: Behrooz Parhami, Computer Arithmetic: Algorithms and Hardware Designs,
+		// Oxford University Press, 2000, pp. 218-221.
+		final int width = factory.bitwidth, extended = width*2 + 1;
+		
+		// extend the dividend to bitwidth*2 + 1 and store it in s; the quotient will have width digits  
+		final BooleanValue[] s = extend(extended), q = new BooleanValue[width];
+		
+		BooleanValue carry, sbit, qbit, dbit;
+		
+		// the sign bit of the divisor
+		final BooleanValue dMSB = other.bit(width);
+		
+		int sleft = 0; // the index which contains the LSB of s
+		for(int i = 0; i < width; i++) {
+			int sright = (sleft + extended - 1) % extended; // the index which contains the MSB of s
+			// q[width-i-1] is 1 if sign(s_(i)) = sign(d), otherwise it is 0
+			qbit = factory.iff(s[sright], dMSB);
+			q[width-i-1] = qbit;
+			// shift s to the left by 1 -- simulated by setting sright to FALSE and sleft to sright
+			s[sright] = FALSE;
+			sleft = sright;
+			// if sign(s_(i)) = sign(d), form s_(i+1) by subtracting (2^width)d from s_(i);
+			// otherwise, form s_(i+1) by adding (2^width)d to s_(i).
+			carry = qbit;
+			for(int di = 0, si = (sleft+width) % extended; di <= width; di++, si = (si+1) % extended) {
+				dbit = factory.xor(qbit, other.bit(di));
+				sbit = s[si];
+				s[si] = factory.sum(sbit, dbit, carry);
+				carry = factory.carry(sbit, dbit, carry);
+			}
+		}
+	
+		// shift q one bit to the left; and let the LSB position of q be 1
+		System.arraycopy(q, 0, q, 1, width-1);
+		
+		// Check if the MSB of the final remainder and the dividend are the same, or 
+		// the final remainder is zero; if so,
+		// we are done.  Otherwise, correct q as follows:
+		// if s and d have the same sign, q + 1 is the correct quotient,
+		// else, q - 1 is the correct quotient.
+		sbit = s[(sleft + extended - 1) % extended];
+		final BooleanValue incorrect = factory.and(or(s, factory), factory.xor(sbit, bit(width)));
+		final BooleanValue addOne = factory.and(incorrect, factory.xor(sbit, dMSB));
+		
+		q[0] = factory.sum(TRUE, incorrect, FALSE); // LSB position of q is 1
+		carry = factory.carry(TRUE, incorrect, FALSE); // LSB position of q is 1
+		
+		for(int i = 1; i < width; i++) {
+			qbit = q[i];
+			q[i] = factory.sum(qbit, addOne, carry);
+			carry = factory.carry(qbit, addOne, carry);
+		}
+			
+		return new BinaryInt(factory, q);
+	}
+	
+	/**
 	 * {@inheritDoc}
 	 * @see java.lang.Object#toString()
 	 */
 	public String toString() {
 		return "b" + Arrays.toString(bits);
 	}
+
 }

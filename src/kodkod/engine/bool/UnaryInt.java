@@ -118,6 +118,24 @@ final class UnaryInt extends Int {
 	public Int minus(Int other) {
 		throw new UnsupportedOperationException();
 	}
+
+	/**
+	 * Unsupported.
+	 * @throws UnsupportedOperationException
+	 */
+	@Override
+	public Int multiply(Int other) {
+		throw new UnsupportedOperationException();
+	}
+
+	/**
+	 * Unsupported.
+	 * @throws UnsupportedOperationException
+	 */
+	@Override
+	public Int divide(Int other) {
+		throw new UnsupportedOperationException();
+	}
 	
 	/**
 	 * {@inheritDoc}

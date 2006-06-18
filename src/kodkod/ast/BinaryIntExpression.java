@@ -126,6 +126,32 @@ public final class BinaryIntExpression extends IntExpression {
 			public String toString() {
 				return "-";
 			}
+		},
+		/** `*' operator */
+		MULTIPLY {
+			/**
+			 * Returns the product of i0 and i1.
+			 * @return i0 * i1
+			 */
+			public int apply(int i0, int i1) {
+				return i0 * i1;
+			}
+			public String toString() {
+				return "*";
+			}
+		}, 
+		/** `/' operator */
+		DIVIDE {
+			/**
+			 * Returns the ration of i0 and i1.
+			 * @return i0 / i1
+			 */
+			public int apply(int i0, int i1) {
+				return i0 / i1;
+			}
+			public String toString() {
+				return "/";
+			}
 		};
 		
 		/**

@@ -5,8 +5,8 @@
 package kodkod.instance;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -38,7 +38,7 @@ public final class Instance implements Iterable<Relation> {
 	public Instance(final Universe universe) {
 		if (universe==null) throw new NullPointerException("universe=null");
 		this.universe = universe;
-		this.tuples = new HashMap<Relation, TupleSet>();
+		this.tuples = new LinkedHashMap<Relation, TupleSet>();
 	}
 	
 	/**

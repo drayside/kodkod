@@ -32,7 +32,7 @@ public abstract class Int {
 	public final BooleanFactory factory() { return factory; }
 	
 	/**
-	 * Returns the number of bits in the minimal representation of this Int,
+	 * Returns the number of bits in the representation of this Int,
 	 * including sign bits (if any).
 	 * @return this.width
 	 */
@@ -95,7 +95,7 @@ public abstract class Int {
 		final BooleanValue leq = lte(other);
 		final BooleanAccumulator acc = BooleanAccumulator.treeGate(OR);
 		for(int i = 0, width = StrictMath.max(width(), other.width()); i < width; i++) {
-			acc.add(factory.and(bit(i).negation(), other.bit(i)));
+			acc.add(factory.xor(bit(i), other.bit(i)));
 		}
 		return factory.and(leq, factory.accumulate(acc));
 	}
@@ -147,6 +147,22 @@ public abstract class Int {
 	 * @throws UnsupportedOperationException - this.encoding does not support subtraction
 	 */
 	public abstract Int minus(Int other);
+	
+	/**
+	 * Returns an Int that represents the product between this and the given Int.
+	 * @requires this.factory = other.factory
+	 * @return an Int that represents the product between this and the given Int
+	 * @throws UnsupportedOperationException - this.encoding does not support multiplication
+	 */
+	public abstract Int multiply(Int other);
+	
+	/**
+	 * Returns an Int that represents the ratio between this and the given Int.
+	 * @requires this.factory = other.factory
+	 * @return an Int that represents the ratio between this and the given Int
+	 * @throws UnsupportedOperationException - this.encoding does not support division
+	 */
+	public abstract Int divide(Int other);
 	
 	/**
 	 * Throws IllegalArgumentException if other.factory != this.factory.

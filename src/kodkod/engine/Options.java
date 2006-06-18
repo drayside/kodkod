@@ -317,13 +317,14 @@ public final class Options {
 	 */
 	public static enum IntEncoding {
 		/**
-		 * Unary encoding of integers permits comparisons and
+		 * Unary encoding of integers supports comparisons and
 		 * addition of non-negative numbers.
 		 */
 		UNARY,
 		/**
-		 * Two's-complement encoding of integers permits
-		 * comparisons, addition, and subtraction.
+		 * Two's-complement encoding of integers supports
+		 * comparisons, addition, subtraction, multiplication,
+		 * and division.
 		 */
 		BINARY
 	}

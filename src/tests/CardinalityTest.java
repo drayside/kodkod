@@ -1,5 +1,13 @@
 package tests;
 
+import static kodkod.ast.IntComparisonFormula.Operator.EQ;
+import static kodkod.ast.IntComparisonFormula.Operator.GT;
+import static kodkod.ast.IntComparisonFormula.Operator.GTE;
+import static kodkod.ast.IntComparisonFormula.Operator.LT;
+import static kodkod.ast.IntComparisonFormula.Operator.LTE;
+import static kodkod.engine.Options.IntEncoding.BINARY;
+import static kodkod.engine.Options.IntEncoding.UNARY;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,11 +22,9 @@ import kodkod.engine.Solver;
 import kodkod.engine.TimeoutException;
 import kodkod.instance.Bounds;
 import kodkod.instance.TupleFactory;
+import kodkod.instance.TupleSet;
 import kodkod.instance.Universe;
 import kodkod.util.ints.Ints;
-
-import static kodkod.ast.IntComparisonFormula.Operator.*;
-import static kodkod.engine.Options.IntEncoding.*;
 /**
  * Tests translation of cardinality expressions/formulas.
  * 
@@ -259,4 +265,113 @@ public class CardinalityTest extends TestCase {
 		} catch (UnsupportedOperationException unused) {	}
 		testCardMinus(BINARY);
 	}
+	
+	public final void testMultiply() {
+		solver.options().setBitwidth(6);
+		TupleSet r1b = factory.setOf("1", "5");
+		bounds.bound(r1, r1b, r1b);
+		
+		Formula f = r1.count().multiply(IntConstant.constant(0)).eq(IntConstant.constant(0));
+		Solution s = solve(f);
+		assertNotNull(s.instance());
+		
+		f = r1.count().multiply(IntConstant.constant(1)).eq(IntConstant.constant(2));
+		s = solve(f);
+		assertNotNull(s.instance());
+		
+		f = r1.count().multiply(IntConstant.constant(4)).eq(IntConstant.constant(8));
+		s = solve(f);
+		assertNotNull(s.instance());
+		
+		f = r1.count().multiply(IntConstant.constant(-1)).eq(IntConstant.constant(-2));
+		s = solve(f);
+		assertNotNull(s.instance());
+		
+		f = r1.count().multiply(IntConstant.constant(-3)).eq(IntConstant.constant(-6));
+		s = solve(f);
+		assertNotNull(s.instance());
+		
+		r1b = factory.setOf("1", "5", "14");
+		bounds.bound(r1, r1b);
+		f = r1.count().multiply(IntConstant.constant(3)).lt(IntConstant.constant(8));
+		s = solve(f);
+		assertTrue(s.instance().tuples(r1).size() * 3 < 8);
+		
+		TupleSet r2b = factory.setOf(factory.tuple("1", "1"), factory.tuple("2","5"));
+		bounds.bound(r2, r2b);
+		f = r1.count().multiply(r2.count()).lt(r2.count());
+		s = solve(f);
+		assertNotNull(s.instance());
+		assertTrue(s.instance().tuples(r1).isEmpty());
+		assertFalse(s.instance().tuples(r2).isEmpty());
+		
+		s = solve(IntConstant.constant(1000).multiply(IntConstant.constant(456)).eq(IntConstant.constant(456000)));
+		assertNotNull(s.instance());
+		
+	}
+	
+	public final void testDivide() {
+		solver.options().setBitwidth(6);
+		TupleSet r1b = factory.setOf("1", "5", "9");
+		bounds.bound(r1, r1b, r1b);
+		
+		Formula f = r1.count().divide(IntConstant.constant(1)).eq(IntConstant.constant(3));
+		Solution s = solve(f);
+		assertNotNull(s.instance());
+		
+		f = r1.count().divide(IntConstant.constant(3)).eq(IntConstant.constant(1));
+		s = solve(f);
+		assertNotNull(s.instance());
+
+		f = r1.count().divide(IntConstant.constant(2)).eq(IntConstant.constant(1));
+		s = solve(f);
+		assertNotNull(s.instance());
+		
+		f =  r1.count().divide(IntConstant.constant(8)).eq(IntConstant.constant(0));
+		s = solve(f);
+		assertNotNull(s.instance());
+		
+		f = r1.count().divide(IntConstant.constant(-3)).eq(IntConstant.constant(-1));
+		s = solve(f);
+		assertNotNull(s.instance());
+		
+		f = r1.count().divide(IntConstant.constant(-2)).eq(IntConstant.constant(-1));
+		s = solve(f);
+		assertNotNull(s.instance());
+		
+		f = r1.count().divide(IntConstant.constant(-1)).eq(IntConstant.constant(-3));
+		s = solve(f);
+		assertNotNull(s.instance());	
+		
+		f = r1.count().divide(IntConstant.constant(-4)).eq(IntConstant.constant(0));
+		s = solve(f);
+		assertNotNull(s.instance());
+		
+		f = IntConstant.constant(-3).divide(r1.count()).eq(IntConstant.constant(-1));
+		s = solve(f);
+		assertNotNull(s.instance());
+		
+		f = IntConstant.constant(-2).divide(r1.count()).eq(IntConstant.constant(0));
+		s = solve(f);
+		assertNotNull(s.instance());
+		
+		f = IntConstant.constant(-4).divide(r1.count()).eq(IntConstant.constant(-1));
+		s = solve(f);
+		assertNotNull(s.instance());	
+		
+		r1b = factory.setOf("1", "5", "9", "10", "11");
+		bounds.bound(r1, r1b);
+		
+		TupleSet r2b = factory.setOf(factory.tuple("1", "1"), factory.tuple("2","5"));
+		bounds.bound(r2, r2b);
+		
+		f = r1.count().divide(r2.count()).eq(IntConstant.constant(2));
+		s = solve(f);
+		assertSame(s.instance().tuples(r1).size() / s.instance().tuples(r2).size(), 2);
+		
+		f = r1.count().divide(r2.count()).eq(IntConstant.constant(-2));
+		s = solve(f);
+		assertNull(s.instance());
+	}
+	
 }

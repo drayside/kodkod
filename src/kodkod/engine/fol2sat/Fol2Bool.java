@@ -609,8 +609,10 @@ final class Fol2Bool {
 			final Int left = intExpr.left().accept(this);
 			final Int right = intExpr.right().accept(this);
 			switch(intExpr.op()) {
-			case PLUS  : ret = left.plus(right); break;
-			case MINUS : ret = left.minus(right); break;
+			case PLUS  		: ret = left.plus(right); break;
+			case MINUS 		: ret = left.minus(right); break;
+			case MULTIPLY 	: ret = left.multiply(right); break;
+			case DIVIDE 		: ret = left.divide(right); break;
 			default    :
 				throw new IllegalArgumentException("Unknown operator: " + intExpr.op());
 			}
