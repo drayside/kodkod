@@ -6,7 +6,7 @@ package kodkod.ast.visitor;
 import kodkod.ast.BinaryExpression;
 import kodkod.ast.BinaryFormula;
 import kodkod.ast.BinaryIntExpression;
-import kodkod.ast.Cardinality;
+import kodkod.ast.ExprIntCast;
 import kodkod.ast.ComparisonFormula;
 import kodkod.ast.Comprehension;
 import kodkod.ast.ConstantExpression;
@@ -14,6 +14,7 @@ import kodkod.ast.ConstantFormula;
 import kodkod.ast.Decl;
 import kodkod.ast.Decls;
 import kodkod.ast.IfExpression;
+import kodkod.ast.IntExprCast;
 import kodkod.ast.IntComparisonFormula;
 import kodkod.ast.IntConstant;
 import kodkod.ast.MultiplicityFormula;
@@ -188,6 +189,21 @@ public abstract class DepthFirstDetector implements ReturnVisitor<Boolean, Boole
 		}
 	}
 	
+	/** 
+	 * Calls lookup(castExpr) and returns the cached value, if any.  
+	 * If no cached value exists, visits the child, caches its return value and returns it. 
+	 * @return let x = lookup(castExpr) | 
+	 *          x != null => x,  
+	 *          cache(intExpr, castExpr.intExpr.accept(this)) 
+	 */
+	public Boolean visit(IntExprCast castExpr) {
+		final Boolean ret = lookup(castExpr);
+		if (ret==null)
+			return cache(castExpr, castExpr.intExpr().accept(this));
+		else 
+			return ret;
+	}
+	
 	/**
 	 * Returns FALSE.
 	 * @return FALSE
@@ -203,7 +219,7 @@ public abstract class DepthFirstDetector implements ReturnVisitor<Boolean, Boole
 	 *          x != null => x,  
 	 *          cache(intExpr, intExpr.expression.accept(this)) 
 	 */
-	public Boolean visit(Cardinality intExpr) {
+	public Boolean visit(ExprIntCast intExpr) {
 		final Boolean ret = lookup(intExpr);
 		if (ret==null)
 			return cache(intExpr, intExpr.expression().accept(this));

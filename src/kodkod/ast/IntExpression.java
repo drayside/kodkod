@@ -132,6 +132,16 @@ public abstract class IntExpression implements Node {
 	}
 	
 	/**
+	 * Returns an expression whose meaning is the singleton set containing the atom 
+	 * that represents the integer given by this integer expression.
+	 * @return an expression whose meaning is the singleton set containing the atom 
+	 * that represents the integer given by this integer expression.
+	 */
+	public Expression toExpression() {
+		return new IntExprCast(this);
+	}
+	
+	/**
 	 * {@inheritDoc}
 	 * @see kodkod.ast.Node#accept(kodkod.ast.visitor.ReturnVisitor)
 	 */

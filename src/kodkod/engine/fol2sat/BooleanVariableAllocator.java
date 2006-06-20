@@ -38,7 +38,7 @@ import kodkod.util.ints.Ints;
  * 
  * @author Emina Torlak
  */
-final class BooleanVariableAllocator extends BooleanFormulaAllocator {
+final class BooleanVariableAllocator extends BooleanValueAllocator {
 	private final BooleanFactory factory;
 	private final Bounds bounds;
 	/* maps a relation to the intrange whose minimum and maximum values represent
@@ -51,6 +51,7 @@ final class BooleanVariableAllocator extends BooleanFormulaAllocator {
 	/* relations that are functions, which can
 	 * therefore be compactly represented.
 	 */
+	@SuppressWarnings("unused")
 	private final Set<Relation> functions;
 	
 	/**  
@@ -97,9 +98,10 @@ final class BooleanVariableAllocator extends BooleanFormulaAllocator {
 		return maxLit-1;
 	}
 	
-	@Override
-	Universe universe() { return bounds.universe(); }
-	
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.engine.fol2sat.BooleanValueAllocator#factory()
+	 */
 	@Override
 	public final BooleanFactory factory() { return factory; }
 	
@@ -109,18 +111,12 @@ final class BooleanVariableAllocator extends BooleanFormulaAllocator {
 	 * @return a mapping of relations with non-exact bounds to the literals
 	 * assigned to it by this allocator.
 	 */
-	Map<Relation, IntRange> allocationMap() {
+	Map<Relation, IntRange> allocationFunction() {
 		return literals;
 	}
 	
 	/**
-	 * Returns the relations that are functions.
-	 * @return the relations that are functions.
-	 */
-	Set<Relation> functions() {
-		return functions;
-	}
-	/**
+	 * Returns this.bounds
 	 * @return this.bounds
 	 */
 	public Bounds bounds() { return bounds; }
@@ -147,7 +143,7 @@ final class BooleanVariableAllocator extends BooleanFormulaAllocator {
 	 * @throws NullPointerException - r = null
 	 * @throws IllegalArgumentException - !this.bounds.contains(r)
 	 */
-	public BooleanMatrix allocate(final Relation r) {
+	public BooleanMatrix interpret(final Relation r) {
 		validate(r);
 
 			
@@ -167,6 +163,34 @@ final class BooleanVariableAllocator extends BooleanFormulaAllocator {
 		}
 		
 		return m;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.engine.fol2sat.BooleanValueAllocator#universe()
+	 */
+	@Override
+	Universe universe() {
+		return bounds.universe();
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.engine.fol2sat.BooleanValueAllocator#ints()
+	 */
+	@Override
+	IntSet ints() {
+		return bounds.ints();
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.engine.fol2sat.BooleanValueAllocator#interpret(int)
+	 */
+	@Override
+	BooleanMatrix interpret(int i) {
+		final IntSet s = bounds.exactBound(i).indexView();
+		return factory.matrix(Dimensions.square(1, bounds.universe().size()), s, s);
 	}
 
 }

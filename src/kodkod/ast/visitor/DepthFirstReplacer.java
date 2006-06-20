@@ -7,7 +7,7 @@ package kodkod.ast.visitor;
 import kodkod.ast.BinaryExpression;
 import kodkod.ast.BinaryFormula;
 import kodkod.ast.BinaryIntExpression;
-import kodkod.ast.Cardinality;
+import kodkod.ast.ExprIntCast;
 import kodkod.ast.ComparisonFormula;
 import kodkod.ast.Comprehension;
 import kodkod.ast.ConstantExpression;
@@ -17,6 +17,7 @@ import kodkod.ast.Decls;
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
 import kodkod.ast.IfExpression;
+import kodkod.ast.IntExprCast;
 import kodkod.ast.IntComparisonFormula;
 import kodkod.ast.IntConstant;
 import kodkod.ast.IntExpression;
@@ -219,6 +220,21 @@ public abstract class DepthFirstReplacer implements ReturnVisitor<Expression, Fo
 		return cache(ifExpr,ret);
 	}
     
+	/**
+	 * Calls lookup(castExpr) and returns the cached value, if any.  If a replacement
+	 * has not been cached, visits the expression's child.  If nothing changes, the argument
+	 * is cached and returned, otherwise a replacement expression is cached and returned.
+	 * @return { e: Expression | e = castExpr.intExpr.accept(this).toExpression() }
+	 */
+	public Expression visit(IntExprCast castExpr) {
+		Expression ret = lookup(castExpr);
+		if (ret==null) {
+			final IntExpression intExpr = castExpr.intExpr().accept(this);
+			ret = (intExpr==castExpr.intExpr()) ? castExpr : intExpr.toExpression();
+		}
+		return ret;
+	}
+	
     /** 
 	 * Calls lookup(intconst) and returns the cached value, if any.  
 	 * If a replacement has not been cached, the constant is cached and returned.
@@ -234,13 +250,13 @@ public abstract class DepthFirstReplacer implements ReturnVisitor<Expression, Fo
 	 * If a replacement has not been cached, visits the expression's 
 	 * child.  If nothing changes, the argument is cached and
 	 * returned, otherwise a replacement expression is cached and returned.
-	 * @return { i: UnaryIntExpression | i.expression = intExpr.expression.accept(this)}
+	 * @return { i: ExprIntCast | i.expression = intExpr.expression.accept(this) && i.op = intExpr.op}
 	 */
-    public IntExpression visit(Cardinality intExpr) {
+    public IntExpression visit(ExprIntCast intExpr) {
     		IntExpression ret = lookup(intExpr);
     		if (ret==null) {
     			final Expression expr = intExpr.expression().accept(this);
-    			ret = expr==intExpr.expression() ? intExpr : expr.count();
+    			ret = expr==intExpr.expression() ? intExpr : expr.apply(intExpr.op());
     		}
     		return cache(intExpr, ret);
     }

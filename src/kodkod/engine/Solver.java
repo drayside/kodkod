@@ -11,6 +11,7 @@ import kodkod.engine.fol2sat.Translator;
 import kodkod.engine.satlab.SATSolver;
 import kodkod.instance.Bounds;
 import kodkod.instance.Instance;
+import kodkod.util.ints.IntIterator;
 
 import org.sat4j.specs.TimeoutException;
 
@@ -68,6 +69,10 @@ public final class Solver {
 				instance.add(r, bounds.lowerBound(r));
 			}
 		}
+		for(IntIterator iter = bounds.ints().iterator(); iter.hasNext(); ) {
+			int i = iter.nextInt();
+			instance.add(i, bounds.exactBound(i));
+		}
 		return instance;
 	}
 	
@@ -80,6 +85,10 @@ public final class Solver {
 		final Instance instance = new Instance(bounds.universe());
 		for (Relation r : bounds.relations()) {
 			instance.add(r, bounds.lowerBound(r));
+		}
+		for(IntIterator iter = bounds.ints().iterator(); iter.hasNext(); ) {
+			int i = iter.nextInt();
+			instance.add(i, bounds.exactBound(i));
 		}
 		return instance;
 	}

@@ -81,25 +81,25 @@ public final class Translator {
 		final Map<Node, IntSet> varUsage;
 		BooleanValue circuit;
 		if (options.trackVars()) {
-			Fol2Bool acircuit = Fol2Bool.translateAndTrack(annotated, allocator);
+			Fol2Bool acircuit = Fol2Bool.translateAndTrack(annotated,  allocator);
 			circuit = acircuit.translation();
 			if (circuit.op()==Operator.CONST) {
 				throw new TrivialFormulaException(Reducer.reduce(annotated,preds,acircuit), 
 						(BooleanConstant)circuit, bounds, skolems);
 			}
-			varUsage = new IdentityHashMap<Node, IntSet>(allocator.allocationMap().size() + acircuit.variableUsage().size());
+			varUsage = new IdentityHashMap<Node, IntSet>(allocator.allocationFunction().size() + acircuit.variableUsage().size());
 			varUsage.putAll(acircuit.variableUsage());
 		} else {
-			circuit = Fol2Bool.translate(annotated, allocator);
+			circuit = Fol2Bool.translate(annotated,  allocator);
 			if (circuit.op()==Operator.CONST) {
 				throw new TrivialFormulaException(formula, (BooleanConstant)circuit, bounds, skolems);
 			}
-			varUsage = new IdentityHashMap<Node, IntSet>(allocator.allocationMap().size());
+			varUsage = new IdentityHashMap<Node, IntSet>(allocator.allocationFunction().size());
 		}
 		
 		annotated = null; // release structural information
 		
-		for(Map.Entry<Relation, IntRange> e: allocator.allocationMap().entrySet()) {
+		for(Map.Entry<Relation, IntRange> e: allocator.allocationFunction().entrySet()) {
 			varUsage.put(e.getKey(), Ints.rangeSet(e.getValue()));
 		}
 
@@ -168,7 +168,7 @@ public final class Translator {
 	 * Reduces a trivially (un)satisfiable formula to a subtree that 
 	 * caused the formula's (un)satisfiability.
 	 */
-	private static final class Reducer extends DepthFirstReplacer {
+	 private static final class Reducer extends DepthFirstReplacer {
 		private final Set<Formula> trues, falses;
 		private final Map<Node,Node> cache;
 		

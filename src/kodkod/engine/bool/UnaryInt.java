@@ -144,7 +144,7 @@ final class UnaryInt extends Int {
 	public String toString() {
 		return "u"+Arrays.toString(bits);
 	}
-	
+
 }
 
 

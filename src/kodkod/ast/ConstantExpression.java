@@ -63,6 +63,10 @@ public abstract class ConstantExpression extends LeafExpression {
 		
 	};
 	
+	static final ConstantExpression INTS = new ConstantExpression("ints", 1) {
+		
+	};
+	
 	/**
 	 * Constructs a constant expression with the given arity.
 	 */

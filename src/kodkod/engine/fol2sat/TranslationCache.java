@@ -12,7 +12,7 @@ import java.util.Set;
 import kodkod.ast.BinaryExpression;
 import kodkod.ast.BinaryFormula;
 import kodkod.ast.BinaryIntExpression;
-import kodkod.ast.Cardinality;
+import kodkod.ast.ExprIntCast;
 import kodkod.ast.ComparisonFormula;
 import kodkod.ast.Comprehension;
 import kodkod.ast.ConstantExpression;
@@ -22,6 +22,7 @@ import kodkod.ast.Decls;
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
 import kodkod.ast.IfExpression;
+import kodkod.ast.IntExprCast;
 import kodkod.ast.IntComparisonFormula;
 import kodkod.ast.IntConstant;
 import kodkod.ast.MultiplicityFormula;
@@ -748,7 +749,7 @@ abstract class TranslationCache {
 		 * Returns the free variables in intExpr.expression.
 		 * @return freeVars(intExpr.expression)
 		 */
-		public Set<Variable> visit(Cardinality intExpr) {
+		public Set<Variable> visit(ExprIntCast intExpr) {
 			Set<Variable> ret = lookup(intExpr);
 			return ret != null ? ret : cache(intExpr, intExpr.expression().accept(this));
 		}
@@ -781,6 +782,15 @@ abstract class TranslationCache {
 			vars.addAll(left);
 			vars.addAll(right);
 			return cache(intExpr, vars);
+		}
+
+		/**
+		 * Returns the free variables of castExpr, if any.
+		 * @return freeVars(castExpr.intExpr)
+		 */
+		public Set<Variable> visit(IntExprCast castExpr) {
+			Set<Variable> vars = lookup(castExpr);
+			return  (vars != null) ? vars : cache(castExpr, castExpr.intExpr().accept(this));
 		}
 	}
 }

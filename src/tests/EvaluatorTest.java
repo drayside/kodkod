@@ -57,7 +57,7 @@ public class EvaluatorTest extends TestCase {
   
         evaluator = new Evaluator(InstanceCreator.getInstance(SOLUTION));
         Map<String, Relation> nameToRelation = new HashMap<String, Relation>();
-        for (Relation r : evaluator.instance()) {
+        for (Relation r : evaluator.instance().relations()) {
             nameToRelation.put(r.name(), r);
         }
         univ = relation(nameToRelation, UNIV_PATH, "univ");

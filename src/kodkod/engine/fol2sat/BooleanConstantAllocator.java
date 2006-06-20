@@ -13,6 +13,7 @@ import kodkod.instance.Bounds;
 import kodkod.instance.Instance;
 import kodkod.instance.TupleSet;
 import kodkod.instance.Universe;
+import kodkod.util.ints.IntSet;
 
 /** 
  * Uses {@link kodkod.engine.bool.BooleanConstant boolean constants} to 
@@ -20,12 +21,15 @@ import kodkod.instance.Universe;
  * No variables are allocated; the constants represent the upper bounds on the
  * contents of expressions.
  * 
- * @specfield tuples: Relation -> one TupleSet
+ * @specfield universe: Universe
+ * @specfield relations: set Relation
+ * @specfield ints: set int
  * @specfield factory: BooleanFactory
- * @invariant all r: tuples.TupleSet | tuples[r].arity = r.arity
+ * @specfield formulas: (relations + ints) lone->one BooleanMatrix 
+ * @invariant formulas[Relation].factory = factory
  * @author Emina Torlak 
  */
-abstract class BooleanConstantAllocator extends BooleanFormulaAllocator {
+abstract class BooleanConstantAllocator extends BooleanValueAllocator {
 	
 	private final BooleanFactory factory;
 	/**  
@@ -37,43 +41,12 @@ abstract class BooleanConstantAllocator extends BooleanFormulaAllocator {
 		this.factory = BooleanFactory.factory(0, options);
 	}
 	
-	public final BooleanFactory factory() { return factory; } 
-	
-	@Override
-	abstract Universe universe();
-	
 	/**
-	 * Returns the tuples that represent the 
-	 * upper bound on the given relation.  If 
-	 * the relation is not mapped by this.tuples,
-	 * null is returned.
-	 * @return this.bounds[r]
+	 * {@inheritDoc}
+	 * @see kodkod.engine.fol2sat.BooleanValueAllocator#factory()
 	 */
-	abstract TupleSet tuples(Relation r);
-	
-	/** 
-	 * Returns a {@link kodkod.engine.bool.BooleanMatrix matrix m} of 
-	 * {@link kodkod.engine.bool.BooleanConstant boolean constants} representing
-	 * the tuples assigned to the specified relation by this.tuples.    
-	 * 
-	 * @return {m : BooleanMatrix | m.zero = FALSE && 
-	 *           m.elements[this.tuples[r].indexView()] = TRUE }
-	 * @throws NullPointerException - r = null 
-	 * @throws IllegalArgumentException - no this.tuples[r]
-	 * @see kodkod.engine.fol2sat.BooleanFormulaAllocator#allocate(kodkod.ast.Relation)
-	 */
-	public BooleanMatrix allocate(Relation r) {
-		
-		final TupleSet tuples = tuples(r);
-		if (tuples==null) {
-			throw new IllegalArgumentException(r + " is not bound.");
-		}
-		
-		return factory.matrix(Dimensions.square(r.arity(), universe().size()), tuples.indexView(), tuples.indexView());
-	}
-	
-	
-	
+	public final BooleanFactory factory() { return factory; } 
+
 	/**
 	 * A BooleanConstantAllocator that is based on an Instance.
 	 * Specifically, true entries in the matrix representing
@@ -97,21 +70,45 @@ abstract class BooleanConstantAllocator extends BooleanFormulaAllocator {
 		}
 		
 		/**
-		 * Returns this.instance.
-		 * @return this.instance
+		 * {@inheritDoc}
+		 * @see kodkod.engine.fol2sat.BooleanValueAllocator#interpret(kodkod.ast.Relation)
 		 */
-		Instance instance() {
-			return instance;
+		final BooleanMatrix interpret(Relation r) {
+			
+			final TupleSet tuples = instance.tuples(r);
+			if (tuples==null) {
+				throw new IllegalArgumentException(r + " is not bound.");
+			}
+			
+			return super.factory.matrix(Dimensions.square(r.arity(), instance.universe().size()), tuples.indexView(), tuples.indexView());
 		}
-		
+
+		/**
+		 * {@inheritDoc}
+		 * @see kodkod.engine.fol2sat.BooleanValueAllocator#universe()
+		 */
 		@Override
 		Universe universe() {
 			return instance.universe();
 		}
 
+		/**
+		 * {@inheritDoc}
+		 * @see kodkod.engine.fol2sat.BooleanValueAllocator#ints()
+		 */
 		@Override
-		TupleSet tuples(Relation r) {
-			return instance.tuples(r);
+		IntSet ints() {
+			return instance.ints();
+		}
+
+		/**
+		 * {@inheritDoc}
+		 * @see kodkod.engine.fol2sat.BooleanValueAllocator#interpret(int)
+		 */
+		@Override
+		BooleanMatrix interpret(int i) {
+			final IntSet s = instance.tuples(i).indexView();
+			return super.factory.matrix(Dimensions.square(1, instance.universe().size()), s, s);
 		}
 	}
 	
@@ -137,24 +134,37 @@ abstract class BooleanConstantAllocator extends BooleanFormulaAllocator {
 			if (bounds==null) throw new NullPointerException();
 			this.bounds = bounds;
 		}
-		
+
 		/**
-		 * Returns this.bounds. 
-		 * @return this.bounds
+		 * {@inheritDoc}
+		 * @see kodkod.engine.fol2sat.BooleanValueAllocator#interpret(kodkod.ast.Relation)
 		 */
-		Bounds bounds() {
-			return bounds;
+		final BooleanMatrix interpret(Relation r) {
+			
+			final TupleSet tuples = bounds.upperBound(r);
+			if (tuples==null) {
+				throw new IllegalArgumentException(r + " is not bound.");
+			}
+			
+			return super.factory.matrix(Dimensions.square(r.arity(), bounds.universe().size()), tuples.indexView(), tuples.indexView());
 		}
-		
+
 		@Override
 		Universe universe() {
 			return bounds.universe();
 		}
 
 		@Override
-		TupleSet tuples(Relation r) {
-			return bounds.upperBound(r);
+		IntSet ints() {
+			return bounds.ints();
 		}
+
+		@Override
+		BooleanMatrix interpret(int i) {
+			final IntSet s = bounds.exactBound(i).indexView();
+			return super.factory.matrix(Dimensions.square(1, bounds.universe().size()), s, s);
+		}
+	
 		
 	}
 	

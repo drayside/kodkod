@@ -143,7 +143,7 @@ public final class BinaryIntExpression extends IntExpression {
 		/** `/' operator */
 		DIVIDE {
 			/**
-			 * Returns the ration of i0 and i1.
+			 * Returns the ratio of i0 and i1.
 			 * @return i0 / i1
 			 */
 			public int apply(int i0, int i1) {
@@ -152,7 +152,43 @@ public final class BinaryIntExpression extends IntExpression {
 			public String toString() {
 				return "/";
 			}
-		};
+		} ; 
+//		, OR {
+//			/**
+//			 * Returns the bitwise OR of i0 and i1.
+//			 * @return i0 | i1
+//			 */
+//			public int apply(int i0, int i1) {
+//				return i0 | i1;
+//			}
+//			public String toString() {
+//				return "|";
+//			}
+//		},
+//		AND {
+//			/**
+//			 * Returns the bitwise AND of i0 and i1.
+//			 * @return i0 & i1
+//			 */
+//			public int apply(int i0, int i1) {
+//				return i0 & i1;
+//			}
+//			public String toString() {
+//				return "&";
+//			}
+//		}, 
+//		XOR {
+//			/**
+//			 * Returns the bitwise XOR of i0 and i1.
+//			 * @return i0 ^ i1
+//			 */
+//			public int apply(int i0, int i1) {
+//				return i0 ^ i1;
+//			}
+//			public String toString() {
+//				return "^";
+//			}
+//		};
 		
 		/**
 		 * Returns the result of combining the given integers

@@ -78,22 +78,7 @@ final class Environment<T> {
 	public Environment<T> extend(Map<Variable, T> variableToValue) {
 		return new Environment<T>(this, variableToValue);
 	}
-	
-	/**
-	 * Returns true if this environment was obtained by extending
-	 * the given environment zero or more times.  Note that the
-	 * method will return true if the argument is null since 
-	 * each environment chain ends in null.
-	 * @return environment in this.*parent
-	 */
-//	public boolean isExtensionOf(Environment<T> environment) {
-//		Environment<T> p = this;
-//		while (p!=environment && p!=null) {
-//			p = p.parent;
-//		}
-//		return environment == p;
-//	}
-	
+		
 	/**
 	 * Binds the specified variable to the specified value,
 	 * erasing any prior mappings for the variable
@@ -104,14 +89,6 @@ final class Environment<T> {
 		map.put(variable, value);
 	}
 	
-	/**
-	 * Returns true if this environment has a binding
-	 * for the given variable.
-	 * @return some this.map[variable]
-	 */
-	public boolean binds(Variable variable) {
-		return map.containsKey(variable);
-	}
 	
 	/**
 	 * Returns the binding for the given variable 

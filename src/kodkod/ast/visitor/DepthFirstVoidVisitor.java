@@ -3,7 +3,7 @@ package kodkod.ast.visitor;
 import kodkod.ast.BinaryExpression;
 import kodkod.ast.BinaryFormula;
 import kodkod.ast.BinaryIntExpression;
-import kodkod.ast.Cardinality;
+import kodkod.ast.ExprIntCast;
 import kodkod.ast.ComparisonFormula;
 import kodkod.ast.Comprehension;
 import kodkod.ast.ConstantExpression;
@@ -11,6 +11,7 @@ import kodkod.ast.ConstantFormula;
 import kodkod.ast.Decl;
 import kodkod.ast.Decls;
 import kodkod.ast.IfExpression;
+import kodkod.ast.IntExprCast;
 import kodkod.ast.IntComparisonFormula;
 import kodkod.ast.IntConstant;
 import kodkod.ast.MultiplicityFormula;
@@ -127,6 +128,16 @@ public abstract class DepthFirstVoidVisitor implements VoidVisitor {
 		}
 	}
 	
+	/**
+	 * Visits castExpr.intExpr  if
+	 * this.visited(castExpr) returns false.  Otherwise does nothing.
+	 * @effects castExpr.expression.accept(this)
+	 */
+	public void visit(IntExprCast castExpr) {
+		if (!visited(castExpr)) {
+			castExpr.intExpr().accept(this);
+		}
+	}
 
 	/**
 	 * Does nothing.
@@ -138,7 +149,7 @@ public abstract class DepthFirstVoidVisitor implements VoidVisitor {
 	 * this.visited(intExpr) returns false.  Otherwise does nothing.
 	 * @effects intExpr.expression.accept(this)
 	 */
-	public void visit(Cardinality intExpr) {
+	public void visit(ExprIntCast intExpr) {
 		if (!visited(intExpr)) {
 			intExpr.expression().accept(this);
 		}

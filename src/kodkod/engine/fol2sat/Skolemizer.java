@@ -143,7 +143,7 @@ final class Skolemizer {
 		/* the mapping from skolemized declarations to their corresponding
 		 * skolem constants */
 		final Map<Decl, Relation> skolems;
-		
+		final Bounds bounds;
 		/**
 		 * Constructs a new EQFReplacer.  This replacer should only be applied to
 		 * the top-level formula, root.  The given bounds will be modified to include
@@ -154,6 +154,7 @@ final class Skolemizer {
 		 */
 		EQFReplacer(Set<QuantifiedFormula> eqfs, Bounds bounds, Set<Node> sharedNodes, Options options) {
 			this.eqfs = eqfs;
+			this.bounds = bounds;
 			this.allocator = new BooleanConstantAllocator.Overapproximating(bounds, options);
 			this.skolems = new IdentityHashMap<Decl, Relation>(eqfs.size());
 			this.skolemFormula = Formula.TRUE;
@@ -269,12 +270,12 @@ final class Skolemizer {
 		 */
 		private void updateSkolemInfo(Relation skolem, Decl decl) {
 			final BooleanMatrix skolemBound = Translator.evaluate(decl.expression(), allocator);
-			final Universe universe = allocator.universe();
+			final Universe universe = bounds.universe();
 			final IntSet tuples = Ints.bestSet(universe.size());
 			for(IndexedEntry<BooleanValue> cell : skolemBound) {
 				tuples.add(cell.index());
 			}
-			allocator.bounds().bound(skolem, universe.factory().setOf(1, tuples));
+			bounds.bound(skolem, universe.factory().setOf(1, tuples));
 			skolemFormula = skolemFormula.and(skolem.in(decl.expression()).and(skolem.one()));
 			skolems.put(decl, skolem);
 		}

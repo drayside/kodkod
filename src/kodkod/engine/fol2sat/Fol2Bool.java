@@ -9,18 +9,19 @@ import java.util.Set;
 import kodkod.ast.BinaryExpression;
 import kodkod.ast.BinaryFormula;
 import kodkod.ast.BinaryIntExpression;
-import kodkod.ast.Cardinality;
 import kodkod.ast.ComparisonFormula;
 import kodkod.ast.Comprehension;
 import kodkod.ast.ConstantExpression;
 import kodkod.ast.ConstantFormula;
 import kodkod.ast.Decl;
 import kodkod.ast.Decls;
+import kodkod.ast.ExprIntCast;
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
 import kodkod.ast.IfExpression;
 import kodkod.ast.IntComparisonFormula;
 import kodkod.ast.IntConstant;
+import kodkod.ast.IntExprCast;
 import kodkod.ast.Multiplicity;
 import kodkod.ast.MultiplicityFormula;
 import kodkod.ast.Node;
@@ -40,15 +41,16 @@ import kodkod.engine.bool.BooleanValue;
 import kodkod.engine.bool.Dimensions;
 import kodkod.engine.bool.Int;
 import kodkod.engine.bool.Operator;
+import kodkod.util.ints.IntIterator;
 import kodkod.util.ints.IntSet;
 import kodkod.util.ints.Ints;
 
 /**
  * Translates a first order logic formula into a boolean circuit, 
  * and stores the translation and annotations computed by 
- * {@link Fol2Bool#translateAndTrack(AnnotatedNode, BooleanFormulaAllocator, Options.IntEncoding)}. 
+ * {@link Fol2Bool#translateAndTrack(AnnotatedNode, BooleanValueAllocator, Options.IntEncoding)}. 
  * @specfield node: AnnotatedNode<? extends Node> // the node being translated
- * @specfield allocator: BooleanFormulaAllocator // the allocator used for translation	 
+ * @specfield allocator: BooleanValueAllocator // the allocator used for translation	 
  * @author Emina Torlak
  */
 final class Fol2Bool {
@@ -73,7 +75,7 @@ final class Fol2Bool {
 	 *           annotated.node in Expression => transl in BooleanMatrix}
 	 */
 	@SuppressWarnings("unchecked")
-	static final <T> T translate(AnnotatedNode<? extends Node> annotated, BooleanFormulaAllocator allocator) {
+	static final <T> T translate(AnnotatedNode<? extends Node> annotated, BooleanValueAllocator allocator) {
 		return (T) annotated.node().accept(new Translator(new TranslationCache.Simple(annotated), allocator));
 	}
 	
@@ -85,7 +87,7 @@ final class Fol2Bool {
 	 * @requires allocator.relations = AnnotatedNode.relations(annotated)
 	 * @return {ret: Fol2Bool | ret.node = annotated && ret.allocator = allocator } 
 	 */
-	static final Fol2Bool translateAndTrack(AnnotatedNode<Formula> annotated, BooleanFormulaAllocator allocator) {
+	static final Fol2Bool translateAndTrack(AnnotatedNode<Formula> annotated,  BooleanValueAllocator allocator) {
 		final TranslationCache.Tracking c = new TranslationCache.Tracking(annotated);
 		return new Fol2Bool(annotated.node().accept(new Translator(c, allocator)), 
 				            c.varUsage(), c.trueFormulas(), c.falseFormulas());
@@ -137,7 +139,8 @@ final class Fol2Bool {
 	 * @specfield node: Node // the translated node
 	 */
 	private static class Translator implements ReturnVisitor<BooleanMatrix, BooleanValue, Object, Int> {
-		final BooleanFormulaAllocator allocator;
+		final BooleanValueAllocator allocator;
+
 		
 		/* When visiting the body of a quantified formula or a comprehension, this
 		 * environment contains the current values of the enclosing quantified variable(s) */
@@ -146,11 +149,11 @@ final class Fol2Bool {
 		final TranslationCache cache;
 	
 		/**
-		 * Constructs a new translator that will use the given allocator and cache to perform the 
+		 * Constructs a new translator that will use the given allocator, annotated universe, and cache to perform the 
 		 * translation.
 		 * @effects this.node' = cache.node
 		 */   
-		Translator(TranslationCache cache, BooleanFormulaAllocator allocator) {
+		Translator(TranslationCache cache,  BooleanValueAllocator allocator) {
 			this.allocator = allocator;
 			this.env = new Environment<BooleanMatrix>();
 			this.cache = cache;
@@ -242,7 +245,7 @@ final class Fol2Bool {
 		 * @throws IllegalArgumentException - !this.instance.contains(relation)
 		 */
 		public final BooleanMatrix visit(Relation relation) {
-			return allocator.allocate(relation);
+			return allocator.interpret(relation);
 		}
 		
 		/**
@@ -266,6 +269,12 @@ final class Fol2Bool {
 				ret = allocator.factory().matrix(dim2, iden, iden);
 			} else if (constExpr==Expression.NONE) {
 				ret = allocator.factory().matrix(Dimensions.square(1, univSize), Ints.EMPTY_SET, Ints.EMPTY_SET);
+			} else if (constExpr==Expression.INTS) {
+				final IntSet ints = Ints.bestSet(univSize);
+				for(IntIterator iter = allocator.ints().iterator(); iter.hasNext(); ) {
+					ints.add(allocator.interpret(iter.nextInt()).iterator().next().index());
+				}
+				ret = allocator.factory().matrix(Dimensions.square(1, univSize), ints, ints);
 			} else {
 				throw new IllegalArgumentException("unknown constant expression: " + constExpr);
 			}
@@ -585,6 +594,14 @@ final class Fol2Bool {
 		}
 
 		/**
+		 * @return boolean matrix representing a singleton set containing the
+		 * atom that represents the castExpr.intExpr.
+		 */
+		public BooleanMatrix visit(IntExprCast castExpr) {
+			throw new UnsupportedOperationException();
+		}	
+		
+		/**
 		 * @return factory.integer(intConst.value, this.encoding)
 		 */
 		public Int visit(IntConstant intConst) {
@@ -592,12 +609,18 @@ final class Fol2Bool {
 		}
 
 		/**
-		 * @return translate(intExpr.expression).cardinality(this.encoding)
+		 * @return translate(intExpr.expression).cardinality()
 		 */
-		public Int visit(Cardinality intExpr) {
+		public Int visit(ExprIntCast intExpr) {
 			Int ret = lookup(intExpr);
 			if (ret!=null) return ret;
-			return record(intExpr, intExpr.expression().accept(this).cardinality());
+			switch(intExpr.op()) {
+			case CARDINALITY: ret = intExpr.expression().accept(this).cardinality(); break;
+			case SUM : throw new UnsupportedOperationException();
+			default: 
+				throw new IllegalArgumentException("unknown operator: " + intExpr.op());
+			}
+			return record(intExpr, ret);
 		}
 
 		/**
@@ -640,6 +663,8 @@ final class Fol2Bool {
 //			System.out.println(intComp.right() + ": " + right);
 //			System.out.println(ret);
 			return record(intComp, ret);
-		}	
+		}
+
+		
 	}
 }

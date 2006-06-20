@@ -155,7 +155,7 @@ final class SymmetryBreaker {
 					!relSymms.get(r).contains(symmPart))
 					continue;  // r is constant or upper bound of r does not range over the atoms in symmPart
 				
-				BooleanMatrix m = allocator.allocate(r);
+				BooleanMatrix m = allocator.interpret(r);
 //				System.out.println(r + ": " + m);
 				for(IndexedEntry<BooleanValue> entry : m) {
 					int permIndex = permutation(r.arity(), entry.index(), prevIndex, curIndex);

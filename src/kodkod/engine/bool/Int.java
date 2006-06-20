@@ -164,6 +164,28 @@ public abstract class Int {
 	 */
 	public abstract Int divide(Int other);
 	
+//	/**
+//	 * Returns an Int that represents the bitwise conjunction of this and the given Int.
+//	 * @requires this.factory = other.factory
+//	 * @return an Int that represents the bitwise conjunction of this and the given Int.
+//	 */
+//	public abstract Int and(Int other);
+//	
+//	/**
+//	 * Returns an Int that represents the bitwise disjunction of this and the given Int.
+//	 * @requires this.factory = other.factory
+//	 * @return an Int that represents the bitwise disjunction of this and the given Int.
+//	 */
+//	public abstract Int or(Int other);
+//	
+//	/**
+//	 * Returns an Int that represents the bitwise XOR of this and the given Int.
+//	 * @requires this.factory = other.factory
+//	 * @return an Int that represents the bitwise XOR of this and the given Int.
+//	 * @throws UnsupportedOperationException - this.encoding does not support XOR
+//	 */
+//	public abstract Int xor(Int other);
+	
 	/**
 	 * Throws IllegalArgumentException if other.factory != this.factory.
 	 * @throws IllegalArgumentException - other.factory != this.factory.

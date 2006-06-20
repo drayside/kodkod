@@ -28,7 +28,10 @@ public abstract class Expression implements Node {
 	
 	/** The empty relation: contains no atoms. */
 	public static final Expression NONE = ConstantExpression.NONE;
-		
+	
+	/** The integer relation: contains all atoms {@link kodkod.instance.Bounds bound} to integers */
+	public static final Expression INTS = ConstantExpression.INTS;
+	
     /**
      * Constructs a leaf expression
      * @effects no this.children'
@@ -142,11 +145,31 @@ public abstract class Expression implements Node {
     }
     
     /**
-     * Returns the cardinality of this expression.  
-     * @return {e: IntNode | e = #this }
+     * Returns the cardinality of this expression.  The effect of this method is the
+     * same as calling this.apply(ExprIntCast.Operator.CARDINALITY).  
+     * @return {e: IntExpression | e = #this }
      */
     public final IntExpression count() {
-    		return new Cardinality(this);
+    		return apply(ExprIntCast.Operator.CARDINALITY);
+    }
+    
+    /**
+     * Returns the sum of the integer atoms in this expression.  The effect of this method is the
+     * same as calling this.apply(ExprIntCast.Operator.SUM).  
+     * @return {e: IntExpression | e = sum(this) }
+     */
+    public final IntExpression sum() {
+    		return apply(ExprIntCast.Operator.SUM);
+    }
+    
+    /**
+     * Returns the cast of this expression to an integer expression,
+     * that represents either the cardinality of this expression (if op is CARDINALITY)
+     * or the sum of the integer atoms it contains (if op is SUM).
+     * @return {e: IntExpression | e.op = op && e.expression = this} 
+     */
+    public IntExpression apply(ExprIntCast.Operator op) { 
+    	 return new ExprIntCast(this, op);
     }
     
     /**

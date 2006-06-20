@@ -6,6 +6,10 @@ import java.util.Map;
 import java.util.Set;
 
 import kodkod.ast.Relation;
+import kodkod.util.ints.IntSet;
+import kodkod.util.ints.Ints;
+import kodkod.util.ints.SparseSequence;
+import kodkod.util.ints.TreeSequence;
 
 
 /**
@@ -16,10 +20,14 @@ import kodkod.ast.Relation;
  * that a given relation <i>must</i> contain.  The set <i>rU</i> represents all the tuples
  * that a relation <i>may</i> contain.  All bounding sets range over the same {@link kodkod.instance.Universe universe}.   
  * </p>
+ * <p>A Bounds object also maps integers to singleton tupleset that represent them.  A tupleset may represent more than
+ * one integer, but an integer is represented by at most one tupleset.  </p>
  * @specfield universe: Universe
  * @specfield relations: set Relation
+ * @specfield intBound: int -> lone TupleSet
  * @specfield lowerBound: relations -> one TupleSet
  * @specfield upperBound: relations -> one TupleSet
+ * @invariant all i: intBound.TupleSet | intBound[i].size() = 1 && intBound[i].arity() = 1
  * @invariant lowerBound[relations].universe = upperBound[relations].universe = universe
  * @invariant all r: relations | lowerBound[r].arity = upperBound[r].arity = r.arity
  * @invariant all r: relations | lowerBound[r].tuples in upperBound[r].tuples       
@@ -28,23 +36,26 @@ import kodkod.ast.Relation;
 public final class Bounds implements Cloneable {
 	private final TupleFactory factory;
 	private final Map<Relation, BoundPair> bounds;
+	private final SparseSequence<TupleSet> intbounds;
 	
 	/**
 	 * Constructs a Bounds object with the given factory and mappings.
 	 */
-	private Bounds(TupleFactory factory, Map<Relation, BoundPair> bounds) {
+	private Bounds(TupleFactory factory, Map<Relation, BoundPair> bounds, SparseSequence<TupleSet> intbounds) {
 		this.factory = factory;
 		this.bounds = bounds;
+		this.intbounds = intbounds;
 	}
 	
 	/**
 	 * Constructs new Bounds over the given universe.
-	 * @effects this.universe' = universe && no this.relations'
+	 * @effects this.universe' = universe && no this.relations' && no this.intBound'
 	 * @throws NullPointerException - universe = null
 	 */
 	public Bounds(Universe universe) {
 		this.factory = universe.factory();
 		bounds = new LinkedHashMap<Relation, BoundPair>();
+		intbounds = new TreeSequence<TupleSet>();
 	}
 	
 	/**
@@ -63,6 +74,16 @@ public final class Bounds implements Cloneable {
 	 */
 	public Set<Relation> relations() {
 		return bounds.keySet();
+	}
+	
+	/**
+	 * Returns the set of all integers bound by this Bounds.
+	 * The returned set does not support the add operation.
+	 * It supports removal iff this is not an unmodifiable Bounds.
+	 * @return this.intBounds.TupleSet
+	 */
+	public IntSet ints() {
+		return intbounds.indices();
 	}
 	
 	/**
@@ -87,6 +108,15 @@ public final class Bounds implements Cloneable {
 			return bounds.get(r).upper;
 		}
 		return null;
+	}
+	
+	/**
+	 * Returns the set of tuples representing the given integer.  If i is not
+	 * mapped by this, null is returned.
+	 * @return this.intBound[i]
+	 */
+	public TupleSet exactBound(int i) {
+		return intbounds.get(i);
 	}
 	
 	/**
@@ -160,6 +190,21 @@ public final class Bounds implements Cloneable {
 		bounds.put(r, new BoundPair(factory.noneOf(r.arity()).unmodifiableView(), upper.clone().unmodifiableView()));
 	}
 	
+	/**
+	 * Makes the specified tupleset an exact bound on the relational value
+	 * that corresponds to the given integer.
+	 * @requires ibound.arity = 1 && i.bound.size() = 1
+	 * @effects this.intBound' = this.intBound' ++ i -> ibound
+	 * @throws NullPointerException - ibound = null
+	 * @throws IllegalArgumentException - ibound.arity != 1 || ibound.size() != 1
+	 * @throws IllegalArgumentException - ibound.universe != this.universe
+	 */
+	public void boundExactly(int i, TupleSet ibound) {
+		checkBound(1, ibound);
+		if (ibound.size() != 1)
+			throw new IllegalArgumentException("ibound.size != 1: " + ibound);
+		intbounds.put(i, ibound.clone().unmodifiableView());
+	}
 	
 
 	/**
@@ -167,7 +212,7 @@ public final class Bounds implements Cloneable {
 	 * @return an unmodifiable view of his Bounds object.
 	 */
 	public Bounds unmodifiableView() {
-		return new Bounds(factory, Collections.unmodifiableMap(bounds));
+		return new Bounds(factory, Collections.unmodifiableMap(bounds), Ints.unmodifiableSequence(intbounds));
 	}
 	
 	/**
@@ -175,11 +220,15 @@ public final class Bounds implements Cloneable {
 	 * @return a deep copy of this Bounds object.
 	 */
 	public Bounds clone() {
-		return new Bounds(factory, new LinkedHashMap<Relation, BoundPair>(bounds));
+		try {
+			return new Bounds(factory, new LinkedHashMap<Relation, BoundPair>(bounds), intbounds.clone());
+		} catch (CloneNotSupportedException cnse) {
+			throw new InternalError(); // should not be reached
+		}
 	}
 	
 	public String toString() {
-		return bounds.toString();
+		return "relation bounds: " + bounds.toString() + "\n  int bounds: " + intbounds;
 	}
 	
 	/**
