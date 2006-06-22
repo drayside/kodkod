@@ -56,7 +56,7 @@ abstract class LeafInterpreter<B> {
 	abstract Universe universe();
 	
 	/**
-	 * Returns the bounding object used by this translation manager.
+	 * Returns the bounding object used by this translation interpreter.
 	 * @return this.boundingObj
 	 */
 	abstract B boundingObject();

@@ -25,14 +25,14 @@ import kodkod.util.ints.IntSet;
 
 /**
  * Generates a symmetry breaking predicate
- * using a given bounds manager and symmetry information.
+ * using a given bounds interpreter and symmetry information.
  * 
  * @author Emina Torlak
  */
 final class SymmetryBreaker {
 	/**
 	 * Generates a symmetry breaking predicate for the given
-	 * symmetries, using the specified bounds manager and maximum predicate length.
+	 * symmetries, using the specified bounds interpreter and maximum predicate length.
 	 * @requires maxPredLength >= 0
 	 * @return a symmetry breaking predicate for the given symmetries
 	 * @throws NullPointerException - any of the arguments are null
@@ -45,7 +45,7 @@ final class SymmetryBreaker {
 	
 	
 	private final int MAX_CMP_LENGTH;
-	/* manager used to obtain SAT encodings of relations */
+	/* interpreter used to obtain SAT encodings of relations */
 	private final BoundsInterpreter manager;
 	/* available symmetries */
 	private final List<IntSet> symmetries;
@@ -58,7 +58,7 @@ final class SymmetryBreaker {
 	private final int usize;
 	private final Bounds bounds;
 	/**
-	 * Constructs a predicate generator using the given manager
+	 * Constructs a predicate generator using the given interpreter
 	 * symmetry information, bounds, and Options.
 	 */
 	private SymmetryBreaker(Set<IntSet> symmetries, BoundsInterpreter manager, int maxPredLength) {	

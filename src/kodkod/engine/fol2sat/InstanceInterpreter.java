@@ -25,7 +25,7 @@ final class InstanceInterpreter extends LeafInterpreter<Instance> {
 	/**
 	 * Constructs an InstanceInterpreter for the given instance, using the given factory.
 	 * <p><b>Note: </b> the given instance object may be modified while in use by an
-	 * instance manager, without affecting the manager's correctness.</p>
+	 * instance interpreter, without affecting the interpreter's correctness.</p>
 	 * @effects this.factory' = factory && this.boundingObj' = instance
 	 */
 	InstanceInterpreter(Instance instance, BooleanFactory factory) {
@@ -52,7 +52,7 @@ final class InstanceInterpreter extends LeafInterpreter<Instance> {
 	}
 
 	/**
-	 * Returns the Instance used by this instance manager.
+	 * Returns the Instance used by this instance interpreter.
 	 * @return this.boundingObj
 	 */
 	@Override

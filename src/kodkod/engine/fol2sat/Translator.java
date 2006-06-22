@@ -5,7 +5,6 @@
 package kodkod.engine.fol2sat;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -38,24 +37,24 @@ import kodkod.util.ints.Ints;
  * @author Emina Torlak 
  */
 public final class Translator {
-	private Translator() {}
 	
 	/**
-	 * Determines the ranges of literals that need to be assigned to each
-	 * relation in order to represent it as a matrix of boolean values.
-	 * Returns the total number of literals needed to represent all relations.
+	 * Returns an exact interpreter based on the given bounds and options.
+	 * @return an exact interpreter based on the given bounds and options.
 	 */
-	private static int assignLiterals(Bounds bounds, Map<Relation, IntRange> literals) {
+	private static BoundsInterpreter.Exact exactInterpreter(Bounds bounds, Options options) {
+		final Map<Relation, IntRange> vars = new IdentityHashMap<Relation,IntRange>();
 		int maxLit = 1;
 		for(Relation r : bounds.relations()) {
 			int rLits = bounds.upperBound(r).size() - bounds.lowerBound(r).size();
 			if (rLits > 0) {
-				literals.put(r, Ints.range(maxLit, maxLit + rLits - 1));
+				vars.put(r, Ints.range(maxLit, maxLit + rLits - 1));
 				maxLit += rLits;
 			}
 		}
-		return maxLit-1;
+		return new BoundsInterpreter.Exact(bounds, BooleanFactory.factory(maxLit-1, options), vars);
 	}
+
 	
 	/**
 	 * Translates the given formula using the specified bounds and options.
@@ -67,12 +66,17 @@ public final class Translator {
 	 * @throws IllegalArgumentExeption - the formula refers to an undeclared variable or a 
 	 *                                   relation not mapped by the given bounds.
 	 */
-	public static Translation translate(Formula formula, Bounds bounds, Options options) 
-	throws TrivialFormulaException {
+	public static Translation translate(Formula formula, Bounds bounds, Options options) throws TrivialFormulaException {
+		// extract structural information about the formula (i.e. syntactically shared internal nodes)
 		AnnotatedNode<Formula> annotated = new AnnotatedNode<Formula>(formula);
+		// extract top-level predicates
 		Map<RelationPredicate.Name, Set<RelationPredicate>> preds = AnnotatedNode.predicates(annotated);
+		
+		// copy the bounds and optimize the copy by breaking symmetry on total orders and acyclic
 		bounds = bounds.clone();
 		Set<IntSet> symmetricParts = BoundsOptimizer.optimize(bounds, AnnotatedNode.relations(annotated), preds);
+		
+		// skolemize
 		final Map<Decl, Relation> skolems;
 		if (options.skolemize()) {
 //			System.out.println("skolemizing...");
@@ -83,49 +87,48 @@ public final class Translator {
 			skolems = null;
 		}
 		
-		final Map<Relation, IntRange> relVars = new HashMap<Relation, IntRange>();
-		BooleanFactory factory = BooleanFactory.factory(assignLiterals(bounds, relVars), options);
-		
-		BoundsInterpreter manager = new BoundsInterpreter.Exact(bounds, factory, relVars);
-		
-		final int numPrimaryVariables = factory.numberOfVariables();
+		// translate to boolean, checking for trivial (un)satisfiability
+		BoundsInterpreter.Exact interpreter = exactInterpreter(bounds, options);
 		
 		final Map<Node, IntSet> varUsage;
 		BooleanValue circuit;
 		if (options.trackVars()) {
-			FOL2BoolTranslator acircuit = FOL2BoolTranslator.translateAndTrack(annotated,  manager);
+			FOL2BoolTranslator acircuit = FOL2BoolTranslator.translateAndTrack(annotated,  interpreter);
 			circuit = acircuit.translation();
 			if (circuit.op()==Operator.CONST) {
 				throw new TrivialFormulaException(TrivialFormulaReducer.reduce(annotated,preds,acircuit), 
 						(BooleanConstant)circuit, bounds, skolems);
 			}
-			varUsage = new IdentityHashMap<Node, IntSet>(relVars.size() + acircuit.variableUsage().size());
+			varUsage = new IdentityHashMap<Node, IntSet>(interpreter.vars().size() + acircuit.variableUsage().size());
 			varUsage.putAll(acircuit.variableUsage());
 		} else {
-			circuit = FOL2BoolTranslator.translate(annotated,  manager);
+			circuit = FOL2BoolTranslator.translate(annotated,  interpreter);
 			if (circuit.op()==Operator.CONST) {
 				throw new TrivialFormulaException(formula, (BooleanConstant)circuit, bounds, skolems);
 			}
-			varUsage = new IdentityHashMap<Node, IntSet>(relVars.size());
+			varUsage = new IdentityHashMap<Node, IntSet>(interpreter.vars().size());
 		}
 		
 		annotated = null; // release structural information
 		
-		for(Map.Entry<Relation, IntRange> e: relVars.entrySet()) {
+		for(Map.Entry<Relation, IntRange> e: interpreter.vars().entrySet()) {
 			varUsage.put(e.getKey(), Ints.rangeSet(e.getValue()));
 		}
 
-		circuit = factory.and(circuit, SymmetryBreaker.generateSBP(symmetricParts, manager, options.symmetryBreaking()));
+		BooleanFactory factory = interpreter.factory();
+		final int numPrimaryVariables = factory.numberOfVariables();
+		
+		// break symmetries on the remaining relations
+		circuit = factory.and(circuit, SymmetryBreaker.generateSBP(symmetricParts, interpreter, options.symmetryBreaking()));
 	
-		manager = null; symmetricParts = null; // release the allocator and symmetric partitions
+		interpreter = null; symmetricParts = null; // release the allocator and symmetric partitions
 
+		// flatten
 		if (options.flatten()) {
 //			System.out.println("flattening...");
-			// remove everything but the variables from the factory
-			factory.clear();
+			factory.clear(); // remove everything but the variables from the factory
 			circuit = BooleanFormulaFlattener.flatten((BooleanFormula)circuit, factory);
-			// release the factory itself
-			factory = null;
+			factory = null; // release the factory itself
 		}
 		
 		if (circuit.op()==Operator.CONST) {
@@ -134,6 +137,7 @@ public final class Translator {
 		
 //		System.out.println("translating to cnf...");
 		
+		// translate to cnf and return the translation
 		final SATSolver cnf = Bool2CNFTranslator.definitional((BooleanFormula)circuit, options.solver(), numPrimaryVariables);
 		cnf.setTimeout(options.timeout());
 		return new Translation(cnf, bounds, skolems, Collections.unmodifiableMap(varUsage), numPrimaryVariables, options.trackVars());

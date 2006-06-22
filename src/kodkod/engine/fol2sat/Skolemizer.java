@@ -131,8 +131,8 @@ final class Skolemizer {
 	private static final class EQFReplacer extends DepthFirstReplacer {
 		private final Set<QuantifiedFormula> eqfs;
 		private Environment<LeafExpression> env;
-		/* the manager used to determine the upper bounds for skolem constants;
-		 * the upper bounds for skolem constants will be added to manager.bounds */
+		/* the interpreter used to determine the upper bounds for skolem constants;
+		 * the upper bounds for skolem constants will be added to interpreter.bounds */
 		private final BoundsInterpreter.Overapproximating manager;
 		/* the cache used for storing the replacements for shared nodes */
 		final Map<Node,Node> cache;
@@ -146,11 +146,11 @@ final class Skolemizer {
 		final Bounds bounds;
 		/**
 		 * Constructs a new EQFReplacer.  This replacer should only be applied to
-		 * the top-level formula, root.  The bounds backing the given manager will be modified to include
+		 * the top-level formula, root.  The bounds backing the given interpreter will be modified to include
 		 * upper bounds for the skolem constants generated during replacement.
 		 * @requires sharedNodes = {n: Node | #(n.~children & this.root'.^children) > 1 }
-		 * @requires root.*children & Relation in manager.bounds.relations
-		 * @effects this.eqfs' = eqfs && this.bounds' = manager.bounds
+		 * @requires root.*children & Relation in interpreter.bounds.relations
+		 * @effects this.eqfs' = eqfs && this.bounds' = interpreter.bounds
 		 */
 		EQFReplacer(Set<QuantifiedFormula> eqfs, Set<Node> sharedNodes, BoundsInterpreter.Overapproximating manager) {
 			this.eqfs = eqfs;
@@ -266,7 +266,7 @@ final class Skolemizer {
 		 * @effects this.skolemFormula' = this.skolemFormula && skolem in decl.expression
 		 *            && one skolem
 		 * @effects this.allocator.bounds.upperBound' = 
-		 *            this.allocator.bounds.upperBound + skolem->Translator.evaluate(decl.expression, manager)
+		 *            this.allocator.bounds.upperBound + skolem->Translator.evaluate(decl.expression, interpreter)
 		 */
 		private void updateSkolemInfo(Relation skolem, Decl decl) {
 			final BooleanMatrix skolemBound = (BooleanMatrix) 

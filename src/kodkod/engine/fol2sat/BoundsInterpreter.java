@@ -49,7 +49,7 @@ abstract class BoundsInterpreter extends LeafInterpreter<Bounds> {
 	final Universe universe() { return bounds.universe(); }
 
 	/**
-	 * Returns the Bounds used by this bounds manager.
+	 * Returns the Bounds used by this bounds interpreter.
 	 * @return this.boundingObj
 	 */
 	@Override
@@ -96,12 +96,12 @@ abstract class BoundsInterpreter extends LeafInterpreter<Bounds> {
 		private final Map<Relation, IntRange> vars; 
 		
 		/**  
-		 * Constructs a new exact manager for the given Bounds and factory.
+		 * Constructs a new exact interpreter for the given Bounds and factory.
 		 * The vars map is used to determine how to allocate variables
 		 * to the relations whose upper and lower bounds are not equal.
 		 * <p><b>Note:</b> the given bounds object and vars must not be modified through
-		 * outside pointers once they are used to construct an Exact manager.  If they are,
-		 * the manager is not guaranteed to behave as specified.</p>
+		 * outside pointers once they are used to construct an Exact interpreter.  If they are,
+		 * the interpreter is not guaranteed to behave as specified.</p>
 		 * @requires vars.IntRange = bounds.relations
 		 * @requires all r: vars.IntRange | vars[r] in factory.components
 		 * @requires all r: vars.IntRange | let n = bounds.upperBound[r].size() - bounds.lowerBound[r].size() | #vars[r] = n 
@@ -113,6 +113,16 @@ abstract class BoundsInterpreter extends LeafInterpreter<Bounds> {
 		Exact(Bounds bounds, BooleanFactory factory, Map<Relation, IntRange> vars) {
 			super(bounds, factory);
 			this.vars = vars;
+		}
+		
+		/**
+		 * Returns this.vars.  The returned object must not be modified while it is in use
+		 * by this BoundsInterpreter; if it is, the interpreter is not guaranteed to behave as
+		 * specified.
+		 * @return this.vars.
+		 */
+		Map<Relation, IntRange> vars() { 
+			return vars;
 		}
 		
 		/**
@@ -154,9 +164,9 @@ abstract class BoundsInterpreter extends LeafInterpreter<Bounds> {
 	static final class Overapproximating extends BoundsInterpreter {
 
 		/**  
-		 * Constructs a new overapproximating manager for the given Bounds and factory.
+		 * Constructs a new overapproximating interpreter for the given Bounds and factory.
 		 * <p><b>Note:<b> the given bounds object may be modified while in use by an
-		 * Overapproximating manager, without affecting the manager's correctness.</p>
+		 * Overapproximating interpreter, without affecting the interpreter's correctness.</p>
 		 * @effects this.rBounds' = { r: bounds.relations, l: TupleSet, h: TupleSet | 
 		 *                             l = h = bounds.upperBound[r]} 
 		 */
