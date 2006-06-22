@@ -8,6 +8,7 @@ import kodkod.ast.Formula;
 import kodkod.ast.Relation;
 import kodkod.engine.fol2sat.Translation;
 import kodkod.engine.fol2sat.Translator;
+import kodkod.engine.fol2sat.TrivialFormulaException;
 import kodkod.engine.satlab.SATSolver;
 import kodkod.instance.Bounds;
 import kodkod.instance.Instance;

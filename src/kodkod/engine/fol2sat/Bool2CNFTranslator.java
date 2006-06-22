@@ -18,9 +18,9 @@ import kodkod.util.ints.Ints;
  * 
  * @author Emina Torlak
  */
-final class Bool2Cnf {
+final class Bool2CNFTranslator {
 
-	private Bool2Cnf() {}
+	private Bool2CNFTranslator() {}
 
 	/**
 	 * Creates a new instance of SATSolver using the provided factory

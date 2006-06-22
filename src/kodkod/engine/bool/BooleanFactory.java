@@ -293,11 +293,11 @@ public abstract class BooleanFactory {
 	public abstract Int integer(int number);
 	
 	/**
-	 * Returns an Int that represents 0 or 1, depending on the value of the given bit.
-	 * The behavior of this method is unspecified if bit is not a component of this factory.
-	 * @return { i: Int | [[bit]] => [[i]] = 1, [[i]] = 0 && i.encoding = this.intEncoding && i.factory = this}
+	 * Returns an Int that represents 0 or the given number, depending on the value of the given bit.
+	 * The behavior of this method is unspecified if the bit is not a component of this factory.
+	 * @return { i: Int | [[bit]] => [[i]] = number, [[i]] = 0 && i.encoding = this.intEncoding && i.factory = this}
 	 */
-	public abstract Int integer(BooleanValue bit);
+	public abstract Int integer(int number, BooleanValue bit);
 	
 	/**
 	 * Returns an Int that represents the sum of the elements returned by the iterator,
@@ -312,7 +312,7 @@ public abstract class BooleanFactory {
 		if (low > high) 
 			return integer(0);
 		else if (low == high) 
-			return integer(values.next());
+			return integer(1, values.next());
 		else {
 			final int mid = (low + high) / 2;
 			final Int lsum = sum(values, low, mid);
@@ -432,16 +432,16 @@ public abstract class BooleanFactory {
 		public Int integer(int number) {
 			if (number < 0)
 				throw new IllegalArgumentException("negative numbers not supported: "  +number);
-			return new UnaryInt(this, number);
+			return new UnaryInt(this, number, BooleanConstant.TRUE);
 		}
 
 		/**
 		 * {@inheritDoc}
-		 * @see kodkod.engine.bool.BooleanFactory#integer(kodkod.engine.bool.BooleanValue)
+		 * @see kodkod.engine.bool.BooleanFactory#integer(int, kodkod.engine.bool.BooleanValue)
 		 */
 		@Override
-		public Int integer(BooleanValue bit) {
-			return new UnaryInt(this, bit);
+		public Int integer(int number, BooleanValue bit) {
+			return new UnaryInt(this, number, bit);
 		}
 		
 	}
@@ -483,16 +483,16 @@ public abstract class BooleanFactory {
 		 */
 		@Override
 		public Int integer(int number) {
-			return new BinaryInt(this, number);
+			return new BinaryInt(this, number, BooleanConstant.TRUE);
 		}
 		
 		/**
 		 * {@inheritDoc}
-		 * @see kodkod.engine.bool.BooleanFactory#integer(kodkod.engine.bool.BooleanValue)
+		 * @see kodkod.engine.bool.BooleanFactory#integer(int, kodkod.engine.bool.BooleanValue)
 		 */
 		@Override
-		public Int integer(BooleanValue bit) {
-			return new BinaryInt(this, bit);
+		public Int integer(int number, BooleanValue bit) {
+			return new BinaryInt(this, number, bit);
 		}
 		
 	}

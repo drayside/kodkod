@@ -27,34 +27,22 @@ final class BinaryInt extends Int {
 	}
 	
 	/**
-	 * Constructs a BinaryInt encoding of the given number, using at most
-	 * factory.bitwidth bits.
-	 * @requires factory.encoding = BINARY  
-	 * @effects this.factory' = factory 
+	 * Constructs a BinaryInt that represents either 0 or the given number, depending on 
+	 * the value of the given bit.
+	 * @requires factory.encoding = BINARY  && bit in factory.components 
+	 * @effects this.factory' = factory
+	 * @effects bits is a two's-complement representation of the given number
+	 * that uses the provided bit in place of 1's
 	 */
-	BinaryInt(BooleanFactory factory, int number) {
+	BinaryInt(BooleanFactory factory, int number, BooleanValue bit) {
 		super(factory);
 		final int width = bitwidth(number);
 		this.bits = new BooleanValue[width];
 		for(int i = 0; i < width; i++) {
-			bits[i] = (number & (1<<i)) == 0 ? FALSE : TRUE;
+			bits[i] = (number & (1<<i)) == 0 ? FALSE : bit;
 		}
 	}
 
-	/**
-	 * Constructs a BinaryInt that represents either 0 or 1, depending on 
-	 * the value of the given bit.
-	 * @requires factory.encoding = BINARY  
-	 * @effects this.factory' = factory
-	 * @effects bits = FALSE => this.bits' = 0 -> bit, this.bits' = 0 -> bit + 1 -> FALSE
-	 */
-	BinaryInt(BooleanFactory factory, BooleanValue bit) {
-		super(factory);
-		if (bit==FALSE)
-			this.bits = new BooleanValue[] { bit };
-		else 
-			this.bits = new BooleanValue[] { bit, FALSE };
-	}
 	
 	/**
 	 * Returns the number of bits needed/allowed to represent the given number.

@@ -16,7 +16,7 @@ import kodkod.ast.QuantifiedFormula;
 import kodkod.ast.Relation;
 import kodkod.ast.Variable;
 import kodkod.ast.visitor.DepthFirstReplacer;
-import kodkod.engine.Options;
+import kodkod.engine.bool.BooleanFactory;
 import kodkod.engine.bool.BooleanMatrix;
 import kodkod.engine.bool.BooleanValue;
 import kodkod.instance.Bounds;
@@ -71,7 +71,7 @@ final class Skolemizer {
 	}
 	
 	/**
-	 * Skolemizes the given annotated formula using the given bounds and options.
+	 * Skolemizes the given annotated formula using the given bounds and factory.
 	 * @effects upper bound mappings for skolem constants, if any, are added to the bounds
 	 * @return a Skolemizer whose skolemized field is a skolemized version of the given formula,
 	 * and whose skolem field contains the generated skolem constants
@@ -80,12 +80,12 @@ final class Skolemizer {
 	 * @throws UnsupportedOperationException - bounds is unmodifiable
 	 */
 	@SuppressWarnings("unchecked")
-	static Skolemizer skolemize(AnnotatedNode<Formula> annotated, Bounds bounds, Options options) {
+	static Skolemizer skolemize(AnnotatedNode<Formula> annotated, Bounds bounds, BooleanFactory factory) {
 		final Set<QuantifiedFormula> formulas = AnnotatedNode.existentials(annotated);
 		if (formulas.isEmpty()) {
 			return new Skolemizer(annotated, Collections.EMPTY_MAP);
 		} else {
-			final EQFReplacer replacer = new EQFReplacer(formulas, bounds, annotated.sharedNodes(), options);
+			final EQFReplacer replacer = new EQFReplacer(formulas, annotated.sharedNodes(), new BoundsInterpreter.Overapproximating(bounds, factory));
 			final Formula f = annotated.node().accept(replacer).and(replacer.skolemFormula);
 			if (identityMapping(replacer.cache)) {
 				return new Skolemizer(new AnnotatedNode<Formula>(f, annotated.sharedNodes()), replacer.skolems);
@@ -131,9 +131,9 @@ final class Skolemizer {
 	private static final class EQFReplacer extends DepthFirstReplacer {
 		private final Set<QuantifiedFormula> eqfs;
 		private Environment<LeafExpression> env;
-		/* the allocator used to determine the upper bounds for skolem constants;
-		 * the upper bounds for skolem constants will be added to allocator.bounds */
-		private final BooleanConstantAllocator.Overapproximating allocator;
+		/* the manager used to determine the upper bounds for skolem constants;
+		 * the upper bounds for skolem constants will be added to manager.bounds */
+		private final BoundsInterpreter.Overapproximating manager;
 		/* the cache used for storing the replacements for shared nodes */
 		final Map<Node,Node> cache;
 		/* the conjunction that constrains all the skolem constants; i.e.
@@ -146,16 +146,16 @@ final class Skolemizer {
 		final Bounds bounds;
 		/**
 		 * Constructs a new EQFReplacer.  This replacer should only be applied to
-		 * the top-level formula, root.  The given bounds will be modified to include
+		 * the top-level formula, root.  The bounds backing the given manager will be modified to include
 		 * upper bounds for the skolem constants generated during replacement.
 		 * @requires sharedNodes = {n: Node | #(n.~children & this.root'.^children) > 1 }
-		 * @requires root.*children & Relation in allocator.bounds.relations
-		 * @effects this.eqfs' = eqfs && this.bounds' = bounds
+		 * @requires root.*children & Relation in manager.bounds.relations
+		 * @effects this.eqfs' = eqfs && this.bounds' = manager.bounds
 		 */
-		EQFReplacer(Set<QuantifiedFormula> eqfs, Bounds bounds, Set<Node> sharedNodes, Options options) {
+		EQFReplacer(Set<QuantifiedFormula> eqfs, Set<Node> sharedNodes, BoundsInterpreter.Overapproximating manager) {
 			this.eqfs = eqfs;
-			this.bounds = bounds;
-			this.allocator = new BooleanConstantAllocator.Overapproximating(bounds, options);
+			this.bounds = manager.boundingObject();
+			this.manager = manager;
 			this.skolems = new IdentityHashMap<Decl, Relation>(eqfs.size());
 			this.skolemFormula = Formula.TRUE;
 			this.cache = new IdentityHashMap<Node,Node>(sharedNodes.size());
@@ -266,10 +266,11 @@ final class Skolemizer {
 		 * @effects this.skolemFormula' = this.skolemFormula && skolem in decl.expression
 		 *            && one skolem
 		 * @effects this.allocator.bounds.upperBound' = 
-		 *            this.allocator.bounds.upperBound + skolem->Translator.evaluate(decl.expression, allocator)
+		 *            this.allocator.bounds.upperBound + skolem->Translator.evaluate(decl.expression, manager)
 		 */
 		private void updateSkolemInfo(Relation skolem, Decl decl) {
-			final BooleanMatrix skolemBound = Translator.evaluate(decl.expression(), allocator);
+			final BooleanMatrix skolemBound = (BooleanMatrix) 
+			  FOL2BoolTranslator.translate(new AnnotatedNode<Expression>(decl.expression()), manager);
 			final Universe universe = bounds.universe();
 			final IntSet tuples = Ints.bestSet(universe.size());
 			for(IndexedEntry<BooleanValue> cell : skolemBound) {

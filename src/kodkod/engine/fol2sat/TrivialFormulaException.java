@@ -1,4 +1,4 @@
-package kodkod.engine;
+package kodkod.engine.fol2sat;
 
 import java.util.Map;
 

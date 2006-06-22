@@ -4,27 +4,19 @@
  */
 package kodkod.engine.fol2sat;
 
-import static kodkod.ast.RelationPredicate.Name.FUNCTION;
-
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
 
-import kodkod.ast.BinaryFormula;
-import kodkod.ast.ComparisonFormula;
 import kodkod.ast.Decl;
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
-import kodkod.ast.IntComparisonFormula;
-import kodkod.ast.MultiplicityFormula;
 import kodkod.ast.Node;
-import kodkod.ast.QuantifiedFormula;
 import kodkod.ast.Relation;
 import kodkod.ast.RelationPredicate;
-import kodkod.ast.visitor.DepthFirstReplacer;
 import kodkod.engine.Options;
-import kodkod.engine.TrivialFormulaException;
 import kodkod.engine.bool.BooleanConstant;
 import kodkod.engine.bool.BooleanFactory;
 import kodkod.engine.bool.BooleanFormula;
@@ -49,6 +41,23 @@ public final class Translator {
 	private Translator() {}
 	
 	/**
+	 * Determines the ranges of literals that need to be assigned to each
+	 * relation in order to represent it as a matrix of boolean values.
+	 * Returns the total number of literals needed to represent all relations.
+	 */
+	private static int assignLiterals(Bounds bounds, Map<Relation, IntRange> literals) {
+		int maxLit = 1;
+		for(Relation r : bounds.relations()) {
+			int rLits = bounds.upperBound(r).size() - bounds.lowerBound(r).size();
+			if (rLits > 0) {
+				literals.put(r, Ints.range(maxLit, maxLit + rLits - 1));
+				maxLit += rLits;
+			}
+		}
+		return maxLit-1;
+	}
+	
+	/**
 	 * Translates the given formula using the specified bounds and options.
 	 * @return a Translation whose solver is a SATSolver instance initalized with the 
 	 * CNF representation of the given formula, with respect to the given bounds.
@@ -67,45 +76,48 @@ public final class Translator {
 		final Map<Decl, Relation> skolems;
 		if (options.skolemize()) {
 //			System.out.println("skolemizing...");
-			Skolemizer skolemizer = Skolemizer.skolemize(annotated, bounds, options);
+			Skolemizer skolemizer = Skolemizer.skolemize(annotated, bounds, constantFactory(options));
 			annotated = skolemizer.skolemized();
 			skolems = skolemizer.skolems();
 		} else {
 			skolems = null;
 		}
 		
-		BooleanVariableAllocator allocator = new BooleanVariableAllocator(bounds, preds.get(FUNCTION), options);
-		BooleanFactory factory = allocator.factory();
+		final Map<Relation, IntRange> relVars = new HashMap<Relation, IntRange>();
+		BooleanFactory factory = BooleanFactory.factory(assignLiterals(bounds, relVars), options);
+		
+		BoundsInterpreter manager = new BoundsInterpreter.Exact(bounds, factory, relVars);
+		
 		final int numPrimaryVariables = factory.numberOfVariables();
 		
 		final Map<Node, IntSet> varUsage;
 		BooleanValue circuit;
 		if (options.trackVars()) {
-			Fol2Bool acircuit = Fol2Bool.translateAndTrack(annotated,  allocator);
+			FOL2BoolTranslator acircuit = FOL2BoolTranslator.translateAndTrack(annotated,  manager);
 			circuit = acircuit.translation();
 			if (circuit.op()==Operator.CONST) {
-				throw new TrivialFormulaException(Reducer.reduce(annotated,preds,acircuit), 
+				throw new TrivialFormulaException(TrivialFormulaReducer.reduce(annotated,preds,acircuit), 
 						(BooleanConstant)circuit, bounds, skolems);
 			}
-			varUsage = new IdentityHashMap<Node, IntSet>(allocator.allocationFunction().size() + acircuit.variableUsage().size());
+			varUsage = new IdentityHashMap<Node, IntSet>(relVars.size() + acircuit.variableUsage().size());
 			varUsage.putAll(acircuit.variableUsage());
 		} else {
-			circuit = Fol2Bool.translate(annotated,  allocator);
+			circuit = FOL2BoolTranslator.translate(annotated,  manager);
 			if (circuit.op()==Operator.CONST) {
 				throw new TrivialFormulaException(formula, (BooleanConstant)circuit, bounds, skolems);
 			}
-			varUsage = new IdentityHashMap<Node, IntSet>(allocator.allocationFunction().size());
+			varUsage = new IdentityHashMap<Node, IntSet>(relVars.size());
 		}
 		
 		annotated = null; // release structural information
 		
-		for(Map.Entry<Relation, IntRange> e: allocator.allocationFunction().entrySet()) {
+		for(Map.Entry<Relation, IntRange> e: relVars.entrySet()) {
 			varUsage.put(e.getKey(), Ints.rangeSet(e.getValue()));
 		}
 
-		circuit = factory.and(circuit, SymmetryBreaker.generateSBP(symmetricParts, allocator, options));
+		circuit = factory.and(circuit, SymmetryBreaker.generateSBP(symmetricParts, manager, options.symmetryBreaking()));
 	
-		allocator = null; symmetricParts = null; // release the allocator and symmetric partitions
+		manager = null; symmetricParts = null; // release the allocator and symmetric partitions
 
 		if (options.flatten()) {
 //			System.out.println("flattening...");
@@ -122,22 +134,20 @@ public final class Translator {
 		
 //		System.out.println("translating to cnf...");
 		
-		final SATSolver cnf = Bool2Cnf.definitional((BooleanFormula)circuit, options.solver(), numPrimaryVariables);
+		final SATSolver cnf = Bool2CNFTranslator.definitional((BooleanFormula)circuit, options.solver(), numPrimaryVariables);
 		cnf.setTimeout(options.timeout());
 		return new Translation(cnf, bounds, skolems, Collections.unmodifiableMap(varUsage), numPrimaryVariables, options.trackVars());
 
 	}
 	
 	/**
-	 * Evaluates the given node using the given constant allocator.
-	 * @return an object that represents the value of the node
-	 * @throws NullPointerException - node = null || allocator = null
-	 * @throws IllegalArgumentException - the node refers to an undeclared variable or 
-	 *                                    a relation not mapped by the allocator
+	 * Returns a BooleanFactory with 0 variables, which is essentially a factory
+	 * that can manipulate only constants.
+	 * @return a BooleanFactory with 0 variables, which is essentially a factory
+	 * that can manipulate only constants.
 	 */
-	@SuppressWarnings("unchecked")
-	static <T> T evaluate(Node node, BooleanConstantAllocator allocator) {
-		return (T) Fol2Bool.translate(new AnnotatedNode<Node>(node), allocator);
+	private static BooleanFactory constantFactory(Options options) { 
+		return BooleanFactory.factory(0, options);
 	}
 	
 	/**
@@ -149,7 +159,9 @@ public final class Translator {
 	 *                                    a relation not mapped by the instance
 	 */
 	public static BooleanConstant evaluate(Formula formula, Instance instance, Options options) {
-		return evaluate(formula, new BooleanConstantAllocator.Exact(instance, options));
+		return (BooleanConstant) 
+		 FOL2BoolTranslator.translate(new AnnotatedNode<Formula>(formula), 
+				 new InstanceInterpreter(instance, constantFactory(options)));
 	}
 	
 	/**
@@ -161,176 +173,9 @@ public final class Translator {
 	 *                                    a relation not mapped by the instance
 	 */
 	public static BooleanMatrix evaluate(Expression expression,Instance instance, Options options) {
-		return evaluate(expression, new BooleanConstantAllocator.Exact(instance, options));
-	}
-	
-	/**
-	 * Reduces a trivially (un)satisfiable formula to a subtree that 
-	 * caused the formula's (un)satisfiability.
-	 */
-	 private static final class Reducer extends DepthFirstReplacer {
-		private final Set<Formula> trues, falses;
-		private final Map<Node,Node> cache;
-		
-		/**
-		 * Constructs a reducer for the given annotated formula, using the provided
-		 * sets of formulas to guide the reduction.
-		 */
-		private Reducer(AnnotatedNode<Formula> reducible,Fol2Bool acircuit) {
-			this.trues = acircuit.trueFormulas();
-			this.falses = acircuit.falseFormulas();
-			this.cache = new IdentityHashMap<Node,Node>(reducible.sharedNodes().size());
-			for(Node n: reducible.sharedNodes()) {
-				cache.put(n,null);
-			}
-		}
-		
-		private Formula predicates(Set<RelationPredicate> formulaPreds, Set<RelationPredicate> reducedPreds) {
-			Formula ret = Formula.TRUE;
-			for(RelationPredicate p: formulaPreds) {
-				if (!reducedPreds.contains(p) && isConstant(p))
-					ret = ret.and(p);
-			}
-		    return ret;
-		}
-			
-		/**
-		 * Reduces the node of the given annotated formula to the subformula that causes it to simplify
-		 * to a constant.
-		 * @requires preds = AnnotatedNode.predicates(reducible)
-		 * @requires acircuit.formula = reducible.node
-		 * @return the subformula of the given formula that causes it to simplify
-		 * to a constant.
-		 */
-		static Formula reduce(AnnotatedNode<Formula> reducible, Map<RelationPredicate.Name, Set<RelationPredicate>> preds, 
-				Fol2Bool acircuit) {
-			final Reducer r = new Reducer(reducible, acircuit);
-			Formula reduced = reducible.node().accept(r);
-			final Map<RelationPredicate.Name, Set<RelationPredicate>> rpreds = 
-				AnnotatedNode.predicates(new AnnotatedNode<Formula>(reduced));
-			
-			for(Map.Entry<RelationPredicate.Name, Set<RelationPredicate>> e : preds.entrySet()) {
-				reduced = reduced.and(r.predicates(e.getValue(), rpreds.get(e.getKey())));
-			}
-			return reduced;
-		}
-		
-		
-		/**
-		 * If the given node is shared and its replacement
-		 * cached, the cached value is returned.  Otherwise, null is returned.
-		 * @return this.cache[node]
-		 */
-		@SuppressWarnings("unchecked")
-		@Override
-		protected <N extends Node> N lookup(N node) {
-			return (N) cache.get(node);
-		}
-		
-		/**
-		 * Caches the given replacement for the specified node, if the node
-		 * is shared.  Otherwise does nothing.  The method returns
-		 * the replacement node. 
-		 * @effects this.cache' = this.cache ++ node->replacement 
-		 * @return replacement
-		 */
-		@Override
-		protected <N extends Node> N cache(N node, N replacement) {
-			if (cache.containsKey(node)) {
-				cache.put(node, replacement);
-			}
-			return replacement;
-		}
-	
-		private final boolean isTrue(Formula formula) {
-			return trues.contains(formula);
-		}
-		
-		private final boolean isFalse(Formula formula) {
-			return falses.contains(formula);
-		}
-		
-		private final boolean isConstant(Formula formula) {
-			return falses.contains(formula) || trues.contains(formula);
-		}
-		
-		public Formula visit(BinaryFormula binFormula) {
-			Formula ret = lookup(binFormula);
-			
-			if (ret==null) {
-				// if this method was called with this argument,
-				// binFormula must be either in trues or falseDecendents
-				boolean binValue = isTrue(binFormula); 
-				final Formula l = binFormula.left(), r = binFormula.right();
-				final Formula lnew, rnew; 
-				if (!isConstant(l) && !isConstant(r)) {
-					lnew = l; rnew = r;
-				} else {
-					switch(binFormula.op()) {
-					case AND : 
-						lnew = binValue || isFalse(l) ? l.accept(this) : Formula.TRUE;
-						rnew = binValue || isFalse(r) ? r.accept(this) : Formula.TRUE;
-						break;
-					case OR : 
-						lnew = !binValue || isTrue(l) ? l.accept(this) : Formula.FALSE;
-						rnew = !binValue || isTrue(r) ? r.accept(this) : Formula.FALSE;
-						break;
-					case IMPLIES: // !l || r
-						lnew = !binValue || isFalse(l) ? l.accept(this) : Formula.FALSE;  
-						rnew = !binValue || isTrue(r) ? r.accept(this) : Formula.FALSE;
-						break;
-					case IFF: 
-						lnew = isConstant(l) ? l.accept(this) : l;
-						rnew = isConstant(r) ? r.accept(this) : r;
-						break;
-					default :
-						throw new IllegalArgumentException("Unknown operator: " + binFormula.op());
-					}
-				}
-				ret = (lnew==l && rnew==r) ? binFormula : lnew.compose(binFormula.op(), rnew);     
-			}
-			return cache(binFormula,ret);
-		}
-		
-		public Formula visit(QuantifiedFormula quantFormula) {
-			Formula ret = lookup(quantFormula);
-			if (ret==null) {
-				ret = quantFormula; // can't reduce inside quantifiers
-			}
-			return cache(quantFormula,ret);
-		}
-		
-		public Formula visit(ComparisonFormula compFormula) {
-			Formula ret = lookup(compFormula);
-			if (ret==null) {
-				ret = compFormula; // no expression reduction
-			}
-			return cache(compFormula,ret);
-		}
-		
-		public Formula visit(MultiplicityFormula multFormula) {
-			Formula ret = lookup(multFormula);
-			if (ret==null) {
-				ret = multFormula; // no expression reduction
-			}
-			return cache(multFormula,ret);
-		}
-		
-		public Formula visit(RelationPredicate pred) {
-			Formula ret = lookup(pred);
-			if (ret==null) {
-				ret = pred; // no expression reduction
-			}
-			return cache(pred,ret);
-		}
-		
-		public Formula visit(IntComparisonFormula intComp) {
-			Formula ret = lookup(intComp);
-			if (ret==null) {
-				ret = intComp; // no expression reduction
-			}
-			return cache(intComp,ret);
-		}
+		return (BooleanMatrix) 
+		 FOL2BoolTranslator.translate(new AnnotatedNode<Expression>(expression),
+				 new InstanceInterpreter(instance, constantFactory(options)));
 	}
 
 }

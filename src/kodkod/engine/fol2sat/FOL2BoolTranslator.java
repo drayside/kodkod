@@ -32,7 +32,6 @@ import kodkod.ast.RelationPredicate;
 import kodkod.ast.UnaryExpression;
 import kodkod.ast.Variable;
 import kodkod.ast.visitor.ReturnVisitor;
-import kodkod.engine.Options;
 import kodkod.engine.bool.BooleanAccumulator;
 import kodkod.engine.bool.BooleanConstant;
 import kodkod.engine.bool.BooleanFactory;
@@ -43,22 +42,21 @@ import kodkod.engine.bool.Int;
 import kodkod.engine.bool.Operator;
 import kodkod.util.ints.IntIterator;
 import kodkod.util.ints.IntSet;
-import kodkod.util.ints.Ints;
 
 /**
  * Translates a first order logic formula into a boolean circuit, 
  * and stores the translation and annotations computed by 
- * {@link Fol2Bool#translateAndTrack(AnnotatedNode, BooleanValueAllocator, Options.IntEncoding)}. 
+ * {@link FOL2BoolTranslator#translateAndTrack(AnnotatedNode, LeafInterpreter)}. 
  * @specfield node: AnnotatedNode<? extends Node> // the node being translated
- * @specfield allocator: BooleanValueAllocator // the allocator used for translation	 
+ * @specfield manager: LeafInterpreter // the manager used for translation	 
  * @author Emina Torlak
  */
-final class Fol2Bool {
+final class FOL2BoolTranslator {
 	private final BooleanValue translation;
 	private final Map<Node,IntSet> variableUsage;
 	private final Set<Formula> trueFormulas, falseFormulas;
 	
-	private Fol2Bool(BooleanValue translation, Map<Node,IntSet> varUsage, 
+	private FOL2BoolTranslator(BooleanValue translation, Map<Node,IntSet> varUsage, 
             Set<Formula> trueFormulas, Set<Formula> falseFormulas) {
 		this.translation = translation;
 		this.variableUsage = Collections.unmodifiableMap(varUsage);
@@ -68,28 +66,28 @@ final class Fol2Bool {
 	
 	/**
 	 * Translates the given annotated formula or expression into a boolean
-	 * formula or matrix, using the provided allocator and integer encoding.
-	 * @requires allocator.relations = AnnotatedNode.relations(annotated)
+	 * formula or matrix, using the provided manager and integer encoding.
+	 * @requires manager.relations = AnnotatedNode.relations(annotated)
 	 * @return {transl: T | 
 	 *           annotated.node in Formula => transl in BooleanValue, 
 	 *           annotated.node in Expression => transl in BooleanMatrix}
 	 */
 	@SuppressWarnings("unchecked")
-	static final <T> T translate(AnnotatedNode<? extends Node> annotated, BooleanValueAllocator allocator) {
-		return (T) annotated.node().accept(new Translator(new TranslationCache.Simple(annotated), allocator));
+	static final <T> T translate(AnnotatedNode<? extends Node> annotated, LeafInterpreter manager) {
+		return (T) annotated.node().accept(new Translator(new TranslationCache.Simple(annotated), manager));
 	}
 	
 	/**
 	 * Translates the given annotated formula into a boolean circuit using
-	 * the provided allocator and integer encoding.  Additionally, it 
+	 * the provided manager and integer encoding.  Additionally, it 
 	 * keeps track of which variables comprise the descendents of the formula,
 	 * and which of its descendents are reduced to constants during translation.
-	 * @requires allocator.relations = AnnotatedNode.relations(annotated)
-	 * @return {ret: Fol2Bool | ret.node = annotated && ret.allocator = allocator } 
+	 * @requires manager.relations = AnnotatedNode.relations(annotated)
+	 * @return {ret: FOL2BoolTranslator | ret.node = annotated && ret.manager = manager } 
 	 */
-	static final Fol2Bool translateAndTrack(AnnotatedNode<Formula> annotated,  BooleanValueAllocator allocator) {
+	static final FOL2BoolTranslator translateAndTrack(AnnotatedNode<Formula> annotated,  LeafInterpreter manager) {
 		final TranslationCache.Tracking c = new TranslationCache.Tracking(annotated);
-		return new Fol2Bool(annotated.node().accept(new Translator(c, allocator)), 
+		return new FOL2BoolTranslator(annotated.node().accept(new Translator(c, manager)), 
 				            c.varUsage(), c.trueFormulas(), c.falseFormulas());
 	}
 	
@@ -119,7 +117,7 @@ final class Fol2Bool {
 	/**
 	 * Returns the set of descendents of this.node that 
 	 * evaluate to TRUE.
-	 * @return {f: this.node.node.*children & Formula | translate(f,this.allocator) = TRUE}
+	 * @return {f: this.node.node.*children & Formula | translate(f,this.manager) = TRUE}
 	 */
 	Set<Formula> trueFormulas() {
 		return trueFormulas;
@@ -128,7 +126,7 @@ final class Fol2Bool {
 	/**
 	 * Returns the set of descendents of this.node that 
 	 * evaluate to FALSE.
-	 * @return {f: this.node.node.*children & Formula | translate(f,this.allocator) = FALSE}
+	 * @return {f: this.node.node.*children & Formula | translate(f,this.manager) = FALSE}
 	 */
 	Set<Formula> falseFormulas() {
 		return falseFormulas;
@@ -139,7 +137,7 @@ final class Fol2Bool {
 	 * @specfield node: Node // the translated node
 	 */
 	private static class Translator implements ReturnVisitor<BooleanMatrix, BooleanValue, Object, Int> {
-		final BooleanValueAllocator allocator;
+		final LeafInterpreter manager;
 
 		
 		/* When visiting the body of a quantified formula or a comprehension, this
@@ -149,12 +147,12 @@ final class Fol2Bool {
 		final TranslationCache cache;
 	
 		/**
-		 * Constructs a new translator that will use the given allocator, annotated universe, and cache to perform the 
+		 * Constructs a new translator that will use the given manager, annotated universe, and cache to perform the 
 		 * translation.
 		 * @effects this.node' = cache.node
 		 */   
-		Translator(TranslationCache cache,  BooleanValueAllocator allocator) {
-			this.allocator = allocator;
+		Translator(TranslationCache cache,  LeafInterpreter manager) {
+			this.manager = manager;
 			this.env = new Environment<BooleanMatrix>();
 			this.cache = cache;
 		}
@@ -241,11 +239,11 @@ final class Fol2Bool {
 		
 		/**
 		 * @return a matrix of freshly allocated variables representing the given relation
-		 * @effects some instance.state[relation] => some allocator.vars'[relation]
+		 * @effects some instance.state[relation] => some manager.vars'[relation]
 		 * @throws IllegalArgumentException - !this.instance.contains(relation)
 		 */
 		public final BooleanMatrix visit(Relation relation) {
-			return allocator.interpret(relation);
+			return manager.interpret(relation);
 		}
 		
 		/**
@@ -255,31 +253,7 @@ final class Fol2Bool {
 		 * constExpr = Expression.NONE => UNIV.not()
 		 */
 		public final BooleanMatrix visit(ConstantExpression constExpr) {
-			final BooleanMatrix ret;
-			final int univSize = allocator.universe().size();
-			if (constExpr==Expression.UNIV) {
-				final IntSet all =  Ints.rangeSet(Ints.range(0, univSize-1));
-				ret= allocator.factory().matrix(Dimensions.square(1, univSize), all, all);
-			} else if (constExpr==Expression.IDEN) {
-				final Dimensions dim2 = Dimensions.square(2, univSize);
-				final IntSet iden = Ints.bestSet(dim2.capacity());
-				for(int i = 0; i < univSize; i++) {
-					iden.add(i*univSize + i);
-				}			
-				ret = allocator.factory().matrix(dim2, iden, iden);
-			} else if (constExpr==Expression.NONE) {
-				ret = allocator.factory().matrix(Dimensions.square(1, univSize), Ints.EMPTY_SET, Ints.EMPTY_SET);
-			} else if (constExpr==Expression.INTS) {
-				final IntSet ints = Ints.bestSet(univSize);
-				for(IntIterator iter = allocator.ints().iterator(); iter.hasNext(); ) {
-					ints.add(allocator.interpret(iter.nextInt()).iterator().next().index());
-				}
-				ret = allocator.factory().matrix(Dimensions.square(1, univSize), ints, ints);
-			} else {
-				throw new IllegalArgumentException("unknown constant expression: " + constExpr);
-			}
-			
-			return ret;
+			return manager.interpret(constExpr);
 		}
 		
 		/**
@@ -348,7 +322,7 @@ final class Fol2Bool {
 			final Decls decls = comprehension.declarations();
 			final List<BooleanMatrix> declTransls = visit(decls);
 			final GroundValueGenerator generator = new GroundValueGenerator(env, decls, declTransls);
-			final BooleanFactory factory = allocator.factory();
+			final BooleanFactory factory = manager.factory();
 			
 			Dimensions dims = declTransls.get(0).dimensions();
 			for (int i = 1; i < declTransls.size(); i++) { 
@@ -416,7 +390,7 @@ final class Fol2Bool {
 			final Decls decls = qf.declarations();
 			final List<BooleanMatrix> declTransls = visit(decls);
 			final GroundValueGenerator generator = new GroundValueGenerator(env, decls, declTransls);
-			final BooleanFactory factory = allocator.factory();
+			final BooleanFactory factory = manager.factory();
 			
 			while(generator.hasNext() && !conjunct.isShortCircuited()) {
 				env = generator.next(factory);
@@ -456,7 +430,7 @@ final class Fol2Bool {
 			final Decls decls = qf.declarations();
 			final List<BooleanMatrix> declTransls = visit(decls);
 			final GroundValueGenerator generator = new GroundValueGenerator(env, decls, declTransls);
-			final BooleanFactory factory = allocator.factory();
+			final BooleanFactory factory = manager.factory();
 			
 			while(generator.hasNext() && !disjunct.isShortCircuited()) {
 				env = generator.next(factory);
@@ -513,7 +487,7 @@ final class Fol2Bool {
 			final BooleanValue left = binFormula.left().accept(this);
 			final BooleanValue right = binFormula.right().accept(this);
 			final BinaryFormula.Operator op = binFormula.op();
-			final BooleanFactory f = allocator.factory();
+			final BooleanFactory f = manager.factory();
 			
 			switch(op) {
 			case AND		: ret = f.and(left, right); break;
@@ -533,7 +507,7 @@ final class Fol2Bool {
 		public final BooleanValue visit(NotFormula not) {
 			BooleanValue ret = lookup(not);
 			return ret==null ? 
-				   record(not, allocator.factory().not(not.formula().accept(this))) : ret;
+				   record(not, manager.factory().not(not.formula().accept(this))) : ret;
 		}
 		
 		/**
@@ -598,16 +572,52 @@ final class Fol2Bool {
 		 * atom that represents the castExpr.intExpr.
 		 */
 		public BooleanMatrix visit(IntExprCast castExpr) {
-			throw new UnsupportedOperationException();
+			BooleanMatrix ret = lookup(castExpr);
+			if (ret!=null) return ret;
+			
+			final Int child = castExpr.intExpr().accept(this);
+			final BooleanFactory factory =  manager.factory();
+			ret = factory.matrix(Dimensions.square(1, manager.universe().size()));
+			for(IntIterator iter = manager.ints().iterator(); iter.hasNext(); ) {
+				int i = iter.nextInt();
+				int atomIndex = manager.interpret(i);
+				ret.set(atomIndex, factory.or(ret.get(atomIndex), child.eq(factory.integer(i))));
+			}
+			
+			return record(castExpr, ret);
 		}	
 		
 		/**
 		 * @return factory.integer(intConst.value, this.encoding)
 		 */
 		public Int visit(IntConstant intConst) {
-			return allocator.factory().integer(intConst.value());
+			return manager.factory().integer(intConst.value());
 		}
 
+		/**
+		 * Returns an Int that represents the sum of all the integers that
+		 * correspond to non-FALSE entries in the given matrix.
+		 * @param iter an iterator over all the bound integers.  Initial should be this.manager.ints().iterator().
+		 * @param lo the first element of the current partial sum. Initial should be 0.
+		 * @param hi the last element of the current partial sum.  Initial should be size-1, where size is the total
+		 * number of elements returned by the iterator.
+		 * @return  an Int that represents the sum of all the integers that
+		 * correspond to non-FALSE entries in the given matrix.
+		 */
+		private Int sum(BooleanMatrix m, IntIterator iter, int low, int high) {
+			if (low > high)
+				return manager.factory().integer(0);
+			else if (low==high) {
+				int i = iter.nextInt();
+				return manager.factory().integer(i, m.get(manager.interpret(i)));
+			} else {
+				final int mid = (low + high) / 2;
+				final Int lsum = sum(m, iter, low, mid);
+				final Int hsum = sum(m, iter, mid+1, high);
+				return lsum.plus(hsum);
+			}
+		}
+		
 		/**
 		 * @return translate(intExpr.expression).cardinality()
 		 */
@@ -615,8 +625,11 @@ final class Fol2Bool {
 			Int ret = lookup(intExpr);
 			if (ret!=null) return ret;
 			switch(intExpr.op()) {
-			case CARDINALITY: ret = intExpr.expression().accept(this).cardinality(); break;
-			case SUM : throw new UnsupportedOperationException();
+			case CARDINALITY : 
+				ret = intExpr.expression().accept(this).cardinality(); break;
+			case SUM         :
+				final IntSet ints = manager.ints();
+				ret = sum(intExpr.expression().accept(this), ints.iterator(), 0, ints.size()-1); break;
 			default: 
 				throw new IllegalArgumentException("unknown operator: " + intExpr.op());
 			}
@@ -664,7 +677,6 @@ final class Fol2Bool {
 //			System.out.println(ret);
 			return record(intComp, ret);
 		}
-
 		
 	}
 }

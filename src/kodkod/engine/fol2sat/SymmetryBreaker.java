@@ -12,12 +12,11 @@ import java.util.Map;
 import java.util.Set;
 
 import kodkod.ast.Relation;
-import kodkod.engine.Options;
+import kodkod.engine.bool.BooleanAccumulator;
 import kodkod.engine.bool.BooleanConstant;
 import kodkod.engine.bool.BooleanFactory;
 import kodkod.engine.bool.BooleanMatrix;
 import kodkod.engine.bool.BooleanValue;
-import kodkod.engine.bool.BooleanAccumulator;
 import kodkod.engine.bool.Operator;
 import kodkod.instance.Bounds;
 import kodkod.util.ints.IndexedEntry;
@@ -26,27 +25,28 @@ import kodkod.util.ints.IntSet;
 
 /**
  * Generates a symmetry breaking predicate
- * using given allocator and symmetry information.
+ * using a given bounds manager and symmetry information.
  * 
  * @author Emina Torlak
  */
 final class SymmetryBreaker {
 	/**
 	 * Generates a symmetry breaking predicate for the given
-	 * symmetries, using the specified allocator and options.
+	 * symmetries, using the specified bounds manager and maximum predicate length.
+	 * @requires maxPredLength >= 0
 	 * @return a symmetry breaking predicate for the given symmetries
 	 * @throws NullPointerException - any of the arguments are null
 	 */
-	static BooleanValue generateSBP(Set<IntSet> symmetries, BooleanVariableAllocator allocator, Options options) {
-		return symmetries.isEmpty() || options.symmetryBreaking()==0 ? 
+	static BooleanValue generateSBP(Set<IntSet> symmetries, BoundsInterpreter manager, int maxPredLength) {
+		return symmetries.isEmpty() || maxPredLength==0 ? 
 			   BooleanConstant.TRUE : 
-			   (new SymmetryBreaker(symmetries,allocator,options)).lexLeaderPredicates();
+			   (new SymmetryBreaker(symmetries,manager,maxPredLength)).lexLeaderPredicates();
 	}
 	
 	
 	private final int MAX_CMP_LENGTH;
-	/* allocator used to obtain SAT encodings of relations */
-	private final BooleanVariableAllocator allocator;
+	/* manager used to obtain SAT encodings of relations */
+	private final BoundsInterpreter manager;
 	/* available symmetries */
 	private final List<IntSet> symmetries;
 	/* stores a mapping from each Relation r to the symmetries
@@ -56,21 +56,22 @@ final class SymmetryBreaker {
 	private final Relation[] sortedRels;
 	/* usize = abv.bounds.universe.size */
 	private final int usize;
-
+	private final Bounds bounds;
 	/**
-	 * Constructs a predicate generator using the given allocator
-	 * symmetry information, and Options.
+	 * Constructs a predicate generator using the given manager
+	 * symmetry information, bounds, and Options.
 	 */
-	private SymmetryBreaker(Set<IntSet> symmetries, BooleanVariableAllocator allocator, Options options) {	
-		this.allocator = allocator;
-		this.usize = allocator.bounds().universe().size();
+	private SymmetryBreaker(Set<IntSet> symmetries, BoundsInterpreter manager, int maxPredLength) {	
+		this.manager = manager;
+		this.bounds = manager.boundingObject();
+		this.usize = bounds.universe().size();
 	
-		this.MAX_CMP_LENGTH = options.symmetryBreaking();
+		this.MAX_CMP_LENGTH = maxPredLength;
 		
 		this.symmetries = new LinkedList<IntSet>();
 		this.symmetries.addAll(symmetries);
 		
-		final Set<Relation> relations = allocator.bounds().relations();
+		final Set<Relation> relations = bounds.relations();
 		this.sortedRels = relations.toArray(new Relation[relations.size()]);
 		this.relSymms = new IdentityHashMap<Relation, Set<IntSet>>(relations.size());
 		
@@ -96,7 +97,6 @@ final class SymmetryBreaker {
 	 * Initializes this.relParts.
 	 */
 	private void initRelParts() {
-		final Bounds bounds = allocator.bounds();
 		for(Relation r : bounds.relations()) {
 			IntSet upper = bounds.upperBound(r).indexView();
 			Set<IntSet> rsymms = new HashSet<IntSet>(symmetries.size()/2);
@@ -126,7 +126,7 @@ final class SymmetryBreaker {
 			sbp.add(lexLeaderPredicateFor(symIter.next()));
 			symIter.remove();
 		}
-		return allocator.factory().accumulate(sbp);
+		return manager.factory().accumulate(sbp);
 	}
 	
 	/**
@@ -139,7 +139,6 @@ final class SymmetryBreaker {
 		if (symmPart.size()<2) return BooleanConstant.TRUE;
 		
 		final BooleanAccumulator lexLeader = BooleanAccumulator.treeGate(Operator.AND);
-		final Bounds bounds = allocator.bounds();
 		final List<BooleanValue> originalBits = new ArrayList<BooleanValue>(MAX_CMP_LENGTH);
 		final List<BooleanValue> permutedBits = new ArrayList<BooleanValue>(MAX_CMP_LENGTH);
 		
@@ -155,7 +154,7 @@ final class SymmetryBreaker {
 					!relSymms.get(r).contains(symmPart))
 					continue;  // r is constant or upper bound of r does not range over the atoms in symmPart
 				
-				BooleanMatrix m = allocator.interpret(r);
+				BooleanMatrix m = manager.interpret(r);
 //				System.out.println(r + ": " + m);
 				for(IndexedEntry<BooleanValue> entry : m) {
 					int permIndex = permutation(r.arity(), entry.index(), prevIndex, curIndex);
@@ -178,7 +177,7 @@ final class SymmetryBreaker {
 			prevIndex = curIndex;
 		}
 		
-		return allocator.factory().accumulate(lexLeader);
+		return manager.factory().accumulate(lexLeader);
 	}
 	
 	/**
@@ -189,7 +188,7 @@ final class SymmetryBreaker {
 	 * @return a circuit that compares l0 and l1
 	 */
 	private final BooleanValue leq(List<BooleanValue> l0, List<BooleanValue> l1) {
-		final BooleanFactory f = allocator.factory();
+		final BooleanFactory f = manager.factory();
 		final BooleanAccumulator cmp = BooleanAccumulator.treeGate(Operator.AND);
 		BooleanValue prevEquals = BooleanConstant.TRUE;
 		for(int i = 0; i < l0.size(); i++) {

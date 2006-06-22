@@ -1,7 +1,6 @@
 package kodkod.engine.bool;
 
 import static kodkod.engine.bool.BooleanConstant.FALSE;
-import static kodkod.engine.bool.BooleanConstant.TRUE;
 import static kodkod.engine.bool.Operator.OR;
 
 import java.util.Arrays;
@@ -27,33 +26,20 @@ final class UnaryInt extends Int {
 	}
 	
 	/**
-	 * Constructs a UnaryInt encoding of the given number, using at most
-	 * factory.bitwidth bits.
-	 * @requires factory.encoding = UNARY && number >= 0  
-	 * @effects this.factory' = factory && this.bits'[0..min(number, factory.bitwidth)) -> one TRUE 
+	 * Constructs a UnaryInt that represents either 0 or the given number, depending on 
+	 * the value of the given bit.
+	 * @requires factory.encoding = UNARY && number >= 0 && bit in factory.components  
+	 * @effects this.factory' = factory
+	 * @effects bits is a unary representation of the given number
+	 * that uses the provided bit in place of 1's
 	 */
-	UnaryInt(BooleanFactory factory, int number) {
+	UnaryInt(BooleanFactory factory, int number, BooleanValue bit) {
 		super(factory);
 		assert number >= 0;
 		final int width = StrictMath.min(number, factory.bitwidth);
 		this.bits = new BooleanValue[width];
 		for(int i = 0; i < width; i++) 
-			bits[i] = TRUE;
-	}
-
-	/**
-	 * Constructs a UnaryInt encoding of the given bit.
-	 * @requires factory.encoding = UNARY 
-	 * @effects this.factory' = factory 
-	 * @effects bit=FALSE => no this.bits', this.bits' = 0 -> bit 
-	 */
-	UnaryInt(BooleanFactory factory, BooleanValue bit) {
-		super(factory);
-		if (bit==FALSE) {
-			this.bits = new BooleanValue[0];
-		} else {
-			this.bits = new BooleanValue[]{ bit };
-		}
+			bits[i] = bit;
 	}
 	
 	/**

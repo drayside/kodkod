@@ -46,8 +46,8 @@ import kodkod.util.ints.Ints;
 
 
 /**
- * This class manages translation caching during
- * the FOL to SAT phase.  It determines which translations
+ * Caches translations for particular nodes, computed during
+ * the FOL to Bool translation phase.  It determines which translations
  * to cache, when to throw them out of the cache, etc. 
  * 
  * @specfield node: Node // node being translated
