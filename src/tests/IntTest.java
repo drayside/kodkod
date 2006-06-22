@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import junit.framework.TestCase;
+import kodkod.ast.Expression;
 import kodkod.ast.Formula;
 import kodkod.ast.IntComparisonFormula;
 import kodkod.ast.IntConstant;
@@ -30,14 +31,14 @@ import kodkod.util.ints.Ints;
  * 
  * @author Emina Torlak
  */
-public class CardinalityTest extends TestCase {
+public class IntTest extends TestCase {
 	private static final int SIZE = 16;
 	private final TupleFactory factory;
 	private final Solver solver;
 	private final Relation r1, r2, r3;
 	private Bounds bounds;
 	
-	public CardinalityTest(String arg0) {
+	public IntTest(String arg0) {
 		super(arg0);
 		this.solver = new Solver();
 		List<String> atoms = new ArrayList<String>(SIZE);
@@ -372,6 +373,78 @@ public class CardinalityTest extends TestCase {
 		f = r1.count().divide(r2.count()).eq(IntConstant.constant(-2));
 		s = solve(f);
 		assertNull(s.instance());
+	}
+	
+	public void testSum() {
+		solver.options().setBitwidth(6);
+		TupleSet r1b = factory.setOf("1", "5", "9");
+		bounds.bound(r1, r1b, r1b);
+		
+		
+		Formula f = r1.sum().eq(IntConstant.constant(0));
+		Solution s = solve(f);
+		assertNotNull(s.instance());
+		
+		bounds.boundExactly(5, factory.setOf(factory.tuple("5")));
+		
+		f = r1.sum().eq(IntConstant.constant(5));
+		s = solve(f);
+		assertNotNull(s.instance());
+		
+		bounds.boundExactly(2, factory.setOf(factory.tuple("2")));
+		
+		f = r1.sum().eq(IntConstant.constant(5));
+		s = solve(f);
+		assertNotNull(s.instance());
+		
+		bounds.boundExactly(1, factory.setOf(factory.tuple("9")));
+		f = r1.sum().eq(IntConstant.constant(6));
+		s = solve(f);
+		assertNotNull(s.instance());
+		
+		bounds.boundExactly(-8, factory.setOf(factory.tuple("1")));
+		f = r1.sum().eq(IntConstant.constant(-2));
+		s = solve(f);
+		assertNotNull(s.instance());
+		
+		bounds.bound(r1, r1b);
+		f = r1.sum().eq(IntConstant.constant(-2));
+		s = solve(f);
+		assertNotNull(s.instance());
+		assertEquals(s.instance().tuples(r1), r1b);
+	}
+	
+	public void testIntCast() {
+		solver.options().setBitwidth(6);
+		TupleSet r1b = factory.setOf("1", "5", "9");
+		bounds.bound(r1, r1b, r1b);
+		
+		Formula f = r1.sum().toExpression().eq(Expression.NONE);
+		Solution s = solve(f);
+		assertNotNull(s.instance());
+		
+		bounds.boundExactly(5, factory.setOf(factory.tuple("5")));
+		f = r1.sum().toExpression().eq(IntConstant.constant(5).toExpression());
+		s = solve(f);
+		assertNotNull(s.instance());
+		
+		bounds.boundExactly(1, factory.setOf(factory.tuple("1")));
+		bounds.boundExactly(6, factory.setOf(factory.tuple("6")));
+		
+		f = r1.sum().toExpression().eq(IntConstant.constant(6).toExpression());
+		s = solve(f);
+		assertNotNull(s.instance());
+		
+		bounds.bound(r1, r1b);
+		f = r1.sum().toExpression().eq(IntConstant.constant(6).toExpression());
+		s = solve(f);
+		assertNotNull(s.instance());
+		
+		bounds.boundExactly(6, factory.setOf(factory.tuple("1")));
+		f = r1.sum().toExpression().eq(IntConstant.constant(6).toExpression());
+		s = solve(f);
+		assertNull(s.instance());
+		
 	}
 	
 }

@@ -17,7 +17,7 @@ public class AllTests {
 		suite.addTestSuite(BugTests.class);
 		suite.addTestSuite(ReductionAndProofTest.class);
 		suite.addTestSuite(ExamplesTest.class);
-		suite.addTestSuite(CardinalityTest.class);
+		suite.addTestSuite(IntTest.class);
 		//$JUnit-END$
 		return suite;
 	}
