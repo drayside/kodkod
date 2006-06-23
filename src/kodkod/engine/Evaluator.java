@@ -21,7 +21,7 @@ import kodkod.util.ints.IndexedEntry;
  * 
  * <p><b>Note: </b> you may observe surprising (though correct) 
  * evaluator behavior if you do not use the same set of integer
- * options (i.e. {@link kodkod.engine.Options#intEncoding() intEncoding} and {@link kodkod.engine.Options#bitwidth() bitwidth) 
+ * options (i.e. {@link kodkod.engine.Options#intEncoding() intEncoding} and {@link kodkod.engine.Options#bitwidth() bitwidth} 
  * when evaluating and solving a formula.  For example, suppose that
  * that an Instance i is a solution to a formula f found using options o.
  * If you create an evaluator e such that e.instance = i, but e.options

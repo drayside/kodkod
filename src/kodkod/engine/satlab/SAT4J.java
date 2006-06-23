@@ -225,6 +225,10 @@ final class SAT4J implements SATSolver {
 			return vec.length;
 		}
 
+		public boolean isEmpty() {
+			return size() == 0;
+	    }
+		
 		public void shrink(int arg0) {
 			throw new UnsupportedOperationException();
 		}
