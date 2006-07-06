@@ -17,6 +17,7 @@ import kodkod.ast.visitor.VoidVisitor;
  * @specfield elseExpr: Expression
  * @invariant children = condition + thenExpr + elseExpr
  * @author Greg Dennis (gdennis@mit.edu)
+ * @author Emina Torlak
  */
 public final class IfExpression extends Expression {
 

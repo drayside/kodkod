@@ -121,7 +121,7 @@ public enum SATFactory {
 	 * {@link kodkod.engine.satlab.SATSolver#isCoreExtractor() } method of
 	 * the returned instances returns true.  Note that core
 	 * extraction can incur a significant memory overhead during solving,
-	 * so if you do not need this functionality, use the {@link #ZChaff} factory.
+	 * so if you do not need this functionality, use the {@link #ZChaff} factory
 	 * instead.
 	 */
 	ZChaffPlus {
