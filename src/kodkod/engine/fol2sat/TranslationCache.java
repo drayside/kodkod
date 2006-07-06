@@ -12,19 +12,20 @@ import java.util.Set;
 import kodkod.ast.BinaryExpression;
 import kodkod.ast.BinaryFormula;
 import kodkod.ast.BinaryIntExpression;
-import kodkod.ast.ExprIntCast;
 import kodkod.ast.ComparisonFormula;
 import kodkod.ast.Comprehension;
 import kodkod.ast.ConstantExpression;
 import kodkod.ast.ConstantFormula;
 import kodkod.ast.Decl;
 import kodkod.ast.Decls;
+import kodkod.ast.ExprIntCast;
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
 import kodkod.ast.IfExpression;
-import kodkod.ast.IntExprCast;
+import kodkod.ast.IfIntExpression;
 import kodkod.ast.IntComparisonFormula;
 import kodkod.ast.IntConstant;
+import kodkod.ast.IntExprCast;
 import kodkod.ast.MultiplicityFormula;
 import kodkod.ast.Node;
 import kodkod.ast.NotFormula;
@@ -743,6 +744,24 @@ abstract class TranslationCache {
 		 */
 		public Set<Variable> visit(IntConstant intConst) {
 			return Collections.emptySet();
+		}
+		
+		/**
+		 * Returns the free variables in the given if-int-expression.
+		 * @return freeVars(ifExpr.condition) + freeVars(ifExpr.thenExpr) + freeVars(ifExpr.elseExpr)
+		 */
+		public Set<Variable> visit(IfIntExpression ifExpr) {
+			Set<Variable> vars = lookup(ifExpr);
+			if (vars != null) return vars;
+			
+			final Set<Variable> condition = ifExpr.condition().accept(this);
+			final Set<Variable> thenExpr = ifExpr.thenExpr().accept(this);
+			final Set<Variable> elseExpr = ifExpr.elseExpr().accept(this);
+			vars = setOfSize(condition.size() + thenExpr.size() + elseExpr.size());
+			vars.addAll(condition);
+			vars.addAll(thenExpr);
+			vars.addAll(elseExpr);
+			return cache(ifExpr, vars);
 		}
 
 		/**

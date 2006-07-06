@@ -7,19 +7,20 @@ package kodkod.ast.visitor;
 import kodkod.ast.BinaryExpression;
 import kodkod.ast.BinaryFormula;
 import kodkod.ast.BinaryIntExpression;
-import kodkod.ast.ExprIntCast;
 import kodkod.ast.ComparisonFormula;
 import kodkod.ast.Comprehension;
 import kodkod.ast.ConstantExpression;
 import kodkod.ast.ConstantFormula;
 import kodkod.ast.Decl;
 import kodkod.ast.Decls;
+import kodkod.ast.ExprIntCast;
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
 import kodkod.ast.IfExpression;
-import kodkod.ast.IntExprCast;
+import kodkod.ast.IfIntExpression;
 import kodkod.ast.IntComparisonFormula;
 import kodkod.ast.IntConstant;
+import kodkod.ast.IntExprCast;
 import kodkod.ast.IntExpression;
 import kodkod.ast.Multiplicity;
 import kodkod.ast.MultiplicityFormula;
@@ -244,6 +245,28 @@ public abstract class DepthFirstReplacer implements ReturnVisitor<Expression, Fo
     		IntExpression ret = lookup(intconst);
     		return ret==null ? cache(intconst, intconst) : intconst;
     }
+    
+    /** 
+	 * Calls lookup(intExpr) and returns the cached value, if any.  
+	 * If a replacement has not been cached, visits the expression's 
+	 * children.  If nothing changes, the argument is cached and
+	 * returned, otherwise a replacement expression is cached and returned.
+	 * @return { i: IfIntExpression | i.condition = intExpr.condition.accept(this) &&
+	 *                             i.thenExpr = intExpr.thenExpr.accept(this) &&
+	 *                             i.elseExpr = intExpr.elseExpr.accept(this) }
+	 */
+	public IntExpression visit(IfIntExpression intExpr) {
+		IntExpression ret = lookup(intExpr);
+		if (ret==null) {
+			final Formula condition = intExpr.condition().accept(this);
+			final IntExpression thenExpr = intExpr.thenExpr().accept(this);
+			final IntExpression elseExpr = intExpr.elseExpr().accept(this);
+			ret = (condition==intExpr.condition() && thenExpr==intExpr.thenExpr() &&
+				   elseExpr==intExpr.elseExpr()) ? 
+			      intExpr : condition.thenElse(thenExpr, elseExpr);
+		}
+		return cache(intExpr,ret);
+	}
     
     /** 
 	 * Calls lookup(intExpr) and returns the cached value, if any.  

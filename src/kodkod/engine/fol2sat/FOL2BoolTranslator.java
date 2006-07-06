@@ -19,6 +19,7 @@ import kodkod.ast.ExprIntCast;
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
 import kodkod.ast.IfExpression;
+import kodkod.ast.IfIntExpression;
 import kodkod.ast.IntComparisonFormula;
 import kodkod.ast.IntConstant;
 import kodkod.ast.IntExprCast;
@@ -595,6 +596,21 @@ final class FOL2BoolTranslator {
 		}
 
 		/**
+		 * @return translate(intExpr.condition) => translate(intExpr.then), translate(intExpr.else)
+		 */
+		public Int visit(IfIntExpression intExpr) { 
+			Int ret = lookup(intExpr);
+			if (ret!=null) return ret;
+			
+			final BooleanValue condition = intExpr.condition().accept(this);
+			final Int thenExpr = intExpr.thenExpr().accept(this);
+			final Int elseExpr = intExpr.elseExpr().accept(this);
+			ret = thenExpr.choice(condition, elseExpr);
+			
+			return record(intExpr, ret);
+		}
+		
+		/**
 		 * Returns an Int that represents the sum of all the integers that
 		 * correspond to non-FALSE entries in the given matrix.
 		 * @param iter an iterator over all the bound integers.  Initial should be this.manager.ints().iterator().
@@ -672,9 +688,6 @@ final class FOL2BoolTranslator {
 			default: 
 				throw new IllegalArgumentException("Unknown operator: " + intComp.op());
 			}
-//			System.out.println(intComp.left() + ": " + left);
-//			System.out.println(intComp.right() + ": " + right);
-//			System.out.println(ret);
 			return record(intComp, ret);
 		}
 		

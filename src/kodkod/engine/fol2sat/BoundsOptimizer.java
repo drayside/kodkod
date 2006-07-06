@@ -22,24 +22,25 @@ import kodkod.util.ints.IntSet;
 import kodkod.util.ints.Ints;
 
 /**
- * A BoundsOptimizer minimizes the number and size of mappings
- * in a given Bounds object.  Given a Bounds B, a set of relations R, 
+ * <p>A BoundsOptimizer minimizes the number and size of mappings
+ * in a given Bounds object.  Given a Bounds B, a set of relations R, a set of integers I,
  * a set of RelationPredicate.TotalOrdering T, and a set of RelationPredicate.Acyclic A,
- * a BoundsOptimizer first reduces B.relations to R.  Then, it partitions B.universe
- * into sets of equivalent atoms.  (Atoms within each partition 
+ * a BoundsOptimizer first reduces B.relations to R and B.intBound.TupleSet to I.  Then, it partitions B.universe
+ * into sets of equivalent atoms, based on the bounds of the relations in R and the integers in I.  
+ * (Atoms within each partition 
  * can be permuted without affecting the meaning of a formula whose relation leaves are
- * a subset of R.)   
+ * a subset of R.)   </p>
  * 
- * Using the partitioning, the optimizer attempts to minimize B by breaking symmetries 
+ * <p>Using the partitioning, the optimizer attempts to minimize B by breaking symmetries 
  * on relations constrained by predicates in the sets T and A:  exact bounds are given to total
  * orders and upper bounds on acyclic relations are halved whenever the equivalence and 
  * fixness constraints on atoms allow it.  Specifically, given a total ordering predicate
  * Tp, symmetry is broken on Tp.first, Tp.last, Tp.relation, and Tp.ordered iff 
  * Tp.ordered is a partition of B.universe and symmetry has not already been broken on it.
  * Given an acyclic predicate Ap, symmetry is broken on Ap.relation iff its domain and
- * range are each partitions of B.universe and symmetry has been broken on neither.     
+ * range are each partitions of B.universe and symmetry has been broken on neither.     </p>
  * 
- * Note that in subsequent comments, atoms are identified with their index in bounds.universe.
+ * <p>Note that in subsequent comments, atoms are identified with their index in bounds.universe.</p>
  *              
  * @author Emina Torlak
  */
@@ -49,15 +50,20 @@ final class BoundsOptimizer {
 	private final int usize;
 	
 	/**
-	 * Constructs a new BoundsOptimizer that reduces bounds.relations to relations
-	 * upon construction and initializes partitions to an empty list.
+	 * Constructs a new BoundsOptimizer that reduces bounds.relations to relations and
+	 * bounds.intBound.TupleSet to ints and initializes partitions to an empty list.
 	 */
-	private BoundsOptimizer(Bounds bounds, Set<Relation> relations) {
+	private BoundsOptimizer(Bounds bounds, Set<Relation> relations, IntSet ints) {
 		this.bounds = bounds;
 		bounds.relations().retainAll(relations);
 		if (relations.size() != bounds.relations().size()) {
 			relations.removeAll(bounds.relations());
 			throw new IllegalArgumentException("Unbound relations: " + relations);
+		}
+		bounds.ints().retainAll(ints);
+		if (ints.size() != bounds.ints().size()) {
+			ints.removeAll(bounds.ints());
+			throw new IllegalArgumentException("Unbound ints: " + ints);
 		}
 		this.parts = new LinkedList<IntSet>();
 		this.usize = bounds.universe().size();
@@ -71,49 +77,13 @@ final class BoundsOptimizer {
 	 * @throws NullPointerException - any of the arguments are null
 	 * @throws UnsupportedOperationException - bounds is unmodifiable
 	 * @throws IllegalArgumentException - some relations - bounds.relations
-	 * @throws IllegalArgumentException - some relations - totals.(relation + first + last + ordered)
-	 * @throws IllegalArgumentException - some relations - acylics.relation
-	 */
-	static Set<IntSet> optimize(Bounds bounds, Set<Relation> relations,
-			                    Set<RelationPredicate.TotalOrdering> totals,
-			                    Set<RelationPredicate.Acyclic> acyclics) {
-				
-		final BoundsOptimizer opt = new BoundsOptimizer(bounds, relations);
-		opt.computePartitions();
-		
-		for(RelationPredicate.TotalOrdering pred : 
-			opt.sort(totals.toArray(new RelationPredicate.TotalOrdering[totals.size()]))) {
-			opt.minimizeTotalOrder(pred);
-		}
-		
-		for(RelationPredicate.Acyclic pred : 
-			opt.sort(acyclics.toArray(new RelationPredicate.Acyclic[acyclics.size()]))) {
-			opt.minimizeAcyclic(pred);
-		}
-		
-		// convert the list of remaining partitions into a set of unmodifiable partitions
-		final Set<IntSet> partSet = new IdentityHashSet<IntSet>(opt.parts.size());
-		for(IntSet s : opt.parts) {
-			partSet.add(Ints.unmodifiableIntSet(s));
-		}
-		
-		return partSet;
-	}
-	
-	/**
-	 * Optimizes the given bounds as described above, and returns
-	 * the partitions on which symmetries have not been broken.
-	 * @return the partitions on which symmetries have not been broken
-	 * @effects optimizes the given bounds
-	 * @throws NullPointerException - any of the arguments are null
-	 * @throws UnsupportedOperationException - bounds is unmodifiable
-	 * @throws IllegalArgumentException - some relations - bounds.relations
+	 * @throws IllegalArgumentException - some ints - bounds.intBound.TupleSet
 	 * @throws IllegalArgumentException - some relations - preds[TOTAL_ORDERING].(relation + first + last + ordered)
 	 * @throws IllegalArgumentException - some relations - preds[ACYCLIC].relation
 	 */
-	static Set<IntSet> optimize(Bounds bounds, Set<Relation> relations, 
+	static Set<IntSet> optimize(Bounds bounds, Set<Relation> relations, IntSet ints,
 			Map<RelationPredicate.Name, Set<RelationPredicate>> preds) {
-		final BoundsOptimizer opt = new BoundsOptimizer(bounds, relations);
+		final BoundsOptimizer opt = new BoundsOptimizer(bounds, relations, ints);
 		opt.computePartitions();
 		final Set<RelationPredicate> totals = preds.get(TOTAL_ORDERING);
 		final Set<RelationPredicate> acyclics = preds.get(ACYCLIC);
@@ -300,13 +270,17 @@ final class BoundsOptimizer {
 		for(Relation r : bounds.relations()) {
 			TupleSet lower = bounds.lowerBound(r);
 			TupleSet upper = bounds.upperBound(r);
-			
 			refinePartitions(lower.indexView(), lower.arity(), range2domain);
 			if (!lower.equals(upper))
 				refinePartitions(upper.indexView(), upper.arity(), range2domain);
 		
 		}
-
+		
+		// refine the partitions based on the bounds of each integer
+		for(IntIterator iter = bounds.ints().iterator(); iter.hasNext();) {
+			TupleSet exact = bounds.exactBound(iter.nextInt());
+			refinePartitions(exact.indexView(), 1, range2domain);
+		}
 	}
 	
 	/**

@@ -261,11 +261,15 @@ public final class TreeSequence<V> extends AbstractSparseSequence<V>
 		public final void remove() {
 			if (lastReturned == null)
 				throw new IllegalStateException();
-			final int nextIndex = next.key;
-			TreeSequence.this.remove(lastReturned.key);
-			// necessary since the structural modifications made by the delete
-			// procedure may affect the next pointer
-			next = tree.search(nextIndex);
+			if (next==null) {
+				TreeSequence.this.remove(lastReturned.key);
+			} else {
+				final int nextIndex = next.key;
+				TreeSequence.this.remove(lastReturned.key);
+				// necessary since the structural modifications made by the delete
+				// procedure may affect the next pointer
+				next = tree.search(nextIndex);
+			}
 			lastReturned = null;
 		}
 	}

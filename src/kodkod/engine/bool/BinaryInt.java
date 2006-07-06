@@ -278,10 +278,27 @@ final class BinaryInt extends Int {
 	
 	/**
 	 * {@inheritDoc}
+	 * @see kodkod.engine.bool.Int#choice(kodkod.engine.bool.BooleanValue, kodkod.engine.bool.Int)
+	 */
+	@Override
+	public Int choice(BooleanValue condition, Int other) {
+		validate(other);
+		final int width = StrictMath.max(width(), other.width());
+		final BooleanValue[] choice = new BooleanValue[width];
+		for(int i = 0; i < width; i++) {
+			choice[i] = factory.ite(condition, bit(i), other.bit(i));
+		}
+		return new BinaryInt(factory, choice);
+	}
+	
+	/**
+	 * {@inheritDoc}
 	 * @see java.lang.Object#toString()
 	 */
 	public String toString() {
 		return "b" + Arrays.toString(bits);
 	}
+
+	
 
 }

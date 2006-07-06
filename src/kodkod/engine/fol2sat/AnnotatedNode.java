@@ -18,8 +18,10 @@ import java.util.Set;
 
 import kodkod.ast.BinaryFormula;
 import kodkod.ast.ComparisonFormula;
+import kodkod.ast.ExprIntCast;
 import kodkod.ast.Formula;
 import kodkod.ast.IntComparisonFormula;
+import kodkod.ast.IntExprCast;
 import kodkod.ast.MultiplicityFormula;
 import kodkod.ast.Node;
 import kodkod.ast.NotFormula;
@@ -103,6 +105,26 @@ final class AnnotatedNode<N extends Node> {
 	}
 	
 	/**
+	 * Returns true if the given node contains a child whose meaning depends on 
+	 * integer bounds (i.e. an ExprIntCast node with SUM operator or an IntExprCast node).
+	 * @return true if the given node contains a child whose meaning depends on 
+	 * integer bounds (i.e. an ExprIntCast node with SUM operator or an IntExprCast node).
+	 */
+	static boolean usesIntBounds(final AnnotatedNode<? extends Node> annotated) {
+		final Detector detector = new Detector(annotated.sharedNodes) {
+			public Boolean visit(IntExprCast expr) {
+				return Boolean.TRUE;
+			}
+			public Boolean visit(ExprIntCast intExpr) {
+				if (intExpr.op()==ExprIntCast.Operator.CARDINALITY)
+					super.visit(intExpr);
+				return Boolean.TRUE;
+			}
+		};
+		return (Boolean)annotated.node.accept(detector);
+	}
+	
+	/**
 	 * Returns the set of all top-level existentially quantified formulas in annotated.node.  An
 	 * existentially quantified formula is considered top-level, iff it can be
 	 * skolemized out of annotated.node
@@ -110,7 +132,7 @@ final class AnnotatedNode<N extends Node> {
 	 */
 	static Set<QuantifiedFormula> existentials(AnnotatedNode<Formula> annotated) {
 		final Detector detector = new Detector(annotated.sharedNodes) {
-			public Boolean visit(QuantifiedFormula quantFormulaa) {
+			public Boolean visit(QuantifiedFormula quantFormula) {
 				return Boolean.TRUE;
 			}
 		};

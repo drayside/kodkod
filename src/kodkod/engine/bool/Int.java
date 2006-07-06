@@ -164,6 +164,15 @@ public abstract class Int {
 	 */
 	public abstract Int divide(Int other);
 	
+	/**
+	 * Returns an Int that evaluates to this if the condition is true, otherwise it
+	 * evaluates to the given Int.
+	 * @requires other + condition in this.factory.components
+	 * @return an Int that evaluates to this if the condition is true, and
+	 * to the given Int if the condition is false.
+	 */
+	public abstract Int choice(BooleanValue condition, Int other);
+	
 //	/**
 //	 * Returns an Int that represents the bitwise conjunction of this and the given Int.
 //	 * @requires this.factory = other.factory

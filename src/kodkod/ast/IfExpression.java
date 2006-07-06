@@ -26,7 +26,7 @@ public final class IfExpression extends Expression {
 	private final int hashCode;
 	
 	/**
-	 * @effect this.condition' = condition && this.thenExpr' = thenExpr &&
+	 * @effects this.condition' = condition && this.thenExpr' = thenExpr &&
 	 *         this.elseExpr' = elseExpr
 	 * @throws IllegalArgumentException - thenExpr.arity != elseExpr.arity
 	 */
@@ -85,8 +85,6 @@ public final class IfExpression extends Expression {
 	public <E, F, D, I> E accept(ReturnVisitor<E, F, D, I> visitor) {
 		return visitor.visit(this);
 	}
-	
-	
     
 	/**
      * Accepts the given visitor.
@@ -102,21 +100,26 @@ public final class IfExpression extends Expression {
      * @return o.condition.equals(this.condition) && o.thenExpr.equals(this.thenExpr) && o.elseExpr.equals(this.elseExpr) 
      */
     public boolean equals(Object o) {
-    	if (this == o) return true;
-    	if (!(o instanceof IfExpression)) return false;
-    	IfExpression that = (IfExpression)o;
-    	return condition.equals(that.condition) &&
-    		thenExpr.equals(that.thenExpr) &&
-    		elseExpr.equals(that.elseExpr);
-    }
+		if (this == o) return true;
+		if (!(o instanceof IfExpression)) return false;
+		IfExpression that = (IfExpression) o;
+		return condition.equals(that.condition)
+				&& thenExpr.equals(that.thenExpr)
+				&& elseExpr.equals(that.elseExpr);
+	}
     
-    public int hashCode() {
-    	return hashCode;
-    }
+    /**
+     * {@inheritDoc}
+     * @see java.lang.Object#hashCode()
+     */
+    public int hashCode() { 	return hashCode; }
 	
+    /**
+     * {@inheritDoc}
+     * @see java.lang.Object#toString()
+     */
 	public String toString() {
-		return "(if " + condition + " then " + thenExpr +
-		                            " else " + elseExpr + ")";
+		return "(if " + condition + " then " + thenExpr + " else " + elseExpr + ")";
 	}
 	
 }

@@ -65,7 +65,7 @@ public final class ExprIntCast extends IntExpression {
 	 * @see java.lang.Object#toString()
 	 */
 	public String toString() {
-		return expression.toString();
+		return op + "("+expression.toString()+")";
 	}
 	
 	/**

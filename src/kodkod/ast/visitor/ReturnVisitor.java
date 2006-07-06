@@ -7,17 +7,18 @@ package kodkod.ast.visitor;
 import kodkod.ast.BinaryExpression;
 import kodkod.ast.BinaryFormula;
 import kodkod.ast.BinaryIntExpression;
-import kodkod.ast.ExprIntCast;
 import kodkod.ast.ComparisonFormula;
 import kodkod.ast.Comprehension;
 import kodkod.ast.ConstantExpression;
 import kodkod.ast.ConstantFormula;
 import kodkod.ast.Decl;
 import kodkod.ast.Decls;
+import kodkod.ast.ExprIntCast;
 import kodkod.ast.IfExpression;
-import kodkod.ast.IntExprCast;
+import kodkod.ast.IfIntExpression;
 import kodkod.ast.IntComparisonFormula;
 import kodkod.ast.IntConstant;
+import kodkod.ast.IntExprCast;
 import kodkod.ast.MultiplicityFormula;
 import kodkod.ast.NotFormula;
 import kodkod.ast.QuantifiedFormula;
@@ -93,9 +94,14 @@ public interface ReturnVisitor<E, F, D, I> {
     
     /**
      * Visits the given integer constant and returns the result.
-	 * @return the result of visiting <code>intconst</code> 
+	 * @return the result of visiting <code>intConst</code> 
      */
     public I visit(IntConstant intConst);
+    /**
+     * Visits the given if-int-expression and returns the result.
+	 * @return the result of visiting <code>intExpr</code> 
+     */
+    public I visit(IfIntExpression intExpr);
     /**
      * Visits the given unary integer expression and returns the result.
 	 * @return the result of visiting <code>intExpr</code> 

@@ -74,7 +74,7 @@ public class IntTest extends TestCase {
 	/**
 	 * @requires op in { EQ, LTE, GTE }
 	 */
-	private final void testCardEqLteGte(Options.IntEncoding encoding, IntComparisonFormula.Operator op) {
+	private final void testEqLteGte(Options.IntEncoding encoding, IntComparisonFormula.Operator op) {
 		solver.options().setIntEncoding(encoding);
 		bounds.bound(r1, factory.setOf("15"), factory.setOf("15"));
 		Formula f = r1.count().compare(op, IntConstant.constant(1));
@@ -121,31 +121,31 @@ public class IntTest extends TestCase {
 	}
 	
 	
-	public final void testCardEQ() {
+	public final void testEQ() {
 		solver.options().setBitwidth(17);
-		testCardEqLteGte(UNARY, EQ);
+		testEqLteGte(UNARY, EQ);
 		solver.options().setBitwidth(6);
-		testCardEqLteGte(BINARY, EQ);
+		testEqLteGte(BINARY, EQ);
 	}
 	
-	public final void testCardLTE() {
+	public final void testLTE() {
 		solver.options().setBitwidth(17);
-		testCardEqLteGte(UNARY, LTE);
+		testEqLteGte(UNARY, LTE);
 		solver.options().setBitwidth(8);
-		testCardEqLteGte(BINARY, LTE);
+		testEqLteGte(BINARY, LTE);
 	}
 	
-	public final void testCardGTE() {
+	public final void testGTE() {
 		solver.options().setBitwidth(17);
-		testCardEqLteGte(UNARY, GTE);
+		testEqLteGte(UNARY, GTE);
 		solver.options().setBitwidth(8);
-		testCardEqLteGte(BINARY, GTE);
+		testEqLteGte(BINARY, GTE);
 	}
 	
 	/**
 	 * @requires op in { LT, GT }
 	 */
-	private final void testCardLtGt(Options.IntEncoding encoding, IntComparisonFormula.Operator op) {
+	private final void testLtGt(Options.IntEncoding encoding, IntComparisonFormula.Operator op) {
 		solver.options().setIntEncoding(encoding);
 		bounds.bound(r1, factory.setOf("14"), factory.setOf("13", "14", "15"));
 		Formula f = r1.count().compare(op, IntConstant.constant(2));
@@ -176,19 +176,19 @@ public class IntTest extends TestCase {
 		assertEquals(Solution.Outcome.TRIVIALLY_SATISFIABLE, s.outcome());
 	}
 	
-	public final void testCardLT() {
-		testCardLtGt(UNARY, LT);
+	public final void testLT() {
+		testLtGt(UNARY, LT);
 		solver.options().setBitwidth(8);
-		testCardLtGt(BINARY, LT);
+		testLtGt(BINARY, LT);
 	}
 	
-	public final void testCardGT() {
-		testCardLtGt(UNARY, GT);
+	public final void testGT() {
+		testLtGt(UNARY, GT);
 		solver.options().setBitwidth(8);
-		testCardLtGt(BINARY, GT);
+		testLtGt(BINARY, GT);
 	}
 	
-	private final void testCardPlus(Options.IntEncoding encoding) {
+	private final void testPlus(Options.IntEncoding encoding) {
 		solver.options().setIntEncoding(encoding);
 		bounds.bound(r1, factory.setOf("15"), factory.setOf("15"));
 		Formula f = r1.count().plus(IntConstant.constant(1)).eq(IntConstant.constant(2));
@@ -220,14 +220,14 @@ public class IntTest extends TestCase {
 		assertEquals(Solution.Outcome.TRIVIALLY_SATISFIABLE, s.outcome());
 	}
 	
-	public final void testCardPlus() {
+	public final void testPlus() {
 		solver.options().setBitwidth(17);
-		testCardPlus(UNARY);
+		testPlus(UNARY);
 		solver.options().setBitwidth(8);
-		testCardPlus(BINARY);
+		testPlus(BINARY);
 	}
 	
-	private final void testCardMinus(Options.IntEncoding encoding) {
+	private final void testMinus(Options.IntEncoding encoding) {
 		solver.options().setIntEncoding(encoding);
 		bounds.bound(r1, factory.setOf("15"), factory.setOf("15"));
 		Formula f = r1.count().minus(IntConstant.constant(2)).eq(IntConstant.constant(-1));
@@ -259,12 +259,12 @@ public class IntTest extends TestCase {
 		assertEquals(Solution.Outcome.TRIVIALLY_SATISFIABLE, s.outcome());
 	}
 	
-	public final void testCardMinus() {
+	public final void testMinus() {
 		try {
-			testCardMinus(UNARY);
+			testMinus(UNARY);
 			fail();
 		} catch (UnsupportedOperationException unused) {	}
-		testCardMinus(BINARY);
+		testMinus(BINARY);
 	}
 	
 	public final void testMultiply() {
@@ -445,6 +445,44 @@ public class IntTest extends TestCase {
 		s = solve(f);
 		assertNull(s.instance());
 		
+	}
+	
+	private void testIfIntExpr(Options.IntEncoding encoding) {
+		solver.options().setIntEncoding(encoding);
+		bounds.bound(r1, factory.setOf("15"), factory.setOf("15"));
+		Formula f = (r1.some().thenElse(r1.count(), IntConstant.constant(5))).eq(IntConstant.constant(1));
+		Solution s = solve(f);
+		assertNotNull(s.instance());
+		assertEquals(Ints.singleton(15), s.instance().tuples(r1).indexView());
+		
+		f = (r1.some().thenElse(r1.sum(), IntConstant.constant(5))).eq(IntConstant.constant(1));
+		s = solve(f);
+		assertNull(s.instance());
+		
+		bounds.bound(r1, factory.setOf("3"), factory.allOf(1));
+		bounds.boundExactly(3, factory.setOf("3"));
+		bounds.boundExactly(1, factory.setOf("1"));
+		f = ((r1.count().eq(IntConstant.constant(2))).thenElse(r1.sum(), IntConstant.constant(5))).eq(IntConstant.constant(4));
+		s = solve(f);
+		assertNotNull(s.instance());
+		assertTrue(s.instance().tuples(r1).indexView().contains(1));
+		assertTrue(s.instance().tuples(r1).indexView().contains(3));
+		assertEquals(2, s.instance().tuples(r1).size());
+		
+		f = Formula.TRUE.thenElse(IntConstant.constant(2), IntConstant.constant(3)).eq(IntConstant.constant(4));
+		s = solve(f);
+		assertEquals(Solution.Outcome.TRIVIALLY_UNSATISFIABLE, s.outcome());
+		
+		f = Formula.FALSE.thenElse(IntConstant.constant(2), IntConstant.constant(3)).eq(IntConstant.constant(3));
+		s = solve(f);
+		assertEquals(Solution.Outcome.TRIVIALLY_SATISFIABLE, s.outcome());
+	}
+	
+	public void testIfIntExpr() {
+		solver.options().setBitwidth(17);
+		testIfIntExpr(UNARY);
+		solver.options().setBitwidth(8);
+		testIfIntExpr(BINARY);
 	}
 	
 }

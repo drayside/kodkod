@@ -179,7 +179,7 @@ public final class Instance implements Cloneable {
 	 * @see java.lang.Object#toString()
 	 */
 	public String toString() {
-		return "relations: "+tuples.toString() + "\n ints: " + ints;
+		return "relations: "+tuples.toString() + "\nints: " + ints;
 	}
 
 }

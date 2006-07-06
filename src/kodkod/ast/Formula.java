@@ -121,7 +121,16 @@ public abstract class Formula implements Node {
      * @return {e: Expression | e = if this then thenExpr else elseExpr}
      */
     public Expression thenElse(Expression thenExpr, Expression elseExpr) {
-    	return new IfExpression(this, thenExpr, elseExpr);
+    		return new IfExpression(this, thenExpr, elseExpr);
+    }
+    
+    /**
+     * Returns the if expression constructed from this formula and the
+     * specified then and else integer expressions.
+     * @return {e: IntExpression | e = if this then thenExpr else elseExpr}
+     */
+    public IntExpression thenElse(IntExpression thenExpr, IntExpression elseExpr) {
+    		return new IfIntExpression(this, thenExpr, elseExpr);
     }
     
     /**

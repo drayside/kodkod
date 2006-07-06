@@ -228,7 +228,7 @@ public final class Bounds implements Cloneable {
 	}
 	
 	public String toString() {
-		return "relation bounds: " + bounds.toString() + "\n  int bounds: " + intbounds;
+		return "relation bounds: " + bounds.toString() + "\nint bounds: " + intbounds;
 	}
 	
 	/**

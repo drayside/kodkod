@@ -38,6 +38,11 @@ public abstract class ConstantFormula extends Formula {
 		}
 		
 		@Override
+		public IntExpression thenElse(IntExpression thenExpr, IntExpression elseExpr) {
+			return thenExpr;
+		}
+		
+		@Override
 		public boolean booleanValue() { return true; }
 		
 		
@@ -63,6 +68,11 @@ public abstract class ConstantFormula extends Formula {
 
 		@Override
 		public Expression thenElse(Expression thenExpr, Expression elseExpr) {
+			return elseExpr;
+		}
+		
+		@Override
+		public IntExpression thenElse(IntExpression thenExpr, IntExpression elseExpr) {
 			return elseExpr;
 		}
 		
