@@ -8,12 +8,14 @@ import org.sat4j.minisat.SolverFactory;
  * 
  * @author Emina Torlak
  */
-public enum SATFactory {
+public abstract class SATFactory {
+	private SATFactory() {}
+	
 	/**
-	 * The factory for instances of the default sat4j solver.
+	 * The factory that produces instances of the default sat4j solver.
 	 * @see org.sat4j.core.ASolverFactory#defaultSolver()
 	 */
-	DefaultSAT4J { 
+	public static final SATFactory DefaultSAT4J = new SATFactory() { 
 		/**
 		 * Returns an instance of the default sat4j solver.
 		 * @return an instance of the default sat4j solver.
@@ -21,91 +23,32 @@ public enum SATFactory {
 		public SATSolver instance() { 
 			return new SAT4J(SolverFactory.instance().defaultSolver()); 
 		}
-	},
+		public String toString() { return "DefaultSAT4J"; }
+	};
 	
 	/**
-	 * The factory for instances of the "light" sat4j solver that is
-	 * suitable for solving many small instances of SAT problems.
+	 * The factory that produces instances of the "light" sat4j solver.  The
+	 * light solver is suitable for solving many small instances of SAT problems.
 	 * @see org.sat4j.core.ASolverFactory#lightSolver()
 	 */
-	LightSAT4J {
+	public static final SATFactory LightSAT4J = new SATFactory() {
 		/**
 		 * Returns an instance of the "light" sat4j solver.
 		 * @return an instance of the "light" sat4j solver.
 		 */
 		public SATSolver instance() { 
-			return new SAT4J(SolverFactory.newMini3SAT()); 
+			return new SAT4J(SolverFactory.instance().lightSolver()); 
 		}
-	},
+		public String toString() { return "LightSAT4J"; }
+	};
 	
 	/**
-	 * The factory for instances of the "minilearning" sat4j solver 
-	 * that learns clauses of size smaller than 10 % of the total number of variables
-	 * @see org.sat4j.minisat.SolverFactory#newMiniLearning()
-	 */
-	MiniLearning {
-		/**
-		 * Returns an instance of the "minilearning" sat4j solver.
-		 * @return an instance of the "minilearning" sat4j solver.
-		 */
-		public SATSolver instance() { 
-			return new SAT4J(SolverFactory.newMiniLearning()); 
-		}
-	},
-	
-	/**
-	 * The factory for instances of the sat4j "active learning" solver that
-	 * uses First UIP clause generator, watched literals, etc.
-	 * @see org.sat4j.minisat.SolverFactory#newActiveLearning()
-	 */
-	ActiveLearning {
-		/**
-		 * Returns an instance of the "active learning" sat4j solver.
-		 * @return an instance of the "active learning" sat4j solver.
-		 */
-		public SATSolver instance() { 
-			return new SAT4J(SolverFactory.newActiveLearning()); 
-		}
-	},
-	
-	/**
-	 * The factory for instances of the "backjumping" sat4j solver 
-	 * with VSIDS heuristics, FirstUIP clause generator for backjumping but no learning.
-	 * @see org.sat4j.minisat.SolverFactory#newBackjumping()
-	 */
-	Backjumping {
-		/**
-		 * Returns an instance of the "backjumping" sat4j solver.
-		 * @return an instance of the "backjumping" sat4j solver.
-		 */
-		public SATSolver instance() { 
-			return new SAT4J(SolverFactory.newBackjumping()); 
-		}
-	},
-	
-	/**
-	 * The factory for instances of the sat4j "relsat" solver with 
-	 * decision UIP clause generator.
-	 * @see org.sat4j.minisat.SolverFactory#newRelsat()
-	 */
-	Relsat {
-		/**
-		 * Returns an instance of the sat4j "relsat" solver.
-		 * @return an instance of the sat4j "relsat" solver.
-		 */
-		public SATSolver instance() { 
-			return new SAT4J(SolverFactory.newRelsat()); 
-		}
-	},
-	
-	/**
-	 * The factory for instances that provide access to the basic
-	 * functionality of the zchaff solver from Princeton; 
+	 * The factory that produces instances of the zchaff solver from Princeton; 
 	 * the returned instances 
 	 * support only basic sat solver operations (adding variables/clauses,
 	 * solving, and obtaining a satisfying solution, if any).
 	 */
-	ZChaff {
+	public static final SATFactory ZChaff = new SATFactory() {
 		/**
 		 * Returns an instance of the zchaff solver.
 		 * @return an instance of the zchaff solver.
@@ -113,18 +56,18 @@ public enum SATFactory {
 		public SATSolver instance() { 
 			return new ZChaff(false); 
 		}
-	},
+		public String toString() { return "ZChaff"; }
+	};
 	
 	/**
-	 * The factory for instances that proivde access to the core extraction
-	 * functionality of the zchaff solver from Princeton; the 
+	 * The factory the produces core-extracting instances of the zchaff solver from Princeton; the 
 	 * {@link kodkod.engine.satlab.SATSolver#isCoreExtractor() } method of
 	 * the returned instances returns true.  Note that core
 	 * extraction can incur a significant memory overhead during solving,
 	 * so if you do not need this functionality, use the {@link #ZChaff} factory
 	 * instead.
 	 */
-	ZChaffPlus {
+	public static final SATFactory ZChaffPlus = new SATFactory() {
 		/**
 		 * Returns an instance of the zchaff solver with the core extraction
 		 * functionality.
@@ -134,8 +77,27 @@ public enum SATFactory {
 		public SATSolver instance() { 
 			return new ZChaff(true); 
 		}
+		public String toString() { return "ZChaffPlus"; }
 	};
 	
+	/**
+	 * Returns a SATFactory that produces instances of the specified
+	 * SAT4J solver.  For the list of available SAT4J solvers see
+	 * {@link org.sat4j.core.ASolverFactory#solverNames() org.sat4j.core.ASolverFactory#solverNames()}.
+	 * @requires solverName is a valid solver name
+	 * @return a SATFactory that returns the instances of the specified
+	 * SAT4J solver
+	 * @see org.sat4j.core.ASolverFactory#solverNames()
+	 */
+	public static final SATFactory sat4jFactory(final String solverName) {
+		return new SATFactory() {
+			@Override
+			public SATSolver instance() {
+				return new SAT4J(SolverFactory.instance().createSolverByName(solverName));
+			}
+			public String toString() { return solverName; }
+		};
+	}
 	
 	/**
 	 * Returns an instance of a SATSolver produced by this factory.
