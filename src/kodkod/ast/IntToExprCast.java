@@ -16,13 +16,13 @@ import kodkod.ast.visitor.VoidVisitor;
  * @invariant arity = 1
  * @author Emina Torlak
  */
-public final class IntExprCast extends Expression {
+public final class IntToExprCast extends Expression {
 	private final IntExpression intExpr;
 	/**
-	 * Constructs a new IntExprCast.
+	 * Constructs a new IntToExprCast.
 	 * @effects this.intexpr' = intExpr
 	 */
-	IntExprCast(IntExpression intexpr) {
+	IntToExprCast(IntExpression intexpr) {
 		this.intExpr = intexpr;
 	}
 
@@ -69,15 +69,15 @@ public final class IntExprCast extends Expression {
 	}
 	
 	/**
-	 * Returns true if o is an IntExprCast whose intExpr is 
+	 * Returns true if o is an IntToExprCast whose intExpr is 
 	 * logically equal to this.intExpr.
-	 * @return o in IntExprCast && o.intExpr.equals(this.intExpr)
+	 * @return o in IntToExprCast && o.intExpr.equals(this.intExpr)
 	 */
 	public boolean equals(Object o) {
 		if (this==o) 
 			return true;
-		else if (o instanceof IntExprCast) 
-			return ((IntExprCast)o).intExpr.equals(intExpr);
+		else if (o instanceof IntToExprCast) 
+			return ((IntToExprCast)o).intExpr.equals(intExpr);
 		else	 
 			return false;
 	}

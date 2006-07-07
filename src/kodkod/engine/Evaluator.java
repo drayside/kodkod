@@ -76,6 +76,9 @@ public final class Evaluator {
 	 * given by this.instance and using this.options. 
 	 * @return true if formula is true with respect to this.instance and this.options; 
 	 * otherwise returns false
+	 * @throws kodkod.engine.fol2sat.HigherOrderDeclException - the formula contains a higher order declaration
+	 * @throws kodkod.engine.fol2sat.UnboundLeafException - the formula contains an undeclared variable or
+	 * a relation not mapped by this.instance
 	 */
 	public boolean evaluate(Formula formula){
 		if (formula == null) throw new NullPointerException("formula");
@@ -87,6 +90,9 @@ public final class Evaluator {
 	 * given by this.instance and using this.options.
 	 * @return  {@link kodkod.instance.TupleSet set} of tuples to which the expression evaluates given the
 	 * mappings in this.instance and the options in this.options.
+	 * @throws kodkod.engine.fol2sat.HigherOrderDeclException - the expression contains a higher order declaration
+	 * @throws kodkod.engine.fol2sat.UnboundLeafException - the expression contains an undeclared variable or
+	 * a relation not mapped by this.instance
 	 */
 	public TupleSet evaluate(Expression expression){
 		if (expression == null) throw new NullPointerException("expression");

@@ -36,8 +36,8 @@ public final class TrivialFormulaException extends Exception {
 	 * @requires reduction != null && bounds != null && formulaValue != null
 	 * @effects this.reduction' = reduction && this.bounds' = bounds && this.formulaValue' = formulaValue 
 	 */
-	public TrivialFormulaException(Formula reduction, BooleanConstant formulaValue, Bounds bounds, Map<Decl, Relation> skolems) {
-		super();
+	 TrivialFormulaException(Formula reduction, BooleanConstant formulaValue, Bounds bounds, Map<Decl, Relation> skolems) {
+		super("Trivially " + ((formulaValue==BooleanConstant.FALSE) ? "un" : "" )  + "satisfiable formula.");
 		assert formulaValue != null && bounds != null && reduction != null;
 		this.reduction = reduction;
 		this.bounds = bounds;

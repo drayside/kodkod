@@ -13,12 +13,12 @@ import kodkod.ast.ConstantExpression;
 import kodkod.ast.ConstantFormula;
 import kodkod.ast.Decl;
 import kodkod.ast.Decls;
-import kodkod.ast.ExprIntCast;
+import kodkod.ast.ExprToIntCast;
 import kodkod.ast.IfExpression;
 import kodkod.ast.IfIntExpression;
 import kodkod.ast.IntComparisonFormula;
 import kodkod.ast.IntConstant;
-import kodkod.ast.IntExprCast;
+import kodkod.ast.IntToExprCast;
 import kodkod.ast.MultiplicityFormula;
 import kodkod.ast.NotFormula;
 import kodkod.ast.QuantifiedFormula;
@@ -90,7 +90,7 @@ public interface ReturnVisitor<E, F, D, I> {
 	 * Visits the given cast expression expression and returns the result.
 	 * @return the result of visiting <code>castExpr</code> 
 	 **/
-    public E visit(IntExprCast castExpr);
+    public E visit(IntToExprCast castExpr);
     
     /**
      * Visits the given integer constant and returns the result.
@@ -106,7 +106,7 @@ public interface ReturnVisitor<E, F, D, I> {
      * Visits the given unary integer expression and returns the result.
 	 * @return the result of visiting <code>intExpr</code> 
      */
-    public I visit(ExprIntCast intExpr);
+    public I visit(ExprToIntCast intExpr);
     /**
      * Visits the given binary integer expression and returns the result.
 	 * @return the result of visiting <code>intExpr</code> 

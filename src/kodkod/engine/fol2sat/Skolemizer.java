@@ -11,6 +11,7 @@ import kodkod.ast.Decls;
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
 import kodkod.ast.LeafExpression;
+import kodkod.ast.Multiplicity;
 import kodkod.ast.Node;
 import kodkod.ast.QuantifiedFormula;
 import kodkod.ast.Relation;
@@ -198,8 +199,8 @@ final class Skolemizer {
 		 * is going to be skolemized, if we visited the variable in the enclosed
 		 * declaration, we would get the skolem constant as a return value and
 		 * a ClassCastException would be thrown.
-		 * @return { d: Declaration |  d.variable = declaration.variable && 
-		 *                             d.expression = declaration.expression.accept(this) 
+		 * @return { d: Declaration |  d.variable = decl.variable && d.multiplicity = decl.multiplicity &&
+		 *                             d.expression = decl.expression.accept(this) } 
 		 */
 		@Override
 		public Decl visit(Decl decl) {
@@ -207,7 +208,7 @@ final class Skolemizer {
 			if (ret==null) {
 				final Expression expression = decl.expression().accept(this);
 				ret = (expression==decl.expression()) ?
-					  decl : decl.variable().oneOf(expression); 
+					  decl : decl.variable().declare(decl.multiplicity(), expression); 
 			}
 			return cache(decl,ret);
 		}
@@ -260,11 +261,11 @@ final class Skolemizer {
 		}
 		
 		/**
-		 * Adds the formula 'skolem in decl.expression && one skolem' to 
+		 * Adds the formula 'skolem in decl.expression && decl.multiplicity skolem' to 
 		 * this.skolemFormula, computes and adds the upper bound for skolem
 		 * to this.allocator.bounds.
 		 * @effects this.skolemFormula' = this.skolemFormula && skolem in decl.expression
-		 *            && one skolem
+		 *            && decl.multiplicity skolem
 		 * @effects this.allocator.bounds.upperBound' = 
 		 *            this.allocator.bounds.upperBound + skolem->Translator.evaluate(decl.expression, interpreter)
 		 */
@@ -272,12 +273,15 @@ final class Skolemizer {
 			final BooleanMatrix skolemBound = (BooleanMatrix) 
 			  FOL2BoolTranslator.translate(new AnnotatedNode<Expression>(decl.expression()), manager);
 			final Universe universe = bounds.universe();
-			final IntSet tuples = Ints.bestSet(universe.size());
+			final int arity = decl.variable().arity();
+			final IntSet tuples = Ints.bestSet((int)StrictMath.pow(universe.size(), arity));
 			for(IndexedEntry<BooleanValue> cell : skolemBound) {
 				tuples.add(cell.index());
 			}
-			bounds.bound(skolem, universe.factory().setOf(1, tuples));
-			skolemFormula = skolemFormula.and(skolem.in(decl.expression()).and(skolem.one()));
+			bounds.bound(skolem, universe.factory().setOf(arity, tuples));
+			skolemFormula = skolemFormula.and(skolem.in(decl.expression()));
+			if (decl.multiplicity()!=Multiplicity.SET) 
+				skolemFormula = skolemFormula.and(skolem.apply(decl.multiplicity()));
 			skolems.put(decl, skolem);
 		}
 		
@@ -296,7 +300,7 @@ final class Skolemizer {
 				if (eqfs.contains(quantFormula)) { // an existentially quantified formula
 					final Map<Variable,LeafExpression> varMap = new IdentityHashMap<Variable,LeafExpression>(quantFormula.declarations().size());
 					for(Decl decl : quantFormula.declarations()) {
-						Relation skolem = Relation.unary(decl.variable().name());
+						Relation skolem = Relation.nary(decl.variable().name(), decl.variable().arity());
 						updateSkolemInfo(skolem, (Decl) decl.accept(this));
 						varMap.put(decl.variable(), skolem);				
 					}

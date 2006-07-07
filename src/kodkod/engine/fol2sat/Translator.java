@@ -63,8 +63,9 @@ public final class Translator {
 	 * @throws TrivialFormulaException - the given formula is reduced to a constant during translation
 	 * (i.e. the formula is trivially (un)satisfiable).
 	 * @throws NullPointerException - any of the arguments are null
-	 * @throws IllegalArgumentExeption - the formula refers to an undeclared variable or a 
-	 *                                   relation not mapped by the given bounds.
+	 * @throws UnboundLeafException - the formula refers to an undeclared variable or a relation not mapped by the given bounds.
+	 * @throws HigherOrderDeclException - the formula contains a higher order declaration that cannot
+	 * be skolemized, or it can be skolemized but options.skolemize is false.
 	 */
 	public static Translation translate(Formula formula, Bounds bounds, Options options) throws TrivialFormulaException {
 		// extract structural information about the formula (i.e. syntactically shared internal nodes)
@@ -160,8 +161,8 @@ public final class Translator {
 	 * 
 	 * @return a BooleanConstant that represents the value of the formula.
 	 * @throws NullPointerException - formula = null || instance = null || options = null
-	 * @throws IllegalArgumentException - the formula refers to an undeclared variable or 
-	 *                                    a relation not mapped by the instance
+	 * @throws UnboundLeafException - the formula refers to an undeclared variable or a relation not mapped by the instance
+	 * @throws HigherOrderDeclException - the formula contains a higher order declaration
 	 */
 	public static BooleanConstant evaluate(Formula formula, Instance instance, Options options) {
 		return (BooleanConstant) 
@@ -174,8 +175,8 @@ public final class Translator {
 	 * 
 	 * @return a BooleanMatrix whose TRUE entries represent the tuples contained by the expression.
 	 * @throws NullPointerException - formula = null || instance = null || options = null
-	 * @throws IllegalArgumentException - the expression refers to an undeclared variable or 
-	 *                                    a relation not mapped by the instance
+	 * @throws UnboundLeafException - the expression refers to an undeclared variable or a relation not mapped by the instance
+	 * @throws HigherOrderDeclException - the expression contains a higher order declaration
 	 */
 	public static BooleanMatrix evaluate(Expression expression,Instance instance, Options options) {
 		return (BooleanMatrix) 

@@ -9,12 +9,12 @@ import kodkod.ast.ConstantExpression;
 import kodkod.ast.ConstantFormula;
 import kodkod.ast.Decl;
 import kodkod.ast.Decls;
-import kodkod.ast.ExprIntCast;
+import kodkod.ast.ExprToIntCast;
 import kodkod.ast.IfExpression;
 import kodkod.ast.IfIntExpression;
 import kodkod.ast.IntComparisonFormula;
 import kodkod.ast.IntConstant;
-import kodkod.ast.IntExprCast;
+import kodkod.ast.IntToExprCast;
 import kodkod.ast.MultiplicityFormula;
 import kodkod.ast.Node;
 import kodkod.ast.NotFormula;
@@ -134,7 +134,7 @@ public abstract class DepthFirstVoidVisitor implements VoidVisitor {
 	 * this.visited(castExpr) returns false.  Otherwise does nothing.
 	 * @effects castExpr.expression.accept(this)
 	 */
-	public void visit(IntExprCast castExpr) {
+	public void visit(IntToExprCast castExpr) {
 		if (!visited(castExpr)) {
 			castExpr.intExpr().accept(this);
 		}
@@ -164,7 +164,7 @@ public abstract class DepthFirstVoidVisitor implements VoidVisitor {
 	 * this.visited(intExpr) returns false.  Otherwise does nothing.
 	 * @effects intExpr.expression.accept(this)
 	 */
-	public void visit(ExprIntCast intExpr) {
+	public void visit(ExprToIntCast intExpr) {
 		if (!visited(intExpr)) {
 			intExpr.expression().accept(this);
 		}

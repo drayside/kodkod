@@ -138,7 +138,7 @@ public abstract class IntExpression implements Node {
 	 * that represents the integer given by this integer expression.
 	 */
 	public Expression toExpression() {
-		return new IntExprCast(this);
+		return new IntToExprCast(this);
 	}
 	
 	/**

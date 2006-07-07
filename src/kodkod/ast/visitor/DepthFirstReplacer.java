@@ -13,14 +13,14 @@ import kodkod.ast.ConstantExpression;
 import kodkod.ast.ConstantFormula;
 import kodkod.ast.Decl;
 import kodkod.ast.Decls;
-import kodkod.ast.ExprIntCast;
+import kodkod.ast.ExprToIntCast;
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
 import kodkod.ast.IfExpression;
 import kodkod.ast.IfIntExpression;
 import kodkod.ast.IntComparisonFormula;
 import kodkod.ast.IntConstant;
-import kodkod.ast.IntExprCast;
+import kodkod.ast.IntToExprCast;
 import kodkod.ast.IntExpression;
 import kodkod.ast.Multiplicity;
 import kodkod.ast.MultiplicityFormula;
@@ -71,8 +71,7 @@ public abstract class DepthFirstReplacer implements ReturnVisitor<Expression, Fo
 	 * variable and expression.  If nothing changes, the argument is cached and
 	 * returned, otherwise a replacement Decls object is cached and returned.
 	 * @return { d: Decls | d.size = decls.size && 
-	 *                      all i: [0..d.size) | d.declarations[i].variable = decls.declarations[i].variable.accept(this) && 
-	 *                                           d.declarations[i].expression = decls.declarations[i].expression.accept(this) } 
+	 *                      all i: [0..d.size) | d.declarations[i] = decls.declarations[i].accept(this) } 
 	 */
 	public Decls visit(Decls decls) { 
 		Decls ret = lookup(decls);
@@ -97,6 +96,7 @@ public abstract class DepthFirstReplacer implements ReturnVisitor<Expression, Fo
 	 * variable and expression.  If nothing changes, the argument is cached and
 	 * returned, otherwise a replacement Decl object is cached and returned.
 	 * @return { d: Declaration |  d.variable = declaration.variable.accept(this) && 
+	 *                             d.multiplicity = decl.multiplicity && 
 	 *                             d.expression = declaration.expression.accept(this) 
 	 */
 	public Decl visit(Decl decl) {
@@ -105,7 +105,7 @@ public abstract class DepthFirstReplacer implements ReturnVisitor<Expression, Fo
 			final Variable variable = (Variable) decl.variable().accept(this);
 			final Expression expression = decl.expression().accept(this);
 			ret = (variable==decl.variable() && expression==decl.expression()) ?
-				  decl : variable.oneOf(expression); 
+				  decl : variable.declare(decl.multiplicity(), expression); 
 		}
 		return cache(decl,ret);
 	}
@@ -227,7 +227,7 @@ public abstract class DepthFirstReplacer implements ReturnVisitor<Expression, Fo
 	 * is cached and returned, otherwise a replacement expression is cached and returned.
 	 * @return { e: Expression | e = castExpr.intExpr.accept(this).toExpression() }
 	 */
-	public Expression visit(IntExprCast castExpr) {
+	public Expression visit(IntToExprCast castExpr) {
 		Expression ret = lookup(castExpr);
 		if (ret==null) {
 			final IntExpression intExpr = castExpr.intExpr().accept(this);
@@ -273,9 +273,9 @@ public abstract class DepthFirstReplacer implements ReturnVisitor<Expression, Fo
 	 * If a replacement has not been cached, visits the expression's 
 	 * child.  If nothing changes, the argument is cached and
 	 * returned, otherwise a replacement expression is cached and returned.
-	 * @return { i: ExprIntCast | i.expression = intExpr.expression.accept(this) && i.op = intExpr.op}
+	 * @return { i: ExprToIntCast | i.expression = intExpr.expression.accept(this) && i.op = intExpr.op}
 	 */
-    public IntExpression visit(ExprIntCast intExpr) {
+    public IntExpression visit(ExprToIntCast intExpr) {
     		IntExpression ret = lookup(intExpr);
     		if (ret==null) {
     			final Expression expr = intExpr.expression().accept(this);

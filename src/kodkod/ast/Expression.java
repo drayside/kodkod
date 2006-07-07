@@ -146,20 +146,20 @@ public abstract class Expression implements Node {
     
     /**
      * Returns the cardinality of this expression.  The effect of this method is the
-     * same as calling this.apply(ExprIntCast.Operator.CARDINALITY).  
+     * same as calling this.apply(ExprToIntCast.Operator.CARDINALITY).  
      * @return {e: IntExpression | e = #this }
      */
     public final IntExpression count() {
-    		return apply(ExprIntCast.Operator.CARDINALITY);
+    		return apply(ExprToIntCast.Operator.CARDINALITY);
     }
     
     /**
      * Returns the sum of the integer atoms in this expression.  The effect of this method is the
-     * same as calling this.apply(ExprIntCast.Operator.SUM).  
+     * same as calling this.apply(ExprToIntCast.Operator.SUM).  
      * @return {e: IntExpression | e = sum(this) }
      */
     public final IntExpression sum() {
-    		return apply(ExprIntCast.Operator.SUM);
+    		return apply(ExprToIntCast.Operator.SUM);
     }
     
     /**
@@ -168,8 +168,8 @@ public abstract class Expression implements Node {
      * or the sum of the integer atoms it contains (if op is SUM).
      * @return {e: IntExpression | e.op = op && e.expression = this} 
      */
-    public IntExpression apply(ExprIntCast.Operator op) { 
-    	 return new ExprIntCast(this, op);
+    public IntExpression apply(ExprToIntCast.Operator op) { 
+    	 return new ExprToIntCast(this, op);
     }
     
     /**

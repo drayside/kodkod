@@ -9,12 +9,12 @@ import kodkod.ast.ConstantExpression;
 import kodkod.ast.ConstantFormula;
 import kodkod.ast.Decl;
 import kodkod.ast.Decls;
-import kodkod.ast.ExprIntCast;
+import kodkod.ast.ExprToIntCast;
 import kodkod.ast.IfExpression;
 import kodkod.ast.IfIntExpression;
 import kodkod.ast.IntComparisonFormula;
 import kodkod.ast.IntConstant;
-import kodkod.ast.IntExprCast;
+import kodkod.ast.IntToExprCast;
 import kodkod.ast.MultiplicityFormula;
 import kodkod.ast.NotFormula;
 import kodkod.ast.QuantifiedFormula;
@@ -72,7 +72,7 @@ public interface VoidVisitor {
     /**
      * Visits the given integer cast expression.
      */
-    public void visit(IntExprCast castExpr);
+    public void visit(IntToExprCast castExpr);
     /**
      * Visits the given integer constant.
      */
@@ -80,7 +80,7 @@ public interface VoidVisitor {
     /**
      * Visits the given unary integer expression.
      */
-    public void visit(ExprIntCast intExpr);
+    public void visit(ExprToIntCast intExpr);
     /**
      * Visits the given if-int-expression.
      */

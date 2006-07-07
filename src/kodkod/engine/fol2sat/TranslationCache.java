@@ -18,14 +18,14 @@ import kodkod.ast.ConstantExpression;
 import kodkod.ast.ConstantFormula;
 import kodkod.ast.Decl;
 import kodkod.ast.Decls;
-import kodkod.ast.ExprIntCast;
+import kodkod.ast.ExprToIntCast;
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
 import kodkod.ast.IfExpression;
 import kodkod.ast.IfIntExpression;
 import kodkod.ast.IntComparisonFormula;
 import kodkod.ast.IntConstant;
-import kodkod.ast.IntExprCast;
+import kodkod.ast.IntToExprCast;
 import kodkod.ast.MultiplicityFormula;
 import kodkod.ast.Node;
 import kodkod.ast.NotFormula;
@@ -768,7 +768,7 @@ abstract class TranslationCache {
 		 * Returns the free variables in intExpr.expression.
 		 * @return freeVars(intExpr.expression)
 		 */
-		public Set<Variable> visit(ExprIntCast intExpr) {
+		public Set<Variable> visit(ExprToIntCast intExpr) {
 			Set<Variable> ret = lookup(intExpr);
 			return ret != null ? ret : cache(intExpr, intExpr.expression().accept(this));
 		}
@@ -807,7 +807,7 @@ abstract class TranslationCache {
 		 * Returns the free variables of castExpr, if any.
 		 * @return freeVars(castExpr.intExpr)
 		 */
-		public Set<Variable> visit(IntExprCast castExpr) {
+		public Set<Variable> visit(IntToExprCast castExpr) {
 			Set<Variable> vars = lookup(castExpr);
 			return  (vars != null) ? vars : cache(castExpr, castExpr.intExpr().accept(this));
 		}

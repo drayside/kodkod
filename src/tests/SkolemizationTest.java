@@ -9,10 +9,12 @@ import junit.framework.TestCase;
 import kodkod.ast.Decl;
 import kodkod.ast.Decls;
 import kodkod.ast.Formula;
+import kodkod.ast.Multiplicity;
 import kodkod.ast.Relation;
 import kodkod.ast.Variable;
 import kodkod.engine.Solver;
 import kodkod.engine.TimeoutException;
+import kodkod.engine.fol2sat.HigherOrderDeclException;
 import kodkod.instance.Bounds;
 import kodkod.instance.Instance;
 import kodkod.instance.TupleFactory;
@@ -85,9 +87,9 @@ public class SkolemizationTest extends TestCase {
 		
 	}
 	
-	public final void testNoSkolems() {
+	private final void testNoSkolems(Multiplicity mult) {
 		final Variable v = Variable.unary("v");
-		final Decl d = v.oneOf(r1a);
+		final Decl d = v.declare(mult, r1a);
 		
 		testNoSkolems(d, v.join(r2a).some().forAll(d).not());
 		testNoSkolems(d, v.join(r2a).some().forSome(d));
@@ -98,7 +100,22 @@ public class SkolemizationTest extends TestCase {
 		final Formula f1 = v1.join(r2a).some().forAll(d1);
 		Instance inst = solve(f1.and(f));
 		assertEquals(bounds.relations(), inst.relations());
-		
+	}
+	
+	public final void testNoSkolems() {
+		testNoSkolems(Multiplicity.ONE);
+		try {
+			testNoSkolems(Multiplicity.LONE);
+			fail();
+		} catch (HigherOrderDeclException hode) {}
+		try {
+			testNoSkolems(Multiplicity.SOME);
+			fail();
+		} catch (HigherOrderDeclException hode) {}
+		try {
+			testNoSkolems(Multiplicity.SET);
+			fail();
+		} catch (HigherOrderDeclException hode) {}
 	}
 	
 	private final void assertSkolems(Bounds bounds, Instance inst, Set<String> skolems) {
@@ -108,13 +125,13 @@ public class SkolemizationTest extends TestCase {
 		}
 	}
 	
-	public final void testSkolems() {
+	private final void testSkolems(Multiplicity mult) {
 		final Variable va = Variable.unary("va");
 		final Variable vb = Variable.unary("vb");
 		final Set<String> skolems = new HashSet<String>(4);
 		
-		Decl da = va.oneOf(r1a);
-		Decl db = vb.oneOf(r1b);
+		Decl da = va.declare(mult, r1a);
+		Decl db = vb.declare(mult, r1b);
 		
 		skolems.add(va.name());
 		
@@ -127,8 +144,10 @@ public class SkolemizationTest extends TestCase {
 		inst = solve(va.in(r1b.join(r2b)).forSome(da));
 		assertSkolems(bounds, inst, skolems);
 		
-		inst = solve(va.in(r1b.join(r2b)).forSome(da).and(va.in(r1b).not().forAll(da)));
+		
+		inst = solve(va.in(r1b.join(r2b)).forSome(da).and(va.in(r1b).not().forAll(mult==Multiplicity.ONE ? da : va.oneOf(r1a))));
 		assertSkolems(bounds, inst, skolems);
+		
 		
 		skolems.add(vb.name());
 		
@@ -146,6 +165,12 @@ public class SkolemizationTest extends TestCase {
 		
 		inst = solve(va.in(r1b.join(r2b)).forSome(da).and(r1b.in(vb).forAll(db).not()));
 		assertSkolems(bounds, inst, skolems);
-		
+	}
+	
+	public final void testSkolems() {
+		testSkolems(Multiplicity.ONE);
+		testSkolems(Multiplicity.LONE);
+		testSkolems(Multiplicity.SOME);
+		testSkolems(Multiplicity.SET);
 	}
 }

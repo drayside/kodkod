@@ -58,7 +58,7 @@ final class BoundsOptimizer {
 		bounds.relations().retainAll(relations);
 		if (relations.size() != bounds.relations().size()) {
 			relations.removeAll(bounds.relations());
-			throw new IllegalArgumentException("Unbound relations: " + relations);
+			throw new UnboundLeafException("Unbound relation.", relations.iterator().next());
 		}
 		bounds.ints().retainAll(ints);
 		if (ints.size() != bounds.ints().size()) {
@@ -76,7 +76,7 @@ final class BoundsOptimizer {
 	 * @effects optimizes the given bounds
 	 * @throws NullPointerException - any of the arguments are null
 	 * @throws UnsupportedOperationException - bounds is unmodifiable
-	 * @throws IllegalArgumentException - some relations - bounds.relations
+	 * @throws UnboundLeafException - some relations - bounds.relations
 	 * @throws IllegalArgumentException - some ints - bounds.intBound.TupleSet
 	 * @throws IllegalArgumentException - some relations - preds[TOTAL_ORDERING].(relation + first + last + ordered)
 	 * @throws IllegalArgumentException - some relations - preds[ACYCLIC].relation

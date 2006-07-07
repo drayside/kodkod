@@ -15,14 +15,14 @@ import kodkod.ast.ConstantExpression;
 import kodkod.ast.ConstantFormula;
 import kodkod.ast.Decl;
 import kodkod.ast.Decls;
-import kodkod.ast.ExprIntCast;
+import kodkod.ast.ExprToIntCast;
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
 import kodkod.ast.IfExpression;
 import kodkod.ast.IfIntExpression;
 import kodkod.ast.IntComparisonFormula;
 import kodkod.ast.IntConstant;
-import kodkod.ast.IntExprCast;
+import kodkod.ast.IntToExprCast;
 import kodkod.ast.Multiplicity;
 import kodkod.ast.MultiplicityFormula;
 import kodkod.ast.Node;
@@ -72,7 +72,9 @@ final class FOL2BoolTranslator {
 	 * @return {transl: T | 
 	 *           annotated.node in Formula => transl in BooleanValue, 
 	 *           annotated.node in Expression => transl in BooleanMatrix}
-	 */
+	 * @throws HigherOrderDeclException - annotated.node contains a higher order declaration
+	 * @throws UnboundLeafException - annotated.node refers to an undeclared variable 
+	 **/
 	@SuppressWarnings("unchecked")
 	static final <T> T translate(AnnotatedNode<? extends Node> annotated, LeafInterpreter interpreter) {
 		return (T) annotated.node().accept(new Translator(new TranslationCache.Simple(annotated), interpreter));
@@ -85,6 +87,8 @@ final class FOL2BoolTranslator {
 	 * and which of its descendents are reduced to constants during translation.
 	 * @requires interpreter.relations = AnnotatedNode.relations(annotated)
 	 * @return {ret: FOL2BoolTranslator | ret.node = annotated && ret.manager = interpreter } 
+	 * @throws HigherOrderDeclException - annotated.node contains a higher order declaration
+	 * @throws UnboundLeafException - annotated.node refers to an undeclared variable 
 	 */
 	static final FOL2BoolTranslator translateAndTrack(AnnotatedNode<Formula> annotated,  LeafInterpreter interpreter) {
 		final TranslationCache.Tracking c = new TranslationCache.Tracking(annotated);
@@ -225,7 +229,10 @@ final class FOL2BoolTranslator {
 		 */
 		public final BooleanMatrix visit(Decl decl) {
 			BooleanMatrix matrix = lookup(decl);
-			return matrix==null ? record(decl, decl.expression().accept(this)) : matrix;
+			if (matrix!=null) return matrix;
+			if (decl.multiplicity()!=Multiplicity.ONE)
+				throw new HigherOrderDeclException(decl);
+			return record(decl, decl.expression().accept(this));
 		}
 		
 		/**
@@ -235,7 +242,7 @@ final class FOL2BoolTranslator {
 		public final BooleanMatrix visit(Variable variable) {
 			final BooleanMatrix ret = env.lookup(variable);
 			if (ret != null) return ret;
-			else throw new IllegalArgumentException("unbound variable " + variable);
+			else throw new UnboundLeafException("Unbound variable.", variable);
 		}
 		
 		/**
@@ -572,7 +579,7 @@ final class FOL2BoolTranslator {
 		 * @return boolean matrix representing a singleton set containing the
 		 * atom that represents the castExpr.intExpr.
 		 */
-		public BooleanMatrix visit(IntExprCast castExpr) {
+		public BooleanMatrix visit(IntToExprCast castExpr) {
 			BooleanMatrix ret = lookup(castExpr);
 			if (ret!=null) return ret;
 			
@@ -637,7 +644,7 @@ final class FOL2BoolTranslator {
 		/**
 		 * @return translate(intExpr.expression).cardinality()
 		 */
-		public Int visit(ExprIntCast intExpr) {
+		public Int visit(ExprToIntCast intExpr) {
 			Int ret = lookup(intExpr);
 			if (ret!=null) return ret;
 			switch(intExpr.op()) {

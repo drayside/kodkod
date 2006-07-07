@@ -6,9 +6,11 @@ package kodkod.engine;
 
 import kodkod.ast.Formula;
 import kodkod.ast.Relation;
+import kodkod.engine.fol2sat.HigherOrderDeclException;
 import kodkod.engine.fol2sat.Translation;
 import kodkod.engine.fol2sat.Translator;
 import kodkod.engine.fol2sat.TrivialFormulaException;
+import kodkod.engine.fol2sat.UnboundLeafException;
 import kodkod.engine.satlab.SATSolver;
 import kodkod.instance.Bounds;
 import kodkod.instance.Instance;
@@ -106,14 +108,17 @@ public final class Solver {
 	 * 
 	 * @return Solution to the formula with respect to the given bounds
 	 * @throws NullPointerException - formula = null || bounds = null
-	 * @throws IllegalArgumentException - the formula contains an unbound variable
-	 * @throws IllegalArgumentException - the formula contains a relation not mapped by the given bounds object
+	 * @throws kodkod.engine.fol2sat.UnboundLeafException - the formula contains an undeclared variable or
+	 * a relation not mapped by the given bounds
+	 * @throws kodkod.engine.fol2sat.HigherOrderDeclException - the formula contains a higher order declaration that cannot
+	 * be skolemized, or it can be skolemized but this.options.skolemize is false.
 	 * @throws TimeoutException - it takes more than this.timeout of seconds to solve the formula
 	 * @see Solution
 	 * @see Options
 	 * @see Proof
 	 */
-	public Solution solve(Formula formula, Bounds bounds) throws kodkod.engine.TimeoutException {
+	public Solution solve(Formula formula, Bounds bounds) throws kodkod.engine.TimeoutException, 
+	 HigherOrderDeclException, UnboundLeafException {
 		long startTransl = System.currentTimeMillis(), endTransl;
 		try {
 			final Translation translation = Translator.translate(formula, bounds, options);

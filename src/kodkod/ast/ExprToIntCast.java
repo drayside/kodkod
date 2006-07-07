@@ -16,7 +16,7 @@ import kodkod.ast.visitor.VoidVisitor;
  * @invariant children = expression
  * @author Emina Torlak
  */
-public final class ExprIntCast extends IntExpression {
+public final class ExprToIntCast extends IntExpression {
 	private final Expression expression;
 	private final Operator op; 
 	private final int hashcode;
@@ -27,7 +27,7 @@ public final class ExprIntCast extends IntExpression {
 	 * @throws NullPointerException - expression = null || op = null
 	 * @throws IllegalArgumentException - op = SUM && child.arity != 1
 	 */
-	ExprIntCast(Expression child, Operator op) {
+	ExprToIntCast(Expression child, Operator op) {
 		if (!op.applicable(child.arity())) 
 			throw new IllegalArgumentException("cannot apply " + op + " to " + child);
 		this.expression = child;
@@ -48,14 +48,14 @@ public final class ExprIntCast extends IntExpression {
 	public Operator op() { return op; } 
 	
 	/**
-	 * Returns true of o is a ExprIntCast with the
+	 * Returns true of o is a ExprToIntCast with the
 	 * same tree structure as this.
-	 * @return o in ExprIntCast && o.op.equals(this.op) && o.expression.equals(this.expression)
+	 * @return o in ExprToIntCast && o.op.equals(this.op) && o.expression.equals(this.expression)
 	 */
 	public boolean equals(Object o) {
 		if (this == o) return true;
-		if (!(o instanceof ExprIntCast)) return false;
-		ExprIntCast that = (ExprIntCast)o;
+		if (!(o instanceof ExprToIntCast)) return false;
+		ExprToIntCast that = (ExprToIntCast)o;
 		return op.equals(that.op) && expression.equals(that.expression);
 	}
 	

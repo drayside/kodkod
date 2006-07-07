@@ -18,10 +18,10 @@ import java.util.Set;
 
 import kodkod.ast.BinaryFormula;
 import kodkod.ast.ComparisonFormula;
-import kodkod.ast.ExprIntCast;
+import kodkod.ast.ExprToIntCast;
 import kodkod.ast.Formula;
 import kodkod.ast.IntComparisonFormula;
-import kodkod.ast.IntExprCast;
+import kodkod.ast.IntToExprCast;
 import kodkod.ast.MultiplicityFormula;
 import kodkod.ast.Node;
 import kodkod.ast.NotFormula;
@@ -106,17 +106,17 @@ final class AnnotatedNode<N extends Node> {
 	
 	/**
 	 * Returns true if the given node contains a child whose meaning depends on 
-	 * integer bounds (i.e. an ExprIntCast node with SUM operator or an IntExprCast node).
+	 * integer bounds (i.e. an ExprToIntCast node with SUM operator or an IntToExprCast node).
 	 * @return true if the given node contains a child whose meaning depends on 
-	 * integer bounds (i.e. an ExprIntCast node with SUM operator or an IntExprCast node).
+	 * integer bounds (i.e. an ExprToIntCast node with SUM operator or an IntToExprCast node).
 	 */
 	static boolean usesIntBounds(final AnnotatedNode<? extends Node> annotated) {
 		final Detector detector = new Detector(annotated.sharedNodes) {
-			public Boolean visit(IntExprCast expr) {
+			public Boolean visit(IntToExprCast expr) {
 				return Boolean.TRUE;
 			}
-			public Boolean visit(ExprIntCast intExpr) {
-				if (intExpr.op()==ExprIntCast.Operator.CARDINALITY)
+			public Boolean visit(ExprToIntCast intExpr) {
+				if (intExpr.op()==ExprToIntCast.Operator.CARDINALITY)
 					super.visit(intExpr);
 				return Boolean.TRUE;
 			}

@@ -12,12 +12,12 @@ import kodkod.ast.ConstantExpression;
 import kodkod.ast.ConstantFormula;
 import kodkod.ast.Decl;
 import kodkod.ast.Decls;
-import kodkod.ast.ExprIntCast;
+import kodkod.ast.ExprToIntCast;
 import kodkod.ast.IfExpression;
 import kodkod.ast.IfIntExpression;
 import kodkod.ast.IntComparisonFormula;
 import kodkod.ast.IntConstant;
-import kodkod.ast.IntExprCast;
+import kodkod.ast.IntToExprCast;
 import kodkod.ast.MultiplicityFormula;
 import kodkod.ast.Node;
 import kodkod.ast.NotFormula;
@@ -197,7 +197,7 @@ public abstract class DepthFirstDetector implements ReturnVisitor<Boolean, Boole
 	 *          x != null => x,  
 	 *          cache(intExpr, castExpr.intExpr.accept(this)) 
 	 */
-	public Boolean visit(IntExprCast castExpr) {
+	public Boolean visit(IntToExprCast castExpr) {
 		final Boolean ret = lookup(castExpr);
 		if (ret==null)
 			return cache(castExpr, castExpr.intExpr().accept(this));
@@ -238,7 +238,7 @@ public abstract class DepthFirstDetector implements ReturnVisitor<Boolean, Boole
 	 *          x != null => x,  
 	 *          cache(intExpr, intExpr.expression.accept(this)) 
 	 */
-	public Boolean visit(ExprIntCast intExpr) {
+	public Boolean visit(ExprToIntCast intExpr) {
 		final Boolean ret = lookup(intExpr);
 		if (ret==null)
 			return cache(intExpr, intExpr.expression().accept(this));
