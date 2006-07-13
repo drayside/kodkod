@@ -94,16 +94,13 @@ public final class Solution {
 
 	/**
 	 * Returns a proof of this.formula's unsatisfiability, if the value 
-	 * returned  by {@link #outcome() this.outcome()} is UNSATISFIABLE.
-	 * Otherwise, null is returned.  <i>If
-	 * the {@link Options options} with which the {@link Solver solver}
-	 * was invoked did not specify the use of a core extracting 
-	 * {@link kodkod.engine.satlab.SATSolver sat solver}, calling the 
-	 * {@link Proof#size()}, {@link Proof#clauses()}, {@link Proof#refine()}, 
-	 * or {@link Proof#refine(int)}  
-	 * methods on the returned object will raise an UnsupportedOperationException.</i>
-	 * @return Returns a proof of this.formula's unsatisfiability, if 
-	 * one exists.
+	 * returned  by {@link #outcome() this.outcome()} is UNSATISFIABLE
+	 * and the {@link Options options} with which the {@link Solver solver}
+	 * was invoked specified the use of a core extracting 
+	 * {@link kodkod.engine.satlab.SATProver sat solver}.
+	 * Otherwise, null is returned.  
+	 * @return a proof of this.formula's unsatisfiability, if 
+	 * one is available.
 	 */
 	public Proof proof() {
 		return proof;

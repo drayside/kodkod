@@ -245,7 +245,7 @@ public class Bigconfig {
 		
 		final Bigconfig model = new Bigconfig(Integer.parseInt(args[2]));
 		final Solver solver = new Solver();
-		solver.options().setSolver(SATFactory.ZChaff);
+		solver.options().setSolver(SATFactory.ZChaffBasic);
 		try {
 			final int hq = Integer.parseInt(args[0]);
 			final int sub = Integer.parseInt(args[1]);

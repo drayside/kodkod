@@ -83,6 +83,7 @@ abstract class TranslationCache {
 				e.setValue(new MultiVarTranslationInfo(freeVars));
 		}
 		this.cache = (Map<Node, TranslationInfo>)((Map) collector.cachingInfo());
+//		System.out.println(cache);
 	}
 
 	/**

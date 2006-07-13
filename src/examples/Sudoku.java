@@ -215,7 +215,7 @@ public final class Sudoku {
 	public static void main(String[] args) {
 		final Sudoku sudoku = new Sudoku(3);
 		final Solver solver = new Solver();
-		solver.options().setSolver(SATFactory.ZChaff);
+		solver.options().setSolver(SATFactory.ZChaffBasic);
 		try {
 			final Formula rules = sudoku.rules();// sudoku.rules();
 			final Bounds puzzle1 = sudoku.puzzle1();

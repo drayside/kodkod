@@ -644,7 +644,7 @@ final class AbstractWorldDefinitions {
 	public static void main(String[] args) {
 		final AbstractWorldDefinitions model = new AbstractWorldDefinitions();
 		final Solver solver = new Solver();
-		solver.options().setSolver(SATFactory.ZChaff);
+		solver.options().setSolver(SATFactory.ZChaffBasic);
 //		solver.options().setSkolemize(false);
 		
 		try {

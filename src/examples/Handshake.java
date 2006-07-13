@@ -155,7 +155,7 @@ import kodkod.instance.Universe;
 		
 		final Handshake model =  new Handshake();
 		final Solver solver = new Solver();
-		solver.options().setSolver(SATFactory.ZChaff);
+		solver.options().setSolver(SATFactory.ZChaffBasic);
 		solver.options().setSymmetryBreaking(0);
 		try {
 			final int persons = Integer.parseInt(args[0]);

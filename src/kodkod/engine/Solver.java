@@ -11,6 +11,7 @@ import kodkod.engine.fol2sat.Translation;
 import kodkod.engine.fol2sat.Translator;
 import kodkod.engine.fol2sat.TrivialFormulaException;
 import kodkod.engine.fol2sat.UnboundLeafException;
+import kodkod.engine.satlab.SATProver;
 import kodkod.engine.satlab.SATSolver;
 import kodkod.instance.Bounds;
 import kodkod.instance.Instance;
@@ -142,7 +143,8 @@ public final class Solver {
 			} else {
 				return new Solution(Solution.Outcome.UNSATISFIABLE, stats,
 									translation.skolems(),
-								    null, null, new Proof(cnf, translation.variableUsage()));
+								    null, null, 
+								    (cnf instanceof SATProver) ? new Proof((SATProver)cnf, translation.variableUsage()) : null);
 			}
 
 		} catch (TrivialFormulaException trivial) {

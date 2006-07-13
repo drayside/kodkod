@@ -161,7 +161,7 @@ public final class CeilingsAndFloors {
 		final Solver solver = new Solver();
 		final int m = Integer.parseInt(args[0]);
 		final int p = Integer.parseInt(args[1]);
-		solver.options().setSolver(SATFactory.ZChaff);
+		solver.options().setSolver(SATFactory.ZChaffBasic);
 		try {
 			final Formula show = model.declarations().and(model.belowTooDoublePrime());
 			final Solution sol = solver.solve(show, model.bounds(m,p));

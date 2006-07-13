@@ -69,11 +69,14 @@ public final class Translator {
 	 */
 	public static Translation translate(Formula formula, Bounds bounds, Options options) throws TrivialFormulaException {
 		// extract structural information about the formula (i.e. syntactically shared internal nodes)
+//		System.out.println("finding syntactically shared nodes...");
 		AnnotatedNode<Formula> annotated = new AnnotatedNode<Formula>(formula);
 		// extract top-level predicates
+//		System.out.println("finding top-level predicates...");
 		Map<RelationPredicate.Name, Set<RelationPredicate>> preds = AnnotatedNode.predicates(annotated);
 		
 		// copy the bounds and optimize the copy by breaking symmetry on total orders and acyclic
+//		System.out.println("optimizing bounds...");
 		bounds = bounds.clone();
 		Set<IntSet> symmetricParts = BoundsOptimizer.optimize(bounds, AnnotatedNode.relations(annotated), 
 				AnnotatedNode.usesIntBounds(annotated) ? bounds.ints() : Ints.EMPTY_SET, preds);
@@ -94,6 +97,7 @@ public final class Translator {
 		
 		final Map<Node, IntSet> varUsage;
 		BooleanValue circuit;
+//		System.out.println("translating to bool...");
 		if (options.trackVars()) {
 			FOL2BoolTranslator acircuit = FOL2BoolTranslator.translateAndTrack(annotated,  interpreter);
 			circuit = acircuit.translation();
@@ -121,6 +125,7 @@ public final class Translator {
 		final int numPrimaryVariables = factory.numberOfVariables();
 		
 		// break symmetries on the remaining relations
+//		System.out.println("generating symmetry breaking predicates...");
 		circuit = factory.and(circuit, SymmetryBreaker.generateSBP(symmetricParts, interpreter, options.symmetryBreaking()));
 	
 		interpreter = null; symmetricParts = null; // release the allocator and symmetric partitions
@@ -137,9 +142,8 @@ public final class Translator {
 			throw new TrivialFormulaException(formula, (BooleanConstant)circuit, bounds, skolems);
 		}
 		
-//		System.out.println("translating to cnf...");
-		
 		// translate to cnf and return the translation
+//		System.out.println("translating to cnf...");
 		final SATSolver cnf = Bool2CNFTranslator.definitional((BooleanFormula)circuit, options.solver(), numPrimaryVariables);
 		cnf.setTimeout(options.timeout());
 		return new Translation(cnf, bounds, skolems, Collections.unmodifiableMap(varUsage), numPrimaryVariables, options.trackVars());

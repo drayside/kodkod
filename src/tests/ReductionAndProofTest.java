@@ -111,27 +111,15 @@ public class ReductionAndProofTest extends TestCase {
 	    		solver.options().setTrackVars(false);
 			sol = solver.solve(f3, bounds);
 			assertEquals(Solution.Outcome.UNSATISFIABLE, sol.outcome());
-			try {
-				System.out.println(sol.proof().size());
-				fail("expected no proof for non-core extracting solver");
-			} catch (UnsupportedOperationException uoe) {
-				// good
-			}
-			try {
-				System.out.println(sol.proof().variablesFor(ra));
-				fail("expected no variables for non-tracking translation");
-			} catch (UnsupportedOperationException uoe) {
-				// good
-			}
+			assertNull(sol.proof());
 			solver.options().setTrackVars(true);
 			solver.options().setSkolemize(false);
 			sol = solver.solve(f3, bounds);
-			try {
-				System.out.println(sol.proof().size());
-				fail("expected no proof for non-core extracting solver");
-			} catch (UnsupportedOperationException uoe) {
-				// good
-			}
+			assertNull(sol.proof());
+			
+			solver.options().setSolver(SATFactory.ZChaffProver);
+			sol = solver.solve(f3, bounds);
+			assertTrue(sol.proof().size() > 0);
 			
 			assertSame(5, sol.proof().variablesFor(ra).size());
 			assertSame(5, sol.proof().variablesFor(rb).size());
@@ -139,11 +127,6 @@ public class ReductionAndProofTest extends TestCase {
 			assertSame(1, sol.proof().variablesFor(f1).size());
 			assertSame(1, sol.proof().variablesFor(f2).size());
 			assertSame(1, sol.proof().variablesFor(f3).size());
-			
-			solver.options().setSolver(SATFactory.ZChaffPlus);
-			sol = solver.solve(f3, bounds);
-			assertTrue(sol.proof().size() > 0);
-			
 		} catch (TimeoutException te) {
 			fail("Timed out solving " + f0);
 		}

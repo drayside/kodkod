@@ -294,7 +294,7 @@ public final class RingElection {
 		try {
 			final RingElection model = new RingElection();
 			final Solver solver = new Solver();
-			solver.options().setSolver(SATFactory.ZChaff);
+			solver.options().setSolver(SATFactory.ZChaffBasic);
 			
 			final int p = Integer.parseInt(args[0]);
 			final int t = Integer.parseInt(args[1]);

@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.Set;
 
 import kodkod.ast.Node;
-import kodkod.engine.satlab.SATSolver;
+import kodkod.engine.satlab.SATProver;
 import kodkod.util.ints.IntSet;
 import kodkod.util.ints.Ints;
 
@@ -17,7 +17,7 @@ import kodkod.util.ints.Ints;
  * @specfield bounds: Bounds // the bounds with respect to which the formula is unsatisfiable
  */
 public final class Proof {
-	private final SATSolver solver;
+	private final SATProver solver;
 	private final Map<Node,IntSet> node2vars;
 	private boolean fixed;
 	/**
@@ -31,9 +31,8 @@ public final class Proof {
 	 * @requires node2vars.map.IntSet in this.formula.*children
 	 * && nod2vars.map[Node].ints in [1..solver.numberOfVariables].
 	 */
-	Proof(SATSolver solver, Map<Node,IntSet> node2vars) {
-		assert solver != null;
-		this.solver = solver;
+	Proof(SATProver solver, Map<Node,IntSet> node2vars) {
+		this.solver = (SATProver)solver;
 		this.fixed = false;
 		this.node2vars = node2vars;
 	}

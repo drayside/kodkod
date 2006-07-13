@@ -48,26 +48,25 @@ public abstract class SATFactory {
 	 * support only basic sat solver operations (adding variables/clauses,
 	 * solving, and obtaining a satisfying solution, if any).
 	 */
-	public static final SATFactory ZChaff = new SATFactory() {
+	public static final SATFactory ZChaffBasic = new SATFactory() {
 		/**
 		 * Returns an instance of the zchaff solver.
 		 * @return an instance of the zchaff solver.
 		 */
 		public SATSolver instance() { 
-			return new ZChaff(false); 
+			return new ZChaffBasic(); 
 		}
-		public String toString() { return "ZChaff"; }
+		public String toString() { return "ZChaffBasic"; }
 	};
 	
 	/**
-	 * The factory the produces core-extracting instances of the zchaff solver from Princeton; the 
-	 * {@link kodkod.engine.satlab.SATSolver#isCoreExtractor() } method of
-	 * the returned instances returns true.  Note that core
+	 * The factory the produces {@link SATProver core-extracting} 
+	 * instances of the zchaff solver from Princeton.  Note that core
 	 * extraction can incur a significant memory overhead during solving,
-	 * so if you do not need this functionality, use the {@link #ZChaff} factory
+	 * so if you do not need this functionality, use the {@link #ZChaffBasic} factory
 	 * instead.
 	 */
-	public static final SATFactory ZChaffPlus = new SATFactory() {
+	public static final SATFactory ZChaffProver = new SATFactory() {
 		/**
 		 * Returns an instance of the zchaff solver with the core extraction
 		 * functionality.
@@ -75,9 +74,9 @@ public abstract class SATFactory {
 		 * functionality.
 		 */
 		public SATSolver instance() { 
-			return new ZChaff(true); 
+			return new ZChaffProver(); 
 		}
-		public String toString() { return "ZChaffPlus"; }
+		public String toString() { return "ZChaffProver"; }
 	};
 	
 	/**

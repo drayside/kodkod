@@ -413,8 +413,7 @@ final class FOL2BoolTranslator {
 				//   translate(F(A_index[0], B_index[1], ..., X_index[index.length-1]))
 				disjunct.add(qf.formula().accept(this));
 				
-				conjunct.add(factory.accumulate(disjunct));
-				
+				conjunct.add(factory.accumulate(disjunct));				
 			}
 			env = generator.baseEnvironment();
 			
