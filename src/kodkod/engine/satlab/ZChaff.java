@@ -18,7 +18,7 @@ abstract class ZChaff implements SATSolver {
 	 * The memory address of the instance of zchaff
 	 * wrapped by this wrapper.
 	 */
-	final long zchaff;
+	private long zchaff;
 	private int timeout, status;
 	
 	/**
@@ -118,8 +118,18 @@ abstract class ZChaff implements SATSolver {
 	 * @return one of UNDETERMINED = 0, UNSATISFIABLE=1, SATISFIABLE = 2,
 	 *			 TIME_OUT = 3, MEM_OUT = 4, ABORTED = 5;
 	 */
-	int status() { 
+	final int status() { 
 		return status;
+	}
+	
+	/**
+	 * Returns a pointer to the C++ peer class (the native instance
+	 * of zchaff wrapped by this).
+	 * @return a pointer to the C++ peer class (the native instance
+	 * of zchaff wrapped by this).
+	 */
+	final long peer() {
+		return zchaff;
 	}
 	
 	/**
@@ -153,6 +163,16 @@ abstract class ZChaff implements SATSolver {
 	}
 	
 	/**
+	 * Throws an IllegalArgumentException if variable !in this.variables.
+	 * Otherwise does nothing.
+	 * @throws IllegalArgumentException - variable !in this.variables
+	 */
+	final void validateVariable(int variable) {
+		if (variable < 1 || variable > numberOfVariables())
+			throw new IllegalArgumentException(variable + " !in [1.." + numberOfVariables()+"]");
+	}
+	
+	/**
 	 * Returns the boolean value assigned to the given variable by the
 	 * last successful call to {@link #solve()}. 
 	 * @requires {@link #solve() } has been called and the 
@@ -166,8 +186,7 @@ abstract class ZChaff implements SATSolver {
 	public final boolean valueOf(int variable) {
 		if (status != SATISFIABLE)
 			throw new IllegalStateException();
-		if (variable < 1 || variable > numberOfVariables())
-			throw new IllegalArgumentException(variable + " !in [1.." + numberOfVariables()+"]");
+		validateVariable(variable);
 		return valueOf(zchaff, variable)==1;
 	}
 	
@@ -176,8 +195,12 @@ abstract class ZChaff implements SATSolver {
 	 */
 	protected final void finalize() throws Throwable {
 		super.finalize();
-		free(zchaff);
-//		System.out.println("finalizing " + zchaff);
+		if (zchaff != 0) {
+//			System.out.println("finalizing " + zchaff + " for object " + getClass() + System.identityHashCode(this));
+			free(zchaff);
+			zchaff = 0;
+//			System.out.println("finalized " + zchaff);
+		} // already freed
 	}
 	
 	
@@ -194,7 +217,7 @@ abstract class ZChaff implements SATSolver {
 	 * @effects releases the resources associated
 	 * with the given instance of zchaff
 	 */
-	private static native void free(long zchaff);
+	private synchronized native void free(long zchaff);
 	
 	/**
 	 * Sets the timeout of the given instance of zchaff

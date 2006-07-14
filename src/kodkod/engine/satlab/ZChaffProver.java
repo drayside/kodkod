@@ -10,6 +10,9 @@ import java.util.NoSuchElementException;
  * @author Emina Torlak
  */
 final class ZChaffProver extends ZChaff implements SATProver {
+	/**
+	 * Constructs an instance of ZChaffProver.
+	 */
 	ZChaffProver() {
 		super(make());
 	}
@@ -23,7 +26,7 @@ final class ZChaffProver extends ZChaff implements SATProver {
 	public int coreSize() {
 		if (status() != ZChaff.UNSATISFIABLE)
 			throw new IllegalStateException();
-		return coreSize(zchaff);
+		return coreSize(peer());
 	}
 	
 	/**
@@ -48,7 +51,7 @@ final class ZChaffProver extends ZChaff implements SATProver {
 			
 			public int[] next() {
 				if (!hasNext()) throw new NoSuchElementException();
-				return coreClause(zchaff, cursor++);
+				return coreClause(peer(), cursor++);
 			}
 			
 			public void remove() {
@@ -69,7 +72,7 @@ final class ZChaffProver extends ZChaff implements SATProver {
 	public void retainCore() {
 		if (status() != ZChaff.UNSATISFIABLE)
 			throw new IllegalStateException();
-		retainCore(zchaff);
+		retainCore(peer());
 	}
 	
 	public String toString() { 

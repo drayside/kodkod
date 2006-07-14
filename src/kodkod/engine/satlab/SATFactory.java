@@ -16,10 +16,6 @@ public abstract class SATFactory {
 	 * @see org.sat4j.core.ASolverFactory#defaultSolver()
 	 */
 	public static final SATFactory DefaultSAT4J = new SATFactory() { 
-		/**
-		 * Returns an instance of the default sat4j solver.
-		 * @return an instance of the default sat4j solver.
-		 */
 		public SATSolver instance() { 
 			return new SAT4J(SolverFactory.instance().defaultSolver()); 
 		}
@@ -32,10 +28,6 @@ public abstract class SATFactory {
 	 * @see org.sat4j.core.ASolverFactory#lightSolver()
 	 */
 	public static final SATFactory LightSAT4J = new SATFactory() {
-		/**
-		 * Returns an instance of the "light" sat4j solver.
-		 * @return an instance of the "light" sat4j solver.
-		 */
 		public SATSolver instance() { 
 			return new SAT4J(SolverFactory.instance().lightSolver()); 
 		}
@@ -49,10 +41,6 @@ public abstract class SATFactory {
 	 * solving, and obtaining a satisfying solution, if any).
 	 */
 	public static final SATFactory ZChaffBasic = new SATFactory() {
-		/**
-		 * Returns an instance of the zchaff solver.
-		 * @return an instance of the zchaff solver.
-		 */
 		public SATSolver instance() { 
 			return new ZChaffBasic(); 
 		}
@@ -67,16 +55,24 @@ public abstract class SATFactory {
 	 * instead.
 	 */
 	public static final SATFactory ZChaffProver = new SATFactory() {
-		/**
-		 * Returns an instance of the zchaff solver with the core extraction
-		 * functionality.
-		 * @return an instance of the zchaff solver with the core extraction
-		 * functionality.
-		 */
 		public SATSolver instance() { 
 			return new ZChaffProver(); 
 		}
 		public String toString() { return "ZChaffProver"; }
+	};
+	
+	/**
+	 * The factory the produces {@link SATMinSolver cost-minimizing} 
+	 * instances of the zchaff solver from Princeton.  Note that cost minimization
+	 * can incur a time and/or memory overhead during solving,
+	 * so if you do not need this functionality, use the {@link #ZChaffBasic} factory
+	 * instead.
+	 */
+	public static final SATFactory ZChaffMincost = new SATFactory() {
+		public SATSolver instance() {
+			return new ZChaffMincost();
+		}
+		public String toString() { return "ZChaffMincost"; }
 	};
 	
 	/**

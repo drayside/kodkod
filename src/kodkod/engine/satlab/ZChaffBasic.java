@@ -5,6 +5,9 @@ package kodkod.engine.satlab;
  * access to basic functionality.
  */
 final class ZChaffBasic extends ZChaff {
+	/**
+	 * Constructs an instance of ZChaffBasic.
+	 */
 	ZChaffBasic() {
 		super(make());
 	}
