@@ -6,8 +6,6 @@ package kodkod.engine.satlab;
 
 
 import kodkod.engine.TimeoutException;
-import kodkod.util.ints.IntSet;
-import kodkod.util.ints.Ints;
 
 /**
  * A wrapper class that provides access to the 
@@ -155,32 +153,28 @@ abstract class ZChaff implements SATSolver {
 	}
 	
 	/**
-	 * Returns the literals in the range [start..end] that 
-	 * have been set to the given boolean value by the most recent call to {@link #solve() }.  
-	 * @return the true literals between start and end
-	 * @throws IllegalArgumentException - start > end || [start..end] !in this.literals
+	 * Returns the boolean value assigned to the given variable by the
+	 * last successful call to {@link #solve()}. 
+	 * @requires {@link #solve() } has been called and the 
+	 * outcome of the last call was <code>true</code>.  
+	 * @return the boolean value assigned to the given variable by the
+	 * last successful call to {@link #solve()}. 
+	 * @throws IllegalArgumentException - variable !in this.variables
 	 * @throws IllegalStateException - {@link #solve() } has not been called or the 
 	 * outcome of the last call was not <code>true</code>.
-	 * @see kodkod.engine.satlab.SATSolver#variablesThatAre(boolean, int, int)
 	 */
-	public final IntSet variablesThatAre(boolean truthValue, int start, int end) {
+	public final boolean valueOf(int variable) {
 		if (status != SATISFIABLE)
 			throw new IllegalStateException();
-		if (start < 1 || start > end || end > numberOfVariables())
-			throw new IllegalArgumentException("[start..end]: " + start + ".." + end + ", #this.literals: " + numberOfVariables());
-		final IntSet ret = Ints.bestSet(start, end);
-		final int intTruth = truthValue ? 1 : 0;
-		for(; start <= end; start++) {
-			if (valueOf(zchaff, start)==intTruth)
-				ret.add(start);
-		}
-		return ret;
+		if (variable < 1 || variable > numberOfVariables())
+			throw new IllegalArgumentException(variable + " !in [1.." + numberOfVariables()+"]");
+		return valueOf(zchaff, variable)==1;
 	}
 	
 	/**
 	 * Releases the memory used by this.zchaff.
 	 */
-	protected void finalize() throws Throwable {
+	protected final void finalize() throws Throwable {
 		super.finalize();
 		free(zchaff);
 //		System.out.println("finalizing " + zchaff);

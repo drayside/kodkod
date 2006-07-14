@@ -1,14 +1,13 @@
 package kodkod.engine.satlab;
 
 import kodkod.engine.TimeoutException;
-import kodkod.util.ints.IntSet;
 
 /**
  * Provides an interface to a SAT solver.
  * 
- * @specfield literals: set int
- * @specfield clauses: set seq[literals]
- * @invariant all i: [2..) | i in literals => i-1 in literals
+ * @specfield variables: set [1..)
+ * @specfield clauses: set seq[{i: int | i in variables or -i in variables}]
+ * @invariant all i: [2..) | i in variables => i-1 in variables
  * @author Emina Torlak
  */
 public interface SATSolver {
@@ -22,7 +21,7 @@ public interface SATSolver {
 	
 	/**
 	 * Returns the size of this solver's vocabulary.
-	 * @return #this.literals
+	 * @return #this.variables
 	 */
 	public abstract int numberOfVariables();
 	
@@ -48,7 +47,7 @@ public interface SATSolver {
 	 * Adds the specified number of new variables
 	 * to the solver's vocabulary.
 	 * @requires numVars >= 0
-	 * @effects this.literals' = [1..#this.literals + numVars]
+	 * @effects this.variables' = [1..#this.variables + numVars]
 	 * @throws IllegalArgumentException - numVars < 0
 	 */
 	public abstract void addVariables(int numVars);
@@ -60,7 +59,7 @@ public interface SATSolver {
 	 * be modified.</b>  It is the client's responsibility to 
 	 * ensure that no literals in a clause are repeated, or that
 	 * both a literal and its negation are present.
-	 * @requires all i: [0..lits.length) | lits[i] != 0 && |lits[i]| <= #this.literals 
+	 * @requires all i: [0..lits.length) | lits[i] != 0 && |lits[i]| in this.variables 
 	 * @effects this.clauses' = this.clauses + lits
 	 * @effects lits' may not have the same contents as lits
 	 * @throws NullPointerException - lits = null
@@ -70,7 +69,8 @@ public interface SATSolver {
 	/**
 	 * Returns true if there is a satisfying assignment for this.clauses.
 	 * Otherwise returns false.  If this.clauses are satisfiable, the 
-	 * satisfying assignment can be obtained by calling {@link #variablesThatAre(boolean, int, int)}.
+	 * satisfying assignment for a given variable
+	 *  can be obtained by calling {@link #valueOf(int)}.
 	 * If the satisfiability of this.clauses cannot be determined within
 	 * the given number of seconds, a TimeoutException is thrown.
 	 * @return true if this.clauses are satisfiable; otherwise false.
@@ -80,14 +80,16 @@ public interface SATSolver {
 	public abstract boolean solve() throws TimeoutException;
 	
 	/**
-	 * Returns the literals in the range [start..end] that 
-	 * have been set to the given boolean value by the most recent call to {@link #solve() }.
+	 * Returns the boolean value assigned to the given variable by the
+	 * last successful call to {@link #solve()}. 
 	 * @requires {@link #solve() } has been called and the 
 	 * outcome of the last call was <code>true</code>.  
-	 * @return the true literals between start and end
-	 * @throws IllegalArgumentException - start > end || [start..end] !in this.literals
+	 * @return the boolean value assigned to the given variable by the
+	 * last successful call to {@link #solve()}. 
+	 * @throws IllegalArgumentException - variable !in this.variables
 	 * @throws IllegalStateException - {@link #solve() } has not been called or the 
 	 * outcome of the last call was not <code>true</code>.
 	 */
-	public abstract IntSet variablesThatAre(boolean truthValue, int start, int end);
+	public abstract boolean valueOf(int variable);
+	
 }

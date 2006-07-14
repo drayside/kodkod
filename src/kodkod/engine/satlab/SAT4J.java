@@ -8,8 +8,6 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 import kodkod.engine.TimeoutException;
-import kodkod.util.ints.IntSet;
-import kodkod.util.ints.Ints;
 
 import org.sat4j.specs.ContradictionException;
 import org.sat4j.specs.ISolver;
@@ -147,30 +145,23 @@ final class SAT4J implements SATSolver {
 	}
 
 	/**
-	 * Returns the literals in the range [start..end] that 
-	 * have been set to the given boolean value by the most recent call to {@link #solve() }.  
-	 * @return the true literals between start and end
-	 * @throws IllegalArgumentException - start > end || [start..end] !in this.literals
+	 * Returns the boolean value assigned to the given variable by the
+	 * last successful call to {@link #solve()}. 
+	 * @requires {@link #solve() } has been called and the 
+	 * outcome of the last call was <code>true</code>.  
+	 * @return the boolean value assigned to the given variable by the
+	 * last successful call to {@link #solve()}. 
+	 * @throws IllegalArgumentException - variable !in this.variables
 	 * @throws IllegalStateException - {@link #solve() } has not been called or the 
 	 * outcome of the last call was not <code>true</code>.
 	 */
-	public IntSet variablesThatAre(boolean truthValue, int start, int end) {
+	public final boolean valueOf(int variable) {
 		if (isSatisfiable != Boolean.TRUE) 
 			throw new IllegalStateException();
-		if (start < 1 || start > end || end > solver.nVars())
-			throw new IllegalArgumentException("[start..end]: " + start + ".." + end + ", #this.literals: " + solver.nVars());
-		final IntSet ret = Ints.bestSet(start, end);
-		final int switchValue = (truthValue ? 1 : -1);
-		for(int lit : solver.model()) {
-			lit *= switchValue;
-			if (start <= lit && lit <= end)
-				ret.add(lit);
-			else if (lit > end || -lit > end)
-				break;
-		}
-		return ret;
+		if (variable < 1 || variable > numberOfVariables())
+			throw new IllegalArgumentException(variable + " !in [1.." + numberOfVariables()+"]");
+		return solver.model(variable);
 	}
-
 	
 	/**
 	 * A wrapper for an int array that provides

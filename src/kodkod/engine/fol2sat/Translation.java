@@ -81,7 +81,7 @@ public final class Translation {
 		final TupleFactory f = bounds.universe().factory();
 		final Instance instance = new Instance(bounds.universe());
 //		System.out.println(varUsage);
-		final IntSet model = solver.variablesThatAre(true, 1, StrictMath.min(maxPrimaryLit, solver.numberOfVariables()));
+//		final IntSet model = solver.variablesThatAre(true, 1, StrictMath.min(maxPrimaryLit, solver.numberOfVariables()));
 		for(Relation r : bounds.relations()) {
 			TupleSet lower = bounds.lowerBound(r);
 			IntSet indeces = Ints.bestSet(lower.capacity());
@@ -91,7 +91,7 @@ public final class Translation {
 				int lit = vars.min();
 				for(IntIterator iter = bounds.upperBound(r).indexView().iterator(); iter.hasNext();) {
 					final int index = iter.nextInt();
-					if (!indeces.contains(index) && model.contains(lit++)) 
+					if (!indeces.contains(index) && solver.valueOf(lit++))//model.contains(lit++)) 
 						indeces.add(index);
 				}
 			}
