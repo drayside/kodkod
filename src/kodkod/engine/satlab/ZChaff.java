@@ -191,16 +191,24 @@ abstract class ZChaff implements SATSolver {
 	}
 	
 	/**
+	 * {@inheritDoc}
+	 * @see kodkod.engine.satlab.SATSolver#free()
+	 */
+	public synchronized final void free() {
+		if (zchaff!=0) {
+//			System.out.println("freeing " + zchaff + " for object " + getClass() + System.identityHashCode(this));
+			free(zchaff);
+			zchaff = 0;
+		} // already freed
+	}
+	
+	
+	/**
 	 * Releases the memory used by this.zchaff.
 	 */
 	protected final void finalize() throws Throwable {
 		super.finalize();
-		if (zchaff != 0) {
-//			System.out.println("finalizing " + zchaff + " for object " + getClass() + System.identityHashCode(this));
-			free(zchaff);
-			zchaff = 0;
-//			System.out.println("finalized " + zchaff);
-		} // already freed
+		free();
 	}
 	
 	
@@ -217,7 +225,7 @@ abstract class ZChaff implements SATSolver {
 	 * @effects releases the resources associated
 	 * with the given instance of zchaff
 	 */
-	private synchronized native void free(long zchaff);
+	private  native void free(long zchaff);
 	
 	/**
 	 * Sets the timeout of the given instance of zchaff

@@ -21,7 +21,7 @@ import org.sat4j.specs.IVecInt;
  * @author Emina Torlak
  */
 final class SAT4J implements SATSolver {
-	private final ISolver solver;
+	private ISolver solver;
 	private final ReadOnlyIVecInt wrapper;
 	private Boolean isSatisfiable; 
 	private int vars, clauses;
@@ -161,6 +161,14 @@ final class SAT4J implements SATSolver {
 		if (variable < 1 || variable > numberOfVariables())
 			throw new IllegalArgumentException(variable + " !in [1.." + numberOfVariables()+"]");
 		return solver.model(variable);
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.engine.satlab.SATSolver#free()
+	 */
+	public void free() {
+		solver = null;
 	}
 	
 	/**
@@ -341,6 +349,8 @@ final class SAT4J implements SATSolver {
 			e.printStackTrace();
 		}
 	}
+
+	
 
 	
 

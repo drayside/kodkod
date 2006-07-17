@@ -92,4 +92,11 @@ public interface SATSolver {
 	 */
 	public abstract boolean valueOf(int variable);
 	
+	/**
+	 * Frees the memory used by this solver.  Once free() is called,
+	 * all subsequent calls to methods other than free() may fail.  
+	 * @effects frees the memory used by this solver
+	 */
+	public abstract void free();
+	
 }

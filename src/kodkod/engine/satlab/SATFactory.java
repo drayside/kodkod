@@ -58,6 +58,8 @@ public abstract class SATFactory {
 		public SATSolver instance() { 
 			return new ZChaffProver(); 
 		}
+		@Override
+		public boolean provers() { return true; }
 		public String toString() { return "ZChaffProver"; }
 	};
 	
@@ -72,6 +74,8 @@ public abstract class SATFactory {
 		public SATSolver instance() {
 			return new ZChaffMincost();
 		}
+		@Override
+		public boolean minimizers() { return true; }
 		public String toString() { return "ZChaffMincost"; }
 	};
 	
@@ -99,5 +103,25 @@ public abstract class SATFactory {
 	 * @return a SATSolver instance
 	 */
 	public abstract SATSolver instance();
+	
+	/**
+	 * Returns true if the solvers returned by this.instance() are
+	 * {@link SATProver SATProvers}.  Otherwise returns false.
+	 * @return true if the solvers returned by this.instance() are
+	 * {@link SATProver SATProvers}.  Otherwise returns false.
+	 */
+	public boolean provers() {
+		return false;
+	}
+	
+	/**
+	 * Returns true if the solvers returned by this.instance() are 
+	 * {@link SATMinSolver SATMinSolvers}.  Otherwise returns false.
+	 * @return true if the solvers returned by this.instance() are
+	 * {@link SATMinSolver SATMinSolvers}.  Otherwise returns false.
+	 */
+	public boolean minimizers() { 
+		return false;
+	}
 
 }

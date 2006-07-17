@@ -18,6 +18,7 @@ public class AllTests {
 		suite.addTestSuite(ReductionAndProofTest.class);
 		suite.addTestSuite(ExamplesTest.class);
 		suite.addTestSuite(IntTest.class);
+		suite.addTestSuite(MinCostTest.class);
 		//$JUnit-END$
 		return suite;
 	}

@@ -28,28 +28,24 @@ public final class Translation {
 	private final Bounds bounds;
 	private final SATSolver solver;
 	/* maps nodes to the literals that comprise their translations.  Note that this
-	 * map _always_ contains mappings for all relations in bounds.relations */
+	 * map _always_ contains mappings for all non-constant relations in bounds.relations */
 	private final Map<Node, IntSet> varUsage; 
 	private final int maxPrimaryLit;
-	private final boolean trackedVars;
 	private final Map<Decl, Relation> skolems;
 	
 	/**
 	 * Constructs a new Translation object for the given solver, bounds, mapping
 	 * from Nodes to literals, and skolems.
-	 * @requires trackedVars should be true if variable tracking was enabled during translation;
-	 * otherwise it should be false
 	 * @requires maxPrimaryLit = max(varUsage[Relation].max)
 	 * @requires bounds.relations in varUsage.IntSet
 	 * @effects this.solver' = solver && this.bounds' = bounds
 	 */
-	Translation(SATSolver solver, Bounds bounds, Map<Decl, Relation> skolems, Map<Node, IntSet> varUsage, int maxPrimaryLit, boolean trackedVars) {	
+	Translation(SATSolver solver, Bounds bounds, Map<Decl, Relation> skolems, Map<Node, IntSet> varUsage, int maxPrimaryLit) {	
 		this.solver = solver;
 		this.bounds = bounds;
 		this.skolems = skolems;
 		this.varUsage = varUsage;
 		this.maxPrimaryLit = maxPrimaryLit;
-		this.trackedVars = trackedVars;
 	}
 
 	/**
@@ -73,7 +69,7 @@ public final class Translation {
 	 * this.bounds.upperBound[r] != this.bounds.lowerBound[r]}), 
 	 * or skolem constants.
 	 * @return an interpretation of the cnf solution as
-	 * a mapping from Relations to sets of Tuples.
+	 * a mapping from (this.variableUsage().keySet() & Relation) to sets of Tuples.
 	 * @throws IllegalStateException - this.solver.solve() has not been called or the 
 	 * outcome of the last call was not <code>true</code>.
 	 */
@@ -81,7 +77,6 @@ public final class Translation {
 		final TupleFactory f = bounds.universe().factory();
 		final Instance instance = new Instance(bounds.universe());
 //		System.out.println(varUsage);
-//		final IntSet model = solver.variablesThatAre(true, 1, StrictMath.min(maxPrimaryLit, solver.numberOfVariables()));
 		for(Relation r : bounds.relations()) {
 			TupleSet lower = bounds.lowerBound(r);
 			IntSet indeces = Ints.bestSet(lower.capacity());
@@ -91,14 +86,12 @@ public final class Translation {
 				int lit = vars.min();
 				for(IntIterator iter = bounds.upperBound(r).indexView().iterator(); iter.hasNext();) {
 					final int index = iter.nextInt();
-					if (!indeces.contains(index) && solver.valueOf(lit++))//model.contains(lit++)) 
+					if (!indeces.contains(index) && solver.valueOf(lit++))
 						indeces.add(index);
 				}
 			}
 			instance.add(r, f.setOf(r.arity(), indeces));
 		}
-		
-//		System.out.println(model);
 		return instance;
 	}
 	
@@ -118,14 +111,15 @@ public final class Translation {
 	}
 	
 	/**
-	 * Returns the mapping from this.formula's
-	 * descendents to the CNF variables that comprise their translations, 
-	 * provided that this.options.trackVars is set to true.  Otherwise returns null.
-	 * @return a mapping from this.formula.*children to the CNF
+	 * Returns the mapping from a subset of this.formula's
+	 * descendents to the CNF variables that comprise their translations.  If this.options.trackVars
+	 * was set to true, then all non-constant descendents of the formula are mapped.
+	 * Otherwise, only the non-constant {@link Relation relations} are mapped.
+	 * @return a mapping from a subset of this.formula.*children to the CNF
 	 * variables that comprise their translations.
 	 */
 	public Map<Node, IntSet> variableUsage() {
-		return trackedVars ? varUsage : null;
+		return varUsage;
 	}
 	
 	/**
