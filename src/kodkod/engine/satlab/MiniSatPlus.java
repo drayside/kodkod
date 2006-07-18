@@ -4,53 +4,53 @@
  */
 package kodkod.engine.satlab;
 
-import java.util.Iterator;
-
 import kodkod.engine.TimeoutException;
-import kodkod.util.ints.IntSet;
-import kodkod.util.ints.Ints;
 
 /**
  * A wrapper that provides
- * access to the basic funcionality of the MiniSAT+ solver. 
+ * access to the basic funcionality of the MiniSat+ solver. 
  * 
  * @author jbaek
  */
 public class MiniSatPlus implements SATSolverWithPB {
 
-	// The memory address of MiniSATPlus loaded in this instance. 
-	private final long minisat;
-	private int timeout = Integer.MAX_VALUE;
+	// The memory address of MiniSat+ loaded in this instance. 
+	private long minisat;
 	private int status;
 	private static final int UNDETERMINED = 0, UNSATISFIABLE = 1, SATISFIABLE = 2,
 				TIME_OUT = 3, MEM_OUT = 4, ABORTED = 5;
 	
 	/**
-	 * Constructs a new wrapper for a freshly created
-	 * instance of MiniSatPlus.
+	 * Creates a fresh instance of MiniSat+. 
 	 */
 	MiniSatPlus() {
 		this.minisat =  make();
-		this.timeout = Integer.MAX_VALUE;
-		//setTimeout(minisat, timeout); //TODO
 	}
 	
-	/* 
-	 * @see kodkod.engine.satlab.SATSolverWithPB#addPBClause(int[], int[], int, int)
+	/**
+	 * Adds the specified pseudo-boolean constraint to the existing instance of MiniSat+.
+	 * @requires -2 <= ineq && ineq <=2 && lits.length == cs.length && lits.length > 0
+	 * @throws NullPointerException - lits = null || cs = null
+	 * @throws IllegalArgumentException - lits.length != cs.length || lits.length = 0 || ineq > 2 || ineq < -2
+	 * @effects adds the given pseudo-boolean constraint
 	 */
 	public void addPBClause(int[] lits, int[] cs, int rhs, int ineq) {
 		if (lits == null || cs == null)
 			throw new NullPointerException();
 		else if (lits.length > 0 && lits.length == cs.length && ineq >= -2 && ineq <= 2) {
 			addPBClause(minisat, lits, cs, rhs, ineq);
-		}
+		} else
+			throw new IllegalArgumentException();
 	}
 
-	/* (non-Javadoc)
-	 * @see kodkod.engine.satlab.SATSolver#addClause(int[])
+	/**
+	 * Trivially translates the given CNF clause into an equivalent pseudo-boolean
+	 * constraint and passes it to MiniSat+ 
+	 * of MiniSat+ referenced by the first argument.
+	 * @requires -2 <= ineq && ineq <=2 
+	 * @effects adds the given pseudo-boolean constraint to the specified instance of MiniSat+.
 	 */
 	public void addClause(int[] lits) {
-		// defer to addPBClause;
 		int rhs_coef = 0;
 		if (lits == null)
 			throw new NullPointerException();
@@ -79,51 +79,53 @@ public class MiniSatPlus implements SATSolverWithPB {
 	}
 	
 	/**
-	 * Throws UnsupportedOperationException.
-	 * @throws UnsupportedOperationException
-	 * @see kodkod.engine.satlab.SATSolver#coreSize()
+	 * {@inheritDoc}
+	 * @see kodkod.engine.satlab.SATSolver#free()
 	 */
-	public int coreSize() {
-		throw new UnsupportedOperationException("This is not a core extracting solver.");
+	public synchronized final void free() {
+		if (minisat!=0) {
+			// need to free minisat TODO
+			minisat = 0;
+		}
 	}
-
+	
 	/**
-	 * @see kodkod.engine.satlab.SATSolver#isCoreExtractor()
-	 */
-	public boolean isCoreExtractor() {
-		return false;
-	}
-
-	/* (non-Javadoc)
+	 * Returns the number of clauses added to the 
+	 * solver so far.
+	 * @return #this.clauses
 	 * @see kodkod.engine.satlab.SATSolver#numberOfClauses()
 	 */
 	public int numberOfClauses() {
 		return numConstraints(minisat);
 	}
 
-	/* (non-Javadoc)
+	/**
+	 * Returns the size of this solver's vocabulary.
+	 * @return #this.labels
 	 * @see kodkod.engine.satlab.SATSolver#numberOfVariables()
 	 */
 	public int numberOfVariables() {
 		return numVariables(minisat);
 	}
 
-	/* (non-Javadoc)
-	 * @see kodkod.engine.satlab.SATSolver#retainCore()
-	 */
-	public void retainCore() {
-		throw new UnsupportedOperationException("This is not a core extracting solver.");
-	}
-
-	/* (non-Javadoc)
+	/**
+	 * Unimplemented. MiniSat+ does not make use of timeout, so this
+	 * method will perform no actions.
 	 * @see kodkod.engine.satlab.SATSolver#setTimeout(int)
 	 */
 	public void setTimeout(int seconds) {
-		// TODO Auto-generated method stub
-		// timeout not supported yet.
+		return;
 	}
 
-	/* (non-Javadoc)
+	/**
+	 * Returns true if there is a satisfying assignment for this.clauses.
+	 * Otherwise returns false.  If this.clauses are satisfiable, the 
+	 * satisfying assignment can be obtained by calling {@link #variablesThatAre(boolean, int, int)}
+	 * or {@link #valueOf(int) }. Note that MiniSat+ has no timeout, so TimeoutException
+	 * will actually be never thrown.
+	 * @return true if this.clauses are satisfiable; otherwise false.
+	 * @throws TimeoutException - the solver could not determine
+	 * the satisfiability of the problem within this.timeout() seconds.
 	 * @see kodkod.engine.satlab.SATSolver#solve()
 	 */
 	public boolean solve() throws TimeoutException {
@@ -146,58 +148,56 @@ public class MiniSatPlus implements SATSolverWithPB {
 		}
 	}
 
-	/* (non-Javadoc)
+	/**
+	 * Unimplemented. MiniSat+ does not make use of timeout, so this
+	 * method will always return Integer.MAX_VALUE.
+	 * @return Integer.MAX_VALUE
 	 * @see kodkod.engine.satlab.SATSolver#timeout()
 	 */
 	public int timeout() {
-		return timeout;
+		return Integer.MAX_VALUE;
 	}
 
-	/* (non-Javadoc)
-	 * @see kodkod.engine.satlab.SATSolver#unsatCore()
-	 */
-	public Iterator<int[]> unsatCore() {
-		throw new UnsupportedOperationException("This is not a core extracting solver.");
-	}
-
-	/* (non-Javadoc)
-	 * @see kodkod.engine.satlab.SATSolver#valueOf(int)
+	/**
+	 * Returns the boolean value assigned to the given variable by the
+	 * last successful call to {@link #solve()}. 
+	 * @requires {@link #solve() } has been called and the 
+	 * outcome of the last call was <code>true</code>.  
+	 * @return the boolean value assigned to the given variable by the
+	 * last successful call to {@link #solve()}. 
+	 * @throws IllegalArgumentException - variable cannot be validated.
+	 * @throws IllegalStateException - {@link #solve() } has not been called or the 
+	 * outcome of the last call was not <code>true</code>.
 	 */
 	public final boolean valueOf(int variable) {
 		if (status != SATISFIABLE)
 			throw new IllegalStateException();
+		if (!validateVariable(minisat, variable)) throw new IllegalArgumentException();
 		return valueOf(minisat, variable);
 	}
 	
-	/* (non-Javadoc)
-	 * @see kodkod.engine.satlab.SATSolver#variablesThatAre(boolean, int, int)
+	/**
+	 * Native methods begin here.
 	 */
-	public IntSet variablesThatAre(boolean truthValue, int start, int end) {
-		if (status != SATISFIABLE)
-			throw new IllegalStateException();
-		if (start < 1 || start > end || end > numberOfVariables())
-			throw new IllegalArgumentException("[start..end]: " + start + ".." + end + ", #this.literals: " + numberOfVariables());
-		final IntSet ret = Ints.bestSet(start, end);
-		final int intTruth = truthValue ? 1 : 0;
-		for(; start <= end; start++) {
-			if (valueOf(minisat, start)==(intTruth==1))
-				ret.add(start);
-		}
-		return ret;
-	}
 	
-	// native methods
 	static {
 		System.loadLibrary("miniSatJNI");
 	}
-	private static native long make();
-	/**
-	 * We'll skip addGoal for now, and just find a single solution.
-	 */
-	// omitted so far: getVar, allocConstants, solve(solve_Command?)
-	//private static native void addGoal(long minisat, int[] lits, int[] cs); 
 	
-	// the ownership of the arrays lits and cs may be taken, I believe. Is that OK?
+	/**
+	 * Creates an instance of MiniSat+ and returns 
+	 * its address in memory.  
+	 * @return the memory address of an instance
+	 * of the MiniSat+ solver 
+	 */
+	private static native long make();
+	
+	/**
+	 * Adds the specified pseudo-boolean constraint to the instance
+	 * of MiniSat+ referenced by the first argument.
+	 * @requires -2 <= ineq && ineq <= 2 && lits.length == cs.length && lits.length > 0 
+	 * @effects adds the given pseudo-boolean constraint to the specified instance of MiniSat+.
+	 */
 	private static native void addPBClause(long minisat, int[] lits, int[] cs, int rhs, int ineq);
 	
 	/**
@@ -211,11 +211,35 @@ public class MiniSatPlus implements SATSolverWithPB {
 	//TODO: minisat's solve takes other options, i.e. return best solution, return all solutions, etc.
 	//These functionalities are not taken advantage of, yet.
 	
-	// examples
-	// make, free, setTimeout, numClause, solve, valueOf, coreSize, coreClause, retainCore
+	/**
+	 * Unimplemented
+	 */
 	private static native void addVariables(long minisat, int numVariables);
+	
+	/**
+	 * Returns the number of existing variables in the given instance of MiniSat+.
+	 * @return the number of existing variables.
+	 */
 	private static native int numVariables(long minisat);
+	
+	/**
+	 * Returns the number of pseudo-boolean constraints in the given instance of MiniSat+.
+	 * @return the number of pseudo-boolean constraints.
+	 */
 	private static native int numConstraints(long minisat);
-	private static native void addClause(long minisat, int[] lits);
+	
+	/**
+	 * Returns the assignment for the given literal
+	 * by the specified instance of MiniSat+.
+	 * @requires the last call to {@link #solve(long) solve(zchaff)} returned SATISFIABLE, and the variable was previously used in a pseudo-boolean constraint.
+	 * @return the assignment for the given literal
+	 */
 	private static native boolean valueOf(long minisat, int index);
+	
+	/**
+	 * Validates that the given literal specified by the second argument is currently assigned a value.
+	 * @requires the last call to {@link #solve(long) solve(zchaff)} returned SATISFIABLE
+	 * @return true if the given literal had been used and resolved, false otherwise
+	 */
+	private static native boolean validateVariable(long minisat, int index);
 }
