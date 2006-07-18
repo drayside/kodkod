@@ -17,6 +17,8 @@ public class MiniSatPlus implements SATSolverWithPB {
 	// The memory address of MiniSat+ loaded in this instance. 
 	private long minisat;
 	private int status;
+	private int num_vars = 0;
+	private int num_constrs = 0;
 	private static final int UNDETERMINED = 0, UNSATISFIABLE = 1, SATISFIABLE = 2,
 				TIME_OUT = 3, MEM_OUT = 4, ABORTED = 5;
 	
@@ -25,20 +27,21 @@ public class MiniSatPlus implements SATSolverWithPB {
 	 */
 	MiniSatPlus() {
 		this.minisat =  make();
+		num_vars = num_constrs = 0;
 	}
 	
 	/**
 	 * Adds the specified pseudo-boolean constraint to the existing instance of MiniSat+.
-	 * @requires -2 <= ineq && ineq <=2 && lits.length == cs.length && lits.length > 0
+	 * @requires -2 <= ineq <=2 && lits.length == cs.length && lits.length > 0 && all i:[0...lits.length) | 1 <= lits[i], cs[i] <= num_vars 
 	 * @throws NullPointerException - lits = null || cs = null
-	 * @throws IllegalArgumentException - lits.length != cs.length || lits.length = 0 || ineq > 2 || ineq < -2
+	 * @throws IllegalArgumentException - lits.length != cs.length || lits.length = 0 || ineq > 2 || ineq < -2 || some i: [0...lits.length] | lits[i] < 1 || lits[i] > num_vars || cs[i] < 1 || cs[i] > num_vars 
 	 * @effects adds the given pseudo-boolean constraint
 	 */
 	public void addPBClause(int[] lits, int[] cs, int rhs, int ineq) {
 		if (lits == null || cs == null)
 			throw new NullPointerException();
 		else if (lits.length > 0 && lits.length == cs.length && ineq >= -2 && ineq <= 2) {
-			addPBClause(minisat, lits, cs, rhs, ineq);
+			if (addPBClause(minisat, lits, cs, rhs, ineq)) num_constrs++;
 		} else
 			throw new IllegalArgumentException();
 	}
@@ -69,13 +72,16 @@ public class MiniSatPlus implements SATSolverWithPB {
 		}
 	}
 
-	/* (non-Javadoc)
+	/**
+	 * Adds the specified number of new variables
+	 * to the solver's vocabulary.
+	 * @effects this.labels' = [1..#this.literals + vars]
+	 * @throws IllegalArgumentException - vars < 0
 	 * @see kodkod.engine.satlab.SATSolver#addVariables(int)
 	 */
-	public void addVariables(int numVars) {
-		// TODO Auto-generated method stub
-		// note to self: I am not sure if miniSat requires configurations as these.
-
+	public void addVariables(int vars) {
+		if (vars<0) throw new IllegalArgumentException();
+		num_vars+=vars;
 	}
 	
 	/**
@@ -84,7 +90,6 @@ public class MiniSatPlus implements SATSolverWithPB {
 	 */
 	public synchronized final void free() {
 		if (minisat!=0) {
-			// need to free minisat TODO
 			minisat = 0;
 		}
 	}
@@ -96,7 +101,7 @@ public class MiniSatPlus implements SATSolverWithPB {
 	 * @see kodkod.engine.satlab.SATSolver#numberOfClauses()
 	 */
 	public int numberOfClauses() {
-		return numConstraints(minisat);
+		return num_constrs;
 	}
 
 	/**
@@ -105,7 +110,7 @@ public class MiniSatPlus implements SATSolverWithPB {
 	 * @see kodkod.engine.satlab.SATSolver#numberOfVariables()
 	 */
 	public int numberOfVariables() {
-		return numVariables(minisat);
+		return num_vars;
 	}
 
 	/**
@@ -172,6 +177,7 @@ public class MiniSatPlus implements SATSolverWithPB {
 	public final boolean valueOf(int variable) {
 		if (status != SATISFIABLE)
 			throw new IllegalStateException();
+		if (variable < 1 || variable > num_vars) throw new IllegalArgumentException();
 		if (!validateVariable(minisat, variable)) throw new IllegalArgumentException();
 		return valueOf(minisat, variable);
 	}
@@ -197,8 +203,9 @@ public class MiniSatPlus implements SATSolverWithPB {
 	 * of MiniSat+ referenced by the first argument.
 	 * @requires -2 <= ineq && ineq <= 2 && lits.length == cs.length && lits.length > 0 
 	 * @effects adds the given pseudo-boolean constraint to the specified instance of MiniSat+.
+	 * @returns true if the pseudo-boolean clause has been successfully added.
 	 */
-	private static native void addPBClause(long minisat, int[] lits, int[] cs, int rhs, int ineq);
+	private static native boolean addPBClause(long minisat, int[] lits, int[] cs, int rhs, int ineq);
 	
 	/**
 	 * Calls the solve method on the instance of 
@@ -215,19 +222,7 @@ public class MiniSatPlus implements SATSolverWithPB {
 	 * Unimplemented
 	 */
 	private static native void addVariables(long minisat, int numVariables);
-	
-	/**
-	 * Returns the number of existing variables in the given instance of MiniSat+.
-	 * @return the number of existing variables.
-	 */
-	private static native int numVariables(long minisat);
-	
-	/**
-	 * Returns the number of pseudo-boolean constraints in the given instance of MiniSat+.
-	 * @return the number of pseudo-boolean constraints.
-	 */
-	private static native int numConstraints(long minisat);
-	
+
 	/**
 	 * Returns the assignment for the given literal
 	 * by the specified instance of MiniSat+.
