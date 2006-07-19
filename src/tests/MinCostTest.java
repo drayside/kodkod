@@ -39,7 +39,6 @@ public class MinCostTest extends TestCase {
 		super(arg0);
 		this.solver = new Solver();
 		solver.options().setSolver(SATFactory.ZChaffMincost);
-		solver.options().setTrackVars(true);
 		List<String> atoms = new ArrayList<String>(USIZE);
 		for (int i = 0; i < USIZE; i++) {
 			atoms.add(""+i);
@@ -89,7 +88,18 @@ public class MinCostTest extends TestCase {
 		}
 	}
 	
+//	private Solution simpleSolve(Formula formula) {
+//		try {
+//			solver.options().setSolver(SATFactory.ZChaffBasic);
+//			return solver.solve(formula, bounds);
+//		} catch (TimeoutException te) {
+//			fail("Timed out solving " + formula);
+//			return null;
+//		}
+//	}
+	
 	public void testNoSolution() {
+		
 		Formula f = ra.some().and(ra.in(Expression.UNIV.join(rab))).and(rab.no());
 		Solution s = solve(f);
 		assertEquals(Solution.Outcome.UNSATISFIABLE, s.outcome());

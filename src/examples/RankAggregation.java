@@ -149,14 +149,31 @@ public final class RankAggregation {
 		try {
 			final RankAggregation model = new RankAggregation(Integer.parseInt(args[1]));
 			final Solver solver = new Solver();
-			solver.options().setSolver(SATFactory.ZChaffMincost);
+			
 			Formula f = model.show();
 			Bounds b = model.bounds(Integer.parseInt(args[0]));
-			System.out.println("solving...");
-			Solution sol = solver.solve(f, b, model.cost());
-			//System.out.println(f);
-			//System.out.println(b);
-			System.out.println(sol);
+			
+			
+//			System.out.println("solving with basic");
+//			solver.options().setSolver(SATFactory.ZChaffBasic);
+//			Solution solb = solver.solve(f, b);
+//			System.out.println(solb);
+			
+			System.out.println("solving with mincost");
+			solver.options().setSolver(SATFactory.ZChaffMincost);
+			Solution solm = solver.solve(f, b, model.cost());
+			System.out.println(solm);
+			
+//			System.out.println("solving with prover");
+//			solver.options().setSolver(SATFactory.ZChaffProver);
+//			Solution solp = solver.solve(f, b);
+//			System.out.println(solp); 
+			
+			
+			
+			
+			
+			
 		} catch (TimeoutException e) {
 			System.out.println("timed out.");
 			e.printStackTrace();

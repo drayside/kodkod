@@ -29,6 +29,7 @@ abstract class ZChaff implements SATSolver {
 		this.zchaff = zchaff;
 		this.timeout = Integer.MAX_VALUE;
 		setTimeout(zchaff, timeout);
+//		System.out.println("creating " + zchaff);
 	}
 	
 	/**
@@ -196,7 +197,7 @@ abstract class ZChaff implements SATSolver {
 	 */
 	public synchronized final void free() {
 		if (zchaff!=0) {
-//			System.out.println("freeing " + zchaff + " for object " + getClass() + System.identityHashCode(this));
+//			System.out.println("freeing " + zchaff);
 			free(zchaff);
 			zchaff = 0;
 		} // already freed
