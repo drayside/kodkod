@@ -1,13 +1,5 @@
-package tests;
+package examples;
 
-import examples.Bigconfig;
-import examples.CeilingsAndFloors;
-import examples.Dijkstra;
-import examples.Pigeonhole;
-import examples.RingElection;
-import examples.Sudoku;
-import examples.Toughnut;
-import junit.framework.TestCase;
 import kodkod.ast.Formula;
 import kodkod.engine.Solution;
 import kodkod.engine.Solver;
@@ -15,14 +7,13 @@ import kodkod.engine.TimeoutException;
 import kodkod.engine.satlab.SATFactory;
 import kodkod.instance.Bounds;
 
-public class ExamplesTest extends TestCase {
+class ExamplesTest  {
 
 	private final Solver solver;
 	
-	public ExamplesTest(String arg0) {
-		super(arg0);
+	public ExamplesTest(SATFactory factory) {
 		this.solver = new Solver();
-		this.solver.options().setSolver(SATFactory.ZChaffBasic);
+		this.solver.options().setSolver(factory);
 	}
 
 	private Solution solve(Formula formula, Bounds bounds) {
@@ -33,7 +24,14 @@ public class ExamplesTest extends TestCase {
 			throw new AssertionError();
 		}
 	}
-	
+	private void assertEquals(Object o1, Object o2) {
+		if (!o1.equals(o2))
+			throw new IllegalArgumentException();
+	}
+	private void assertEquals(int o1, int o2) {
+		if (o1!=o2)
+			throw new IllegalArgumentException();
+	}
 	/**
 	 * Runs the Bigconfig example for 1 hq, 9 subs, 4 unwindings.
 	 */
@@ -141,6 +139,36 @@ public class ExamplesTest extends TestCase {
 		assertEquals(0, sol.stats().primaryVariables());
 		assertEquals(0, sol.stats().variables());
 		assertEquals(0, sol.stats().clauses());
+	}
+	
+	public static void main(String[] args) {
+		
+		ExamplesTest t = new ExamplesTest(SATFactory.ZChaffBasic);
+		
+		System.out.println("testBigconfig ");
+		t.testBigconfig();
+		
+		t = new ExamplesTest(SATFactory.ZChaffMincost);
+		System.out.println("testSudoku ");
+		t.testSudoku();
+		
+//		System.out.println("testCeilingsAndFloors ");
+//		t.testCeilingsAndFloors();
+		
+		
+//		t = new ExamplesTest();
+//		System.out.println("testDijkstra ");
+//		t.testDijkstra();
+//		t = new ExamplesTest();
+//		System.out.println("testPigeonhole ");
+//		t.testPigeonhole();
+//		t = new ExamplesTest();
+//		System.out.println("testRingElection ");
+//		t.testRingElection();
+
+//		t = new ExamplesTest();
+//		System.out.println("testToughnut ");
+//		t.testToughnut();
 	}
 	
 }
