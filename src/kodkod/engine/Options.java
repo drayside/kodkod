@@ -8,7 +8,6 @@ import kodkod.engine.satlab.SATFactory;
  * used to choose the SAT solver, set the timeout, etc.
  * 
  * @specfield solver: SATFactory // SAT solver factory to use
- * @specfield timeout:  int // SAT solver timeout, in seconds
  * @specfield symmetryBreaking: int // the amount of symmetry breaking to perform
  * @specfield intEncoding: IntEncoding // encoding to use for translating {@link kodkod.ast.IntExpression int expressions}
  * @specfield bitwidth: int // the bitwidth to use for integer representation / arithmetic
@@ -20,7 +19,6 @@ import kodkod.engine.satlab.SATFactory;
  */
 public final class Options {
 	private SATFactory solver = SATFactory.DefaultSAT4J;
-	private int timeout = Integer.MAX_VALUE;
 	private int symmetryBreaking = 20;
 	private IntEncoding intEncoding = IntEncoding.BINARY;
 	private int bitwidth = 5;
@@ -33,7 +31,6 @@ public final class Options {
 	 * Constructs an Options object initalized with 
 	 * default values.
 	 * @effects this.solver' = SATFactory.DefaultSAT4J
-	 *          this.timeout' = Integer.MAX_VALUE 
 	 *          this.symmetryBreaking' = 20
 	 *          this.intEncoding' = BINARY
 	 *          this.bitwidth' = 5
@@ -50,7 +47,6 @@ public final class Options {
 	 * for other options.
 	 * @effects this.solver' = solver
 	 *          this.seed' = 0
-	 *          this.timeout' = Integer.MAX_VALUE
 	 *          this.symmetryBreaking' = 20
 	 *          this.intEncoding' = BINARY
 	 *          this.bitwidth' = 5
@@ -93,30 +89,7 @@ public final class Options {
 			throw new IllegalArgumentException(arg + " !in [" + min + ".." + max + "]");
 	}
 	
-	
-	/**
-	 * Returns the number of seconds that the 
-	 * SAT solver is allowed to spend on any given problem.
-	 * The default is Integer.MAX_VALUE:  the 
-	 * SAT solver is allowed to run as long as
-	 * necessary to determine the satisfiability
-	 * of a formula.
-	 * @return this.timeout
-	 */
-	public int timeout() {
-		return timeout;
-	}
-	
-	/**
-	 * Sets the timeout option to the given value.
-	 * @effects  this.timeout' = timeout
-	 * @throws IllegalArgumentException - timeout !in [0..Integer.MAX_VALUE]
-	 */
-	public void setTimeout(int timeout) {
-		checkRange(timeout, 0, Integer.MAX_VALUE);
-		this.timeout = timeout;
-	}
-	
+
 	
 	/**
 	 * Returns the integer encoding that will be used for translating {@link kodkod.ast.IntExpression int nodes}.
@@ -292,8 +265,6 @@ public final class Options {
 		b.append("Options:");
 		b.append("\n solver: ");
 		b.append(solver);
-		b.append("\n timeout: ");
-		b.append(timeout);
 		b.append("\n intEncoding: ");
 		b.append(intEncoding);
 		b.append("\n bitwidth: ");

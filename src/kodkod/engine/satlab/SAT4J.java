@@ -58,32 +58,6 @@ final class SAT4J implements SATSolver {
 	public int numberOfClauses() {
 		return clauses; 
 	}
-
-	/**
-	 * Returns the maximum amount of time
-	 * that this.solver will spend trying
-	 * to find a solution. 
-	 * @return the timeout (in seconds)
-	 * @see kodkod.engine.satlab.SATSolver#timeout()
-	 */
-	public int timeout() {
-		return solver.getTimeout();
-	}
-
-	/**
-	 * Sets the timeout of this solver to the specified
-	 * number of seconds.  If a solution is 
-	 * not found in the given timeframe, the solver
-	 * terminates with a TimeoutException.
-	 * @effects sets the timeout to the given number of seconds
-	 * @throws IllegalArgumentException - seconds < 0
-	 * @see kodkod.engine.satlab.SATSolver#setTimeout(int)
-	 */
-	public void setTimeout(int seconds) {
-		if (seconds < 0)
-			throw new IllegalArgumentException("seconds < 0: " + seconds);
-		solver.setTimeout(seconds);
-	}
 	
 	/**
 	 * Adds the specified number of new variables

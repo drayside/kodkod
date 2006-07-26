@@ -11,13 +11,6 @@ import kodkod.engine.TimeoutException;
  * @author Emina Torlak
  */
 public interface SATSolver {
-	/**
-	 * Returns the maximum amount of time
-	 * that this.solver will spend trying
-	 * to find a solution. 
-	 * @return the timeout (in seconds)
-	 */
-	public abstract int timeout();
 	
 	/**
 	 * Returns the size of this solver's vocabulary.
@@ -31,17 +24,6 @@ public interface SATSolver {
 	 * @return #this.clauses
 	 */
 	public abstract int numberOfClauses();
-	
-	/**
-	 * Sets the timeout of this solver to the specified
-	 * number of seconds.  If a solution is 
-	 * not found in the given timeframe, the solver
-	 * terminates with a TimeoutException.
-	 * @requires seconds >= 0
-	 * @effects sets the timeout to the given number of seconds
-	 * @throws IllegalArgumentException - seconds < 0
-	 */
-	public abstract void setTimeout(int seconds);
 	
 	/**
 	 * Adds the specified number of new variables

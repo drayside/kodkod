@@ -19,7 +19,7 @@ abstract class ZChaff implements SATSolver {
 	 * wrapped by this wrapper.
 	 */
 	private long zchaff;
-	private int timeout, status;
+	private int status;
 	
 	/**
 	 * Constructs a new wrapper for the given 
@@ -27,8 +27,6 @@ abstract class ZChaff implements SATSolver {
 	 */
 	ZChaff(long zchaff) {
 		this.zchaff = zchaff;
-		this.timeout = Integer.MAX_VALUE;
-		setTimeout(zchaff, timeout);
 //		System.out.println("creating " + zchaff);
 	}
 	
@@ -49,33 +47,6 @@ abstract class ZChaff implements SATSolver {
 	 */
 	public final int numberOfClauses() {
 		return numClauses(zchaff);
-	}
-	
-	/**
-	 * Returns the maximum amount of time
-	 * that this.solver will spend trying
-	 * to find a solution. 
-	 * @return the timeout (in seconds)
-	 * @see kodkod.engine.satlab.SATSolver#timeout()
-	 */
-	public final int timeout() {
-		return timeout;
-	}
-	
-	/**
-	 * Sets the timeout of this solver to the specified
-	 * number of seconds.  If a solution is 
-	 * not found in the given timeframe, the solver
-	 * terminates with a TimeoutException.
-	 * @effects sets the timeout to the given number of seconds
-	 * @throws IllegalArgumentException - seconds < 0
-	 * @see kodkod.engine.satlab.SATSolver#setTimeout(int)
-	 */
-	public final void setTimeout(int seconds) {
-		if (seconds < 0)
-			throw new IllegalArgumentException(seconds + " < 0");
-		timeout = seconds;
-		setTimeout(zchaff, timeout);
 	}
 	
 	/**
@@ -227,13 +198,6 @@ abstract class ZChaff implements SATSolver {
 	 * with the given instance of zchaff
 	 */
 	private  native void free(long zchaff);
-	
-	/**
-	 * Sets the timeout of the given instance of zchaff
-	 * to the specified value.
-	 * @effects sets the timeout to the given number of seconds
-	 */
-	private static native void setTimeout(long zchaff, int timeout);
 	
 	/**
 	 * Adds the given number of variables
