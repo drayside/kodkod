@@ -37,6 +37,10 @@ final class ZChaffMincost extends ZChaff implements SATMinSolver {
 		return costOf(peer(), variable);
 	}
 	
+	/**
+	 * {@inheritDoc}
+	 * @see java.lang.Object#toString()
+	 */
 	public String toString() { 
 		return "ZChaffMincost";
 	}
@@ -60,7 +64,7 @@ final class ZChaffMincost extends ZChaff implements SATMinSolver {
 	 * @effects sets the cost of the given variable to the specified value in the 
 	 * native zchaff instance at the given address.
 	 */
-	private static native void setCost(long zchaff, int variable, int cost);
+	private native void setCost(long peer, int variable, int cost);
 	
 	/**
 	 * Retrieves the cost of the given variable in the native zchaff instance at the 
@@ -69,5 +73,36 @@ final class ZChaffMincost extends ZChaff implements SATMinSolver {
 	 * @return the cost of the given variable in the native zchaff instance at the 
 	 * given address.
 	 */
-	private static native int costOf(long zchaff, int variable);
+	private native int costOf(long peer, int variable);
+	
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.engine.satlab.ZChaff#free(long)
+	 */
+	native void free(long peer);
+	
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.engine.satlab.ZChaff#addVariables(long, int)
+	 */
+	native void addVariables(long peer, int numVariables);
+	
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.engine.satlab.ZChaff#addClause(long, int[])
+	 */
+	native void addClause(long peer, int[] lits);
+	
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.engine.satlab.ZChaff#solve(long)
+	 */
+	native int solve(long peer);
+	
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.engine.satlab.ZChaff#valueOf(long, int)
+	 */
+	native int valueOf(long peer, int literal);
+	
 }

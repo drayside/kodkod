@@ -75,6 +75,10 @@ final class ZChaffProver extends ZChaff implements SATProver {
 		retainCore(peer());
 	}
 	
+	/**
+	 * {@inheritDoc}
+	 * @see java.lang.Object#toString()
+	 */
 	public String toString() { 
 		return "ZChaffProver";
 	}
@@ -90,6 +94,7 @@ final class ZChaffProver extends ZChaff implements SATProver {
 	 * of the zchaff solver 
 	 */
 	private static native long make();
+	
 	/**
 	 * Returns the size of the unsatisfiable core produced by the
 	 * given instance of zchaff.  
@@ -98,7 +103,7 @@ final class ZChaffProver extends ZChaff implements SATProver {
 	 * @return the size of the unsat core produced by the given instance
 	 * of zchaff.
 	 */
-	private static native int coreSize(long zchaff);
+	private native int coreSize(long peer);
 	
 	/**
 	 * Returns the ith clause in the unsatisfiable core produced by the 
@@ -108,7 +113,7 @@ final class ZChaffProver extends ZChaff implements SATProver {
 	 * @requires 0 <= i < {@link #coreSize(long) coreSize(zchaff) } 
 	 * @return the ith clause in the unsatisfiable core of the given instance of zchaff
 	 */
-	private static native int[] coreClause(long zchaff, int i);
+	private native int[] coreClause(long peer, int i);
 	
 	/**
 	 * Removes all clauses from the given instance of zchaff that are not
@@ -118,5 +123,35 @@ final class ZChaffProver extends ZChaff implements SATProver {
 	 * @effects removes all clauses from the given instance of zchaff that are not
 	 * in the unsat core.
 	 */
-	private static native void retainCore(long zchaff);
+	private native void retainCore(long peer);
+	
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.engine.satlab.ZChaff#free(long)
+	 */
+	native void free(long peer);
+	
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.engine.satlab.ZChaff#addVariables(long, int)
+	 */
+	native void addVariables(long peer, int numVariables);
+	
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.engine.satlab.ZChaff#addClause(long, int[])
+	 */
+	native void addClause(long peer, int[] lits);
+	
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.engine.satlab.ZChaff#solve(long)
+	 */
+	native int solve(long peer);
+	
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.engine.satlab.ZChaff#valueOf(long, int)
+	 */
+	native int valueOf(long peer, int literal);
 }

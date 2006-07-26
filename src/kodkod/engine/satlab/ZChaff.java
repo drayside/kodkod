@@ -18,16 +18,17 @@ abstract class ZChaff implements SATSolver {
 	 * The memory address of the instance of zchaff
 	 * wrapped by this wrapper.
 	 */
-	private long zchaff;
-	private int status;
+	private long peer;
+	private int status, clauses, vars;
 	
 	/**
 	 * Constructs a new wrapper for the given 
 	 * instance of zchaff.
 	 */
-	ZChaff(long zchaff) {
-		this.zchaff = zchaff;
-//		System.out.println("creating " + zchaff);
+	ZChaff(long peer) {
+		this.peer = peer;
+		this.clauses = this.vars = 0;
+//		System.out.println("created " + peer);
 	}
 	
 	/**
@@ -36,7 +37,7 @@ abstract class ZChaff implements SATSolver {
 	 * @see kodkod.engine.satlab.SATSolver#numberOfVariables()
 	 */
 	public final int numberOfVariables() {
-		return numVariables(zchaff);
+		return vars;
 	}
 	
 	/**
@@ -46,7 +47,7 @@ abstract class ZChaff implements SATSolver {
 	 * @see kodkod.engine.satlab.SATSolver#numberOfClauses()
 	 */
 	public final int numberOfClauses() {
-		return numClauses(zchaff);
+		return clauses;
 	}
 	
 	/**
@@ -60,7 +61,8 @@ abstract class ZChaff implements SATSolver {
 		if (numVars < 0)
 			throw new IllegalArgumentException("vars < 0: " + numVars);
 		else if (numVars > 0) {
-			addVariables(zchaff, numVars);
+			vars += numVars;
+			addVariables(peer, numVars);
 		}
 	}
 	
@@ -81,7 +83,8 @@ abstract class ZChaff implements SATSolver {
 //				System.out.print(i + " ");
 //			}
 //			System.out.println(0);
-			addClause(zchaff, lits);
+			clauses++;
+			addClause(peer, lits);
 		}
 	}
 	
@@ -101,7 +104,7 @@ abstract class ZChaff implements SATSolver {
 	 * of zchaff wrapped by this).
 	 */
 	final long peer() {
-		return zchaff;
+		return peer;
 	}
 	
 	/**
@@ -115,7 +118,7 @@ abstract class ZChaff implements SATSolver {
 	 * @see kodkod.engine.satlab.SATSolver#solve()
 	 */
 	public final boolean solve() throws TimeoutException {
-		status = solve(zchaff);
+		status = solve(peer);
 		switch(status) {
 		case UNDETERMINED : 
 			throw new UnknownError();
@@ -140,8 +143,8 @@ abstract class ZChaff implements SATSolver {
 	 * @throws IllegalArgumentException - variable !in this.variables
 	 */
 	final void validateVariable(int variable) {
-		if (variable < 1 || variable > numberOfVariables())
-			throw new IllegalArgumentException(variable + " !in [1.." + numberOfVariables()+"]");
+		if (variable < 1 || variable > vars)
+			throw new IllegalArgumentException(variable + " !in [1.." + vars+"]");
 	}
 	
 	/**
@@ -159,7 +162,7 @@ abstract class ZChaff implements SATSolver {
 		if (status != SATISFIABLE)
 			throw new IllegalStateException();
 		validateVariable(variable);
-		return valueOf(zchaff, variable)==1;
+		return valueOf(peer, variable)==1;
 	}
 	
 	/**
@@ -167,10 +170,10 @@ abstract class ZChaff implements SATSolver {
 	 * @see kodkod.engine.satlab.SATSolver#free()
 	 */
 	public synchronized final void free() {
-		if (zchaff!=0) {
-//			System.out.println("freeing " + zchaff);
-			free(zchaff);
-			zchaff = 0;
+		if (peer!=0) {
+//			System.out.println("freeing " + peer + " " + getClass());
+			free(peer);
+			peer = 0;
 		} // already freed
 	}
 	
@@ -197,7 +200,7 @@ abstract class ZChaff implements SATSolver {
 	 * @effects releases the resources associated
 	 * with the given instance of zchaff
 	 */
-	private  native void free(long zchaff);
+	abstract void free(long peer);
 	
 	/**
 	 * Adds the given number of variables
@@ -206,14 +209,7 @@ abstract class ZChaff implements SATSolver {
 	 * @effects increases the vocabulary of the given instance
 	 * by the specified number of variables
 	 */
-	private static native void addVariables(long zchaff, int numVariables);
-	
-	/**
-	 * Returns the number of variables in the vocabulary of 
-	 * the given instance of zchaff.
-	 * @return the number of variables
-	 */
-	private static native int numVariables(long zchaff);
+	abstract void addVariables(long peer, int numVariables);
 	
 	/**
 	 * Adds the specified clause to the instance
@@ -222,14 +218,7 @@ abstract class ZChaff implements SATSolver {
 	 *            i = l || i = -l
 	 * @effects adds the given clause to the specified instance of zchaff.
 	 */
-	private static native void addClause(long zchaff, int[] lits);
-	
-	/**
-	 * Returns the number of clauses in the pool of clauses
-	 * of the given instance of zchaff.
-	 * @return the number of clauses
-	 */
-	private static native int numClauses(long zchaff);
+	abstract void addClause(long peer, int[] lits);
 	
 	/**
 	 * Calls the solve method on the instance of 
@@ -238,7 +227,7 @@ abstract class ZChaff implements SATSolver {
 	 * status as follows: UNDETERMINED = 0, UNSATISFIABLE = 1, SATISFIABLE = 2,
 	 * TIME_OUT = 3, MEM_OUT = 4, ABORTED = 5.
 	 */
-	private static native int solve(long zchaff);
+	abstract int solve(long peer);
 	
 	/**
 	 * Returns the assignment for the given literal
@@ -248,7 +237,7 @@ abstract class ZChaff implements SATSolver {
 	 * @requires the last call to {@link #solve(long) solve(zchaff)} returned SATISFIABLE
 	 * @return the assignment for the given literal
 	 */
-	private static native int valueOf(long zchaff, int literal);
+	abstract int valueOf(long peer, int literal);
 
 	
 }
