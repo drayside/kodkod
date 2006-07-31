@@ -21,5 +21,5 @@ public enum Multiplicity {
     /** <tt>some expr</tt>: expr contains at least one element. */
     SOME { public String toString() { return "some"; }},
     /** <tt>v: set expr</tt>: v is a subset of expr.  The 'set' multiplicity can only be used in a declaration. */
-    SET { public String toString() { return ""; }}
+    SET { public String toString() { return "set"; }}
 }
