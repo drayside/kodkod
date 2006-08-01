@@ -57,12 +57,12 @@ public class ExamplesTest extends TestCase {
 		final Formula assertion = model.declarations().and(model.belowTooDoublePrime());
 		final Solution sol = solve(assertion, model.bounds(6, 6));
 //		UNSATISFIABLE
-//		p cnf 1686 3447
+//		p cnf 1749 3289
 //		primary variables: 90
 		assertEquals(Solution.Outcome.UNSATISFIABLE, sol.outcome());
 		assertEquals(90, sol.stats().primaryVariables());
-		assertEquals(1686, sol.stats().variables());
-		assertEquals(3447, sol.stats().clauses());
+		assertEquals(1749, sol.stats().variables());
+		assertEquals(3289, sol.stats().clauses());
 	}
 	
 	/**
@@ -73,12 +73,12 @@ public class ExamplesTest extends TestCase {
 		final Formula noDeadlocks = model.declarations().and(model.dijkstraPreventsDeadlocks().not());
 		final Solution sol = solve(noDeadlocks, model.bounds(6,6,6));
 //		UNSATISFIABLE
-//		p cnf 4341 18623
+//		p cnf 4344 18609
 //		primary variables: 444
 		assertEquals(Solution.Outcome.UNSATISFIABLE, sol.outcome());
 		assertEquals(444, sol.stats().primaryVariables());
-		assertEquals(4341, sol.stats().variables());
-		assertEquals(18623, sol.stats().clauses());
+		assertEquals(4344, sol.stats().variables());
+		assertEquals(18609, sol.stats().clauses());
 	}
 	
 	/**
@@ -105,12 +105,12 @@ public class ExamplesTest extends TestCase {
 		final Formula checkAtMostOneElected = model.declsAndFacts().and(model.atMostOneElected().not());
 		final Solution sol = solve(checkAtMostOneElected, model.bounds(5,10));
 //		UNSATISFIABLE
-//		p cnf 8654 29705
+//		p cnf 8665 29615 
 //		primary variables: 325
 		assertEquals(Solution.Outcome.UNSATISFIABLE, sol.outcome());
 		assertEquals(325, sol.stats().primaryVariables());
-		assertEquals(8654, sol.stats().variables());
-		assertEquals(29705, sol.stats().clauses());
+		assertEquals(8665, sol.stats().variables());
+		assertEquals(29615, sol.stats().clauses());
 	}
 
 	/**

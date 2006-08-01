@@ -587,7 +587,20 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	 * @return { f: BooleanValue | f <=> this.one() || this.none() }
 	 */
 	public final BooleanValue lone() {
-		return factory.or(one(), none());
+		if (cells.isEmpty())
+			return TRUE; 
+		else {
+			final BooleanAccumulator g = BooleanAccumulator.treeGate(AND);
+			
+			BooleanValue partial = FALSE;
+			for(IndexedEntry<BooleanValue> e: cells) {
+				if (g.add(factory.or(e.value().negation(), partial.negation()))==FALSE)
+					return FALSE;
+				partial = factory.or(partial, e.value());
+			}
+
+			return factory.accumulate(g);
+		}
 	}
 	
 	/**
@@ -598,25 +611,15 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 		if (cells.isEmpty())
 			return FALSE; 
 		else {
-			final int density = cells.size();
-			final BooleanAccumulator g = BooleanAccumulator.treeGate(OR);
-			UPDATEg : for (int i = 0; i < density; i++) { // g contains the outermost disjunction
-				Iterator<IndexedEntry<BooleanValue>> entries = cells.iterator();
-				BooleanAccumulator v = BooleanAccumulator.treeGate(OR); // v contains the individual disjunctions
-				for(int j = 0; j < i; j++) {
-					if (v.add(entries.next().value())==TRUE) {
-						continue UPDATEg;
-					}
-				}
-				if (v.add(entries.next().value().negation())==TRUE) continue;
-				for(int j = i+1; j < density; j++) {
-					if (v.add(entries.next().value())==TRUE) {
-						continue UPDATEg;
-					}
-				}
-				if (g.add(factory.accumulate(v).negation())==TRUE) return TRUE;
-			}
+			final BooleanAccumulator g = BooleanAccumulator.treeGate(AND);
 			
+			BooleanValue partial = FALSE;
+			for(IndexedEntry<BooleanValue> e: cells) {
+				if (g.add(factory.or(e.value().negation(), partial.negation()))==FALSE)
+					return FALSE;
+				partial = factory.or(partial, e.value());
+			}
+			g.add(partial);
 			return factory.accumulate(g);
 		}
 	}
