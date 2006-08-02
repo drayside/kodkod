@@ -58,7 +58,6 @@ public class GEO091 extends GEO158 {
 	
 			final Solver solver = new Solver();
 			solver.options().setSolver(SATFactory.MiniSat);
-	
 			final GEO091 model = new GEO091();
 			final Formula f = model.axioms().and(model.theorem213().not());
 			

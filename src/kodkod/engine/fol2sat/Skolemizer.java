@@ -5,6 +5,7 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
 
+import kodkod.ast.BinaryExpression;
 import kodkod.ast.Comprehension;
 import kodkod.ast.Decl;
 import kodkod.ast.Decls;
@@ -134,7 +135,12 @@ final class Skolemizer {
 		private Environment<LeafExpression> env;
 		/* the interpreter used to determine the upper bounds for skolem constants;
 		 * the upper bounds for skolem constants will be added to interpreter.bounds */
-		private final BoundsInterpreter.Overapproximating manager;
+		private final BoundsInterpreter.Overapproximating interpreter;
+		/* when computing the upper bounds for skolems, all difference expressions must
+		 * be replaced with the right child to ensure soundness.
+		 */
+		private final DifferenceRemover diffRemover ;
+		
 		/* the cache used for storing the replacements for shared nodes */
 		final Map<Node,Node> cache;
 		/* the conjunction that constrains all the skolem constants; i.e.
@@ -156,7 +162,7 @@ final class Skolemizer {
 		EQFReplacer(Set<QuantifiedFormula> eqfs, Set<Node> sharedNodes, BoundsInterpreter.Overapproximating manager) {
 			this.eqfs = eqfs;
 			this.bounds = manager.boundingObject();
-			this.manager = manager;
+			this.interpreter = manager;
 			this.skolems = new IdentityHashMap<Decl, Relation>(eqfs.size());
 			this.skolemFormula = Formula.TRUE;
 			this.cache = new IdentityHashMap<Node,Node>(sharedNodes.size());
@@ -164,6 +170,7 @@ final class Skolemizer {
 				cache.put(n, null);
 			}
 			this.env = new Environment<LeafExpression>();
+			this.diffRemover = new DifferenceRemover(sharedNodes);
 		}
 		
 		/**
@@ -271,7 +278,7 @@ final class Skolemizer {
 		 */
 		private void updateSkolemInfo(Relation skolem, Decl decl) {
 			final BooleanMatrix skolemBound = (BooleanMatrix) 
-			  FOL2BoolTranslator.translate(new AnnotatedNode<Expression>(decl.expression()), manager);
+			  FOL2BoolTranslator.translate(new AnnotatedNode<Expression>(decl.expression().accept(diffRemover)), interpreter);
 			final Universe universe = bounds.universe();
 			final int arity = decl.variable().arity();
 			final IntSet tuples = Ints.bestSet((int)StrictMath.pow(universe.size(), arity));
@@ -316,6 +323,44 @@ final class Skolemizer {
 				env = env.parent();
 			}
 			return cache(quantFormula,ret);
+		}
+	}
+	
+	/**
+	 * Replaces all instances of difference expressions in a given formula with
+	 * the expression's right child.
+	 */
+	private static final class DifferenceRemover extends DepthFirstReplacer {
+		/* the cache used for storing the replacements for shared nodes */
+		private final Map<Node,Node> cache;
+		private final Set<Node> cached;
+		/**
+		 * Creates a difference remover which will cache replacement values
+		 * for the given nodes.
+		 */
+		DifferenceRemover(Set<Node> sharedNodes) {
+			this.cache = new IdentityHashMap<Node,Node>();
+			this.cached = sharedNodes;
+		}
+		@SuppressWarnings("unchecked")
+		@Override
+		protected <N extends Node> N lookup(N node) {
+			return (N)cache.get(node);
+		}
+
+		@Override
+		protected <N extends Node> N cache(N node, N replacement) {
+			if (cached.contains(node)) {
+				cache.put(node, replacement);
+			}
+			return replacement;
+		}
+		
+		public Expression visit(BinaryExpression binExpr) {
+			if (binExpr.op()==BinaryExpression.Operator.DIFFERENCE)
+				return cache(binExpr, binExpr.right().accept(this));
+			else
+				return super.visit(binExpr);
 		}
 		
 	}
