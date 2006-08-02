@@ -11,9 +11,12 @@ import kodkod.ast.Formula;
 import kodkod.ast.Relation;
 import kodkod.ast.Variable;
 import kodkod.engine.Evaluator;
+import kodkod.engine.Options;
 import kodkod.engine.Solution;
 import kodkod.engine.Solver;
 import kodkod.engine.TimeoutException;
+import kodkod.engine.fol2sat.HigherOrderDeclException;
+import kodkod.engine.fol2sat.UnboundLeafException;
 import kodkod.engine.satlab.SATFactory;
 import kodkod.instance.Bounds;
 import kodkod.instance.Instance;
@@ -44,6 +47,51 @@ public class BugTests extends TestCase {
 //		System.out.println(Integer.toBinaryString(-1));
 //		System.out.println(Integer.toBinaryString(1));
 //	}
+	
+	public final void testFelix_08022006() {
+		Relation x = Relation.nary("P", 1);
+
+		String[] atoms = {
+		 "-8", "-7", "-6", "-5", "-4",
+		 "-3", "-2", "-1", "0", "1", "2",
+		 "3", "4", "5", "6", "7"
+		};
+
+		java.util.ArrayList<String> atomlist=new java.util.ArrayList<String>();
+		for(String a:atoms) atomlist.add(a);
+		Universe universe = new Universe(atomlist);
+		TupleFactory factory = universe.factory();
+		Bounds bounds = new Bounds(universe);
+
+		for(int i = -8; i <=7; i++)
+			bounds.boundExactly(i, factory.setOf(String.valueOf(i)));
+	
+		bounds.bound(x, factory.allOf(1));
+
+		Formula f=x.in(Expression.INTS).and(x.some());
+
+//		System.out.println(bounds);
+		
+		Solver solver = new Solver();
+		solver.options().setSolver(SATFactory.ZChaffBasic);
+		solver.options().setBitwidth(4);
+		solver.options().setIntEncoding(Options.IntEncoding.BINARY);
+		Solution sol;
+		try {
+			sol = solver.solve(f,bounds);
+			assertNotNull(sol.instance());
+		} catch (HigherOrderDeclException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (UnboundLeafException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (TimeoutException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	}
 	
 	public final void testVincent_03182006_reduced() {
 		final Relation pCourses = Relation.binary("pCourses"),

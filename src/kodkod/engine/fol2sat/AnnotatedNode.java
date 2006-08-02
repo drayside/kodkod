@@ -18,7 +18,9 @@ import java.util.Set;
 
 import kodkod.ast.BinaryFormula;
 import kodkod.ast.ComparisonFormula;
+import kodkod.ast.ConstantExpression;
 import kodkod.ast.ExprToIntCast;
+import kodkod.ast.Expression;
 import kodkod.ast.Formula;
 import kodkod.ast.IntComparisonFormula;
 import kodkod.ast.IntToExprCast;
@@ -119,6 +121,9 @@ final class AnnotatedNode<N extends Node> {
 				if (intExpr.op()==ExprToIntCast.Operator.CARDINALITY)
 					super.visit(intExpr);
 				return Boolean.TRUE;
+			}
+			public Boolean visit(ConstantExpression expr) {
+				return expr==Expression.INTS ? Boolean.TRUE : Boolean.FALSE;
 			}
 		};
 		return (Boolean)annotated.node.accept(detector);

@@ -78,9 +78,10 @@ public final class Translator {
 		// copy the bounds and optimize the copy by breaking symmetry on total orders and acyclic
 //		System.out.println("optimizing bounds...");
 		bounds = bounds.clone();
+		
 		Set<IntSet> symmetricParts = BoundsOptimizer.optimize(bounds, AnnotatedNode.relations(annotated), 
 				AnnotatedNode.usesIntBounds(annotated) ? bounds.ints() : Ints.EMPTY_SET, preds);
-		
+
 		// skolemize
 		final Map<Decl, Relation> skolems;
 		if (options.skolemize()) {
