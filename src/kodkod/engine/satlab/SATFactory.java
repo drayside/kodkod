@@ -15,6 +15,17 @@ public abstract class SATFactory {
 	 * The factory that produces instances of the default sat4j solver.
 	 * @see org.sat4j.core.ASolverFactory#defaultSolver()
 	 */
+	public static final SATFactory MiniSatPlus = new SATFactory() { 
+		public SATSolver instance() { 
+			return new MiniSatPlus(); 
+		}
+		public String toString() { return "MiniSatPlus"; }
+	};
+
+	/**
+	 * The factory that produces instances of the default sat4j solver.
+	 * @see org.sat4j.core.ASolverFactory#defaultSolver()
+	 */
 	public static final SATFactory DefaultSAT4J = new SATFactory() { 
 		public SATSolver instance() { 
 			return new SAT4J(SolverFactory.instance().defaultSolver()); 
@@ -77,17 +88,6 @@ public abstract class SATFactory {
 		@Override
 		public boolean minimizers() { return true; }
 		public String toString() { return "ZChaffMincost"; }
-	};
-	
-	/**
-	 * The factory that produces instances of Niklas EŽn and Niklas Sšrensson's
-	 * MiniSat solver.
-	 */
-	public static final SATFactory MiniSat = new SATFactory() {
-		public SATSolver instance() {
-			return new MiniSAT();
-		}
-		public String toString() { return "MiniSat"; }
 	};
 	
 	/**
