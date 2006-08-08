@@ -97,7 +97,7 @@ public class GEO159 extends GEO158 {
 			solver.options().setSolver(SATFactory.MiniSat);
 	
 			final GEO159 model = new GEO159();
-			final Formula f = model.axioms().and(model.closed.some().and(model.open.some()));
+			final Formula f = model.axioms();
 			
 			final Bounds b = model.bounds(c,p);
 			final Solution sol = solver.solve(f,b);
