@@ -32,6 +32,7 @@ import kodkod.ast.NotFormula;
 import kodkod.ast.QuantifiedFormula;
 import kodkod.ast.Relation;
 import kodkod.ast.RelationPredicate;
+import kodkod.ast.SumExpression;
 import kodkod.ast.UnaryExpression;
 import kodkod.ast.Variable;
 import kodkod.ast.visitor.ReturnVisitor;
@@ -585,12 +586,13 @@ abstract class TranslationCache {
 		}
 		
 		/**
-		 * Visits the given comprehension or quantified formula.  The method returns a set that contains all 
-		 * the free variables in the declarations and the formula, minus the variables that are 
+		 * Visits the given comprehension, quantified formula, or sum expression.  
+		 * The method returns a set that contains all 
+		 * the free variables in the declarations and the body, minus the variables that are 
 		 * actually bound in the declarations.  
 		 */
 		@SuppressWarnings("unchecked")
-		private Set<Variable> visit(Node creator, Decls decls, Formula formula) {
+		private Set<Variable> visit(Node creator, Decls decls, Node body) {
 			Set<Variable> vars = lookup(creator);
 			if (vars!=null) return vars;
 			
@@ -608,12 +610,12 @@ abstract class TranslationCache {
 			}
 			
 			// collect the free variables in the formula
-			final Set<Variable> formulaVars = formula.accept(this);
+			final Set<Variable> bodyVars = (Set<Variable>) body.accept(this);
 			
 			// add the free variables in the decls and the formula to the creator's free vars set
-			vars = setOfSize(declVars.size() + formulaVars.size());
+			vars = setOfSize(declVars.size() + bodyVars.size());
 			vars.addAll(declVars);
-			vars.addAll(formulaVars);
+			vars.addAll(bodyVars);
 			
 			// remove the variables that are actually declared by this creator
 			// from the creator's free variable set, as well as from the in-scope stack
@@ -802,6 +804,15 @@ abstract class TranslationCache {
 			vars.addAll(left);
 			vars.addAll(right);
 			return cache(intExpr, vars);
+		}
+		
+		/** 
+		 * Returns the free variables of intExpr, if any.
+		 * @return freeVars(intExpr.declarations) + 
+		 *          freeVars(intExpr.intExpr) - intExpr.declarations.declarations[int].Expression 
+		 */
+		public Set<Variable> visit(SumExpression intExpr) {
+			return visit(intExpr, intExpr.declarations(), intExpr.intExpr());
 		}
 
 		/**

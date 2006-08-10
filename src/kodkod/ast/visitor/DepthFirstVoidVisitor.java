@@ -21,6 +21,7 @@ import kodkod.ast.NotFormula;
 import kodkod.ast.QuantifiedFormula;
 import kodkod.ast.Relation;
 import kodkod.ast.RelationPredicate;
+import kodkod.ast.SumExpression;
 import kodkod.ast.UnaryExpression;
 import kodkod.ast.Variable;
 
@@ -179,6 +180,18 @@ public abstract class DepthFirstVoidVisitor implements VoidVisitor {
 		if (!visited(intExpr)) {
 			intExpr.left().accept(this);
 			intExpr.right().accept(this);
+		}
+	}
+	
+	/**
+	 * Visits the children of the given sum expression  if
+	 * this.visited(intExpr) returns false.  Otherwise does nothing.
+	 * @effects intExpr.decls.accept(this) && intExpr.intExpr.accept(this)
+	 */
+	public void visit(SumExpression intExpr) {
+		if (!visited(intExpr)) {
+			intExpr.declarations().accept(this);
+			intExpr.intExpr().accept(this);
 		}
 	}
 	

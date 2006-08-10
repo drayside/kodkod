@@ -20,8 +20,8 @@ import kodkod.ast.IfExpression;
 import kodkod.ast.IfIntExpression;
 import kodkod.ast.IntComparisonFormula;
 import kodkod.ast.IntConstant;
-import kodkod.ast.IntToExprCast;
 import kodkod.ast.IntExpression;
+import kodkod.ast.IntToExprCast;
 import kodkod.ast.Multiplicity;
 import kodkod.ast.MultiplicityFormula;
 import kodkod.ast.Node;
@@ -29,6 +29,7 @@ import kodkod.ast.NotFormula;
 import kodkod.ast.QuantifiedFormula;
 import kodkod.ast.Relation;
 import kodkod.ast.RelationPredicate;
+import kodkod.ast.SumExpression;
 import kodkod.ast.UnaryExpression;
 import kodkod.ast.Variable;
 
@@ -298,6 +299,24 @@ public abstract class DepthFirstReplacer implements ReturnVisitor<Expression, Fo
 			final IntExpression right = intExpr.right().accept(this);
 			ret =  (left==intExpr.left() && right==intExpr.right()) ? 
 					intExpr : left.compose(intExpr.op(), right);
+		}
+		return cache(intExpr,ret);
+    }
+    
+    /** 
+	 * Calls lookup(intExpr) and returns the cached value, if any.  
+	 * If a replacement has not been cached, visits the expression's 
+	 * children.  If nothing changes, the argument is cached and
+	 * returned, otherwise a replacement expression is cached and returned.
+	 * @return { c: IntExpression | [[c]] = sum intExpr.decls.accept(this) | intExpr.intExpr.accept(this) }
+	 */
+    public IntExpression visit(SumExpression intExpr) {
+    		IntExpression ret = lookup(intExpr);
+		if (ret==null) {
+			final Decls decls  = intExpr.declarations().accept(this);
+			final IntExpression expr = intExpr.intExpr().accept(this);
+			ret =  (decls==intExpr.declarations() && expr==intExpr.intExpr()) ? 
+					intExpr : expr.sum(decls);
 		}
 		return cache(intExpr,ret);
     }

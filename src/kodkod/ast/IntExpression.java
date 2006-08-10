@@ -81,6 +81,16 @@ public abstract class IntExpression implements Node {
 	}
 	
 	/**
+	 * Returns an integer expression that is the sum of all
+	 * values that this integer expression can take given the
+	 * provided declarations.
+	 * @return {e: IntExpression | [[e]] = sum decls | this }
+	 */
+	public final IntExpression sum(Decls decls) {
+		return new SumExpression(decls, this);
+	}
+	
+	/**
 	 * Returns an IntExpression that represents the sum of this and
 	 * the given int node.  The effect of this method is the same as calling
 	 * this.compose(BinaryIntExpression.Operator.PLUS, intexpr).

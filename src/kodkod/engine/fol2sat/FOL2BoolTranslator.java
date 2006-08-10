@@ -30,6 +30,7 @@ import kodkod.ast.NotFormula;
 import kodkod.ast.QuantifiedFormula;
 import kodkod.ast.Relation;
 import kodkod.ast.RelationPredicate;
+import kodkod.ast.SumExpression;
 import kodkod.ast.UnaryExpression;
 import kodkod.ast.Variable;
 import kodkod.ast.visitor.ReturnVisitor;
@@ -674,6 +675,40 @@ final class FOL2BoolTranslator {
 			default    :
 				throw new IllegalArgumentException("Unknown operator: " + intExpr.op());
 			}
+			return record(intExpr, ret);
+		}
+		
+		/** 
+		 * @return let intExpr = "sum a: A, b: B, ..., x: X | IE(a, b, ..., x)" |
+		 *           translate(IE(A_0, B_0, ..., X_0)) + ... + translate(IE(A_|A|, B_|B|, ..., X_|X|))
+		 */
+		public Int visit(SumExpression intExpr) {
+			Int ret = lookup(intExpr);
+			if (ret!=null) return ret;
+			
+			final Decls decls = intExpr.declarations();
+			final List<BooleanMatrix> declTransls = visit(decls);
+			final GroundValueGenerator generator = new GroundValueGenerator(env, decls, declTransls);
+			final BooleanFactory factory = interpreter.factory();
+			final Int zero = factory.integer(0);
+			
+			ret = zero;
+			
+			while(generator.hasNext()) {
+				env = generator.next(factory);
+				
+				int index[] = generator.index();
+				BooleanAccumulator conjunct = BooleanAccumulator.treeGate(Operator.AND);
+				// A_index[0] && B_index[1] && ... && X_index[index.length-1]
+				for(int i = 0; i < index.length; i++) {
+					conjunct.add(declTransls.get(i).get(index[i]));
+				}
+				// if (A_index[0] && B_index[1] && ... && X_index[index.length-1]) then
+				//   translate(IE(A_index[0], B_index[1], ..., X_index[index.length-1])) else 0
+				ret = ret.plus(intExpr.intExpr().accept(this).choice(factory.accumulate(conjunct), zero));	
+			}
+			env = generator.baseEnvironment();
+ 			
 			return record(intExpr, ret);
 		}
 		

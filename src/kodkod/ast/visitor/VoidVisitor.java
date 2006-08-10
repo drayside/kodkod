@@ -20,6 +20,7 @@ import kodkod.ast.NotFormula;
 import kodkod.ast.QuantifiedFormula;
 import kodkod.ast.Relation;
 import kodkod.ast.RelationPredicate;
+import kodkod.ast.SumExpression;
 import kodkod.ast.UnaryExpression;
 import kodkod.ast.Variable;
 
@@ -89,6 +90,10 @@ public interface VoidVisitor {
      * Visits the given binary integer expression.
      */
     public void visit(BinaryIntExpression intExpr);
+    /**
+     * Visits the given sum expression.
+     */
+    public void visit(SumExpression intExpr);
     /**
      * Visits the given integer comparison formula.
      */

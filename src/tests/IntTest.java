@@ -17,6 +17,7 @@ import kodkod.ast.Formula;
 import kodkod.ast.IntComparisonFormula;
 import kodkod.ast.IntConstant;
 import kodkod.ast.Relation;
+import kodkod.ast.Variable;
 import kodkod.engine.Options;
 import kodkod.engine.Solution;
 import kodkod.engine.Solver;
@@ -485,4 +486,29 @@ public class IntTest extends TestCase {
 		testIfIntExpr(BINARY);
 	}
 	
+	private void testIntSum(Options.IntEncoding encoding) {
+		solver.options().setIntEncoding(encoding);
+		final Variable x = Variable.unary("x");
+		bounds.bound(r1, factory.setOf("13","14","15"), factory.setOf("13","14","15"));
+		Formula f = IntConstant.constant(3).eq(IntConstant.constant(1).sum(x.oneOf(r1)));
+		Solution s = solve(f);
+		
+		assertNotNull(s.instance());
+		bounds.bound(r1, factory.noneOf(1), factory.setOf("1","3","5"));
+		bounds.boundExactly(1, factory.setOf("1"));
+		bounds.boundExactly(3, factory.setOf("3"));
+		bounds.boundExactly(5, factory.setOf("5"));
+		
+		f = IntConstant.constant(9).eq(x.sum().sum(x.oneOf(r1)));
+		s = solve(f);
+		assertNotNull(s.instance());
+		assertEquals(s.instance().tuples(r1), factory.setOf("1","3","5"));
+	}
+	
+	public void testIntSum() {
+		solver.options().setBitwidth(17);
+		testIntSum(UNARY);
+		solver.options().setBitwidth(8);
+		testIntSum(BINARY);
+	}
 }

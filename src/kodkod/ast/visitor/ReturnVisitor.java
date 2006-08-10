@@ -24,6 +24,7 @@ import kodkod.ast.NotFormula;
 import kodkod.ast.QuantifiedFormula;
 import kodkod.ast.Relation;
 import kodkod.ast.RelationPredicate;
+import kodkod.ast.SumExpression;
 import kodkod.ast.UnaryExpression;
 import kodkod.ast.Variable;
 
@@ -112,6 +113,11 @@ public interface ReturnVisitor<E, F, D, I> {
 	 * @return the result of visiting <code>intExpr</code> 
      */
     public I visit(BinaryIntExpression intExpr);
+    /**
+     * Visits the given sum expression and returns the result.
+	 * @return the result of visiting <code>intExpr</code> 
+     */
+    public I visit(SumExpression intExpr);
     /**
      * Visits the given integer comparison formula and returns the result.
 	 * @return the result of visiting <code>intcomp</code> 
