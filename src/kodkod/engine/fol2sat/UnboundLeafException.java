@@ -15,11 +15,11 @@ public final class UnboundLeafException extends RuntimeException {
 	private static final long serialVersionUID = 2472395272061454465L;
 
 	/**
-	 * Constructs an UnboundLeafException using the given message and leaf.
+	 * Constructs an UnboundLeafException for the given leaf.
 	 * @effects this.leaf' = leaf
 	 */
 	UnboundLeafException(String msg, LeafExpression leaf) {
-		super(msg);
+		super(msg + ": " +leaf);
 		this.leaf = leaf;
 	}
 

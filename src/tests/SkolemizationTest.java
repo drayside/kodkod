@@ -151,7 +151,7 @@ public class SkolemizationTest extends TestCase {
 		
 		skolems.add(vb.name());
 		
-		inst = solve(va.in(vb.join(r2b)).forSome(vb.oneOf(va.join(r2a))).forSome(da));
+		inst = solve(va.in(vb.join(r2b)).forSome(da.and(vb.oneOf(va.join(r2a)))));
 		assertSkolems(bounds, inst, skolems);
 		
 		inst = solve((va.in(vb.join(r2b)).forAll(vb.oneOf(va.join(r2a))).forAll(da)).not());

@@ -508,20 +508,12 @@ abstract class TranslationCache {
 		}
 		
 		/**
-		 * Returns free variables in the given declarations.
-		 * @return freeVars(decls.declarations)
+		 * Never gets called.  
+		 * @throws InternalError
 		 */
 		@SuppressWarnings("unchecked")
 		public Set<Variable> visit(Decls decls) {
-			Set<Variable> vars = lookup(decls);
-			if (vars != null) return vars;
-			
-			vars = setOfSize(decls.size());
-			for(Decl decl : decls) {
-				vars.addAll(visit(decl));
-			}
-			
-			return cache(decls, vars.isEmpty() ? Collections.EMPTY_SET : vars);
+			throw new InternalError("Fatal error:  please contact emina@mit.edu");
 		}
 
 		/**
@@ -595,17 +587,13 @@ abstract class TranslationCache {
 		private Set<Variable> visit(Node creator, Decls decls, Node body) {
 			Set<Variable> vars = lookup(creator);
 			if (vars!=null) return vars;
-			
-			// collect the free variables in the declaration expressions;
-			// note that we don't need to add variables to the in-scope stack
-			// as they are being collected, as we assume that there are no 
-			// variable dependencies among variables declared within the same 
-			// Decls object.
-			final Set<Variable> declVars = decls.accept(this);
+		
+			final Set<Variable> declVars = setOfSize(decls.size());
 			
 			// add the declared variables to the scoped variables stack 
 			varsInScope.ensureCapacity(varsInScope.size() + decls.size());
 			for(Decl decl : decls) {
+				declVars.addAll(visit(decl));
 				varsInScope.push(decl.variable());
 			}
 			

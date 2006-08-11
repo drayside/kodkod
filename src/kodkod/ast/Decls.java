@@ -80,9 +80,6 @@ public class Decls implements Node, Iterable<Decl> {
     /**
      * Returns a sequence of this.size + decls.size declarations that has 
      * these declarations as the prefix and the given declarations as the suffix.
-     * This method requires that no declaration in the argument object depends
-     * on a variable declared in this.decls.  
-     * @requires no declaration in decls depends on a variable declared in this.decls
      * @return {ds: Decls | ds.size = this.size + decls.size && 
      *                      ds.declarations = this.declarations + 
      *                      {i: [this.size..this.size+decls.size), d: Decl | d = decls.declarations[i-this.size] }

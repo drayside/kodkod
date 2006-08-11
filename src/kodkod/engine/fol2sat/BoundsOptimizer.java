@@ -58,7 +58,7 @@ final class BoundsOptimizer {
 		bounds.relations().retainAll(relations);
 		if (relations.size() != bounds.relations().size()) {
 			relations.removeAll(bounds.relations());
-			throw new UnboundLeafException("Unbound relation.", relations.iterator().next());
+			throw new UnboundLeafException("Unbound relation", relations.iterator().next());
 		}
 		bounds.ints().retainAll(ints);
 		if (ints.size() != bounds.ints().size()) {

@@ -63,7 +63,7 @@ final class Environment<T> {
 	 * @return e : Environment | e.parent = this && e.map = variable -> value
 	 */
 	public Environment<T> extend(Variable variable, T value) {
-		final Environment<T> ret = extend(new HashMap<Variable, T>());
+		final Environment<T> ret = extend(new HashMap<Variable, T>(1));
 		ret.bind(variable, value);
 		return ret;
 	}
@@ -81,7 +81,7 @@ final class Environment<T> {
 		
 	/**
 	 * Binds the specified variable to the specified value,
-	 * erasing any prior mappings for the variable
+	 * erasing any prior mappings for the variable in this environment.
 	 * 
 	 * @effects this.map' = this.map ++ variable->value
 	 */

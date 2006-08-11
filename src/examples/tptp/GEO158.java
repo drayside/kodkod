@@ -100,11 +100,10 @@ public class GEO158 {
 		final Variable c = Variable.unary("c");
 		final Variable p = Variable.unary("p");
 		
-		final Formula f0 = c.in(p.join(incident));
 		final Expression e = p.join(incident).intersection(partOf.join(c));
 		final Formula f1 = e.product(e).in(partOf.union(partOf.transpose()));
 		
-		return endPoint.eq((f0.and(f1)).comprehension(p.oneOf(point).and(c.oneOf(curve))));
+		return endPoint.eq(f1.comprehension(p.oneOf(point).and(c.oneOf(p.join(incident)))));
 	}
 	
 	/**
@@ -128,11 +127,10 @@ public class GEO158 {
 		final Variable p = Variable.unary("p");
 		
 		final Expression e0 = p.join(incident);
-		final Formula f0 = c.in(e0).and(c1.in(e0));
 		final Expression e1 = incident.join(c).intersection(incident.join(c1));
 		final Formula f1 = e1.in((endPoint.join(c)).intersection(endPoint.join(c1)));
 		
-		return meet.eq((f0.and(f1)).comprehension(p.oneOf(point).and(c.oneOf(curve)).and(c1.oneOf(curve))));
+		return meet.eq(f1.comprehension(p.oneOf(point).and(c.oneOf(e0)).and(c1.oneOf(e0))));
 	}
 	
 	/**
@@ -204,7 +202,7 @@ public class GEO158 {
 	    //  some p->union.c & meet
 		final Variable c = Variable.unary("c");
 		final Variable p = Variable.unary("p");
-		return p.product(sum.join(c)).intersection(meet).some().forAll(p.oneOf(innerPoint.join(c))).forAll(c.oneOf(curve));
+		return p.product(sum.join(c)).intersection(meet).some().forAll(c.oneOf(curve).and(p.oneOf(innerPoint.join(c))));
 	}
 	
 	/**

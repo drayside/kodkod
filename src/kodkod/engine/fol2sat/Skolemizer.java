@@ -306,12 +306,12 @@ final class Skolemizer {
 			if (ret==null) {			
 				if (eqfs.contains(quantFormula)) { // an existentially quantified formula
 					final Map<Variable,LeafExpression> varMap = new IdentityHashMap<Variable,LeafExpression>(quantFormula.declarations().size());
+					env = env.extend(varMap);
 					for(Decl decl : quantFormula.declarations()) {
 						Relation skolem = Relation.nary(decl.variable().name(), decl.variable().arity());
 						updateSkolemInfo(skolem, (Decl) decl.accept(this));
 						varMap.put(decl.variable(), skolem);				
 					}
-					env = env.extend(varMap);
 					ret = quantFormula.formula().accept(this);
 				} else {
 					env = env.extend(identityMapping(quantFormula.declarations()));
