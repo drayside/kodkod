@@ -137,7 +137,7 @@ final class Skolemizer {
 		 * the upper bounds for skolem constants will be added to interpreter.bounds */
 		private final BoundsInterpreter.Overapproximating interpreter;
 		/* when computing the upper bounds for skolems, all difference expressions must
-		 * be replaced with the right child to ensure soundness.
+		 * be replaced with the left child to ensure soundness.
 		 */
 		private final DifferenceRemover diffRemover ;
 		
@@ -358,7 +358,7 @@ final class Skolemizer {
 		
 		public Expression visit(BinaryExpression binExpr) {
 			if (binExpr.op()==BinaryExpression.Operator.DIFFERENCE)
-				return cache(binExpr, binExpr.right().accept(this));
+				return cache(binExpr, binExpr.left().accept(this));
 			else
 				return super.visit(binExpr);
 		}
