@@ -17,6 +17,7 @@ import kodkod.ast.IntConstant;
 import kodkod.ast.IntToExprCast;
 import kodkod.ast.MultiplicityFormula;
 import kodkod.ast.NotFormula;
+import kodkod.ast.ProjectExpression;
 import kodkod.ast.QuantifiedFormula;
 import kodkod.ast.Relation;
 import kodkod.ast.RelationPredicate;
@@ -69,6 +70,11 @@ public interface VoidVisitor {
 	 * Visits the given if-then expression.
 	 **/
     public void visit(IfExpression ifExpr);
+    /**
+     * Visits the given projection expression.
+     */
+    public void visit(ProjectExpression project);
+    
     
     /**
      * Visits the given integer cast expression.

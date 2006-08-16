@@ -4,6 +4,8 @@
  */
 package kodkod.ast;
 
+import java.util.List;
+
 import kodkod.ast.visitor.ReturnVisitor;
 
 
@@ -141,7 +143,16 @@ public abstract class Expression implements Node {
      * @throws IllegalArgumentException - this.arity != 2
      */
     public Expression apply(UnaryExpression.Operator op) {
-    	return new UnaryExpression(op, this);
+    		return new UnaryExpression(op, this);
+    }
+    
+    /**
+     * Returns the projection of this expression onto the specified columns.
+     * @return {e: Expression | e = project(this, columns) }
+     * @throws IllegalArgumentException - columns.length < 1
+     */
+    public Expression project(List<IntExpression> columns) {
+    		return new ProjectExpression(this, columns);
     }
     
     /**

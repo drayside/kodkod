@@ -368,7 +368,7 @@ public class BooleanMatrixTest extends TestCase {
 	    }
 	    
 	    public final void testClosure() {
-	        BooleanMatrix mF44 =  f.matrix(Dimensions.square(2,4));
+	        BooleanMatrix mF44 =  f.matrix(Dimensions.square(4,2));
 	        assertTrue(equivalent(mF44, mF44.closure()));
 	        
 	        mF44.set(0, vars[0]);

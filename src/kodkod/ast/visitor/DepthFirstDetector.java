@@ -17,10 +17,12 @@ import kodkod.ast.IfExpression;
 import kodkod.ast.IfIntExpression;
 import kodkod.ast.IntComparisonFormula;
 import kodkod.ast.IntConstant;
+import kodkod.ast.IntExpression;
 import kodkod.ast.IntToExprCast;
 import kodkod.ast.MultiplicityFormula;
 import kodkod.ast.Node;
 import kodkod.ast.NotFormula;
+import kodkod.ast.ProjectExpression;
 import kodkod.ast.QuantifiedFormula;
 import kodkod.ast.Relation;
 import kodkod.ast.RelationPredicate;
@@ -186,6 +188,29 @@ public abstract class DepthFirstDetector implements ReturnVisitor<Boolean, Boole
 		if (ret==null) {
 			return cache(ifExpr, ifExpr.condition().accept(this) || 
 					ifExpr.thenExpr().accept(this) || ifExpr.elseExpr().accept(this));
+		} else {
+			return ret;
+		}
+	}
+	
+	/**
+	 * Calls lookup(project) and returns the cached value, if any.  If no cached
+	 * value exists, visits each child, caches the disjunction of the children's return
+	 * values and returns it.
+	 * @return let x = lookup(project) | 
+	 *          x != null => x,  
+	 *          cache(project, project.expression.accept(this) || project.columns[int].accept(this)) 
+	 */
+	public Boolean visit(ProjectExpression project) {
+		Boolean ret = lookup(project);
+		if (ret==null) {
+			if (project.expression().accept(this))
+				return cache(project, true);
+			for(IntExpression col : project.columns()) {
+				if (col.accept(this))
+					return cache(project, true);
+			}
+			return cache(project, false);
 		} else {
 			return ret;
 		}

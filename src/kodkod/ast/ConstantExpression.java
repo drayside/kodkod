@@ -1,6 +1,8 @@
 package kodkod.ast;
 
 
+import java.util.List;
+
 import kodkod.ast.visitor.ReturnVisitor;
 import kodkod.ast.visitor.VoidVisitor;
 
@@ -30,6 +32,13 @@ public abstract class ConstantExpression extends LeafExpression {
 			case UNION: return expr;
 			default: return super.compose(op, expr);
 			}
+		}
+		
+		@Override
+		public Expression project(List<IntExpression> columns) {
+			if (columns.isEmpty())
+				throw new IllegalArgumentException("no columns specified for projection");
+			return this;
 		}
 		
 		@Override

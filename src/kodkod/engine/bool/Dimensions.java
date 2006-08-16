@@ -37,7 +37,7 @@ public abstract class Dimensions {
 	 * @return {d: Dimensions | d.n = n && d.dimensions[int] = size }
 	 * @throws IllegalArgumentException - n < 1 || size < 1
 	 */
-	public static Dimensions square(int n, int size) {
+	public static Dimensions square(int size, int n) {
 		if (n < 1 || size < 1) throw new IllegalArgumentException("n < 1 || size < 1");
 		return new Square(n, size);
 	}
@@ -214,28 +214,18 @@ public abstract class Dimensions {
 	 * @throws IndexOutOfBoundsException - !validate(index)
 	 */
 	public final int[] convert(int index) {
-		return convert(index, new int[numDimensions()]);
-//		if (!validate(index)) throw new IndexOutOfBoundsException("index");    
-//		final int length = numDimensions();
-//		int[] vectorIndex = new int[length];
-//		int conversionFactor = capacity;
-//		int remainder = index;
-//		for (int i = 0; i < length; i++) {
-//			conversionFactor = conversionFactor / dimension(i);
-//			vectorIndex[i] = remainder / conversionFactor;
-//			remainder = remainder % conversionFactor;
-//		}
-//		return vectorIndex;
+		final int[] vector = new int[numDimensions()];
+		convert(index, vector);
+		return vector;
 	}
 	
 	/**
 	 * Converts an integer index into a matrix with these dimensions into a vector index, 
-	 * stores the result in the provided array and returns it.  This method requires that
+	 * and stores the result in the provided array.  This method requires that
 	 * the array argument have at least this.n cells, which are used to store the
 	 * vector representation of the given index.  The contents of the cells of <code>vectorIndex</code> 
 	 * beyond the first this.n cells are left unchanged. 
 	 * @requires vectorIndex.length <= this.n
-	 * @return <code>vectorIndex</code>
 	 * @effects the first this.numDimensions entries of <code>vectorIndex</code> contain 
 	 * the vector index representation of the specified integer index into a 
 	 * this.dimensions[0]x...xthis.dimensions[n-1] matrix
@@ -243,7 +233,7 @@ public abstract class Dimensions {
 	 * @throws IllegalArgumentException - vectorIndex.length < this.numDimensions
 	 * @throws IndexOutOfBoundsException - !validate(index)
 	 */
-	public final int[] convert(int index, int[] vectorIndex) {
+	public final void convert(int index, int[] vectorIndex) {
 		final int length = numDimensions();	
 		if (vectorIndex.length < length)
 			throw new IllegalArgumentException("arrayIndex.length<this.numDimensions");
@@ -256,7 +246,6 @@ public abstract class Dimensions {
 			vectorIndex[i] = remainder / conversionFactor;
 			remainder = remainder % conversionFactor;
 		}
-		return vectorIndex;
 	}
 	
 	/**

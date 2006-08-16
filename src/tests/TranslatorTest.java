@@ -5,12 +5,15 @@
 package tests;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
 import junit.framework.TestCase;
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
+import kodkod.ast.IntConstant;
+import kodkod.ast.IntExpression;
 import kodkod.ast.Multiplicity;
 import kodkod.ast.QuantifiedFormula;
 import kodkod.ast.Relation;
@@ -262,6 +265,22 @@ public class TranslatorTest extends TestCase {
 		
 	}
 	
+	public final void testTranslateProjection() {
+		
+		assertTrue(isSatisfiable(r3[0].eq(
+				r2[0].project(Arrays.asList((IntExpression)IntConstant.constant(0), IntConstant.constant(1), IntConstant.constant(0))))));
+		
+		assertTrue(isSatisfiable(r2[1].in(r3[0].project(Arrays.asList(r1[3].count(), r1[2].count())))));
+		
+		bounds.boundExactly(r3[0], bounds.upperBound(r3[0]));
+		bounds.boundExactly(r2[0], bounds.upperBound(r2[0]));
+		
+		assertTrue(isSatisfiable(r3[0].project(Arrays.asList((IntExpression)IntConstant.constant(0), IntConstant.constant(1))).eq(r2[0])));
+		assertTrue(isSatisfiable(r3[0].project(Arrays.asList((IntExpression)IntConstant.constant(0), IntConstant.constant(4), IntConstant.constant(2))).
+				eq(Expression.NONE.product(Expression.NONE).product(Expression.NONE))));
+
+	}
+
 	public final void testIFF() {
 		// some r11 && (r11 in r12 iff r12 in r11)
 		Formula f = r1[1].some().and(r1[1].in(r1[2]).iff(r1[2].in(r1[1])));

@@ -21,6 +21,7 @@ import kodkod.ast.IntConstant;
 import kodkod.ast.IntToExprCast;
 import kodkod.ast.MultiplicityFormula;
 import kodkod.ast.NotFormula;
+import kodkod.ast.ProjectExpression;
 import kodkod.ast.QuantifiedFormula;
 import kodkod.ast.Relation;
 import kodkod.ast.RelationPredicate;
@@ -87,6 +88,12 @@ public interface ReturnVisitor<E, F, D, I> {
 	 * @return the result of visiting <code>ifExpr</code> 
 	 **/
     public E visit(IfExpression ifExpr); 
+    /**
+     * Visits the given projection expression and returns the result.
+     * @return the result of visiting <code>project</code>
+     */
+    public E visit(ProjectExpression project);
+    
     /** 
 	 * Visits the given cast expression expression and returns the result.
 	 * @return the result of visiting <code>castExpr</code> 

@@ -25,10 +25,12 @@ import kodkod.ast.IfExpression;
 import kodkod.ast.IfIntExpression;
 import kodkod.ast.IntComparisonFormula;
 import kodkod.ast.IntConstant;
+import kodkod.ast.IntExpression;
 import kodkod.ast.IntToExprCast;
 import kodkod.ast.MultiplicityFormula;
 import kodkod.ast.Node;
 import kodkod.ast.NotFormula;
+import kodkod.ast.ProjectExpression;
 import kodkod.ast.QuantifiedFormula;
 import kodkod.ast.Relation;
 import kodkod.ast.RelationPredicate;
@@ -639,6 +641,23 @@ abstract class TranslationCache {
 			vars.addAll(thenExpr);
 			vars.addAll(elseExpr);
 			return cache(ifExpr, vars);
+		}
+		
+		/**
+		 * Returns the free variables in the given projection expression.
+		 * @return freeVars(project.expression) + freeVars(project.columns[int])
+		 */
+		public Set<Variable> visit(ProjectExpression project) {
+			Set<Variable> vars = lookup(project);
+			if (vars != null) return vars;
+			
+			vars = setOfSize(4);
+			vars.addAll(project.expression().accept(this));
+			for(IntExpression col: project.columns()) {
+				vars.addAll(col.accept(this));
+			}
+
+			return cache(project, vars);
 		}
 		
 		/**

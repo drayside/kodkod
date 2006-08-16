@@ -88,22 +88,22 @@ abstract class LeafInterpreter<B> {
 		final int univSize = universe().size();
 		if (c==Expression.UNIV) {
 			final IntSet all =  Ints.rangeSet(Ints.range(0, univSize-1));
-			return factory().matrix(Dimensions.square(1, univSize), all, all);
+			return factory().matrix(Dimensions.square(univSize, 1), all, all);
 		} else if (c==Expression.IDEN) {
-			final Dimensions dim2 = Dimensions.square(2, univSize);
+			final Dimensions dim2 = Dimensions.square(univSize, 2);
 			final IntSet iden = Ints.bestSet(dim2.capacity());
 			for(int i = 0; i < univSize; i++) {
 				iden.add(i*univSize + i);
 			}			
 			return factory().matrix(dim2, iden, iden);
 		} else if (c==Expression.NONE) {
-			return factory().matrix(Dimensions.square(1, univSize), Ints.EMPTY_SET, Ints.EMPTY_SET);
+			return factory().matrix(Dimensions.square(univSize, 1), Ints.EMPTY_SET, Ints.EMPTY_SET);
 		} else if (c==Expression.INTS) {
 			final IntSet ints = Ints.bestSet(univSize);
 			for(IntIterator iter = ints().iterator(); iter.hasNext(); ) {
 				ints.add(interpret(iter.nextInt()));
 			}
-			return factory().matrix(Dimensions.square(1, univSize), ints, ints);
+			return factory().matrix(Dimensions.square(univSize, 1), ints, ints);
 		} else {
 			throw new IllegalArgumentException("unknown constant expression: " + c);
 		}

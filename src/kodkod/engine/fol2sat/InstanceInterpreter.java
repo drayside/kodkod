@@ -71,7 +71,7 @@ final class InstanceInterpreter extends LeafInterpreter<Instance> {
 	@Override
 	BooleanMatrix interpret(Relation r) {
 		final IntSet indices = instance.tuples(r).indexView();
-		return factory.matrix(Dimensions.square(r.arity(), universe().size()), indices, indices);
+		return factory.matrix(Dimensions.square(universe().size(), r.arity()), indices, indices);
 	}
 
 	/**

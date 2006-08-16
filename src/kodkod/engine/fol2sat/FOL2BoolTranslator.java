@@ -27,6 +27,7 @@ import kodkod.ast.Multiplicity;
 import kodkod.ast.MultiplicityFormula;
 import kodkod.ast.Node;
 import kodkod.ast.NotFormula;
+import kodkod.ast.ProjectExpression;
 import kodkod.ast.QuantifiedFormula;
 import kodkod.ast.Relation;
 import kodkod.ast.RelationPredicate;
@@ -355,7 +356,7 @@ final class FOL2BoolTranslator {
 			BooleanMatrix ret = lookup(cexpr);
 			if (ret!=null) return ret;
 			
-			ret = interpreter.factory().matrix(Dimensions.square(cexpr.declarations().size(), interpreter.universe().size()));
+			ret = interpreter.factory().matrix(Dimensions.square(interpreter.universe().size(), cexpr.declarations().size()));
 			comprehension(cexpr.declarations().declarations(), cexpr.formula(), BooleanConstant.TRUE, 0, ret);
 			
 			return record(cexpr,ret);
@@ -375,6 +376,23 @@ final class FOL2BoolTranslator {
 			
 			return record(ifExpr,ret);
 		}
+		
+		/**
+		 * @return translate(project.expression).project(translate(project.columns))
+		 */
+		public final BooleanMatrix visit(ProjectExpression project) {
+			BooleanMatrix ret = lookup(project);
+			if (ret!=null) return ret;
+			
+			final Int[] cols = new Int[project.arity()];
+			int i = 0;
+			for(IntExpression col : project.columns()) {
+				cols[i++] = col.accept(this);
+			}
+			
+			return record(project, project.expression().accept(this).project(cols));
+		}
+		
 		
 		/**
 		 * @return constant = ConstantFormula.TRUE => BooleanConstant.TRUE, BooleanConstant.FALSE
@@ -592,7 +610,7 @@ final class FOL2BoolTranslator {
 			
 			final Int child = castExpr.intExpr().accept(this);
 			final BooleanFactory factory =  interpreter.factory();
-			ret = factory.matrix(Dimensions.square(1, interpreter.universe().size()));
+			ret = factory.matrix(Dimensions.square(interpreter.universe().size(), 1));
 			for(IntIterator iter = interpreter.ints().iterator(); iter.hasNext(); ) {
 				int i = iter.nextInt();
 				int atomIndex = interpreter.interpret(i);

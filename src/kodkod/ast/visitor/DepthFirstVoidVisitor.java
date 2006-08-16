@@ -14,10 +14,12 @@ import kodkod.ast.IfExpression;
 import kodkod.ast.IfIntExpression;
 import kodkod.ast.IntComparisonFormula;
 import kodkod.ast.IntConstant;
+import kodkod.ast.IntExpression;
 import kodkod.ast.IntToExprCast;
 import kodkod.ast.MultiplicityFormula;
 import kodkod.ast.Node;
 import kodkod.ast.NotFormula;
+import kodkod.ast.ProjectExpression;
 import kodkod.ast.QuantifiedFormula;
 import kodkod.ast.Relation;
 import kodkod.ast.RelationPredicate;
@@ -127,6 +129,20 @@ public abstract class DepthFirstVoidVisitor implements VoidVisitor {
 			ifExpr.condition().accept(this);
 			ifExpr.thenExpr().accept(this);
 			ifExpr.elseExpr().accept(this);
+		}
+	}
+	
+	/**
+	 * Visits project.expression and project.columns if this.visited(project) returns false.
+	 * Otherwise does nothing.
+	 * @effects project.expression.accept(this) && all i: project.arity | project.columns[i].accept(this)
+	 */
+	public void visit(ProjectExpression project) {
+		if (!visited(project)) {
+			project.expression().accept(this);
+			for(IntExpression column : project.columns()) {
+				column.accept(this);
+			}
 		}
 	}
 	

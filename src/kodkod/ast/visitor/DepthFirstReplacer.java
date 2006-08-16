@@ -4,6 +4,9 @@
  */
 package kodkod.ast.visitor;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import kodkod.ast.BinaryExpression;
 import kodkod.ast.BinaryFormula;
 import kodkod.ast.BinaryIntExpression;
@@ -26,6 +29,7 @@ import kodkod.ast.Multiplicity;
 import kodkod.ast.MultiplicityFormula;
 import kodkod.ast.Node;
 import kodkod.ast.NotFormula;
+import kodkod.ast.ProjectExpression;
 import kodkod.ast.QuantifiedFormula;
 import kodkod.ast.Relation;
 import kodkod.ast.RelationPredicate;
@@ -222,6 +226,29 @@ public abstract class DepthFirstReplacer implements ReturnVisitor<Expression, Fo
 		return cache(ifExpr,ret);
 	}
     
+	/** 
+	 * Calls lookup(decls) and returns the cached value, if any.  
+	 * If a replacement has not been cached, visits each of the children's 
+	 * variable and expression.  If nothing changes, the argument is cached and
+	 * returned, otherwise a replacement Decls object is cached and returned.
+	 * @return { d: Decls | d.size = decls.size && 
+	 *                      all i: [0..d.size) | d.declarations[i] = decls.declarations[i].accept(this) } 
+	 */
+	public Expression visit(ProjectExpression project) { 
+		Expression ret = lookup(project);
+		if (ret==null) {	
+			final Expression expr = project.expression().accept(this);
+			final List<IntExpression> cols = new ArrayList<IntExpression>(project.arity());
+			boolean allSame = expr==project.expression();
+			for(IntExpression col : project.columns()) {
+				IntExpression newCol = col.accept(this);
+				cols.add(newCol);
+				allSame = allSame && (newCol==col);
+			}
+			ret = allSame ? project : expr.project(cols);
+		}
+		return cache(project, ret);
+	}
 	/**
 	 * Calls lookup(castExpr) and returns the cached value, if any.  If a replacement
 	 * has not been cached, visits the expression's child.  If nothing changes, the argument

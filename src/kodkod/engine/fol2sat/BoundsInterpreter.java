@@ -144,7 +144,7 @@ abstract class BoundsInterpreter extends LeafInterpreter<Bounds> {
 			final IntSet lowerBound = super.bounds.lowerBound(r).indexView();
 			final IntSet upperBound = super.bounds.upperBound(r).indexView();
 			
-			final BooleanMatrix m = super.factory.matrix(Dimensions.square(r.arity(), universe().size()), upperBound, lowerBound);
+			final BooleanMatrix m = super.factory.matrix(Dimensions.square(universe().size(), r.arity()), upperBound, lowerBound);
 			
 			if (upperBound.size() > lowerBound.size()) {
 				for (IntIterator indeces = upperBound.iterator(); indeces.hasNext();) {
@@ -186,7 +186,7 @@ abstract class BoundsInterpreter extends LeafInterpreter<Bounds> {
 		@Override
 		BooleanMatrix interpret(Relation r) {
 			final IntSet upper = super.bounds.upperBound(r).indexView();
-			return super.factory.matrix(Dimensions.square(r.arity(), universe().size()), upper, upper);
+			return super.factory.matrix(Dimensions.square(universe().size(), r.arity()), upper, upper);
 		}
 		
 	}

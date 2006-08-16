@@ -508,6 +508,55 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 		return ret;
 	}
 	
+	
+	/**
+	 * Returns a matrix m such that the relational value of m is equal to the
+	 * relational value of this projected on the specified columns. 
+	 * @requires column[int] in this.dimensions.dimensions[int]
+	 * @requires this.dimensions.isSquare()
+	 * @return { m: BooleanMatrix | [[m]] = project([[this]], columns) }
+	 * @throws IllegalArgumentExceptions - columns.length < 1 || !this.dimensions.isSquare()
+	 * @throws NullPointerException - columns = null
+	 */
+	public final BooleanMatrix project(Int[] columns) {
+		if (!dims.isSquare())
+			throw new IllegalArgumentException("!this.dimensions.isSquare()");
+		
+		final int rdnum = columns.length;
+		
+		if (rdnum < 1)
+			throw new IllegalArgumentException("columns.length < 1");
+		
+		final Dimensions rdims = Dimensions.square(dims.dimension(0), rdnum);
+		final BooleanMatrix ret = new BooleanMatrix(rdims, factory, cells, cells);
+		
+		final int tdnum = dims.numDimensions();
+		final Dimensions indexer = Dimensions.square(tdnum, rdnum);
+		final int[] tvector = new int[tdnum];
+		final int[] ivector = new int[rdnum];
+		final int[] rvector = new int[rdnum];
+		
+		PROJECT : for(int i = 0, cap = indexer.capacity(); i < cap; i++) {
+			indexer.convert(i, ivector);
+			BooleanValue colVal = TRUE;
+			for(int j = 0; j < rdnum; j++) {
+				colVal = factory.and(colVal, columns[j].eq(factory.integer(ivector[j])));
+				if (colVal==FALSE)
+					continue PROJECT;
+			}
+			for(IndexedEntry<BooleanValue> e : cells) {
+				dims.convert(e.index(), tvector);
+				for(int j = 0; j < rdnum; j++) {
+					rvector[j] = tvector[ivector[j]];
+				}
+				int rindex = rdims.convert(rvector);
+				ret.fastSet(rindex, factory.or(factory.and(e.value(), colVal), ret.fastGet(rindex)));
+			}
+		}
+		
+		return ret;
+	}
+	
 	/**
 	 * Returns a conjunction of the negated values between 
 	 * start, inclusive, and end, exclusive.
