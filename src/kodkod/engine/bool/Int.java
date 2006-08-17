@@ -1,6 +1,7 @@
 package kodkod.engine.bool;
 
 import static kodkod.engine.bool.BooleanConstant.FALSE;
+import static kodkod.engine.bool.BooleanConstant.TRUE;
 import static kodkod.engine.bool.Operator.AND;
 import static kodkod.engine.bool.Operator.OR;
 
@@ -44,6 +45,28 @@ public abstract class Int {
 	 * @return this.bits[i]
 	 */
 	public abstract BooleanValue bit(int i);
+	
+	/**
+	 * Returns true if all the bits representing this Int
+	 * are BooleanConstants.
+	 * @return this.bits[int] in BooleanConstant
+	 */
+	public final boolean isConstant() {
+		for(int i = width()-1; i >= 0; i--) {
+			BooleanValue b = bit(i);
+			if (b!=TRUE && b!=FALSE)
+				return false;
+		}
+		return true;
+	}
+	
+	/**
+	 * If this Int is constant, returns its value.  Otherwise
+	 * throws an IllegalStateException.
+	 * @return this.isConstant() => [[this.bits]]
+	 * @throws IllegalStateException - !this.isConstant()
+	 */
+	public abstract int value();
 	
 	/**
 	 * Returns a BooleanValue encoding the comparator circuit

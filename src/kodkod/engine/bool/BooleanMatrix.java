@@ -507,8 +507,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 		}
 		return ret;
 	}
-	
-	
+		
 	/**
 	 * Returns a matrix m such that the relational value of m is equal to the
 	 * relational value of this projected on the specified columns. 
@@ -531,26 +530,54 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 		final BooleanMatrix ret = new BooleanMatrix(rdims, factory, cells, cells);
 		
 		final int tdnum = dims.numDimensions();
-		final Dimensions indexer = Dimensions.square(tdnum, rdnum);
 		final int[] tvector = new int[tdnum];
 		final int[] ivector = new int[rdnum];
 		final int[] rvector = new int[rdnum];
 		
-		PROJECT : for(int i = 0, cap = indexer.capacity(); i < cap; i++) {
-			indexer.convert(i, ivector);
+		int nVarCols = 1;
+		
+		// detect constant columns to avoid unnecessary looping;
+		for(int i = 0; i < rdnum; i++) {
+			if (columns[i].isConstant()) {
+				int value = columns[i].value();
+				if (value < 0 || value >= tdnum) {
+					return ret;
+				} else { // distinguish constants by making them negative
+					ivector[i] = -value;
+				}
+			} else {
+				nVarCols *= tdnum;
+			}
+		}
+		
+		PROJECT : for(int i = 0; i < nVarCols; i++) {
 			BooleanValue colVal = TRUE;
 			for(int j = 0; j < rdnum; j++) {
-				colVal = factory.and(colVal, columns[j].eq(factory.integer(ivector[j])));
-				if (colVal==FALSE)
-					continue PROJECT;
+				// if the jth column is non-constant, check that it can take on the value ivector[j]
+				if (ivector[j] >= 0) { 
+					colVal = factory.and(colVal, columns[j].eq(factory.integer(ivector[j])));
+					if (colVal==FALSE)
+						continue PROJECT;
+				}
 			}
 			for(IndexedEntry<BooleanValue> e : cells) {
 				dims.convert(e.index(), tvector);
 				for(int j = 0; j < rdnum; j++) {
-					rvector[j] = tvector[ivector[j]];
+					rvector[j] = tvector[StrictMath.abs(ivector[j])];
 				}
 				int rindex = rdims.convert(rvector);
 				ret.fastSet(rindex, factory.or(factory.and(e.value(), colVal), ret.fastGet(rindex)));
+			}
+			for(int j = rdnum-1; j >= 0; j--) { // update ivector
+				// update ivector[j] only if the jth column is not constant
+				if (ivector[j]>=0) {
+					if (ivector[j]+1==tdnum) {
+						ivector[j] = 0;
+					} else {
+						ivector[j] += 1;
+						break;
+					}
+				}
 			}
 		}
 		

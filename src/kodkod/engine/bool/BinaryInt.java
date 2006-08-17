@@ -68,6 +68,24 @@ final class BinaryInt extends Int {
 
 	/**
 	 * {@inheritDoc}
+	 * @see kodkod.engine.bool.Int#value()
+	 */
+	public final int value() {
+		int ret = 0;
+		final int max = bits.length-1;
+		for(int i = 0; i < max; i++) {
+			if (bits[i]==TRUE) ret += 1<<i;
+			else if (bits[i]!=FALSE)
+				throw new IllegalStateException(this + " is not constant.");       
+		}
+		if (bits[max]==TRUE) ret -= 1<<max;
+		else if (bits[max]!=FALSE)
+			throw new IllegalStateException(this + " is not constant.");       
+		return ret;
+	}
+	
+	/**
+	 * {@inheritDoc}
 	 * @see kodkod.engine.bool.Int#bit(int)
 	 */
 	@Override

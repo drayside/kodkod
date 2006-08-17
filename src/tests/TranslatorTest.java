@@ -271,6 +271,11 @@ public class TranslatorTest extends TestCase {
 				r2[0].project(Arrays.asList((IntExpression)IntConstant.constant(0), IntConstant.constant(1), IntConstant.constant(0))))));
 		
 		assertTrue(isSatisfiable(r2[1].in(r3[0].project(Arrays.asList(r1[3].count(), r1[2].count())))));
+
+		final Variable v = Variable.nary("r", 2);
+		assertFalse(isSatisfiable(v.transpose().
+				eq(v.project(Arrays.asList((IntExpression)IntConstant.constant(1), IntConstant.constant(0)))).not().
+				forSome(v.setOf(r2[0]))));
 		
 		bounds.boundExactly(r3[0], bounds.upperBound(r3[0]));
 		bounds.boundExactly(r2[0], bounds.upperBound(r2[0]));
@@ -278,6 +283,10 @@ public class TranslatorTest extends TestCase {
 		assertTrue(isSatisfiable(r3[0].project(Arrays.asList((IntExpression)IntConstant.constant(0), IntConstant.constant(1))).eq(r2[0])));
 		assertTrue(isSatisfiable(r3[0].project(Arrays.asList((IntExpression)IntConstant.constant(0), IntConstant.constant(4), IntConstant.constant(2))).
 				eq(Expression.NONE.product(Expression.NONE).product(Expression.NONE))));
+		assertTrue(isSatisfiable(r3[0].project(Arrays.asList((IntExpression)IntConstant.constant(0), IntConstant.constant(-1), IntConstant.constant(2))).
+				eq(Expression.NONE.product(Expression.NONE).product(Expression.NONE))));
+		
+
 
 	}
 

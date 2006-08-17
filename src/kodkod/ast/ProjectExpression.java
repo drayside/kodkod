@@ -12,8 +12,8 @@ import kodkod.ast.visitor.VoidVisitor;
 
 /**
  * Represents a general projection expression.  For example,
- * let [[e]] = {<a, b, c>, <d, e, f>, <d, g, f>}.  Then, 
- * project(e, 1, 3) = {<a, c>, <d, f>} and project(e, 1, 1, 2) = {<a, a, b>, <d, d, e>, <d, d, g>}.
+ * let [[e]] = {&lt;a, b, c&gt;, &lt;d, e, f&gt;, &lt;d, g, f&gt;}.  Then, 
+ * project(e, 1, 3) = {&lt;a, c&gt;, &lt;d, f&gt;} and project(e, 1, 1, 2) = {&lt;a, a, b&gt;, &lt;d, d, e&gt;, &lt;d, d, g&gt;}.
  * 
  * @specfield expression: Expression 
  * @specfield arity: [1..)

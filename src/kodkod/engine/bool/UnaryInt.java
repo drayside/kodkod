@@ -1,6 +1,7 @@
 package kodkod.engine.bool;
 
 import static kodkod.engine.bool.BooleanConstant.FALSE;
+import static kodkod.engine.bool.BooleanConstant.TRUE;
 import static kodkod.engine.bool.Operator.OR;
 
 import java.util.Arrays;
@@ -51,6 +52,20 @@ final class UnaryInt extends Int {
 		return bits.length;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.engine.bool.Int#value()
+	 */
+	public final int value() {
+		int ret = 0;
+		for(BooleanValue bit : bits) {
+			if (bit==TRUE) ret++;
+			else if (bit!=FALSE)
+				throw new IllegalStateException(this + " is not constant");
+		}
+		return ret;
+	}
+	
 	/**
 	 * {@inheritDoc}
 	 * @see kodkod.engine.bool.Int#bit(int)
