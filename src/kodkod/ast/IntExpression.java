@@ -131,6 +131,66 @@ public abstract class IntExpression implements Node {
 	}
 	
 	/**
+	 * Returns an IntExpression that represents the bitwise AND of this and
+	 * the given int node.  The effect of this method is the same as calling
+	 * this.compose(BinaryIntExpression.Operator.AND, intexpr).
+	 * @return {e: IntExpression | [[e]] = this & intexpr }
+	 */
+	public final IntExpression and(IntExpression intexpr) {
+		return compose(BinaryIntExpression.Operator.AND, intexpr);
+	}
+	
+	/**
+	 * Returns an IntExpression that represents the bitwise OR of this and
+	 * the given int node.  The effect of this method is the same as calling
+	 * this.compose(BinaryIntExpression.Operator.OR, intexpr).
+	 * @return {e: IntExpression | [[e]] = this | intexpr }
+	 */
+	public final IntExpression or(IntExpression intexpr) {
+		return compose(BinaryIntExpression.Operator.OR, intexpr);
+	}
+	
+	/**
+	 * Returns an IntExpression that represents the bitwise XOR of this and
+	 * the given int node.  The effect of this method is the same as calling
+	 * this.compose(BinaryIntExpression.Operator.XOR, intexpr).
+	 * @return {e: IntExpression | [[e]] = this & intexpr }
+	 */
+	public final IntExpression xor(IntExpression intexpr) {
+		return compose(BinaryIntExpression.Operator.XOR, intexpr);
+	}
+	
+	/**
+	 * Returns an IntExpression that represents the left shift of this by
+	 * the given int node.  The effect of this method is the same as calling
+	 * this.compose(BinaryIntExpression.Operator.SHL, intexpr).
+	 * @return {e: IntExpression | [[e]] = this << intexpr }
+	 */
+	public final IntExpression shl(IntExpression intexpr) {
+		return compose(BinaryIntExpression.Operator.SHL, intexpr);
+	}
+	
+	/**
+	 * Returns an IntExpression that represents the right shift of this and
+	 * the given int node, with zero extension.  The effect of this method is the same as calling
+	 * this.compose(BinaryIntExpression.Operator.SHR, intexpr).
+	 * @return {e: IntExpression | [[e]] = this >>> intexpr }
+	 */
+	public final IntExpression shr(IntExpression intexpr) {
+		return compose(BinaryIntExpression.Operator.SHR, intexpr);
+	}
+	
+	/**
+	 * Returns an IntExpression that represents the right shift of this and
+	 * the given int node, with sign extension.  The effect of this method is the same as calling
+	 * this.compose(BinaryIntExpression.Operator.SHA, intexpr).
+	 * @return {e: IntExpression | [[e]] = this >> intexpr }
+	 */
+	public final IntExpression sha(IntExpression intexpr) {
+		return compose(BinaryIntExpression.Operator.SHA, intexpr);
+	}
+	
+	/**
 	 * Returns an expression that combines this and the given integer expression using the
 	 * specified operatior.
 	 * @return {e: IntExpression | [[e]] = this op intexpr }

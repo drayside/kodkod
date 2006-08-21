@@ -4,8 +4,6 @@
  */
 package kodkod.ast;
 
-import java.util.List;
-
 import kodkod.ast.visitor.ReturnVisitor;
 
 
@@ -151,7 +149,7 @@ public abstract class Expression implements Node {
      * @return {e: Expression | e = project(this, columns) }
      * @throws IllegalArgumentException - columns.length < 1
      */
-    public Expression project(List<IntExpression> columns) {
+    public Expression project(IntExpression... columns) {
     		return new ProjectExpression(this, columns);
     }
     

@@ -161,6 +161,72 @@ final class UnaryInt extends Int {
 		return "u"+Arrays.toString(bits);
 	}
 
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.engine.bool.Int#and(kodkod.engine.bool.Int)
+	 */
+	@Override
+	public Int and(Int other) {
+		validate(other);
+		final int width = StrictMath.min(width(), other.width());
+		final BooleanValue[] and = new BooleanValue[width];
+		for(int i = 0; i < width; i++) {
+			and[i] = factory.and(bit(i), other.bit(i));
+		}
+		return new UnaryInt(factory, and);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.engine.bool.Int#or(kodkod.engine.bool.Int)
+	 */
+	@Override
+	public Int or(Int other) {
+		validate(other);
+		final int width = StrictMath.max(width(), other.width());
+		final BooleanValue[] or = new BooleanValue[width];
+		for(int i = 0; i < width; i++) {
+			or[i] = factory.or(bit(i), other.bit(i));
+		}
+		return new UnaryInt(factory, or);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.engine.bool.Int#xor(kodkod.engine.bool.Int)
+	 */
+	@Override
+	public Int xor(Int other) {
+		throw new UnsupportedOperationException();
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.engine.bool.Int#shl(kodkod.engine.bool.Int)
+	 */
+	@Override
+	public Int shl(Int other) {
+		throw new UnsupportedOperationException();
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.engine.bool.Int#shr(kodkod.engine.bool.Int)
+	 */
+	@Override
+	public Int shr(Int other) {
+		throw new UnsupportedOperationException();
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.engine.bool.Int#sha(kodkod.engine.bool.Int)
+	 */
+	@Override
+	public Int sha(Int other) {
+		throw new UnsupportedOperationException();
+	}
+
 }
 
 

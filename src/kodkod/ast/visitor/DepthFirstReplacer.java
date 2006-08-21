@@ -4,9 +4,6 @@
  */
 package kodkod.ast.visitor;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import kodkod.ast.BinaryExpression;
 import kodkod.ast.BinaryFormula;
 import kodkod.ast.BinaryIntExpression;
@@ -238,11 +235,12 @@ public abstract class DepthFirstReplacer implements ReturnVisitor<Expression, Fo
 		Expression ret = lookup(project);
 		if (ret==null) {	
 			final Expression expr = project.expression().accept(this);
-			final List<IntExpression> cols = new ArrayList<IntExpression>(project.arity());
+			final IntExpression[] cols = new IntExpression[project.arity()];
 			boolean allSame = expr==project.expression();
+			int i = 0;
 			for(IntExpression col : project.columns()) {
 				IntExpression newCol = col.accept(this);
-				cols.add(newCol);
+				cols[i++] = newCol;
 				allSame = allSame && (newCol==col);
 			}
 			ret = allSame ? project : expr.project(cols);

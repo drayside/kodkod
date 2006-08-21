@@ -100,10 +100,15 @@ public final class BinaryFormula extends Formula {
      * Represents a binary formula operator. 
      */
     public static enum Operator {
-              
+        /** Logical AND operator. */      
         AND { public String toString() { return "&&"; }},
+        /** Logical OR operator. */      
         OR { public String toString() { return "||"; }},
+        /** Logical XOR operator. */      
+        XOR { public String toString() { return "xor"; } },
+        /** Logical implication operator. */      
         IMPLIES { public String toString() { return "=>"; }},
+        /** Logical bi-implication operator. */
         IFF { public String toString() { return "<=>"; }}
     }
 

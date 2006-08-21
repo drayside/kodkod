@@ -152,43 +152,85 @@ public final class BinaryIntExpression extends IntExpression {
 			public String toString() {
 				return "/";
 			}
-		} ; 
-//		, OR {
-//			/**
-//			 * Returns the bitwise OR of i0 and i1.
-//			 * @return i0 | i1
-//			 */
-//			public int apply(int i0, int i1) {
-//				return i0 | i1;
-//			}
-//			public String toString() {
-//				return "|";
-//			}
-//		},
-//		AND {
-//			/**
-//			 * Returns the bitwise AND of i0 and i1.
-//			 * @return i0 & i1
-//			 */
-//			public int apply(int i0, int i1) {
-//				return i0 & i1;
-//			}
-//			public String toString() {
-//				return "&";
-//			}
-//		}, 
-//		XOR {
-//			/**
-//			 * Returns the bitwise XOR of i0 and i1.
-//			 * @return i0 ^ i1
-//			 */
-//			public int apply(int i0, int i1) {
-//				return i0 ^ i1;
-//			}
-//			public String toString() {
-//				return "^";
-//			}
-//		};
+		}, 
+		/** bitwise AND operator */
+		AND {
+			/**
+			 * Returns the bitwise AND of i0 and i1.
+			 * @return i0 & i1
+			 */
+			public int apply(int i0, int i1) {
+				return i0 & i1;
+			}
+			public String toString() {
+				return "&";
+			}
+		},
+		/** bitwise OR operator */
+		OR {
+			/**
+			 * Returns the bitwise OR of i0 and i1.
+			 * @return i0 | i1
+			 */
+			public int apply(int i0, int i1) {
+				return i0 | i1;
+			}
+			public String toString() {
+				return "|";
+			}
+		}, 
+		/** bitwise XOR operator */
+		XOR {
+			/**
+			 * Returns the bitwise XOR of i0 and i1.
+			 * @return i0 ^ i1
+			 */
+			public int apply(int i0, int i1) {
+				return i0 ^ i1;
+			}
+			public String toString() {
+				return "^";
+			}
+		}, 
+		/** left shift operator */
+		SHL {
+			/**
+			 * Returns i0 shifted to the left by i1 positions.
+			 * @return i0 << i1
+			 */
+			public int apply(int i0, int i1) {
+				return i0 << i1;
+			}
+			public String toString() {
+				return "<<";
+			}
+		}, 
+		/** right shift operator with zero extension */
+		SHR {
+			/**
+			 * Returns i0 shifted to the right by i1 positions.
+			 * @return i0 >>> i1
+			 */
+			public int apply(int i0, int i1) {
+				return i0 >>> i1;
+			}
+			public String toString() {
+				return ">>>";
+			}
+		}, 
+		/** right shift operator with sign extension */
+		SHA {
+			/**
+			 * Returns i0 shifted to the right by i1 positions, with sign extension.
+			 * @return i0 >> i1
+			 */
+			public int apply(int i0, int i1) {
+				return i0 >> i1;
+			}
+			public String toString() {
+				return ">>";
+			}
+		};
 		
 		/**
 		 * Returns the result of combining the given integers

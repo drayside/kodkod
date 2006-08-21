@@ -30,12 +30,14 @@ public final class ProjectExpression extends Expression {
 	 * expr and columns.
 	 * @effects this.expression' = expr && this.indices' = columns
 	 */
-	ProjectExpression(Expression expr, List<IntExpression> columns) {
-		if (columns.isEmpty())
+	ProjectExpression(Expression expr, IntExpression... columns) {
+		if (columns.length==0)
 			throw new IllegalArgumentException("no columns specified for projection");
 		this.expr = expr;
-		this.columns = Collections.unmodifiableList(Arrays.asList(columns.toArray(new IntExpression[columns.size()])));
-		this.hashcode = expr.hashCode() + columns.hashCode();
+		final IntExpression[] temp = new IntExpression[columns.length];
+		System.arraycopy(columns, 0, temp, 0, columns.length);
+		this.columns = Collections.unmodifiableList(Arrays.asList(temp));
+		this.hashcode = expr.hashCode() + Arrays.hashCode(columns);
 	}
 
 	/**

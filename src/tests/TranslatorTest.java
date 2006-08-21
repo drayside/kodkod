@@ -5,7 +5,6 @@
 package tests;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -13,7 +12,6 @@ import junit.framework.TestCase;
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
 import kodkod.ast.IntConstant;
-import kodkod.ast.IntExpression;
 import kodkod.ast.Multiplicity;
 import kodkod.ast.QuantifiedFormula;
 import kodkod.ast.Relation;
@@ -268,26 +266,24 @@ public class TranslatorTest extends TestCase {
 	public final void testTranslateProjection() {
 		
 		assertTrue(isSatisfiable(r3[0].eq(
-				r2[0].project(Arrays.asList((IntExpression)IntConstant.constant(0), IntConstant.constant(1), IntConstant.constant(0))))));
+				r2[0].project(IntConstant.constant(0), IntConstant.constant(1), IntConstant.constant(0)))));
 		
-		assertTrue(isSatisfiable(r2[1].in(r3[0].project(Arrays.asList(r1[3].count(), r1[2].count())))));
+		assertTrue(isSatisfiable(r2[1].in(r3[0].project(r1[3].count(), r1[2].count()))));
 
 		final Variable v = Variable.nary("r", 2);
 		assertFalse(isSatisfiable(v.transpose().
-				eq(v.project(Arrays.asList((IntExpression)IntConstant.constant(1), IntConstant.constant(0)))).not().
+				eq(v.project(IntConstant.constant(1), IntConstant.constant(0))).not().
 				forSome(v.setOf(r2[0]))));
 		
 		bounds.boundExactly(r3[0], bounds.upperBound(r3[0]));
 		bounds.boundExactly(r2[0], bounds.upperBound(r2[0]));
 		
-		assertTrue(isSatisfiable(r3[0].project(Arrays.asList((IntExpression)IntConstant.constant(0), IntConstant.constant(1))).eq(r2[0])));
-		assertTrue(isSatisfiable(r3[0].project(Arrays.asList((IntExpression)IntConstant.constant(0), IntConstant.constant(4), IntConstant.constant(2))).
+		assertTrue(isSatisfiable(r3[0].project(IntConstant.constant(0), IntConstant.constant(1)).eq(r2[0])));
+		assertTrue(isSatisfiable(r3[0].project(IntConstant.constant(0), IntConstant.constant(4), IntConstant.constant(2)).
 				eq(Expression.NONE.product(Expression.NONE).product(Expression.NONE))));
-		assertTrue(isSatisfiable(r3[0].project(Arrays.asList((IntExpression)IntConstant.constant(0), IntConstant.constant(-1), IntConstant.constant(2))).
+		assertTrue(isSatisfiable(r3[0].project(IntConstant.constant(0), IntConstant.constant(-1), IntConstant.constant(2)).
 				eq(Expression.NONE.product(Expression.NONE).product(Expression.NONE))));
 		
-
-
 	}
 
 	public final void testIFF() {

@@ -196,27 +196,55 @@ public abstract class Int {
 	 */
 	public abstract Int choice(BooleanValue condition, Int other);
 	
-//	/**
-//	 * Returns an Int that represents the bitwise conjunction of this and the given Int.
-//	 * @requires this.factory = other.factory
-//	 * @return an Int that represents the bitwise conjunction of this and the given Int.
-//	 */
-//	public abstract Int and(Int other);
-//	
-//	/**
-//	 * Returns an Int that represents the bitwise disjunction of this and the given Int.
-//	 * @requires this.factory = other.factory
-//	 * @return an Int that represents the bitwise disjunction of this and the given Int.
-//	 */
-//	public abstract Int or(Int other);
-//	
-//	/**
-//	 * Returns an Int that represents the bitwise XOR of this and the given Int.
-//	 * @requires this.factory = other.factory
-//	 * @return an Int that represents the bitwise XOR of this and the given Int.
-//	 * @throws UnsupportedOperationException - this.encoding does not support XOR
-//	 */
-//	public abstract Int xor(Int other);
+	/**
+	 * Returns an Int that represents the bitwise conjunction of this and the given Int.
+	 * @requires this.factory = other.factory
+	 * @return an Int that represents the bitwise conjunction of this and the given Int.
+	 */
+	public abstract Int and(Int other);
+	
+	/**
+	 * Returns an Int that represents the bitwise disjunction of this and the given Int.
+	 * @requires this.factory = other.factory
+	 * @return an Int that represents the bitwise disjunction of this and the given Int.
+	 */
+	public abstract Int or(Int other);
+	
+	/**
+	 * Returns an Int that represents the bitwise XOR of this and the given Int.
+	 * @requires this.factory = other.factory
+	 * @return an Int that represents the bitwise XOR of this and the given Int.
+	 * @throws UnsupportedOperationException - this.encoding does not support XOR
+	 */
+	public abstract Int xor(Int other);
+	
+	/**
+	 * Returns an Int that represents this shifted to the left by the given Int.
+	 * @requires this.factory = other.factory
+	 * @return an Int that represents this shifted to the left by the given Int.
+	 * @throws UnsupportedOperationException - this.encoding does not support SHL
+	 */
+	public abstract Int shl(Int other);
+	
+	/**
+	 * Returns an Int that represents this shifted to the right by the given Int, 
+	 * with zero extension.
+	 * @requires this.factory = other.factory
+	 * @return an Int that represents this shifted to the right by the given Int, 
+	 * with zero extension.
+	 * @throws UnsupportedOperationException - this.encoding does not support SHR
+	 */
+	public abstract Int shr(Int other);
+	
+	/**
+	 * Returns an Int that represents this shifted to the right by the given Int, 
+	 * with sign extension.
+	 * @requires this.factory = other.factory
+	 * @return an Int that represents this shifted to the right by the given Int, 
+	 * with sign extension.
+	 * @throws UnsupportedOperationException - this.encoding does not support SHA
+	 */
+	public abstract Int sha(Int other);
 	
 	/**
 	 * Throws IllegalArgumentException if other.factory != this.factory.

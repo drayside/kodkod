@@ -511,4 +511,44 @@ public class IntTest extends TestCase {
 		solver.options().setBitwidth(8);
 		testIntSum(BINARY);
 	}
+	
+	public void testAndOrXor() {
+		Formula f = IntConstant.constant(1).and(IntConstant.constant(2)).eq(IntConstant.constant(0));
+		Solution s = solve(f);
+		assertNotNull(s.instance());
+		bounds.bound(r1, factory.setOf("13","14","15"));
+		f = IntConstant.constant(1).xor(r1.count()).eq(IntConstant.constant(2));
+		s = solve(f);
+		assertEquals(s.instance().tuples(r1).size(), 3);
+		bounds.bound(r1, factory.setOf("12","13","14","15"));
+		bounds.bound(r2, factory.setOf(factory.tuple("1", "1"), factory.tuple("2","5")));
+		f = r2.count().or(r1.count()).eq(IntConstant.constant(5));
+		s = solve(f);
+		assertEquals(s.instance().tuples(r1).size(), 4);
+		assertEquals(s.instance().tuples(r2).size(), 1);
+	}
+	
+	public void testShifts() {
+		bounds.bound(r1, factory.setOf("9","10","11","12","13","14","15"));
+		Formula f = IntConstant.constant(1).shl(r1.count()).eq(IntConstant.constant(4));
+		Solution s = solve(f);
+		assertEquals(s.instance().tuples(r1).size(), 2);
+		f = IntConstant.constant(1).shl(r1.count()).eq(IntConstant.constant(0));
+		s = solve(f);
+		assertTrue(s.instance().tuples(r1).size() >= 5);
+		
+		f = IntConstant.constant(-12).shr(r1.count()).eq(IntConstant.constant(5));
+		s = solve(f);
+		assertTrue(s.instance().tuples(r1).size() == 2);
+		
+		f = IntConstant.constant(-16).sha(r1.count()).eq(IntConstant.constant(0));
+		s = solve(f);
+		assertNull(s.instance());
+		
+		f = IntConstant.constant(-16).sha(r1.count()).eq(IntConstant.constant(-1));
+		s = solve(f);
+		assertTrue(s.instance().tuples(r1).size() >= 4);
+	
+	}
+	
 }

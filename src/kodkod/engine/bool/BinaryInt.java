@@ -311,6 +311,108 @@ final class BinaryInt extends Int {
 	
 	/**
 	 * {@inheritDoc}
+	 * @see kodkod.engine.bool.Int#and(kodkod.engine.bool.Int)
+	 */
+	@Override
+	public Int and(Int other) {
+		validate(other);
+		final int width = StrictMath.min(width(), other.width());
+		final BooleanValue[] and = new BooleanValue[width];
+		for(int i = 0; i < width; i++) {
+			and[i] = factory.and(bit(i), other.bit(i));
+		}
+		return new BinaryInt(factory, and);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.engine.bool.Int#or(kodkod.engine.bool.Int)
+	 */
+	@Override
+	public Int or(Int other) {
+		validate(other);
+		final int width = StrictMath.max(width(), other.width());
+		final BooleanValue[] or = new BooleanValue[width];
+		for(int i = 0; i < width; i++) {
+			or[i] = factory.or(bit(i), other.bit(i));
+		}
+		return new BinaryInt(factory, or);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.engine.bool.Int#xor(kodkod.engine.bool.Int)
+	 */
+	@Override
+	public Int xor(Int other) {
+		validate(other);
+		final int width = StrictMath.max(width(), other.width());
+		final BooleanValue[] xor = new BooleanValue[width];
+		for(int i = 0; i < width; i++) {
+			xor[i] = factory.xor(bit(i), other.bit(i));
+		}
+		return new BinaryInt(factory,xor);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.engine.bool.Int#shl(kodkod.engine.bool.Int)
+	 */
+	@Override
+	public Int shl(Int other) {
+		validate(other);
+		final int width = factory.bitwidth;
+		final BinaryInt shifted = new BinaryInt(factory, extend(width));
+		final int max = StrictMath.min(32 - Integer.numberOfLeadingZeros(width - 1), other.width());
+		for(int i = 0; i < max; i++) {
+			int shift = 1 << i;
+			BooleanValue bit = other.bit(i);
+			for(int j = width-1; j >= 0; j--) {
+				shifted.bits[j] = factory.ite(bit, j < shift ? FALSE : shifted.bit(j-shift), shifted.bits[j]);
+			}
+		}
+		return shifted;
+	}
+	
+	/**
+	 * Performs a right shift with the given extension.
+	 */
+	private Int shr(Int other, BooleanValue sign) {
+		validate(other);
+		final int width = factory.bitwidth;
+		final BinaryInt shifted = new BinaryInt(factory, extend(width));
+		final int max = StrictMath.min(32 - Integer.numberOfLeadingZeros(width - 1), other.width());
+		for(int i = 0; i < max; i++) {
+			int shift = 1 << i;
+			int fill = width - shift;
+			BooleanValue bit = other.bit(i);
+			for(int j = 0; j < width; j++) {
+				shifted.bits[j] = factory.ite(bit, j < fill ? shifted.bit(j+shift) : sign, shifted.bits[j]);
+			}
+		}
+		return shifted;
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.engine.bool.Int#shr(kodkod.engine.bool.Int)
+	 */
+	@Override
+	public Int shr(Int other) {
+		return shr(other, FALSE);
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.engine.bool.Int#sha(kodkod.engine.bool.Int)
+	 */
+	@Override
+	public Int sha(Int other) {
+		return shr(other, bits[bits.length-1]);
+	}
+	
+	/**
+	 * {@inheritDoc}
 	 * @see java.lang.Object#toString()
 	 */
 	public String toString() {
@@ -318,5 +420,4 @@ final class BinaryInt extends Int {
 	}
 
 	
-
 }

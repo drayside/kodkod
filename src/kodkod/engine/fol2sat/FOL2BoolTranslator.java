@@ -525,6 +525,7 @@ final class FOL2BoolTranslator {
 			switch(op) {
 			case AND		: ret = f.and(left, right); break;
 			case OR		: ret = f.or(left, right); break;
+			case XOR		: ret = f.xor(left, right); break;
 			case IMPLIES	: ret = f.implies(left, right); break;
 			case IFF		: ret = f.iff(left, right); break;
 			default : 
@@ -697,6 +698,12 @@ final class FOL2BoolTranslator {
 			case MINUS 		: ret = left.minus(right); break;
 			case MULTIPLY 	: ret = left.multiply(right); break;
 			case DIVIDE 		: ret = left.divide(right); break;
+			case AND			: ret = left.and(right); break;
+			case OR			: ret = left.or(right); break;
+			case XOR			: ret = left.xor(right); break;
+			case SHL			: ret = left.shl(right); break;
+			case SHR			: ret = left.shr(right); break;
+			case SHA			: ret = left.sha(right); break;
 			default    :
 				throw new IllegalArgumentException("Unknown operator: " + intExpr.op());
 			}
