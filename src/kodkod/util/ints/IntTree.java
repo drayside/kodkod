@@ -39,6 +39,7 @@ final class IntTree<N extends IntTree.Node<N>> implements Cloneable {
 	 * Returns the node with the given key, or null no such node exists.
 	 * @return this.nodes & key.index 
 	 */
+	@SuppressWarnings("unchecked")
 	final N search(int k) {	
 		Node node = root;
 		while(node != NIL) {
@@ -46,7 +47,7 @@ final class IntTree<N extends IntTree.Node<N>> implements Cloneable {
 			else if (node.key>k) node = node.left;
 			else node = node.right;
 		}
-		return unwrap(node);
+		return (N)unwrap(node);
 	}
 	
 	/**
@@ -110,9 +111,10 @@ final class IntTree<N extends IntTree.Node<N>> implements Cloneable {
 	 * @return the given node's predecessor
 	 * @throws NullPointerException - node = null
 	 */
+	@SuppressWarnings("unchecked")
 	final N predecessor(N node) {
 		if (node.left != NIL) {
-			return unwrap(max(node.left));
+			return (N)unwrap(max(node.left));
 		} else {
 			Node n = node;
 			Node ancestor = n.parent;
@@ -120,7 +122,7 @@ final class IntTree<N extends IntTree.Node<N>> implements Cloneable {
 				n = ancestor;
 				ancestor = ancestor.parent;
 			}
-			return unwrap(ancestor);
+			return (N)unwrap(ancestor);
 		}
 	}	
 	
@@ -131,9 +133,10 @@ final class IntTree<N extends IntTree.Node<N>> implements Cloneable {
 	 * @return the given node's successor
 	 * @throws NullPointerException - node = null
 	 */
+	@SuppressWarnings("unchecked")
 	final N successor(N node) {
 		if (node.right != NIL) {
-			return unwrap(min(node.right));
+			return (N)unwrap(min(node.right));
 		} else {
 			Node n = node;
 			Node ancestor = n.parent;
@@ -141,7 +144,7 @@ final class IntTree<N extends IntTree.Node<N>> implements Cloneable {
 				n = ancestor;
 				ancestor = ancestor.parent;
 			}
-			return unwrap(ancestor);
+			return (N)unwrap(ancestor);
 		}
 	}
 	
@@ -149,16 +152,18 @@ final class IntTree<N extends IntTree.Node<N>> implements Cloneable {
 	 * Returns the node with the smallest key.
 	 * @return key.(min(this.nodes.key))
 	 */
+	@SuppressWarnings("unchecked")
 	final N min() {
-		return unwrap(min(root));
+		return (N)unwrap(min(root));
 	}
 	
 	/**
 	 * Returns the node with the largest key.
 	 * @return key.(max(this.nodes.key))
 	 */
+	@SuppressWarnings("unchecked")
 	final N max() {
-		return unwrap(max(root));
+		return (N)unwrap(max(root));
 	}
 	
 	/**
@@ -547,19 +552,22 @@ final class IntTree<N extends IntTree.Node<N>> implements Cloneable {
 		 * Returns the left child of this node.
 		 * @return this.left
 		 */
-		final N left() { return unwrap(left); }
+		@SuppressWarnings("unchecked")
+		final N left() { return (N)unwrap(left); }
 		
 		/**
 		 * Returns the right child of this node.
 		 * @return this.right
 		 */
-		final N right() { return unwrap(right); }
+		@SuppressWarnings("unchecked")
+		final N right() { return (N)unwrap(right); }
 		
 		/**
 		 * Return the parent of this node.
 		 * @return this.parent
 		 */
-		final N parent() { return unwrap(parent); }
+		@SuppressWarnings("unchecked")
+		final N parent() { return (N)unwrap(parent); }
 		
 		/**
 		 * Clones this node.  Subclasses must override

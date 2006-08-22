@@ -172,8 +172,8 @@ final class FOL2BoolTranslator {
 		 * @return translation for the given node, if it has been recorded;
 		 * null if not.
 		 */
-		<T> T lookup(Node node) {
-			return cache.get(node, env);
+		@SuppressWarnings("unchecked") <T> T lookup(Node node) {
+			return (T) cache.get(node, env);
 		}
 		
 		/**
