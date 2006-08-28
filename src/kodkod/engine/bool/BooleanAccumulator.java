@@ -139,6 +139,7 @@ public final class BooleanAccumulator extends BooleanValue implements Iterable<B
 			};
 		}
 
+		
 		/**
 		 * Throws an unsupported operation exception.
 		 * @throws UnsupportedOperationException

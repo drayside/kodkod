@@ -444,6 +444,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 		if (cells.isEmpty())
 			return clone();
 		
+//		System.out.println("closure of " + this);
 		BooleanMatrix ret = this;
 	
 		// compute the number of rows in the matrix
@@ -458,7 +459,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 		for(int i = 1; i < rowNum; i*=2) {
 			ret = ret.or(ret.dot(ret));
 		}
-		
+//		System.out.println(ret);
 		return ret==this ? clone() : ret;
 	}
 	

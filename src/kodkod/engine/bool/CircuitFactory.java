@@ -196,18 +196,38 @@ final class CircuitFactory {
 	@SuppressWarnings("unchecked") 
 	BooleanValue assemble(BooleanAccumulator acc) {
 		final int asize = acc.size();
+		final Operator.Nary op = acc.op;
 		switch(asize) {
-		case 0 : return acc.op.identity();
+		case 0 : return op.identity();
 		case 1 : return acc.iterator().next();
 		case 2 : 
 			final Iterator<BooleanValue> inputs = acc.iterator();
-			return assemble(acc.op, inputs.next(), inputs.next());
+			return assemble(op, inputs.next(), inputs.next());
 		default :
-			final int hash = acc.op.hash((Iterator)acc.iterator());
-			for(Iterator<BooleanFormula> gates = opCache(acc.op).get(hash); gates.hasNext(); ) {
-				BooleanFormula g = gates.next();
-				if (g.size()==asize && ((NaryGate) g).sameInputs(acc.iterator())) { 
-					return g;
+			final int hash = op.hash((Iterator)acc.iterator());
+			if (asize > cmpMax) {
+				for(Iterator<BooleanFormula> gates = opCache(op).get(hash); gates.hasNext(); ) {
+					BooleanFormula g = gates.next();
+					if (g.size()==asize && ((NaryGate) g).sameInputs(acc.iterator())) { 
+						return g;
+					} 
+				}
+			} else {
+				LOOKUP: for(Iterator<BooleanFormula> gates = opCache(op).get(hash); gates.hasNext(); ) {
+					BooleanFormula g = gates.next();
+					if (g.size()==asize && ((NaryGate) g).sameInputs(acc.iterator())) { 
+						return g;
+					} else if (g.size() < asize) {
+						scrap0.clear();
+						g.flatten(op, scrap0, cmpMax);
+						if (scrap0.size()==asize) {
+							for(BooleanValue v : acc) {
+								if (!scrap0.contains(v))
+									continue LOOKUP;
+							}
+							return g;
+						}
+					}
 				}
 			}
 			final BooleanFormula ret = new NaryGate(acc, label++, hash);	

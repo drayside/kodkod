@@ -110,7 +110,6 @@ final class NaryGate extends MultiGate {
 	/**
 	 * Returns true if the given iterator and this.iterator 
 	 * return the same elements, in the same order.
-	 * @requires the given iterator returns exactly #this.inputs elements
 	 * @return true if values and this.iterator return the same elements,
 	 * in the same order.
 	 */

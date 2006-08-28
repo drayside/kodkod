@@ -78,6 +78,7 @@ abstract class TranslationCache {
 	private TranslationCache(AnnotatedNode<? extends Node> annotated) {
 		final Collector collector = new Collector(annotated.sharedNodes());
 		annotated.node().accept(collector);
+//		System.out.println(collector.cachingInfo());
 		for(Map.Entry<Node, Object> e :  ((Map<Node, Object>)((Map)collector.cachingInfo())).entrySet()) {
 			Set<Variable> freeVars = (Set<Variable>)e.getValue();
 			if (freeVars.isEmpty())
@@ -477,7 +478,8 @@ abstract class TranslationCache {
 		private final Set<Variable> cache(Node node, Set<Variable> freeVars) {
 			if (sharedNodes.contains(node) || 
 				!varsInScope.empty() && !freeVars.contains(varsInScope.peek())) {
-				
+//				System.out.println("caching " + node + " for " + freeVars);
+//				System.out.println("varsInScope: " + varsInScope + " peek: " + (varsInScope.empty() ? "" : varsInScope.peek()));
 				final int numVars = freeVars.size();
 				if (numVars < 2)
 					freeVarMap.put(node, freeVars);

@@ -69,14 +69,14 @@ public final class Translator {
 	 */
 	public static Translation translate(Formula formula, Bounds bounds, Options options) throws TrivialFormulaException {
 		// extract structural information about the formula (i.e. syntactically shared internal nodes)
-//		System.out.println("finding syntactically shared nodes...");
+		//System.out.println("finding syntactically shared nodes...");
 		AnnotatedNode<Formula> annotated = new AnnotatedNode<Formula>(formula);
 		// extract top-level predicates
-//		System.out.println("finding top-level predicates...");
+		//System.out.println("finding top-level predicates...");
 		Map<RelationPredicate.Name, Set<RelationPredicate>> preds = AnnotatedNode.predicates(annotated);
 		
 		// copy the bounds and optimize the copy by breaking symmetry on total orders and acyclic
-//		System.out.println("optimizing bounds...");
+		//System.out.println("optimizing bounds...");
 		bounds = bounds.clone();
 		
 		Set<IntSet> symmetricParts = BoundsOptimizer.optimize(bounds, AnnotatedNode.relations(annotated), 
@@ -85,7 +85,7 @@ public final class Translator {
 		// skolemize
 		final Map<Decl, Relation> skolems;
 		if (options.skolemize()) {
-//			System.out.println("skolemizing...");
+			//System.out.println("skolemizing...");
 			Skolemizer skolemizer = Skolemizer.skolemize(annotated, bounds, constantFactory(options));
 			annotated = skolemizer.skolemized();
 			skolems = skolemizer.skolems();
@@ -98,7 +98,7 @@ public final class Translator {
 		
 		final Map<Node, IntSet> varUsage;
 		BooleanValue circuit;
-//		System.out.println("translating to bool...");
+		//System.out.println("translating to bool...");
 		if (options.trackVars()) {
 			FOL2BoolTranslator acircuit = FOL2BoolTranslator.translateAndTrack(annotated,  interpreter);
 			circuit = acircuit.translation();
@@ -126,14 +126,14 @@ public final class Translator {
 		final int numPrimaryVariables = factory.numberOfVariables();
 		
 		// break symmetries on the remaining relations
-//		System.out.println("generating symmetry breaking predicates...");
+		//System.out.println("generating symmetry breaking predicates...");
 		circuit = factory.and(circuit, SymmetryBreaker.generateSBP(symmetricParts, interpreter, options.symmetryBreaking()));
 	
 		interpreter = null; symmetricParts = null; // release the allocator and symmetric partitions
 
 		// flatten
 		if (options.flatten()) {
-//			System.out.println("flattening...");
+			//System.out.println("flattening...");
 			factory.clear(); // remove everything but the variables from the factory
 			circuit = BooleanFormulaFlattener.flatten((BooleanFormula)circuit, factory);
 			factory = null; // release the factory itself
@@ -144,9 +144,10 @@ public final class Translator {
 		}
 		
 		// translate to cnf and return the translation
-//		System.out.println("translating to cnf...");
-//		System.out.println(circuit);
+		//System.out.println("translating to cnf...");
+		//System.out.println(circuit);
 		final SATSolver cnf = Bool2CNFTranslator.definitional((BooleanFormula)circuit, options.solver(), numPrimaryVariables);
+		//System.out.println("about to start sat solving p cnf " + cnf.numberOfVariables() + " " + cnf.numberOfClauses());
 		return new Translation(cnf, bounds, skolems, Collections.unmodifiableMap(varUsage), numPrimaryVariables);
 
 	}
