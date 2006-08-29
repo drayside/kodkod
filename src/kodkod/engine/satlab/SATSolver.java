@@ -1,6 +1,5 @@
 package kodkod.engine.satlab;
 
-import kodkod.engine.TimeoutException;
 
 /**
  * Provides an interface to a SAT solver.
@@ -56,10 +55,8 @@ public interface SATSolver {
 	 * If the satisfiability of this.clauses cannot be determined within
 	 * the given number of seconds, a TimeoutException is thrown.
 	 * @return true if this.clauses are satisfiable; otherwise false.
-	 * @throws TimeoutException - the solver could not determine
-	 * the satisfiability of the problem within the specified number of seconds.
 	 */
-	public abstract boolean solve() throws TimeoutException;
+	public abstract boolean solve();
 	
 	/**
 	 * Returns the boolean value assigned to the given variable by the

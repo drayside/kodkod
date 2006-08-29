@@ -70,11 +70,7 @@ public final class Proof {
 	
 		for(int size = solver.coreSize(); solver.coreSize() < size; ) {
 			solver.retainCore();
-			try {
-				solver.solve();
-			} catch (TimeoutException e) {
-				break;
-			}
+			solver.solve();
 		}
 		
 		fixed = true;
@@ -97,11 +93,7 @@ public final class Proof {
 		for(int size = solver.coreSize(); numOfIterations > 0 && solver.coreSize() < size; 
 		    numOfIterations--) {
 			solver.retainCore();
-			try {
-				solver.solve();
-			} catch (TimeoutException e) {
-				break;
-			}
+			solver.solve();
 		}
 		
 		fixed = numOfIterations > 0;

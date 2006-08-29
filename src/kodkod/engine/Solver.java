@@ -184,8 +184,7 @@ public final class Solver {
 	 * @see Cost
 	 */
 	public Solution solve(Formula formula, Bounds bounds, Cost cost)
-			throws kodkod.engine.TimeoutException, HigherOrderDeclException,
-			UnboundLeafException {
+			throws HigherOrderDeclException, UnboundLeafException {
 		
 		if (!options.solver().minimizers())
 			throw new IllegalArgumentException(options.solver() + " is not a minimizing solver.");
@@ -242,8 +241,7 @@ public final class Solver {
 	 * @see Proof
 	 */
 	public Solution solve(Formula formula, Bounds bounds)
-			throws kodkod.engine.TimeoutException, HigherOrderDeclException,
-			UnboundLeafException {
+			throws HigherOrderDeclException, UnboundLeafException {
 		long startTransl = System.currentTimeMillis(), endTransl;
 		try {
 			final Translation translation = Translator.translate(formula, bounds, options);

@@ -1,34 +1,49 @@
 /**
- * ZChaffBasic.java
- * Created on 5:36:29 PM
+ * 
  */
 package kodkod.engine.satlab;
 
 
-import kodkod.engine.TimeoutException;
 
 /**
- * A wrapper class that provides access to the 
- * zchaff solver from Princeton.
+ * A skeleton implementation of a wrapper for a sat solver
+ * accessed through JNI.
  * 
  * @author Emina Torlak
  */
-abstract class ZChaff implements SATSolver {
+abstract class NativeSolver implements SATSolver {
 	/**
-	 * The memory address of the instance of zchaff
-	 * wrapped by this wrapper.
+	 * The memory address of the native instance wrapped by this wrapper.
 	 */
 	private long peer;
-	private int status, clauses, vars;
-	
+	private int clauses, vars;
+	private Boolean status;
 	/**
 	 * Constructs a new wrapper for the given 
-	 * instance of zchaff.
+	 * instance of the native solver.
 	 */
-	ZChaff(long peer) {
+	NativeSolver(long peer) {
 		this.peer = peer;
 		this.clauses = this.vars = 0;
+		this.status = null;
 //		System.out.println("created " + peer);
+	}
+	
+	/**
+	 * Loads the JNI library with the given name.
+	 */
+	static void loadLibrary(String library) {
+		try {
+			System.loadLibrary(library);
+		} catch(UnsatisfiedLinkError ex) {
+			
+			final String fs = System.getProperty("file.separator");
+			final String os = System.getProperty("os.name").toLowerCase().replace(' ','-');
+			final String arch = System.getProperty("os.arch").toLowerCase().replace(' ','-');
+			final String path = System.getProperty("user.dir") + fs + "jni" + fs + arch + "-" + os + fs;	
+			
+			System.load(path+System.mapLibraryName(library));
+		}
 	}
 	
 	/**
@@ -89,22 +104,23 @@ abstract class ZChaff implements SATSolver {
 	}
 	
 	/**
-	 * Returns the current status of the solver.
-	 * @return one of UNDETERMINED = 0, UNSATISFIABLE=1, SATISFIABLE = 2,
-	 *			 TIME_OUT = 3, MEM_OUT = 4, ABORTED = 5;
-	 */
-	final int status() { 
-		return status;
-	}
-	
-	/**
 	 * Returns a pointer to the C++ peer class (the native instance
-	 * of zchaff wrapped by this).
+	 *  wrapped by this).
 	 * @return a pointer to the C++ peer class (the native instance
-	 * of zchaff wrapped by this).
+	 *  wrapped by this).
 	 */
 	final long peer() {
 		return peer;
+	}
+	
+	/**
+	 * Returns the current status of the solver.
+	 * @return null if the status is unknown, TRUE if the last
+	 * call to solve() yielded SAT, and FALSE if the last call to
+	 * solve() yielded UNSAT.
+	 */
+	final Boolean status() { 
+		return status;
 	}
 	
 	/**
@@ -113,29 +129,13 @@ abstract class ZChaff implements SATSolver {
 	 * satisfying assignment can be obtained by calling {@link #variablesThatAre(boolean, int, int)}
 	 * or {@link #valueOf(int) }.
 	 * @return true if this.clauses are satisfiable; otherwise false.
-	 * @throws TimeoutException - the solver could not determine
-	 * the satisfiability of the problem within this.timeout() seconds.
 	 * @see kodkod.engine.satlab.SATSolver#solve()
 	 */
-	public final boolean solve() throws TimeoutException {
-		status = solve(peer);
-		switch(status) {
-		case UNDETERMINED : 
-			throw new UnknownError();
-		case UNSATISFIABLE:
-			return false;
-		case SATISFIABLE :
-			return true;
-		case TIME_OUT : 
-			throw new TimeoutException();
-		case MEM_OUT : 
-			throw new OutOfMemoryError();
-		case ABORTED : 
-			throw new UnknownError();
-		default :
-			throw new InternalError();
-		}
+	public final boolean solve() {
+		return (status = solve(peer));
 	}
+	
+	
 	
 	/**
 	 * Throws an IllegalArgumentException if variable !in this.variables.
@@ -159,10 +159,10 @@ abstract class ZChaff implements SATSolver {
 	 * outcome of the last call was not <code>true</code>.
 	 */
 	public final boolean valueOf(int variable) {
-		if (status != SATISFIABLE)
+		if (status != Boolean.TRUE)
 			throw new IllegalStateException();
 		validateVariable(variable);
-		return valueOf(peer, variable)==1;
+		return valueOf(peer, variable);
 	}
 	
 	/**
@@ -186,25 +186,20 @@ abstract class ZChaff implements SATSolver {
 		free();
 	}
 	
-	
-	/*----------------the native methods that call zchaff and the associated constants----------------*/
-	static final int	 UNDETERMINED = 0, UNSATISFIABLE=1, SATISFIABLE = 2,
-					 TIME_OUT = 3, MEM_OUT = 4, ABORTED = 5;
-	
 	/**
 	 * Releases the resources associated with
-	 * the given instance of zchaff.  This method
+	 * the given instance of a native solver.  This method
 	 * must be called when the object holding the
 	 * given reference goes out of scope to avoid
 	 * memory leaks.
 	 * @effects releases the resources associated
-	 * with the given instance of zchaff
+	 * with the given instance of a native solver
 	 */
 	abstract void free(long peer);
 	
 	/**
 	 * Adds the given number of variables
-	 * to the instance of zchaff referenced
+	 * to the instance of a native solver referenced
 	 * by the first argument.
 	 * @effects increases the vocabulary of the given instance
 	 * by the specified number of variables
@@ -213,31 +208,27 @@ abstract class ZChaff implements SATSolver {
 	
 	/**
 	 * Adds the specified clause to the instance
-	 * of zchaff referenced by the first argument.
-	 * @requires all i: lits[int] | some l: [1..numVariables(zchaff) | 
+	 * of a native solver referenced by the first argument.
+	 * @requires all i: lits[int] | some l: [1..this.numVariables()] | 
 	 *            i = l || i = -l
-	 * @effects adds the given clause to the specified instance of zchaff.
+	 * @effects adds the given clause to the specified instance of a native solver.
 	 */
 	abstract void addClause(long peer, int[] lits);
 	
 	/**
 	 * Calls the solve method on the instance of 
-	 * zchaff referenced by the given long.
-	 * @return an integer in the range [0..5], indicating the solver's
-	 * status as follows: UNDETERMINED = 0, UNSATISFIABLE = 1, SATISFIABLE = 2,
-	 * TIME_OUT = 3, MEM_OUT = 4, ABORTED = 5.
+	 * a native solver referenced by the given long.
+	 * @return true if the clauses in the solver are SAT;
+	 * otherwise returns false.
 	 */
-	abstract int solve(long peer);
+	abstract boolean solve(long peer);
 	
 	/**
 	 * Returns the assignment for the given literal
-	 * by the specified instance of zchaff:  1 means
-	 * the variable is TRUE, 0 that it's FALSE, and 
-	 * -1 that it is UNDECIDED.
-	 * @requires the last call to {@link #solve(long) solve(zchaff)} returned SATISFIABLE
+	 * by the specified instance of a native solver
+	 * @requires the last call to {@link #solve(long) solve(peer)} returned SATISFIABLE
 	 * @return the assignment for the given literal
 	 */
-	abstract int valueOf(long peer, int literal);
+	abstract boolean valueOf(long peer, int literal);
 
-	
 }

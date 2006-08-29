@@ -8,7 +8,6 @@ import kodkod.ast.Formula;
 import kodkod.ast.Variable;
 import kodkod.engine.Solution;
 import kodkod.engine.Solver;
-import kodkod.engine.TimeoutException;
 import kodkod.engine.satlab.SATFactory;
 import kodkod.instance.Bounds;
 
@@ -72,9 +71,6 @@ public final class GEO115 extends GEO159 {
 			
 			System.out.println(sol);
 			
-		} catch (TimeoutException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		} catch (NumberFormatException nfe) {
 			usage();
 		}

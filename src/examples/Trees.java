@@ -14,7 +14,6 @@ import kodkod.ast.Relation;
 import kodkod.ast.Variable;
 import kodkod.engine.Solution;
 import kodkod.engine.Solver;
-import kodkod.engine.TimeoutException;
 import kodkod.engine.fol2sat.HigherOrderDeclException;
 import kodkod.engine.fol2sat.UnboundLeafException;
 import kodkod.engine.satlab.SATFactory;
@@ -286,9 +285,6 @@ public final class Trees {
 		} catch (UnboundLeafException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} catch (TimeoutException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		} 
 	}
 }

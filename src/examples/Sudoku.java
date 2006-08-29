@@ -12,7 +12,6 @@ import kodkod.ast.Relation;
 import kodkod.ast.Variable;
 import kodkod.engine.Solution;
 import kodkod.engine.Solver;
-import kodkod.engine.TimeoutException;
 import kodkod.engine.satlab.SATFactory;
 import kodkod.instance.Bounds;
 import kodkod.instance.Tuple;
@@ -216,7 +215,7 @@ public final class Sudoku {
 		final Sudoku sudoku = new Sudoku(3);
 		final Solver solver = new Solver();
 		solver.options().setSolver(SATFactory.ZChaffBasic);
-		try {
+	
 			final Formula rules = sudoku.rules();// sudoku.rules();
 			final Bounds puzzle1 = sudoku.puzzle1();
 			//System.out.println(rules);
@@ -245,10 +244,7 @@ public final class Sudoku {
 			
 		
 
-		} catch (TimeoutException e) {
-			System.out.println("timed out.");
-			e.printStackTrace();
-		} 
+		
 	}
 	
 	

@@ -1,5 +1,11 @@
 package tests;
 
+import junit.framework.TestCase;
+import kodkod.ast.Formula;
+import kodkod.engine.Solution;
+import kodkod.engine.Solver;
+import kodkod.engine.satlab.SATFactory;
+import kodkod.instance.Bounds;
 import examples.Bigconfig;
 import examples.CeilingsAndFloors;
 import examples.Dijkstra;
@@ -7,13 +13,6 @@ import examples.Pigeonhole;
 import examples.RingElection;
 import examples.Sudoku;
 import examples.Toughnut;
-import junit.framework.TestCase;
-import kodkod.ast.Formula;
-import kodkod.engine.Solution;
-import kodkod.engine.Solver;
-import kodkod.engine.TimeoutException;
-import kodkod.engine.satlab.SATFactory;
-import kodkod.instance.Bounds;
 
 public class ExamplesTest extends TestCase {
 
@@ -26,12 +25,9 @@ public class ExamplesTest extends TestCase {
 	}
 
 	private Solution solve(Formula formula, Bounds bounds) {
-		try {
+		
 			return solver.solve(formula, bounds);
-		} catch (TimeoutException e) {
-			e.printStackTrace();
-			throw new AssertionError();
-		}
+		
 	}
 	
 	/**

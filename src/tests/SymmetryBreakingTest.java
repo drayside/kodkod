@@ -9,7 +9,6 @@ import kodkod.ast.Relation;
 import kodkod.engine.Solution;
 import kodkod.engine.Solver;
 import kodkod.engine.Statistics;
-import kodkod.engine.TimeoutException;
 import kodkod.instance.Bounds;
 import kodkod.instance.Instance;
 import kodkod.instance.TupleFactory;
@@ -73,17 +72,14 @@ public class SymmetryBreakingTest extends TestCase {
 	}
 	
 	private Instance solve(Formula f, Bounds b) {
-		try {
+		
 			final Solution sol = solver.solve(f, b);
 			final Statistics stats = sol.stats();
 			pVars = stats.primaryVariables();
 			iVars = stats.variables() - pVars;
 			clauses = stats.clauses();
 			return sol.instance();
-		} catch (TimeoutException e) {
-			fail("Timed out solving " + f);
-		}
-		return null;
+		
 	}
 	
 	@SuppressWarnings("unused")

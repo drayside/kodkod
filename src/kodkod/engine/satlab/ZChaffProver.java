@@ -9,7 +9,7 @@ import java.util.NoSuchElementException;
  * 
  * @author Emina Torlak
  */
-final class ZChaffProver extends ZChaff implements SATProver {
+final class ZChaffProver extends NativeSolver implements SATProver {
 	/**
 	 * Constructs an instance of ZChaffProver.
 	 */
@@ -24,7 +24,7 @@ final class ZChaffProver extends ZChaff implements SATProver {
 	 * @see kodkod.engine.satlab.CoreExtractor#coreSize()
 	 */
 	public int coreSize() {
-		if (status() != ZChaff.UNSATISFIABLE)
+		if (!Boolean.FALSE.equals(status()))
 			throw new IllegalStateException();
 		return coreSize(peer());
 	}
@@ -40,7 +40,7 @@ final class ZChaffProver extends ZChaff implements SATProver {
 	 * @see kodkod.engine.satlab.CoreExtractor#unsatCore()
 	 */
 	public Iterator<int[]> unsatCore() {
-		if (status() != ZChaff.UNSATISFIABLE)
+		if (!Boolean.FALSE.equals(status()))
 			throw new IllegalStateException();
 		return new Iterator<int[]>() {
 			private int coreSize = coreSize(), cursor = 0;
@@ -70,7 +70,7 @@ final class ZChaffProver extends ZChaff implements SATProver {
 	 * @see kodkod.engine.satlab.CoreExtractor#retainCore()
 	 */
 	public void retainCore() {
-		if (status() != ZChaff.UNSATISFIABLE)
+		if (!Boolean.FALSE.equals(status()))
 			throw new IllegalStateException();
 		retainCore(peer());
 	}
@@ -84,7 +84,7 @@ final class ZChaffProver extends ZChaff implements SATProver {
 	}
 	
 	static {
-		System.loadLibrary("zchaff_prover");
+		loadLibrary("zchaff_prover");
 	}
 	
 	/**
@@ -147,11 +147,11 @@ final class ZChaffProver extends ZChaff implements SATProver {
 	 * {@inheritDoc}
 	 * @see kodkod.engine.satlab.ZChaff#solve(long)
 	 */
-	native int solve(long peer);
+	native boolean solve(long peer);
 	
 	/**
 	 * {@inheritDoc}
 	 * @see kodkod.engine.satlab.ZChaff#valueOf(long, int)
 	 */
-	native int valueOf(long peer, int literal);
+	native boolean valueOf(long peer, int literal);
 }

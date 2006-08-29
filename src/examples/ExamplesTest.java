@@ -3,7 +3,6 @@ package examples;
 import kodkod.ast.Formula;
 import kodkod.engine.Solution;
 import kodkod.engine.Solver;
-import kodkod.engine.TimeoutException;
 import kodkod.engine.satlab.SATFactory;
 import kodkod.instance.Bounds;
 
@@ -17,12 +16,9 @@ class ExamplesTest  {
 	}
 
 	private Solution solve(Formula formula, Bounds bounds) {
-		try {
+		
 			return solver.solve(formula, bounds);
-		} catch (TimeoutException e) {
-			e.printStackTrace();
-			throw new AssertionError();
-		}
+		
 	}
 	private void assertEquals(Object o1, Object o2) {
 		if (!o1.equals(o2))

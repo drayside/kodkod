@@ -17,7 +17,6 @@ import kodkod.engine.Evaluator;
 import kodkod.engine.Options;
 import kodkod.engine.Solution;
 import kodkod.engine.Solver;
-import kodkod.engine.TimeoutException;
 import kodkod.engine.fol2sat.HigherOrderDeclException;
 import kodkod.engine.fol2sat.UnboundLeafException;
 import kodkod.engine.satlab.SATFactory;
@@ -1043,10 +1042,7 @@ public class BugTests extends TestCase {
 		} catch (UnboundLeafException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} catch (TimeoutException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		} 
 		
 	}
 	
@@ -1088,10 +1084,7 @@ public class BugTests extends TestCase {
 		} catch (UnboundLeafException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} catch (TimeoutException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		} 
 		
 	}
 	
@@ -1116,17 +1109,14 @@ public class BugTests extends TestCase {
 		b.bound(prereqs, f.setOf(f.tuple("6.002", "[8.02]"), f.tuple("8.02", "[]"), 
 				f.tuple("6.003", "[6.001]"), f.tuple("6.001", "[]")));
 		
-		try {
+		
 //			System.out.println(u);
 			solver.options().setSolver(SATFactory.DefaultSAT4J);
 			Solution solution = solver.solve((pCourses.some()).and(prereqs.some()), b);		
 //	        System.out.println(solution); // SATISFIABLE
 	        assertEquals(solution.outcome(), Solution.Outcome.SATISFIABLE);
 	        
-		} catch (TimeoutException e2) {
-			// TODO Auto-generated catch block
-			e2.printStackTrace();
-		}
+	
 	}
 	
 	public final void testVincent_03182006() { 
@@ -1218,7 +1208,7 @@ public class BugTests extends TestCase {
 //		System.out.println(x);
 //		System.out.println(y);
 		
-		try {
+		
 			solver.options().setSolver(SATFactory.DefaultSAT4J);
 			Solution solution = solver.solve(x, b);		
 	        //System.out.println(solution); // SATISFIABLE
@@ -1228,10 +1218,7 @@ public class BugTests extends TestCase {
 	        //System.out.println(solution2); // SATISFIABLE!!!???
 	        //System.out.println((new Evaluator(solution2.instance())).evaluate(x));
 	        assertEquals(solution2.outcome(), Solution.Outcome.SATISFIABLE);
-		} catch (TimeoutException e2) {
-			// TODO Auto-generated catch block
-			e2.printStackTrace();
-		}
+		
         
 		              
 	}
@@ -1241,12 +1228,9 @@ public class BugTests extends TestCase {
 		Universe univ = new Universe(Collections.singleton("o"));
 		Bounds bounds = new Bounds(univ);
 		bounds.bound(r,  univ.factory().allOf(2));
-		try {
+		
 			assertEquals(Solution.Outcome.SATISFIABLE, solver.solve(r.some(), bounds).outcome());
-		} catch (TimeoutException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		
 	}
 	
 	
@@ -1269,12 +1253,9 @@ public class BugTests extends TestCase {
 		bounds.bound(r1, set1);
 		bounds.boundExactly(r2, set2);
 		bounds.bound(r3, set1);
-		try {
+	
 			assertEquals(Solution.Outcome.TRIVIALLY_UNSATISFIABLE, solver.solve(f, bounds).outcome());
-		} catch (TimeoutException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
+		
 
 	}
 	
@@ -1362,15 +1343,10 @@ Variable.unary("p");
 
 //        System.out.println(formula);
        
-        try {
+     
 			final Instance instance = solver.solve(formula, bounds).instance();
 			assertNotNull(instance);
-		} catch (TimeoutException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}     
-
-	}
+		}
 	
 	public final void testVincent_02172006() {
         // set ups universe of atoms [1..257]
@@ -1426,13 +1402,10 @@ factory.tuple(list2));
 
 //        System.out.println(formula);
         // solve   
-		try {
+	
 			final Instance instance = solver.solve(formula, bounds).instance();
 			assertNotNull(instance);
-		} catch (TimeoutException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}        
+		     
         
 
 	}
@@ -1481,14 +1454,11 @@ factory.tuple(list2));
         Formula formula = oneRel.in(rel);
 
         // solve      
-		try {
+		
 			final Instance instance = solver.solve(formula, bounds).instance();
 			assertNotNull(instance);
 			//System.out.println(instance);
-		} catch (TimeoutException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}        
+		    
       
 
 	}
@@ -1556,14 +1526,12 @@ factory.tuple(list2));
 		b.bound(r3, tf.setOf(tf.tuple("a0","a0","a0"), tf.tuple("a3","a3","a3")));
 		final Formula f = r1.product(r2).in(r3);
 		
-		try {
+		
 			final Instance instance = solver.solve(f, b).instance();
 			assertTrue((new Evaluator(instance)).evaluate(f));
 //			System.out.println(instance);
 //			System.out.println((new Evaluator(instance)).evaluate(f  ));
-		} catch (TimeoutException te) {
-			fail("Timed out solving " + f);
-		}
+		
 	}
 	
 	public final void testEmina_01192006() {
@@ -1660,17 +1628,14 @@ factory.tuple(list2));
 		bounds.bound(Index, indexTuples);
 		bounds.bound(index2Entry, indexTuples.product(entryTuples));
 //		Solver solver = new Solver(SATSolverName.Default);
-		try {
+		
 //			System.out.println(simulate);
 //			System.out.println(bounds);
 //			System.out.println(instance);
 			instance = solver.solve(simulate, bounds).instance();
 //			System.out.println(instance);
 			assertNotNull(instance);
-		} catch (TimeoutException e4) {
-			// TODO Auto-generated catch block
-			e4.printStackTrace();
-		}
+		
 	}
 	
 	public final void testMana_01132006() {
@@ -1710,12 +1675,9 @@ factory.tuple(list2));
 //		System.out.println(f);
 //		System.out.println(b);
 		
-		try {
 			final Instance instance = solver.solve(f, b).instance();
 			assertNull(instance);
-		} catch (TimeoutException te) {
-			fail("Timed out solving " + f);
-		}
+		
 	}
 	
 	
@@ -1747,14 +1709,12 @@ factory.tuple(list2));
 //		System.out.println(f);
 //		System.out.println(b);
 		
-		try {
+	
 			final Instance instance = solver.solve(f, b).instance();
 			assertTrue((new Evaluator(instance)).evaluate(f));
 //			System.out.println(instance);
 //			System.out.println((new Evaluator(instance)).evaluate(f  ));
-		} catch (TimeoutException te) {
-			fail("Timed out solving " + f);
-		}
+		
 	}
 	
 	public final void testGreg_01052006() {

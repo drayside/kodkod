@@ -147,7 +147,7 @@ public final class Translator {
 		//System.out.println("translating to cnf...");
 		//System.out.println(circuit);
 		final SATSolver cnf = Bool2CNFTranslator.definitional((BooleanFormula)circuit, options.solver(), numPrimaryVariables);
-		//System.out.println("about to start sat solving p cnf " + cnf.numberOfVariables() + " " + cnf.numberOfClauses());
+//		System.out.println("about to start sat solving p cnf " + cnf.numberOfVariables() + " " + cnf.numberOfClauses());
 		return new Translation(cnf, bounds, skolems, Collections.unmodifiableMap(varUsage), numPrimaryVariables);
 
 	}

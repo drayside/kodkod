@@ -9,7 +9,6 @@ import kodkod.ast.Relation;
 import kodkod.ast.Variable;
 import kodkod.engine.Solution;
 import kodkod.engine.Solver;
-import kodkod.engine.TimeoutException;
 import kodkod.engine.satlab.SATFactory;
 import kodkod.instance.Bounds;
 import kodkod.instance.TupleFactory;
@@ -647,19 +646,15 @@ final class AbstractWorldDefinitions {
 		solver.options().setSolver(SATFactory.ZChaffBasic);
 //		solver.options().setSkolemize(false);
 		
-		try {
-			final Formula formula = model.a241();
-			final int scope = args.length==0 ? 3 : Integer.parseInt(args[0]);
-			final Bounds bounds = model.bounds(scope);
+		
+		final Formula formula = model.a241();
+		final int scope = args.length==0 ? 3 : Integer.parseInt(args[0]);
+		final Bounds bounds = model.bounds(scope);
 //			System.out.println(formula);
 //			System.out.println(bounds);
-			System.out.println("scope: " + scope);
-			final Solution sol = solver.solve(formula, bounds);
-			System.out.println(sol);
-		} catch (TimeoutException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		System.out.println("scope: " + scope);
+		final Solution sol = solver.solve(formula, bounds);
+		System.out.println(sol);
 		
 	}
 	

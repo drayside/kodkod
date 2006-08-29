@@ -10,7 +10,6 @@ import kodkod.ast.Relation;
 import kodkod.ast.Variable;
 import kodkod.engine.Solution;
 import kodkod.engine.Solver;
-import kodkod.engine.TimeoutException;
 import kodkod.engine.satlab.SATFactory;
 import kodkod.instance.Bounds;
 import kodkod.instance.TupleFactory;
@@ -132,9 +131,6 @@ public final class Toughnut {
 			//System.out.println(bounds);
 			final Solution sol = solver.solve(covering, bounds);
 			System.out.println(sol);
-		} catch (TimeoutException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		} catch (NumberFormatException nfe) {
 			System.out.println("Usage: java examples.Toughnut [size of one side of the board; optional]");
 		}

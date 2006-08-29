@@ -13,7 +13,6 @@ import kodkod.ast.Multiplicity;
 import kodkod.ast.Relation;
 import kodkod.ast.Variable;
 import kodkod.engine.Solver;
-import kodkod.engine.TimeoutException;
 import kodkod.engine.fol2sat.HigherOrderDeclException;
 import kodkod.instance.Bounds;
 import kodkod.instance.Instance;
@@ -55,12 +54,9 @@ public class SkolemizationTest extends TestCase {
 	}
 	
 	private Instance solve(Formula formula) {
-		try {
+		
 			return solver.solve(formula, bounds).instance();
-		} catch (TimeoutException te) {
-			fail("Timed out solving " + formula);
-			return null;
-		}
+		
 	}
 
 	private final void testNoSkolems(Decls d, Formula f) {

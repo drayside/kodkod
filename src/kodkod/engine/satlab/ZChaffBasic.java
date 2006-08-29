@@ -4,7 +4,7 @@ package kodkod.engine.satlab;
  * Wrapper for an instance of zchaff that provides
  * access to basic functionality.
  */
-final class ZChaffBasic extends ZChaff {
+final class ZChaffBasic extends NativeSolver {
 	/**
 	 * Constructs an instance of ZChaffBasic.
 	 */
@@ -21,7 +21,7 @@ final class ZChaffBasic extends ZChaff {
 	}
 
 	static {
-	    System.loadLibrary("zchaff_basic");
+	    loadLibrary("zchaff_basic");
 	}
 	
 	/**
@@ -54,12 +54,12 @@ final class ZChaffBasic extends ZChaff {
 	 * {@inheritDoc}
 	 * @see kodkod.engine.satlab.ZChaff#solve(long)
 	 */
-	native int solve(long peer);
+	native boolean solve(long peer);
 	
 	/**
 	 * {@inheritDoc}
 	 * @see kodkod.engine.satlab.ZChaff#valueOf(long, int)
 	 */
-	native int valueOf(long peer, int literal);
+	native boolean valueOf(long peer, int literal);
 
 }

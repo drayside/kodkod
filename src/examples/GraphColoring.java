@@ -18,7 +18,6 @@ import kodkod.ast.Variable;
 import kodkod.engine.Cost;
 import kodkod.engine.Solution;
 import kodkod.engine.Solver;
-import kodkod.engine.TimeoutException;
 import kodkod.engine.satlab.SATFactory;
 import kodkod.instance.Bounds;
 import kodkod.instance.TupleFactory;
@@ -221,7 +220,7 @@ public final class GraphColoring {
 		final GraphColoring model = new GraphColoring();
 		final Solver solver = new Solver();
 		
-		try {
+	
 			final Formula f = model.coloring();
 			final Bounds b = args.length>0 ? model.fromFile(args[0]) : model.myciel3();
 			if (b==null) return;
@@ -238,9 +237,6 @@ public final class GraphColoring {
 //				System.out.println((new Evaluator(solb.instance())).evaluate(f));
 //			}
 
-		} catch (TimeoutException e) {
-			System.out.println("timed out.");
-			e.printStackTrace();
-		} 
+		
 	}
 }

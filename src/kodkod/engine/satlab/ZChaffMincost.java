@@ -8,7 +8,7 @@ package kodkod.engine.satlab;
  * 
  * @author Emina Torlak
  */
-final class ZChaffMincost extends ZChaff implements SATMinSolver {
+final class ZChaffMincost extends NativeSolver implements SATMinSolver {
 
 	/**
 	 * Constructs an instance of ZChaffMincost.
@@ -46,7 +46,7 @@ final class ZChaffMincost extends ZChaff implements SATMinSolver {
 	}
 	
 	static {
-		System.loadLibrary("zchaff_mincost");
+		loadLibrary("zchaff_mincost");
 	}
 
 	/**
@@ -97,12 +97,12 @@ final class ZChaffMincost extends ZChaff implements SATMinSolver {
 	 * {@inheritDoc}
 	 * @see kodkod.engine.satlab.ZChaff#solve(long)
 	 */
-	native int solve(long peer);
+	native boolean solve(long peer);
 	
 	/**
 	 * {@inheritDoc}
 	 * @see kodkod.engine.satlab.ZChaff#valueOf(long, int)
 	 */
-	native int valueOf(long peer, int literal);
+	native boolean valueOf(long peer, int literal);
 	
 }

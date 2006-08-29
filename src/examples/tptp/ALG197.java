@@ -8,7 +8,6 @@ import kodkod.ast.Formula;
 import kodkod.ast.Relation;
 import kodkod.engine.Solution;
 import kodkod.engine.Solver;
-import kodkod.engine.TimeoutException;
 import kodkod.engine.satlab.SATFactory;
 import kodkod.instance.Bounds;
 import kodkod.instance.Tuple;
@@ -149,9 +148,6 @@ public final class ALG197 extends Quasigroups7 {
 				System.out.println(sol.stats());
 				model.display(sol.instance());
 			}
-		} catch (TimeoutException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		} catch (NumberFormatException nfe) {
 			usage();
 		}

@@ -7,8 +7,6 @@ package kodkod.engine.satlab;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-import kodkod.engine.TimeoutException;
-
 import org.sat4j.specs.ContradictionException;
 import org.sat4j.specs.ISolver;
 import org.sat4j.specs.IVecInt;
@@ -105,16 +103,14 @@ final class SAT4J implements SATSolver {
 	 * satisfying assignment can be obtained by calling {@link #variablesThatAre(boolean, int, int)}
 	 * or {@link #valueOf(int) }.
 	 * @return true if this.clauses are satisfiable; otherwise false.
-	 * @throws TimeoutException - the solver could not determine
-	 * the satisfiability of the problem within this.timeout() seconds.
 	 */
-	public boolean solve() throws TimeoutException {
+	public boolean solve() {
 		try {
 			if (isSatisfiable != Boolean.FALSE)
 				isSatisfiable = Boolean.valueOf(solver.isSatisfiable());
 			return isSatisfiable;
 		} catch (org.sat4j.specs.TimeoutException e) {
-			throw new TimeoutException();
+			throw new RuntimeException("timed out");
 		} 
 	}
 
@@ -315,13 +311,10 @@ final class SAT4J implements SATSolver {
 		z.addClause(clause1);
 		clause1[0] = -1;
 		z.addClause(clause1);
-		try {
+		
 			System.out.println(z.solve());
 			//System.out.println(z.variablesThatAre(true, 1, 1));
-		} catch (TimeoutException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		
 	}
 
 	

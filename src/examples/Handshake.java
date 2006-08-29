@@ -9,7 +9,6 @@ import kodkod.ast.Relation;
 import kodkod.ast.Variable;
 import kodkod.engine.Solution;
 import kodkod.engine.Solver;
-import kodkod.engine.TimeoutException;
 import kodkod.engine.satlab.SATFactory;
 import kodkod.instance.Bounds;
 import kodkod.instance.TupleFactory;
@@ -166,9 +165,7 @@ import kodkod.instance.Universe;
 			System.out.println(sol);
 		} catch (NumberFormatException nfe) {
 			usage();
-		} catch (TimeoutException te) {
-			te.printStackTrace();
-		}
+		} 
 	}
 	
 }

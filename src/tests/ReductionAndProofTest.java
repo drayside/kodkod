@@ -10,7 +10,6 @@ import kodkod.ast.Relation;
 import kodkod.ast.Variable;
 import kodkod.engine.Solution;
 import kodkod.engine.Solver;
-import kodkod.engine.TimeoutException;
 import kodkod.engine.satlab.SATFactory;
 import kodkod.instance.Bounds;
 import kodkod.instance.TupleFactory;
@@ -56,12 +55,9 @@ public class ReductionAndProofTest extends TestCase {
 	}
 	
 	private Formula reduce(Formula formula) {
-		try {
+		
 			return solver.solve(formula, bounds).reduction();
-		} catch (TimeoutException te) {
-			fail("Timed out solving " + formula);
-			return null;
-		}
+		
 	}
 
 	public final void testReduction() {
@@ -107,7 +103,7 @@ public class ReductionAndProofTest extends TestCase {
 		
 	    Solution sol = null;
 	    
-	    try {
+	
 	    		solver.options().setTrackVars(false);
 			sol = solver.solve(f3, bounds);
 			assertEquals(Solution.Outcome.UNSATISFIABLE, sol.outcome());
@@ -127,9 +123,7 @@ public class ReductionAndProofTest extends TestCase {
 			assertSame(1, sol.proof().variablesFor(f1).size());
 			assertSame(1, sol.proof().variablesFor(f2).size());
 			assertSame(1, sol.proof().variablesFor(f3).size());
-		} catch (TimeoutException te) {
-			fail("Timed out solving " + f0);
-		}
+		
 		
 	}
 	

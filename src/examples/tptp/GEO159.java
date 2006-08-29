@@ -9,7 +9,6 @@ import kodkod.ast.Relation;
 import kodkod.ast.Variable;
 import kodkod.engine.Solution;
 import kodkod.engine.Solver;
-import kodkod.engine.TimeoutException;
 import kodkod.engine.satlab.SATFactory;
 import kodkod.instance.Bounds;
 import kodkod.instance.TupleSet;
@@ -102,9 +101,6 @@ public class GEO159 extends GEO158 {
 			final Bounds b = model.bounds(c,p);
 			final Solution sol = solver.solve(f,b);
 			System.out.println(sol);
-		} catch (TimeoutException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		} catch (NumberFormatException nfe) {
 			usage();
 		}

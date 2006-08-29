@@ -5,8 +5,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import examples.Sudoku;
-
 import junit.framework.TestCase;
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
@@ -14,11 +12,11 @@ import kodkod.ast.Relation;
 import kodkod.engine.Cost;
 import kodkod.engine.Solution;
 import kodkod.engine.Solver;
-import kodkod.engine.TimeoutException;
 import kodkod.engine.satlab.SATFactory;
 import kodkod.instance.Bounds;
 import kodkod.instance.TupleFactory;
 import kodkod.instance.Universe;
+import examples.Sudoku;
 
 /**
  * Tests the optimal-solution functionality provided
@@ -71,21 +69,15 @@ public class MinCostTest extends TestCase {
 	}
 
 	private Solution solve(Formula formula) {
-		try {
+	
 			return solver.solve(formula, bounds, cost);
-		} catch (TimeoutException te) {
-			fail("Timed out solving " + formula);
-			return null;
-		}
+	
 	}
 	
 	private Solution solve(Formula formula, Bounds bounds) {
-		try {
+		
 			return solver.solve(formula, bounds, cost);
-		} catch (TimeoutException te) {
-			fail("Timed out solving " + formula);
-			return null;
-		}
+		
 	}
 	
 //	private Solution simpleSolve(Formula formula) {

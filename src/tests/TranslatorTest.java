@@ -17,7 +17,6 @@ import kodkod.ast.QuantifiedFormula;
 import kodkod.ast.Relation;
 import kodkod.ast.Variable;
 import kodkod.engine.Solver;
-import kodkod.engine.TimeoutException;
 import kodkod.instance.Bounds;
 import kodkod.instance.Instance;
 import kodkod.instance.Tuple;
@@ -90,12 +89,9 @@ public class TranslatorTest extends TestCase {
 	}
 	
 	private Instance solve(Formula formula) {
-		try {
+		
 			return solver.solve(formula, bounds).instance();
-		} catch (TimeoutException te) {
-			fail("Timed out solving " + formula);
-			return null;
-		}
+		
 	}
 	
 	private boolean isSatisfiable(Formula formula) {
@@ -389,14 +385,12 @@ public class TranslatorTest extends TestCase {
 		
 		final Formula f = i0.one().and(mutant.one()).and(expr1.eq(expr2).not());
 		
-		try {
+		
 			final Instance instance = solver.solve(f, b).instance();
 			assertNotNull(instance);
 			
 //			System.out.println(instance);
-		} catch (TimeoutException te) {
-			fail("Timed out solving " + f);
-		}
+		
 		
 	}	
 	

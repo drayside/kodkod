@@ -21,7 +21,6 @@ import kodkod.ast.Variable;
 import kodkod.engine.Options;
 import kodkod.engine.Solution;
 import kodkod.engine.Solver;
-import kodkod.engine.TimeoutException;
 import kodkod.instance.Bounds;
 import kodkod.instance.TupleFactory;
 import kodkod.instance.TupleSet;
@@ -64,12 +63,9 @@ public class IntTest extends TestCase {
 	}
 	
 	private Solution solve(Formula formula) {
-		try {
+		
 			return solver.solve(formula, bounds);
-		} catch (TimeoutException te) {
-			fail("Timed out solving " + formula);
-			return null;
-		}
+		
 	}
 
 	/**
