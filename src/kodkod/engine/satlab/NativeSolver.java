@@ -33,16 +33,31 @@ abstract class NativeSolver implements SATSolver {
 	 * Loads the JNI library with the given name.
 	 */
 	static void loadLibrary(String library) {
+		
 		try {
 			System.loadLibrary(library);
-		} catch(UnsatisfiedLinkError ex) {
+		} catch(UnsatisfiedLinkError ule1) {
 			
 			final String fs = System.getProperty("file.separator");
-			final String os = System.getProperty("os.name").toLowerCase().replace(' ','-');
-			final String arch = System.getProperty("os.arch").toLowerCase().replace(' ','-');
-			final String path = System.getProperty("user.dir") + fs + "jni" + fs + arch + "-" + os + fs;	
+			final String userdir = System.getProperty("user.dir") + fs;
 			
-			System.load(path+System.mapLibraryName(library));
+			try {
+				System.load(userdir+System.mapLibraryName(library));
+			} catch(UnsatisfiedLinkError ule2) {
+				
+				String os = System.getProperty("os.name").toLowerCase().replace(' ','-');
+				if (os.startsWith("mac-")) os="mac";
+	             else if (os.startsWith("windows-")) os="windows";
+				
+				String arch = System.getProperty("os.arch").toLowerCase().replace(' ','-');
+				if (arch.equals("powerpc")) arch="ppc";
+				else arch = arch.replaceAll("\\Ai[3456]86\\z","x86");
+				
+				final String path = userdir + "jni" + fs + arch + "-" + os + fs;
+				
+				System.load(path+System.mapLibraryName(library));	
+			}
+			
 		}
 	}
 	

@@ -120,7 +120,7 @@ public final class GRA019 {
 		if (args.length < 1)
 			usage();
 		try {
-			
+
 			final int n = Integer.parseInt(args[0]);
 			final GRA019 model = new GRA019();
 			
