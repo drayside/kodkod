@@ -104,7 +104,7 @@ public final class Pigeonhole {
 		final Solver solver = new Solver();
 		final int p = Integer.parseInt(args[0]);
 		final int h = Integer.parseInt(args[1]);
-		solver.options().setSolver(SATFactory.ZChaffBasic);
+		solver.options().setSolver(SATFactory.MiniSat);
 		solver.options().setSymmetryBreaking(p);
 		solver.options().setFlatten(true);
 		try {

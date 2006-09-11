@@ -322,7 +322,7 @@ public final class Dijkstra {
 		
 		final Dijkstra model = new Dijkstra();
 		final Solver solver = new Solver();
-		solver.options().setSolver(SATFactory.ZChaffBasic);
+		solver.options().setSolver(SATFactory.MiniSat);
 
 		try {
 			final Formula noDeadlocks = model.declarations().and(model.dijkstraPreventsDeadlocks().not());
