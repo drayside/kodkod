@@ -174,7 +174,7 @@ abstract class NativeSolver implements SATSolver {
 	 * outcome of the last call was not <code>true</code>.
 	 */
 	public final boolean valueOf(int variable) {
-		if (status != Boolean.TRUE)
+		if (!Boolean.TRUE.equals(status))
 			throw new IllegalStateException();
 		validateVariable(variable);
 		return valueOf(peer, variable);

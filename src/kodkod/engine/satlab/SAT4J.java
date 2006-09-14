@@ -83,7 +83,7 @@ final class SAT4J implements SATSolver {
 	 */
 	public void addClause(int[] lits) {
 		try {
-			if (isSatisfiable != Boolean.FALSE) {
+			if (!Boolean.FALSE.equals(isSatisfiable)) {
 				clauses++;
 				solver.addClause(wrapper.wrap(lits));
 //				for(int lit : lits) {
@@ -106,7 +106,7 @@ final class SAT4J implements SATSolver {
 	 */
 	public boolean solve() {
 		try {
-			if (isSatisfiable != Boolean.FALSE)
+			if (!Boolean.FALSE.equals(isSatisfiable))
 				isSatisfiable = Boolean.valueOf(solver.isSatisfiable());
 			return isSatisfiable;
 		} catch (org.sat4j.specs.TimeoutException e) {
@@ -126,7 +126,7 @@ final class SAT4J implements SATSolver {
 	 * outcome of the last call was not <code>true</code>.
 	 */
 	public final boolean valueOf(int variable) {
-		if (isSatisfiable != Boolean.TRUE) 
+		if (!Boolean.TRUE.equals(isSatisfiable)) 
 			throw new IllegalStateException();
 		if (variable < 1 || variable > numberOfVariables())
 			throw new IllegalArgumentException(variable + " !in [1.." + numberOfVariables()+"]");

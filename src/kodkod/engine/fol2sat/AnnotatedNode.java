@@ -256,7 +256,7 @@ final class AnnotatedNode<N extends Node> {
 		 */
 		protected final boolean visited(Node node) {
 			Boolean status = sharingStatus.get(node);
-			if (status != Boolean.TRUE) {
+			if (!Boolean.TRUE.equals(status)) {
 				if (status==null) {
 					status = Boolean.FALSE;
 				} else { // status == Boolean.FALSE
@@ -373,7 +373,7 @@ final class AnnotatedNode<N extends Node> {
 			this.topLevel = true;
 			this.flagCombos = new Byte[16];
 			for(int i = 0; i < 16; i++) {
-				flagCombos[i] = new Byte((byte)i);
+				flagCombos[i] = Byte.valueOf((byte)i);
 			}
 			for(Map.Entry e : sharedInfo.entrySet()) {
 				e.setValue(e.getValue()==Boolean.TRUE ? flagCombos[0] : flagCombos[15]);

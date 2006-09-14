@@ -75,6 +75,14 @@ public final class IntConstant extends IntExpression {
 	
 	/**
 	 * {@inheritDoc}
+	 * @see java.lang.Object#hashCode()
+	 */
+	public int hashCode() { 
+		return value;
+	}
+	
+	/**
+	 * {@inheritDoc}
 	 * @see java.lang.Object#toString()
 	 */
 	public String toString() {

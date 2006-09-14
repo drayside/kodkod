@@ -66,7 +66,7 @@ final class NaryGate extends MultiGate {
 			int low = 0, high = inputs.length-1, step = 1;
 			final int key = f.label();
 			while (low <= high && step <= k) {
-				int mid = (low + high) >> 1;
+				int mid = (low + high) >>> 1;
 				int midVal = inputs[mid].label();
 				
 				if (midVal < key)

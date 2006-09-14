@@ -116,7 +116,7 @@ public final class ArraySequence<V> extends AbstractSparseSequence<V> implements
 		int high = entries.length-1;
 		
 		while (low <= high) {
-			int mid = (low + high) >> 1;
+			int mid = (low + high) >>> 1;
 			int midIndex = entries[mid].index;		
 			if (midIndex < index)
 				low = mid + 1;
