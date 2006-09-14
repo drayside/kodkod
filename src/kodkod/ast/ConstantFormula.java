@@ -117,8 +117,15 @@ public abstract class ConstantFormula extends Formula {
      * @return this = o
      */
     public final boolean equals(Object o) {
-        return this == o;
+        return this==o;
     }
 	
+    /**
+     * Returns the default hash code.
+     * @return the default hash code.
+     */
+    public final int hashCode() {
+    	return super.hashCode();
+    }
 }
 
