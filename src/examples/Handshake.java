@@ -5,6 +5,7 @@ import java.util.List;
 
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
+import kodkod.ast.IntConstant;
 import kodkod.ast.Relation;
 import kodkod.ast.Variable;
 import kodkod.engine.Solution;
@@ -39,7 +40,10 @@ import kodkod.instance.Universe;
 	 * </pre>
 	 */
 	public Formula declarations() {
-		return spouse.function(Person, Person);
+		final Formula f0 = spouse.function(Person, Person);
+		final Formula f1 = shaken.in(Person.product(Person));
+		final Formula f2 = Hilary.one().and(Jocelyn.one());
+		return f0.and(f1).and(f2);
 	}
 	
 	/**
@@ -132,9 +136,9 @@ import kodkod.instance.Universe;
 		final Universe u = new Universe(atoms);
 		final TupleFactory f = u.factory();
 		final Bounds b = new Bounds(u);
-		b.boundExactly(Person, f.allOf(1));
-		b.boundExactly(Hilary, f.setOf("Person0"));
-		b.boundExactly(Jocelyn, f.setOf("Person1"));
+		b.bound(Person, f.allOf(1));
+		b.bound(Hilary, f.allOf(1));
+		b.bound(Jocelyn, f.allOf(1));
 		b.bound(spouse, f.allOf(2));
 		b.bound(shaken, f.allOf(2));
 		return b;
@@ -154,15 +158,21 @@ import kodkod.instance.Universe;
 		
 		final Handshake model =  new Handshake();
 		final Solver solver = new Solver();
-		solver.options().setSolver(SATFactory.ZChaffBasic);
-		solver.options().setSymmetryBreaking(0);
 		try {
 			final int persons = Integer.parseInt(args[0]);
 			if (persons<2) usage();
+			solver.options().setBitwidth(6);
+			
+//			solver.options().setSolver(SATFactory.ZChaffBasic);
+			solver.options().setSolver(SATFactory.MiniSat);
+			
+			solver.options().setSymmetryBreaking(0);
+			solver.options().setFlatten(false);
 			final Bounds b = model.bounds(persons);
-			final Formula f = model.runPuzzle();
+			final Formula f = model.runPuzzle().and(model.Person.count().eq(IntConstant.constant(persons)));
 			Solution sol = solver.solve(f, b);
 			System.out.println(sol);
+			
 		} catch (NumberFormatException nfe) {
 			usage();
 		} 
