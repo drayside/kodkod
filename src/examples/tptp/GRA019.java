@@ -10,6 +10,7 @@ import kodkod.ast.Expression;
 import kodkod.ast.Formula;
 import kodkod.ast.Relation;
 import kodkod.ast.Variable;
+import kodkod.engine.Evaluator;
 import kodkod.engine.Solution;
 import kodkod.engine.Solver;
 import kodkod.engine.fol2sat.HigherOrderDeclException;
@@ -25,12 +26,13 @@ import kodkod.instance.Universe;
  * @author Emina Torlak
  */
 public final class GRA019 {
-	private final Relation red, green, lessThan,goal;
+	private final Relation red, green, lessThan,goal,node;
 	
 	/**
 	 * Constructs a new instance of GRA019.
 	 */
 	public GRA019() {
+		node = Relation.unary("N");
 		red = Relation.binary("red");
 		green = Relation.binary("green");
 		lessThan = Relation.binary("lessThan");
@@ -41,8 +43,8 @@ public final class GRA019 {
 		final Variable a = Variable.unary("A"), b = Variable.unary("B"),
 		 c = Variable.unary("C"), d = Variable.unary("D");
 		final Expression sum = a.product(b.union(c).union(d)).union(b.product(c.union(d))).union(c.product(d));
-		return (sum.in(color)).implies(goal.some()).forAll(a.oneOf(Expression.UNIV).and(b.oneOf(Expression.UNIV)).
-				and(c.oneOf(Expression.UNIV)).and(d.oneOf(Expression.UNIV)));
+		return (sum.in(color)).implies(goal.some()).forAll(a.oneOf(node).and(b.oneOf(node)).
+				and(c.oneOf(node)).and(d.oneOf(node)));
 	}
 	
 	/**
@@ -69,12 +71,17 @@ public final class GRA019 {
 		return lessThan.in(red.union(green));
 	}
 	
+	public final Formula lessThanTransitive() { 
+		return lessThan.join(lessThan).in(lessThan);
+	}
+	
 	/**
 	 * Returns the conjunction of all axioms.
 	 * @return conjunction of all axioms
 	 */
 	public final Formula axioms() {
-		return redCliqueAxiom().and(greenCliqueAxiom()).and(partition());
+		return redCliqueAxiom().and(greenCliqueAxiom()).and(partition()).
+		and(lessThanTransitive());
 	}
 	
 	/**
@@ -92,51 +99,45 @@ public final class GRA019 {
 	public final Bounds bounds(int n) {
 		assert n > 0;
 		final List<String> atoms = new ArrayList<String>(n);
-		for(int i = 0; i < n; i++)
+		for(int i = 1; i <= n; i++)
 			atoms.add("n"+i);
+		atoms.add("goal");
 		final Universe u = new Universe(atoms);
 		final TupleFactory f = u.factory();
 		final Bounds b = new Bounds(u);
-		b.bound(goal, f.setOf("n0"));
-		b.bound(red, f.allOf(2));
-		b.bound(green, f.allOf(2));
+		b.bound(goal, f.setOf("goal"));
+		final TupleSet ns = f.range(f.tuple("n1"), f.tuple("n"+n));
+		b.boundExactly(node, ns);
+		b.bound(red, ns.product(ns));
+		b.bound(green, ns.product(ns));
 		final TupleSet s = f.noneOf(2);
-		for(int i = n-2; i >= 0; i--) {
-			s.add(f.tuple("n"+i, "n"+(i+1)));
+		for(int i = 1; i <= n; i++) {
+			for(int j = i+1; j <= n; j++)
+				s.add(f.tuple("n"+i, "n"+j));
 		}
-		b.boundExactly(lessThan, s);
+		b.bound(lessThan, s, ns.product(ns));
 		return b;
 	}
 	
-	private static void usage() {
-		System.out.println("java examples.tptp.GRA019 [scope]");
-		System.exit(1);
-	}
-	
 	/**
-	 * Usage: java examples.tptp.GRA019 [scope]
+	 * Usage: java examples.tptp.GRA019
 	 */
 	public  static void main(String[] args) {
-		if (args.length < 1)
-			usage();
 		try {
 
-			final int n = Integer.parseInt(args[0]);
 			final GRA019 model = new GRA019();
 			
-			final Bounds b = model.bounds(n);
+			final Bounds b = model.bounds(18);
 			final Solver solver = new Solver();
 			solver.options().setSolver(SATFactory.MiniSat);
 			
-			final Formula f = model.axioms().and(model.goalToBeProved().not());
+			final Formula f = model.axioms().and(model.goalToBeProved().not());//.and(model.red.intersection(model.green).no());
 			System.out.println(f);
 			System.out.println(b);
 			final Solution s = solver.solve(f, b);
 			System.out.println(s);
-		
+			System.out.println((new Evaluator(s.instance())).evaluate(f));
 	
-		} catch (NumberFormatException nfe) {
-			usage();
 		} catch (HigherOrderDeclException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

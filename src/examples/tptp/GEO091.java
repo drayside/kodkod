@@ -1,6 +1,5 @@
 package examples.tptp;
 
-import kodkod.ast.Expression;
 import kodkod.ast.Formula;
 import kodkod.ast.Variable;
 import kodkod.engine.Solution;
@@ -27,42 +26,41 @@ public class GEO091 extends GEO158 {
 	 * Returns the conjecture theorem_2_13.
 	 * @return theorem_2_13
 	 */
-	public final Formula theorem213() {
-		// all c1, c2: curve | 
-		//  some c1.partOf & c2.partOf & open && !(lone endPoint.c1 & endPoint.c2) => c1 = c2
+	public final Formula theorem_2_13() {
+		//  all C, C1, C2: Curve | 
+		//   ((C1 + C2)->C in partOf && C in Open &&
+		//   !(lone endPoint.C1 & endPoint.C2)) => C1 = C2
+		final Variable c = Variable.unary("C");
 		final Variable c1 = Variable.unary("C1");
 		final Variable c2 = Variable.unary("C2");
-		final Expression e0 = c1.join(partOf).intersection(c2.join(partOf)).intersection(open);
-		final Expression e1 = endPoint.join(c1).intersection(endPoint.join(c2));
-		final Formula f0 = e0.some();
-		final Formula f1 = e1.lone().not();
-		return f0.and(f1).implies(c1.eq(c2)).forAll(c1.oneOf(curve).and(c2.oneOf(curve)));
+		final Formula f0 = c1.union(c2).product(c).in(partOf).and(c.in(open));
+		final Formula f1 = endPoint.join(c1).intersection(endPoint.join(c2)).lone().not();
+		return f0.and(f1).implies(c1.eq(c2)).forAll(c.oneOf(curve).and(c1.oneOf(curve)).and(c2.oneOf(curve)));
 	}
 
 	private static void usage() {
-		System.out.println("java examples.tptp.GEO191 [# curves] [# points]");
+		System.out.println("java examples.tptp.GEO191 [univ size]");
 		System.exit(1);
 	}
 	
 	/**
-	 * Usage: ava examples.tptp.GEO191 [# curves] [# points]
+	 * Usage: java examples.tptp.GEO191 [univ size]
 	 */
 	public static void main(String[] args) {
-		if (args.length < 2)
+		if (args.length < 1)
 			usage();
 		
 		try {
-			final int c = Integer.parseInt(args[0]);
-			final int p = Integer.parseInt(args[1]);
+			final int n = Integer.parseInt(args[0]);
 	
 			final Solver solver = new Solver();
 			solver.options().setSolver(SATFactory.MiniSat);
 			final GEO091 model = new GEO091();
-			final Formula f = model.axioms().and(model.theorem213().not());
+			final Formula f = model.axioms().and(model.theorem_2_13().not());
 			
-			System.out.println(model.theorem213());
+			System.out.println(model.theorem_2_13());
 			
-			final Bounds b = model.bounds(c,p);
+			final Bounds b = model.bounds(n,n);
 			final Solution sol = solver.solve(f,b);
 			
 			System.out.println(sol);

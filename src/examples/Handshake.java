@@ -5,7 +5,6 @@ import java.util.List;
 
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
-import kodkod.ast.IntConstant;
 import kodkod.ast.Relation;
 import kodkod.ast.Variable;
 import kodkod.engine.Solution;
@@ -130,15 +129,17 @@ import kodkod.instance.Universe;
 	 */
 	public Bounds bounds(int persons) {
 		final List<String> atoms = new ArrayList<String>(persons);
-		for(int i = 0; i < persons; i ++) {
+		atoms.add("Hilary"); 
+		atoms.add("Jocelyn");
+		for(int i = 2; i < persons; i ++) {
 			atoms.add("Person" + i);
 		}
 		final Universe u = new Universe(atoms);
 		final TupleFactory f = u.factory();
 		final Bounds b = new Bounds(u);
-		b.bound(Person, f.allOf(1));
-		b.bound(Hilary, f.allOf(1));
-		b.bound(Jocelyn, f.allOf(1));
+		b.boundExactly(Person, f.allOf(1));
+		b.boundExactly(Hilary, f.setOf("Hilary"));
+		b.boundExactly(Jocelyn, f.setOf("Jocelyn"));
 		b.bound(spouse, f.allOf(2));
 		b.bound(shaken, f.allOf(2));
 		return b;
@@ -169,7 +170,7 @@ import kodkod.instance.Universe;
 			solver.options().setSymmetryBreaking(0);
 			solver.options().setFlatten(false);
 			final Bounds b = model.bounds(persons);
-			final Formula f = model.runPuzzle().and(model.Person.count().eq(IntConstant.constant(persons)));
+			final Formula f = model.runPuzzle();//.and(model.Person.count().eq(IntConstant.constant(persons)));
 			Solution sol = solver.solve(f, b);
 			System.out.println(sol);
 			
