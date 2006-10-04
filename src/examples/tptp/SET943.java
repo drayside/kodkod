@@ -20,35 +20,26 @@ import kodkod.instance.TupleFactory;
 import kodkod.instance.Universe;
 
 /**
- * A KK encoding of SET948+1.p from http://www.cs.miami.edu/~tptp/
+ * A KK encoding of SET943+1.p from http://www.cs.miami.edu/~tptp/
  * @author Emina Torlak
  */
-public final class SET948 {
+public final class SET943 {
 	
 	private final Relation empty;
-	private final Relation subset, in, disjoint, union;
-	private final Relation intersect2, union2;
+	private final Relation subset, in,  union;
+	private final Relation union2;
 	
 	/**
-	 * Constructs a new instance of SET948.
+	 * Constructs a new instance of SET943.
 	 */
-	public SET948() {
+	public SET943() {
 		empty = Relation.unary("empty");
 		subset = Relation.binary("subset");
 		in = Relation.binary("in");
-		disjoint = Relation.binary("disjoint");
 		union = Relation.binary("union");
-		intersect2 = Relation.ternary("set_intersection2");
 		union2 = Relation.ternary("set_union2");
 	}
 	
-	/**
-	 * Returns set_intersection2[A][B]
-	 * @return set_intersection2[A][B]
-	 */
-	final Expression set_intersection2(Expression a, Expression b) {
-		return b.join(a.join(intersect2));
-	}
 	/**
 	 * Returns set_union2[A][B]
 	 * @return set_union2[A][B]
@@ -89,14 +80,6 @@ public final class SET948 {
 		return a.product(b).in(in);
 	}
 	
-	/**
-	 * Returns a->b in disjoint.
-	 * @return a->b in disjoint
-	 */
-	final Formula disjoint(Expression a, Expression b) {
-		return a.product(b).in(disjoint);
-	}
-	
 	
 	/**
 	 * Returns the declarations.
@@ -106,9 +89,8 @@ public final class SET948 {
 		final Formula f0 = union.function(UNIV, UNIV);
 		final Variable a = Variable.unary("A");
 		final Variable b = Variable.unary("B");
-		final Formula f1 = set_intersection2(a, b).one();
-		final Formula f2 = set_union2(a, b).one();
-		return f0.and(f1.and(f2).forAll(a.oneOf(UNIV).and(b.oneOf(UNIV))));
+		final Formula f1 = set_union2(a, b).one();
+		return f0.and(f1.forAll(a.oneOf(UNIV).and(b.oneOf(UNIV))));
 	}
 	
 	/**
@@ -163,17 +145,6 @@ public final class SET948 {
 		return subset(a,b).iff(in.join(a).in(in.join(b))).forAll(a.oneOf(UNIV).and(b.oneOf(UNIV)));
 	}
 	
-	/**
-	 * Returns d3_xboole_0 axiom.
-	 * @return d3_xboole_0
-	 */
-	public final Formula d3_xboole_0() {
-		final Variable a = Variable.unary("A");
-		final Variable b = Variable.unary("B");
-		final Variable c = Variable.unary("C");
-		return c.eq(set_intersection2(a, b)).iff(in.join(c).eq(in.join(a).intersection(in.join(b)))).
-			forAll(a.oneOf(UNIV).and(b.oneOf(UNIV)).and(c.oneOf(UNIV)));
-	}
 	
 	/**
 	 * Returns d4_tarski axiom.
@@ -214,14 +185,7 @@ public final class SET948 {
 		return set_union2(a, a).eq(a).forAll(a.oneOf(UNIV));
 	}
 	
-	/**
-	 * Returns idempotence_k3_xboole_0 axiom.
-	 * @return idempotence_k3_xboole_0
-	 */
-	public final Formula idempotence_k3_xboole_0() {
-		final Variable a = Variable.unary("A");
-		return set_intersection2(a, a).eq(a).forAll(a.oneOf(UNIV));
-	}
+	
 	
 	/**
 	 * Returns rc1_xboole_0 axiom.
@@ -248,64 +212,62 @@ public final class SET948 {
 		return subset(a,a).forAll(a.oneOf(UNIV));
 	}
 	
+	// all A, B: Atom | subset(A,set_union2(A,B)) 
+	
 	/**
-	 * Returns symmetry_r1_xboole_0 axiom.
-	 * @return symmetry_r1_xboole_0
+	 * Returns t7_xboole_1 axiom.
+	 * @return t7_xboole_1
 	 */
-	public final Formula symmetry_r1_xboole_0() {
+	public final Formula t7_xboole_1() {
 		final Variable a = Variable.unary("A");
 		final Variable b = Variable.unary("B");
-		return disjoint(a, b).implies(disjoint(b, a)).forAll(a.oneOf(UNIV).and(b.oneOf(UNIV)));
+		return subset(a, set_union2(a, b)).forAll(a.oneOf(UNIV).and(b.oneOf(UNIV)));
 	}
 	
 	/**
-	 * Returns t4_xboole_0 axiom.
-	 * @return t4_xboole_0
+	 * Returns t8_xboole_1 axiom.
+	 * @return t8_xboole_1
 	 */
-	public final Formula t4_xboole_0() {
+	public final Formula t8_xboole_1() {
 		final Variable a = Variable.unary("A");
 		final Variable b = Variable.unary("B");
-		return disjoint(a, b).not().implies(set_intersection2(a, b).some()).
-			and(disjoint(a, b).implies(set_intersection2(a, b).no())).
-			forAll(a.oneOf(UNIV).and(b.oneOf(UNIV)));
+		final Variable c = Variable.unary("C");
+		return subset(a,b).and(subset(c,b)).implies(subset(set_union2(a, c),b)).
+				forAll(a.oneOf(UNIV).and(b.oneOf(UNIV)).and(c.oneOf(UNIV)));
+	}
+
+	/**
+	 * Returns t95_zfmisc_1 axiom.
+	 * @return t95_zfmisc_1
+	 */
+	public final Formula t95_zfmisc_1() {
+		final Variable a = Variable.unary("A");
+		final Variable b = Variable.unary("B");
+		return subset(a, b).implies(subset(union(a),union(b))).forAll(a.oneOf(UNIV).and(b.oneOf(UNIV)));
 	}
 	
-	/**
-	 * Returns t97_zfmisc_1 axiom.
-	 * @return t97_zfmisc_1
-	 */
-	public final Formula t97_zfmisc_1() {
-		final Variable a = Variable.unary("A");
-		final Variable b = Variable.unary("B");
-		return subset(union(set_intersection2(a, b)), set_intersection2(union(a), union(b))).
-			forAll(a.oneOf(UNIV).and(b.oneOf(UNIV)));
-	}
 	/**
 	 * Returns the conjunction of all  axioms.
 	 * @return conjunction of all  axioms.
 	 */
 	public final Formula axioms() {
 		return decls().and(antisymmetry_r2_hidden()).and(commutativity_k2_xboole_0()).
-		and(d10_xboole_0()).and(d2_xboole_0()).and(d3_tarski()).and(d3_xboole_0()).
+		and(d10_xboole_0()).and(d2_xboole_0()).and(d3_tarski()).
 		and(d4_tarski()).and(fc2_xboole_0()).and(fc3_xboole_0()).and(idempotence_k2_xboole_0()).
-		and(idempotence_k3_xboole_0()).and(rc1_xboole_0()).and(rc2_xboole_0()).
-		and(reflexivity_r1_tarski()).and(symmetry_r1_xboole_0()).and(t4_xboole_0()).
-		and(t97_zfmisc_1());
+		and(rc1_xboole_0()).and(rc2_xboole_0()).
+		and(reflexivity_r1_tarski()).and(t7_xboole_1()).and(t8_xboole_1()).
+		and(t95_zfmisc_1());
 	}
 
 	/**
-	 * Returns t101_zfmisc_1 conjecture.
-	 * @return t101_zfmisc_1
+	 * Returns t96_zfmisc_1 conjecture.
+	 * @return t96_zfmisc_1
 	 */
-	public final Formula t101_zfmisc_1() {
+	public final Formula t96_zfmisc_1() {
 		final Variable a = Variable.unary("A");
 		final Variable b = Variable.unary("B");
-		final Variable c = Variable.unary("C");
-		final Variable d = Variable.unary("D");
-		final Formula f0 = in(c.union(d), set_union2(a, b)).implies(c.eq(d).or(disjoint(c, c))).
-			forAll(c.oneOf(UNIV).and(d.oneOf(UNIV)));
-		final Formula f1 = union(set_intersection2(a, b)).eq(set_intersection2(union(a), union(b)));
-		return f0.implies(f1).forAll(a.oneOf(UNIV).and(b.oneOf(UNIV)));
+		return union(set_union2(a, b)).eq(set_union2(union(a), union(b))).
+				forAll(a.oneOf(UNIV).and(b.oneOf(UNIV)));
 	}
 	
 	
@@ -324,20 +286,18 @@ public final class SET948 {
 		b.bound(empty, f.allOf(1));
 		b.bound(subset, f.allOf(2));
 		b.bound(in, f.allOf(2));
-		b.bound(disjoint, f.allOf(2));
 		b.bound(union, f.allOf(2));
-		b.bound(intersect2, f.allOf(3));
 		b.bound(union2, f.allOf(3));
 		return b;
 	}
 	
 	private static void usage() {
-		System.out.println("java examples.tptp.SET948 [univ size]");
+		System.out.println("java examples.tptp.SET943 [univ size]");
 		System.exit(1);
 	}
 	
 	/**
-	 * Usage: java examples.tptp.SET948 [univ size]
+	 * Usage: java examples.tptp.SET943 [univ size]
 	 */
 	public static void main(String[] args) {
 		if (args.length < 1)
@@ -347,12 +307,12 @@ public final class SET948 {
 			final int n = Integer.parseInt(args[0]);
 			if (n < 1)
 				usage();
-			final SET948 model = new SET948();
+			final SET943 model = new SET943();
 			final Solver solver = new Solver();
 			solver.options().setSolver(SATFactory.MiniSat);
-//			solver.options().setSymmetryBreaking(n*n);
+//			solver.options().setSymmetryBreaking(1000);
 //			solver.options().setFlatten(false);
-			final Formula f = model.axioms().and(model.t101_zfmisc_1().not());
+			final Formula f = model.axioms().and(model.t96_zfmisc_1().not());
 			final Bounds b = model.bounds(n);
 			System.out.println(f);
 			final Solution sol = solver.solve(f, b);
