@@ -62,8 +62,8 @@ public abstract class Quasigroups7 {
 	 */
 	private static Formula opCoversRange(Relation s, Relation op) {
 		final Variable e = Variable.unary("e");
-		final Formula row = s.in(s.join(e.join(op)));
-		final Formula col = s.in(e.join(s.join(op)));
+		final Formula row = s.eq(s.join(e.join(op)));
+		final Formula col = s.eq(e.join(s.join(op)));
 		return (row.and(col)).forAll(e.oneOf(s));
 	}
 	
@@ -85,7 +85,7 @@ public abstract class Quasigroups7 {
 		final Expression expr0 = x.join(y.join(op)); // op(y,x)
 		final Expression expr1 = y.join(expr0.join(op)); // op(op(y,x),y)
 		final Expression expr2 = y.join(expr1.join(op)); // op(op(op(y,x),y),y)
-		return expr2.in(x).forAll(x.oneOf(s).and(y.oneOf(s)));
+		return expr2.eq(x).forAll(x.oneOf(s).and(y.oneOf(s)));
 	}
 	
 	/**
@@ -191,7 +191,7 @@ public abstract class Quasigroups7 {
 		final Expression expr0 = (y.join(x.join(op1))).join(h); // h(op1(x,y))
 		final Expression expr1 = (y.join(h)).join((x.join(h)).join(op2)); // op2(h(x),h(y))
 		final Formula f0 = expr0.eq(expr1).forAll(x.oneOf(s1).and(y.oneOf(s1)));
-		final Formula f1 = s2.in(s1.join(h));
+		final Formula f1 = s2.eq(s1.join(h));
 		// (all x,y: s1 | h(op1(x,y)) = op2(h(x),h(y))) && (s1 in h(s1))
 		return f0.and(f1);
 	}

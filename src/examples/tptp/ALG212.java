@@ -160,8 +160,8 @@ public final class ALG212 {
 			final ALG212 model = new ALG212();
 			final Solver solver = new Solver();
 			solver.options().setSolver(SATFactory.MiniSat);
-			solver.options().setSymmetryBreaking(n*n);
-			solver.options().setFlatten(false);
+//			solver.options().setSymmetryBreaking(n*n);
+//			solver.options().setFlatten(false);
 			final Formula f = model.axioms().and(model.distLong().not());
 			final Bounds b = model.bounds(n);
 			System.out.println(f);

@@ -147,9 +147,11 @@ public final class COM008 {
 	}
 	
 	public final Formula axioms() { 
-		return decls().and(found()).and(assumption()).and(reflexivity()).
-		       and(symmetry()).and(equalishInTrr()).and(rewriteInTrr()).
-		       and(transitivityOfTrr()).and(loCfl()).and(ihCfl()).and(equalishOrRewrite());
+		return decls().and(equalishInTrr()).and(rewriteInTrr()).
+			   and(found()).and(assumption()).and(reflexivity()).
+		       and(symmetry()).
+		       and(transitivityOfTrr()).and(loCfl()).and(ihCfl()).
+		       and(equalishOrRewrite());
 	}
 	
 	/**
@@ -175,13 +177,18 @@ public final class COM008 {
 		final TupleFactory f = u.factory();
 		final TupleSet d1 = f.range(f.tuple("a0"), f.tuple("a"+(n-1)));
 		final TupleSet d2 = d1.product(d1);
-		bound.boundExactly(Atom, d1);
+		
+		bound.bound(rewrite, d2);
+		bound.bound(equalish, d2);
+		
+		
 		bound.bound(a, d1);
 		bound.bound(b, d1);
 		bound.bound(c, d1);
-		bound.bound(equalish, d2);
-		bound.bound(rewrite, d2);
+		bound.boundExactly(Atom, d1);
+		
 		bound.bound(trr, d2);
+		
 		bound.bound(goal, f.setOf("goal"));
 		return bound;
 	}
@@ -205,8 +212,8 @@ public final class COM008 {
 			final COM008 model = new COM008();
 			final Solver solver = new Solver();
 			solver.options().setSolver(SATFactory.MiniSat);
-			solver.options().setSymmetryBreaking(n*n);
-			solver.options().setFlatten(false);
+//			solver.options().setSymmetryBreaking(22);
+//			solver.options().setFlatten(false);
 			final Formula f = model.axioms().and(model.goalToBeProved());
 			final Bounds b = model.bounds(n);
 			System.out.println(f);

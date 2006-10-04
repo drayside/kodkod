@@ -45,15 +45,15 @@ public final class ALG195 extends Quasigroups7 {
 		final Expression expr3a = expr3.join(op); // op(op(op(e5,op(e5,e5)),op(e5,op(e5,e5))),...)
 		final Expression expr4 = e[5].join(expr3a); // op(op(op(e5,op(e5,e5)),op(e5,op(e5,e5))),e5)
 		// e0 = op(op(op(e5,op(e5,e5)),op(e5,op(e5,e5))),op(e5,op(e5,e5)))
-		final Formula f0 = e[0].in(expr2.join(expr3a));
+		final Formula f0 = e[0].eq(expr2.join(expr3a));
 		// e2 = op(op(e5,op(e5,e5)),op(e5,op(e5,e5)))
-		final Formula f2 = e[2].in(expr3);
+		final Formula f2 = e[2].eq(expr3);
 		// e3 = op(op(op(e5,op(e5,e5)),op(e5,op(e5,e5))),e5)
-		final Formula f3 = e[3].in(expr4);
+		final Formula f3 = e[3].eq(expr4);
 		// e4 = op(e5,op(e5,e5))
-		final Formula f4 = e[4].in(expr2);
+		final Formula f4 = e[4].eq(expr2);
 		// e6 = op(op(op(op(e5,op(e5,e5)),op(e5,op(e5,e5))),e5),op(e5,op(e5,e5)))
-		final Formula f6 = e[6].in(expr2.join(expr4.join(op)));
+		final Formula f6 = e[6].eq(expr2.join(expr4.join(op)));
 		return f0.and(f2).and(f3).and(f4).and(f6);
 	}
 	
