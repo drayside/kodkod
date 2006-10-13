@@ -59,46 +59,25 @@ public abstract class BooleanFactory {
 	
 	/**
 	 * Returns a boolean factory, initialized to contain the given number
-	 * of boolean variables.  Gates are checked for semantic equality 
-	 * down to depth 3 when checking for cached values.  Integers are created/manipulated 
-	 * according to the specifications in the given Options object.
-	 * The effect of this method is the same as calling BooleanFactory.factory(numVars, 3, options).
-	 * @return {f: BooleanFactory | #(f.components & BooleanVariable) = numVars &&
-	 *                              BooleanConstant in f.components && f.components in BooleanVariable + BooleanConstant &&
-	 *                              f.comparisonDepth = compDepth && 
-	 *                              f.bitwidth = options.bitwidth && f.intEncoding = options.intEncoding && 
-	 *                              (all i: [1..numVars] | one f.components.label & i }}
-	 * @throws IllegalArgumentException - numVars < 0 || numVars = Integer.MAX_VALUE
-	 */
-	public static BooleanFactory factory(int numVars, Options options) {
-		return factory(numVars, 3, options);
-	}
-	
-	/**
-	 * Returns a boolean factory, initialized to contain the given number
 	 * of boolean variables.  
 	 * <p>Gates are checked for semantic equality 
-	 * down to the given depth when checking for cached values.  In general,  setting the
+	 * down to the depth given by options.sharing when checking for cached values.  In general,  setting the
 	 * comparison depth to a higher value will result in more 
 	 * subcomponents being shared.  However, it will also slow down
 	 * gate construction.  </p>
 	 * <p>Integers are created/manipulated according to the specifications in the given Options object.</p>
 	 * @return {f: BooleanFactory | #(f.components & BooleanVariable) = numVars &&
 	 *                              BooleanConstant in f.components && f.components in BooleanVariable + BooleanConstant &&
-	 *                              f.comparisonDepth = compDepth && 
+	 *                              f.comparisonDepth = options.sharing && 
 	 *                              f.bitwidth = options.bitwidth && f.intEncoding = options.intEncoding && 
 	 *                              (all i: [1..numVars] | one f.components.label & i }}
 	 * @throws IllegalArgumentException - numVars < 0 || numVars = Integer.MAX_VALUE
-	 * @throws IllegalArgumentException - compDepth < 1
 	 * @throws NullPointerException - options = null
 	 */
-	public static BooleanFactory factory(int numVars, int compDepth, Options options) {
-		if (numVars < 0 || numVars == Integer.MAX_VALUE) 
-			throw new IllegalArgumentException("numVars < 0 || numVars = Integer.MAX_VALUE");
-		if (compDepth < 1) throw new IllegalArgumentException("checkToDepth < 1: " + compDepth);
+	public static BooleanFactory factory(int numVars, Options options) {
 		switch(options.intEncoding()) {
-		case UNARY  : return new UnaryFactory(numVars, compDepth, options.bitwidth());
-		case BINARY : return new BinaryFactory(numVars, compDepth, options.bitwidth()); 
+		case UNARY  : return new UnaryFactory(numVars, options.sharing(), options.bitwidth());
+		case BINARY : return new BinaryFactory(numVars, options.sharing(), options.bitwidth()); 
 		default :
 			throw new IllegalArgumentException("unknown encoding: " + options.intEncoding());
 		}

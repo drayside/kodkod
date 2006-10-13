@@ -9,6 +9,7 @@ import kodkod.engine.satlab.SATFactory;
  * 
  * @specfield solver: SATFactory // SAT solver factory to use
  * @specfield symmetryBreaking: int // the amount of symmetry breaking to perform
+ * @specfield sharing: int // the depth to which circuits should be checked for equivalence during translation
  * @specfield intEncoding: IntEncoding // encoding to use for translating {@link kodkod.ast.IntExpression int expressions}
  * @specfield bitwidth: int // the bitwidth to use for integer representation / arithmetic
  * @specfield skolemize: boolean // skolemize existential quantifiers?
@@ -22,6 +23,7 @@ public final class Options {
 	private int symmetryBreaking = 20;
 	private IntEncoding intEncoding = IntEncoding.BINARY;
 	private int bitwidth = 5;
+	private int sharing = 3;
 	private boolean skolemize = true;
 	private boolean flatten = true;
 	private boolean logEncodeFunctions = false;
@@ -32,6 +34,7 @@ public final class Options {
 	 * default values.
 	 * @effects this.solver' = SATFactory.DefaultSAT4J
 	 *          this.symmetryBreaking' = 20
+	 *          this.sharing' = 3
 	 *          this.intEncoding' = BINARY
 	 *          this.bitwidth' = 5
 	 *          this.skolemize' = true
@@ -48,6 +51,7 @@ public final class Options {
 	 * @effects this.solver' = solver
 	 *          this.seed' = 0
 	 *          this.symmetryBreaking' = 20
+	 *          this.sharing' = 3
 	 *          this.intEncoding' = BINARY
 	 *          this.bitwidth' = 5
 	 *          this.skolemize' = true
@@ -183,6 +187,26 @@ public final class Options {
 	public void setSymmetryBreaking(int symmetryBreaking) {
 		checkRange(symmetryBreaking, 0, Integer.MAX_VALUE);
 		this.symmetryBreaking = symmetryBreaking;
+	}
+	
+	/**
+	 * Returns the depth to which circuits are checked for equivalence during translation.
+	 * The default depth is 3, and the minimum allowed depth is 1.  Increasing the sharing
+	 * may result in a smaller CNF, but at the cost of slower translation times.
+	 * @return this.sharing
+	 */
+	public int sharing() {
+		return sharing;
+	}
+	
+	/**
+	 * Sets the sharing option to the given value.
+	 * @effects this.sharing' = sharing
+	 * @throws IllegalArgumentException - sharing !in [1..Integer.MAX_VALUE]
+	 */
+	public void setSharing(int sharing) {
+		checkRange(sharing, 1, Integer.MAX_VALUE);
+		this.sharing = sharing;
 	}
 	
 	/**

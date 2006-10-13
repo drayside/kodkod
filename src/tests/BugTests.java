@@ -1,5 +1,7 @@
 package tests;
 
+import static kodkod.ast.Expression.UNIV;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -49,6 +51,27 @@ public class BugTests extends TestCase {
 //		System.out.println(Integer.toBinaryString(-1));
 //		System.out.println(Integer.toBinaryString(1));
 //	}
+	
+	public final void testEmina_10092006() {
+		Relation r = Relation.ternary("r");
+		final Variable a = Variable.unary("A");
+		final Variable b = Variable.unary("B");
+		final Variable c = Variable.unary("C");		
+		final Variable d = Variable.unary("D");
+		final Formula f0 = (b.join(a.join(r))).eq(d.join(c.join(r)));
+		final Formula f1 = a.in(c).and(b.in(d));
+		final Formula f = f0.implies(f1).
+			forAll(a.oneOf(UNIV).and(b.oneOf(UNIV)).and(c.oneOf(UNIV)).and(d.oneOf(UNIV)));
+		final Universe u = new Universe(Arrays.asList("a0","a1"));
+		final Bounds bounds = new Bounds(u);
+		bounds.bound(r, u.factory().allOf(3));
+		System.out.println(f); System.out.println(bounds);
+		solver.options().setSymmetryBreaking(0);
+		solver.options().setFlatten(false);
+		final Solution s = solver.solve(f, bounds);
+		System.out.println(s);
+		assertEquals(Solution.Outcome.SATISFIABLE, s.outcome());
+	}
 	
 	public final void testFelix_08142006() {
 		Relation x0 = Relation.nary("/nodeOrd/Ord", 1);
