@@ -84,7 +84,7 @@ public final class Translator {
 
 		// skolemize
 		final Map<Decl, Relation> skolems;
-		if (options.skolemize()) {
+		if (options.skolemDepth()>=0) {
 			//System.out.println("skolemizing...");
 			Skolemizer skolemizer = Skolemizer.skolemize(annotated, bounds, constantFactory(options));
 			annotated = skolemizer.skolemized();

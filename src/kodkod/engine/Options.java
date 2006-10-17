@@ -12,9 +12,8 @@ import kodkod.engine.satlab.SATFactory;
  * @specfield sharing: int // the depth to which circuits should be checked for equivalence during translation
  * @specfield intEncoding: IntEncoding // encoding to use for translating {@link kodkod.ast.IntExpression int expressions}
  * @specfield bitwidth: int // the bitwidth to use for integer representation / arithmetic
- * @specfield skolemize: boolean // skolemize existential quantifiers?
+ * @specfield skolemDepth: int // skolemization depth
  * @specfield flatten: boolean // eliminate extraneous intermediate variables?
- * @specfield logEncodeFunctions: boolean // use a compact encoding for functions?
  * @specfield trackVars: boolean // keep track of variables assigned to non-leaf nodes?
  * @author Emina Torlak
  */
@@ -24,9 +23,8 @@ public final class Options {
 	private IntEncoding intEncoding = IntEncoding.BINARY;
 	private int bitwidth = 5;
 	private int sharing = 3;
-	private boolean skolemize = true;
+	private int skolemDepth = 0;
 	private boolean flatten = true;
-	private boolean logEncodeFunctions = false;
 	private boolean trackVars = false;
 	
 	/**
@@ -37,9 +35,8 @@ public final class Options {
 	 *          this.sharing' = 3
 	 *          this.intEncoding' = BINARY
 	 *          this.bitwidth' = 5
-	 *          this.skolemize' = true
+	 *          this.skolemDepth' = 0
 	 *          this.flatten' = true
-	 *          this.logEncodeFunctions' = false
 	 *          this.trackVars' = false
 	 */
 	public Options() {}
@@ -54,9 +51,8 @@ public final class Options {
 	 *          this.sharing' = 3
 	 *          this.intEncoding' = BINARY
 	 *          this.bitwidth' = 5
-	 *          this.skolemize' = true
+	 *          this.skolemDepth' = 0
 	 *          this.flatten' = true
-	 *          this.logEncodeFunctions' = true
 	 *          this.trackVars' = false
 	 * @throws NullPointerException - solver = null
 	 */
@@ -210,54 +206,33 @@ public final class Options {
 	}
 	
 	/**
-	 * Returns the value of the skolemization flag, which
-	 * controls whether or not existentially quantified variables are
-	 * skolemized.  Skolemization is turned on by default.
-	 * It must be off if the tracking of variables is enabled.
-	 * @return this.skolemize
+	 * Returns the depth to which existential quantifiers are skolemized.
+	 * A negative depth  means that no skolemization is performed.
+	 * The default depth of 0 means that only existentials that are not nested
+	 * within a universal quantifiers are skolemized.  A depth of 1 means that 
+	 * existentials nested within a single universal are also skolemized, etc.
+	 * @return this.skolemDepth
 	 */
-	public boolean skolemize() {
-		return skolemize;
+	public int skolemDepth() {
+		return skolemDepth;
 	}
 	
 	/**
-	 * Sets the skolemization flag to the given value.
-	 * @effects this.skolemize = skolemize
-	 * @throws IllegalArgumentException - this.trackVars && skolemize
+	 * Sets the skolemDepth to the given value. 
+	 * @effects this.skolemDepth' = skolemDepth
+	 * @throws IllegalArgumentException - this.trackVars && skolemDepth >= 0
 	 */
-	public void setSkolemize(boolean skolemize) {
-		if (trackVars && skolemize)
+	public void setSkolemDepth(int skolemDepth) {
+		if (trackVars && skolemDepth>=0)
 			throw new IllegalStateException("trackVars enabled:  skolemization must be off.");
-		this.skolemize = skolemize;
-	}
-	
-	/**
-	 * Returns true if a compact encoding should be used for functions.
-	 * The compact encoding uses N(log M) boolean variables to represent 
-	 * a function whose domain and range contain up to N and M values, 
-	 * respectively.  (The regular encoding uses N*M variables.)  Although
-	 * the compact encoding reduces the number of boolean variables, it
-	 * increases the number of clauses which may slow down the SAT solver.  
-	 * The default value of this flag is <code>false</code>.
-	 * @return this.logEncodeFunctions
-	 */
-	public boolean logEncodeFunctions() {
-		return logEncodeFunctions;
-	}
-	
-	/**
-	 * Sets function encoding flag to the given value.
-	 * @effects this.logEncodeFunctions' = logEncodeFunctions
-	 */
-	public void setLogEncodeFunctions(boolean logEncondeFunctions) {
-		this.logEncodeFunctions = logEncondeFunctions;
+		this.skolemDepth = skolemDepth;
 	}
 	
 	/**
 	 * Returns true if a mapping from non-leaf nodes to boolean variables that
 	 * represent them should be generated during translation.  This is useful
 	 * for determining which formulas/expressions occur in the unsat core of an 
-	 * unsatisfiable formula.  The flatten and skolemization flags must be off whenever 
+	 * unsatisfiable formula.  Flattening and skolemization  must be off whenever 
 	 * this flag is enabled.  Variable tracking is off by default, since 
 	 * it incurs a non-trivial memory overheaad.
 	 * @return this.trackVars
@@ -268,14 +243,14 @@ public final class Options {
 	
 	/**
 	 * Sets the value of the variable tracking flag.  If the 
-	 * flag is turned on, flatten and skolemize are automatically set to false.
+	 * flag is turned on, flattening and skolemization are automatically disabled.
 	 * @effects this.trackVars' = trackVars &&
-	 *          trackVars => this.flatten' = false && this.skolemize' = false
+	 *          trackVars => this.flatten' = false && this.skolemDepth' < 0
 	 */
 	public void setTrackVars(boolean trackVars) {
 		if (trackVars) {
 			flatten = false;
-			skolemize = false;
+			skolemDepth = -1;
 		}
 		this.trackVars = trackVars;
 	}
@@ -293,14 +268,14 @@ public final class Options {
 		b.append(intEncoding);
 		b.append("\n bitwidth: ");
 		b.append(bitwidth);
+		b.append("\n sharing: ");
+		b.append(sharing);
 		b.append("\n flatten: ");
 		b.append(flatten);
 		b.append("\n symmetryBreaking: ");
 		b.append(symmetryBreaking);
-		b.append("\n skolemize: ");
-		b.append(skolemize);
-		b.append("\n logEncodeFunctions: ");
-		b.append(logEncodeFunctions);
+		b.append("\n skolemDepth: ");
+		b.append(skolemDepth);
 		b.append("\n trackVars: ");
 		b.append(trackVars);
 		return b.toString();

@@ -109,7 +109,6 @@ public class ReductionAndProofTest extends TestCase {
 			assertEquals(Solution.Outcome.UNSATISFIABLE, sol.outcome());
 			assertNull(sol.proof());
 			solver.options().setTrackVars(true);
-			solver.options().setSkolemize(false);
 			sol = solver.solve(f3, bounds);
 			assertNull(sol.proof());
 			
