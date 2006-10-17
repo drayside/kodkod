@@ -333,10 +333,12 @@ public final class Dijkstra {
 			System.out.println("*****check DijkstraPreventsDeadlocks for " + 
 					          states + " State, " + processes + " Process, " + mutexes + " Mutex*****");
 
-//			System.out.println(noDeadlocks);
+			System.out.println(noDeadlocks);
 //			System.out.println(bounds);
 			Solution sol1 = solver.solve(noDeadlocks, bounds);
 			System.out.println(sol1);
+//			System.out.println(solver.solve(model.grabOrRelease().and(model.declarations()).
+//					and(model.waits.some()).and(model.deadlock()), bounds));
 			
 		} catch (NumberFormatException nfe) {
 			usage();

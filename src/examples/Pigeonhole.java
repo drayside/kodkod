@@ -50,8 +50,7 @@ public final class Pigeonhole {
 	 * @return declarations
 	 */
 	public Formula declarations() {
-		final Variable p = Variable.unary("p");
-		return p.join(hole).some().forAll(p.oneOf(Pigeon));
+		return hole.function(Pigeon, Hole);
 	}
 	
 	/**
@@ -61,7 +60,9 @@ public final class Pigeonhole {
 	public Formula pigeonPerHole() {
 		final Variable p1 = Variable.unary("p1");
 		final Variable p2 = Variable.unary("p2");
-		return (p1.eq(p2).not().implies(p1.join(hole).intersection(p2.join(hole)).no())).forAll(p1.oneOf(Pigeon).and(p2.oneOf(Pigeon)));
+		return (p1.eq(p2).not().
+				implies(p1.join(hole).intersection(p2.join(hole)).no())).
+				forAll(p1.oneOf(Pigeon).and(p2.oneOf(Pigeon)));
 	}
 	
 	/**

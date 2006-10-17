@@ -31,12 +31,14 @@ public final class ALG197 extends Quasigroups7 {
 	 * @requires e's are unary, op is ternary
 	 */
 	Formula ax12and13(Relation[] e, Relation op) {
-		Expression eIden = Expression.NONE;
+		Formula f0 = Formula.FALSE;
+		Formula f1 = Formula.FALSE;
 		for(int i = 0; i < 7; i++) {
-			eIden = eIden.union(e[i].product(e[1]).product(e[1]));
+			Formula f = e[i].join(e[i].join(op)).eq(e[i]);
+			f0 = f0.or(f);
+			f1 = f1.or(f.not());
 		}
-		final Expression intersect = eIden.intersection(op);
-		return intersect.some().and(eIden.in(intersect).not());
+		return f0.and(f1);
 	}
 	
 	
@@ -140,7 +142,6 @@ public final class ALG197 extends Quasigroups7 {
 			solver.options().setSolver(SATFactory.MiniSat);
 			final Formula f = model.axioms().and(model.co1().not());
 			final Bounds b = model.bounds();
-//			System.out.println(f);
 			final Solution sol = solver.solve(f, b);
 			if (sol.instance()==null) {
 				System.out.println(sol);

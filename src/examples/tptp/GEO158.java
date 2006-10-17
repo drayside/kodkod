@@ -371,30 +371,30 @@ public class GEO158 {
 			solver.options().setSolver(SATFactory.MiniSat);
 	
 			final GEO158 model = new GEO158();
-			final Formula f = model.axioms();
+			final Formula f = model.axioms().and(model.curve.some());
 			
 			
-			System.out.println(model.decls());
-			System.out.println(model.partOfDefn());
-			System.out.println(model.sumDefn());
-			
-			System.out.println(model.endPointDefn());
-			System.out.println(model.innerPointDefn());
-			System.out.println(model.meetDefn());
-			
-			System.out.println(model.openDefn());
-			System.out.println(model.closedDefn());			
-			System.out.println(model.c1());
-			
-			System.out.println(model.c2());
-			System.out.println(model.c3());
-			System.out.println(model.c4());
-			
-			System.out.println(model.c6());
-			System.out.println(model.c7());
-			System.out.println(model.c8());
-			
-			System.out.println(model.c9());
+//			System.out.println(model.decls());
+//			System.out.println(model.partOfDefn());
+//			System.out.println(model.sumDefn());
+//			
+//			System.out.println(model.endPointDefn());
+//			System.out.println(model.innerPointDefn());
+//			System.out.println(model.meetDefn());
+//			
+//			System.out.println(model.openDefn());
+//			System.out.println(model.closedDefn());			
+//			System.out.println(model.c1());
+//			
+//			System.out.println(model.c2());
+//			System.out.println(model.c3());
+//			System.out.println(model.c4());
+//			
+//			System.out.println(model.c6());
+//			System.out.println(model.c7());
+//			System.out.println(model.c8());
+//			
+//			System.out.println(model.c9());
 
 			
 			

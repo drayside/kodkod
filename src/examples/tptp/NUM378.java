@@ -22,7 +22,7 @@ import kodkod.instance.TupleSet;
 import kodkod.instance.Universe;
 
 /**
- * A KK encoding of NUM3788+1.p from http://www.cs.miami.edu/~tptp/
+ * A KK encoding of NUM378+1.020.015.p from http://www.cs.miami.edu/~tptp/
  * 
  * @author Emina Torlak
  */
@@ -177,10 +177,11 @@ public final class NUM378 {
 			solver.options().setSolver(SATFactory.MiniSat);
 			final Formula f = model.decls().and(model.inequalities());
 			final Bounds b = model.bounds();
-			System.out.println(f);
-			System.out.println(b);
+//			System.out.println(f);
+//			System.out.println(b);
 			final Solution sol = solver.solve(f, b);
-			System.out.println(sol);
+			System.out.println(sol.outcome());
+			System.out.println(sol.stats());
 		} catch (NumberFormatException nfe) {
 			usage();
 		}

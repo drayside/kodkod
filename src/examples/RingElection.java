@@ -101,8 +101,9 @@ public final class RingElection {
 	public Formula declarations() {
 		final Formula ordTime = tord.totalOrder(Time, tfirst, tlast);
 		final Formula ordProcess = pord.totalOrder(Process, pfirst, plast);
-		final Formula succFunction = succ.function(Process, Time);
-		return succFunction.and(ordTime).and(ordProcess);
+		final Formula succFunction = succ.function(Process, Process);
+		final Formula electedDomRange = elected.in(Process.product(Time));
+		return succFunction.and(ordTime).and(ordProcess).and(electedDomRange);
 	}
 	
 	/**
@@ -167,7 +168,7 @@ public final class RingElection {
 		final Expression t2 = t1.join(tord);
 		final Variable p = Variable.unary("p");
 		final Formula f = step(t1, t2, p).or(step(t1, t2, succ.join(p))).or(skip(t1, t2, p));
-		final Formula fAll = f.forAll(t1.oneOf(Time.difference(tlast)).and(p.oneOf(Process)));
+		final Formula fAll = f.forAll(p.oneOf(Process)).forAll(t1.oneOf(Time.difference(tlast)));
 		return init(tfirst).and(fAll);
 	}
 	
@@ -297,25 +298,24 @@ public final class RingElection {
 			
 			final int p = Integer.parseInt(args[0]);
 			final int t = Integer.parseInt(args[1]);
-			// check AtMostOneElected for 3 Process, 7 Time 
+	
 			final Formula checkAtMostOneElected = model.declsAndFacts().and(model.atMostOneElected().not());
-			final Bounds bounds37 = model.bounds(p,t);
+			final Bounds boundspt = model.bounds(p,t);
 			
-			// run looplessPath for 13 Time, 3 Process
-			//final Formula runLooplessPath = model.declsAndFacts().and(model.looplessPath());
-			//final Bounds bounds313 = model.bounds(3, 13);
+	
 			
 			System.out.println("*****check AtMostOneElected for " + p +" Process, "+ t + " Time*****");
-//			System.out.println(checkAtMostOneElected);
-//			System.out.println(bounds37);
-			Solution sol1 = solver.solve(checkAtMostOneElected, bounds37);
+			Solution sol1 = solver.solve(checkAtMostOneElected, boundspt);
 			System.out.println(sol1);
-			
-			//System.out.println("*****run looplessPath for 13 Time, 3 Process*****");
+	
+//			// run looplessPath for 13 Time, 3 Process
+//			final Formula runLooplessPath = model.declsAndFacts();//.and(model.looplessPath());
+//			final Bounds bounds313 = model.bounds(p, t);
+//			System.out.println("*****run looplessPath for 13 Time, 3 Process*****");
 //			System.out.println(runLooplessPath);
 //			System.out.println(bounds313);
-			//Solution sol2 = solver.solve(runLooplessPath, bounds313);
-			//System.out.println(sol2);
+//			Solution sol2 = solver.solve(runLooplessPath, bounds313);
+//			System.out.println(sol2);
 			
 		} catch (NumberFormatException nfe) {
 			usage();

@@ -162,9 +162,9 @@ public final class CeilingsAndFloors {
 		final int p = Integer.parseInt(args[1]);
 		solver.options().setSolver(SATFactory.MiniSat);
 		try {
-			final Formula show = model.declarations().and(model.belowTooDoublePrime());
+			final Formula show = model.belowTooDoublePrime();
 			final Solution sol = solver.solve(show, model.bounds(m,p));
-			//System.out.println(show);
+			System.out.println(show);
 			System.out.println(sol);
 			
 		} catch (NumberFormatException nfe) {

@@ -10,7 +10,6 @@ import kodkod.ast.Expression;
 import kodkod.ast.Formula;
 import kodkod.ast.Relation;
 import kodkod.ast.Variable;
-import kodkod.engine.Evaluator;
 import kodkod.engine.Solution;
 import kodkod.engine.Solver;
 import kodkod.engine.fol2sat.HigherOrderDeclException;
@@ -71,8 +70,20 @@ public final class GRA019 {
 		return lessThan.in(red.union(green));
 	}
 	
+	/**
+	 * Returns the transitivity axiom.
+	 * @return transitivity axiom
+	 */
 	public final Formula lessThanTransitive() { 
 		return lessThan.join(lessThan).in(lessThan);
+	}
+	
+	/**
+	 * Returns the no-overlap axiom.
+	 * @return no overlap axiom.
+	 */
+	public final Formula noOverlap() {
+		return red.intersection(green).some().implies(goal.some());
 	}
 	
 	/**
@@ -81,7 +92,7 @@ public final class GRA019 {
 	 */
 	public final Formula axioms() {
 		return redCliqueAxiom().and(greenCliqueAxiom()).and(partition()).
-		and(lessThanTransitive());
+		and(lessThanTransitive()).and(noOverlap());
 	}
 	
 	/**
@@ -111,32 +122,38 @@ public final class GRA019 {
 		b.bound(red, ns.product(ns));
 		b.bound(green, ns.product(ns));
 		final TupleSet s = f.noneOf(2);
-		for(int i = 1; i <= n; i++) {
-			for(int j = i+1; j <= n; j++)
-				s.add(f.tuple("n"+i, "n"+j));
+		for(int i = 1; i < n; i++) {
+		 s.add(f.tuple("n"+i, "n"+(i+1)));
 		}
 		b.bound(lessThan, s, ns.product(ns));
 		return b;
 	}
 	
+	private static void usage() {
+		System.out.println("java examples.tptp.GRA019 [univ size]");
+		System.exit(1);
+	}
+	
 	/**
-	 * Usage: java examples.tptp.GRA019
+	 * Usage: java examples.tptp.GRA019 [univ size]
 	 */
 	public  static void main(String[] args) {
+		if (args.length < 1)
+			usage();
 		try {
 
 			final GRA019 model = new GRA019();
 			
-			final Bounds b = model.bounds(18);
+			final Bounds b = model.bounds(Integer.parseInt(args[0]));
 			final Solver solver = new Solver();
 			solver.options().setSolver(SATFactory.MiniSat);
 			
-			final Formula f = model.axioms().and(model.goalToBeProved().not());//.and(model.red.intersection(model.green).no());
+			final Formula f = model.axioms().and(model.goalToBeProved().not());
 			System.out.println(f);
-			System.out.println(b);
+			//System.out.println(b);
 			final Solution s = solver.solve(f, b);
 			System.out.println(s);
-			System.out.println((new Evaluator(s.instance())).evaluate(f));
+			//System.out.println((new Evaluator(s.instance())).evaluate(f));
 	
 		} catch (HigherOrderDeclException e) {
 			// TODO Auto-generated catch block
@@ -144,6 +161,8 @@ public final class GRA019 {
 		} catch (UnboundLeafException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} 
+		} catch (NumberFormatException nfe) {
+			usage();
+		}
 	}
 }

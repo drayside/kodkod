@@ -306,11 +306,10 @@ public final class TOP020 {
 			final TOP020 model = new TOP020();
 			final Solver solver = new Solver();
 			solver.options().setSolver(SATFactory.MiniSat);
-//			solver.options().setSymmetryBreaking(1000);
-//			solver.options().setFlatten(false);
 			final Formula f = model.axioms().and(model.challenge_AMR_1_4_4().not());
 			final Bounds b = model.bounds(n);
-			System.out.println(f);
+//			System.out.println(f);
+//			System.out.println(b);
 			final Solution sol = solver.solve(f, b);
 			System.out.println(sol);
 		} catch (NumberFormatException nfe) {

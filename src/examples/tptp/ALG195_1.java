@@ -1,3 +1,6 @@
+/**
+ * 
+ */
 package examples.tptp;
 
 import java.util.ArrayList;
@@ -8,6 +11,9 @@ import kodkod.ast.Expression;
 import kodkod.ast.Formula;
 import kodkod.ast.Relation;
 import kodkod.ast.Variable;
+import kodkod.engine.Solution;
+import kodkod.engine.Solver;
+import kodkod.engine.satlab.SATFactory;
 import kodkod.instance.Bounds;
 import kodkod.instance.Instance;
 import kodkod.instance.Tuple;
@@ -16,19 +22,17 @@ import kodkod.instance.TupleSet;
 import kodkod.instance.Universe;
 
 /**
- * Contains the relations/axioms common to the problems ALG195+1.p and ALG197+1.p from
- * from http://www.cs.miami.edu/~tptp/
- * 
- * @author Emina Torlak
+ * @author emina
+ *
  */
-public abstract class Quasigroups7 {
+public final class ALG195_1 {
 	final Relation[] e1, e2, h;
 	final Relation op1, op2, s1, s2;
 	
 	/**
 	 * Constructs a new instance of Quasigroups7.
 	 */
-	Quasigroups7() {
+	ALG195_1() {
 		op1 = Relation.ternary("op1");
 		op2 = Relation.ternary("op2");
 		s1 = Relation.unary("s1");
@@ -56,6 +60,10 @@ public abstract class Quasigroups7 {
 		Formula f = function(s1, op1).and(function(s2, op2));
 		for(Relation x: h) {
 			f = f.and(x.function(s1, s2));
+		}
+		for(int i = 0; i < 7; i++) {
+			f = f.and(h[i].function(s1, s2));
+			f = f.and(e1[i].one()).and(e2[i].one());
 		}
 		return f;
 	}
@@ -126,7 +134,28 @@ public abstract class Quasigroups7 {
 	 * Parametrization of axioms 12 and 13.
 	 * @requires e's are unary, op is ternary
 	 */
-	abstract Formula ax12and13(Relation[] e, Relation op);
+	Formula ax12and13(Relation[] e, Relation op) {
+		Formula f = Formula.TRUE;
+		for(Relation r : e) {
+			f = f.and(r.join(r.join(op)).eq(r).not());
+		}
+		return f;
+	}
+	
+	/**
+	 * Returns axioms 9 and 10.
+	 * @return axioms 9 and 10.
+	 */
+//	public final Formula ax9ax10() {
+//		Formula f = Formula.TRUE;
+//		for(int i = 0 ; i < 6; i++) {
+//			for(int j = i+1; j < 7; j++) {
+//				f = f.and(e1[i].eq(e1[j]).not());
+//				f = f.and(e2[i].eq(e2[j]).not());
+//			}
+//		}
+//		return f;
+//	}
 	
 	/**
 	 * Returns axiom 12.
@@ -148,7 +177,27 @@ public abstract class Quasigroups7 {
 	 * Parametrization of axioms 14 and 15.
 	 * @requires e's are unary, op is ternary
 	 */
-	abstract Formula ax14and15(Relation[] e, Relation op);
+	Formula ax14and15(Relation[] e, Relation op) {
+		final Expression expr0 = e[5].join(op); // op(e5,...)
+		final Expression expr1 = e[5].join(expr0); // op(e5,e5)
+		final Expression expr2 = expr1.join(expr0); // op(e5,op(e5,e5))
+		final Expression expr3 = expr2.join(expr2.join(op)); // op(op(e5,op(e5,e5)),op(e5,op(e5,e5)))
+		final Expression expr3a = expr3.join(op); // op(op(op(e5,op(e5,e5)),op(e5,op(e5,e5))),...)
+		final Expression expr4 = e[5].join(expr3a); // op(op(op(e5,op(e5,e5)),op(e5,op(e5,e5))),e5)
+		// e0 = op(op(op(e5,op(e5,e5)),op(e5,op(e5,e5))),op(e5,op(e5,e5)))
+		final Formula f0 = e[0].eq(expr2.join(expr3a));
+		// e1 = op(e5,e5)
+		final Formula f1 = e[1].eq(expr1);
+		// e2 = op(op(e5,op(e5,e5)),op(e5,op(e5,e5)))
+		final Formula f2 = e[2].eq(expr3);
+		// e3 = op(op(op(e5,op(e5,e5)),op(e5,op(e5,e5))),e5)
+		final Formula f3 = e[3].eq(expr4);
+		// e4 = op(e5,op(e5,e5))
+		final Formula f4 = e[4].eq(expr2);
+		// e6 = op(op(op(op(e5,op(e5,e5)),op(e5,op(e5,e5))),e5),op(e5,op(e5,e5)))
+		final Formula f6 = e[6].eq(expr2.join(expr4.join(op)));
+		return f0.and(f1).and(f2).and(f3).and(f4).and(f6);
+	}
 	
 	/**
 	 * Returns lines 1 and 3-6 of axiom 14.
@@ -170,11 +219,34 @@ public abstract class Quasigroups7 {
 	 * Parametrization of axioms 16-22.
 	 * @requires e is unary, h is binary
 	 */
-	abstract Formula ax16_22(Relation e, Relation h);
+	Formula ax16_22(Relation e, Relation h) {
+		final Expression expr0 = e.join(op2); // op2(e,...)
+		final Expression expr1 = e.join(expr0); // op2(e,e)
+		final Expression expr2 = expr1.join(expr0); // op2(e,op2(e,e))
+		final Expression expr3 = expr2.join(expr2.join(op2)); // op2(op2(e,op2(e,e)),op2(e,op2(e,e)))
+		final Expression expr3a = expr3.join(op2); // op2(op2(op2(e,op2(e,e)),op2(e,op2(e,e))),...)
+		final Expression expr4 = e.join(expr3a); // op2(op2(op2(e,op2(e,e)),op2(e,op2(e,e))),e)
+		// h(e10) = op2(op2(op2(e,op2(e,e)),op2(e,op2(e,e))),op2(e,op2(e,e)))
+		final Formula f0 = e1[0].join(h).eq(expr2.join(expr3a));
+		// h(e11) = op2(e,e)
+		final Formula f1 = e1[1].join(h).eq(expr1);
+		// h(e12) = op2(op2(e,op2(e,e)),op2(e,op2(e,e)))
+		final Formula f2 = e1[2].join(h).eq(expr3);
+		// h(e13) = op2(op2(op2(e,op2(e,e)),op2(e,op2(e,e))),e)
+		final Formula f3 = e1[3].join(h).eq(expr4);
+		// h(e14) = op2(e,op2(e,e))
+		final Formula f4 = e1[4].join(h).eq(expr2);
+		// h1(e15) = e
+		final Formula f5 = e1[5].join(h).eq(e);
+		// h(e16) = op2(op2(op2(op2(e,op2(e,e)),op2(e,op2(e,e))),e),op2(e,op2(e,e)))
+		final Formula f6 = e1[6].join(h).eq(expr2.join(expr4.join(op2)));
+		
+		return f0.and(f1).and(f2).and(f3).and(f4).and(f5).and(f6);
+	}
 	
 	/**
-	 * Returns lines 2-7 of axioms 16-22.
-	 * @return lines 2-7 of axioms 16-22.
+	 * Returns  axioms 16-22.
+	 * @return axioms 16-22.
 	 */
 	public final Formula ax16_22() {
 		Formula f = Formula.TRUE;
@@ -189,7 +261,8 @@ public abstract class Quasigroups7 {
 	 * @return the conjunction of all axioms and implicit constraints
 	 */
 	public final Formula axioms() {
-		return decls().and(ax2ax7()).and(ax3()).and(ax5ax8()).and(ax6()).and(ax12()).and(ax13()).and(ax14()).and(ax15()).and(ax16_22());
+		return decls().and(ax2ax7()).and(ax3()).and(ax5ax8()).and(ax6()).
+			   and(ax12()).and(ax13()).and(ax14()).and(ax15()).and(ax16_22());
 	}
 	
 	/**
@@ -237,8 +310,11 @@ public abstract class Quasigroups7 {
 		final Bounds b = new Bounds(u);
 		final TupleFactory f = u.factory();
 		
-		b.boundExactly(s1, f.range(f.tuple("e10"), f.tuple("e16")));
-		b.boundExactly(s2, f.range(f.tuple("e20"), f.tuple("e26")));
+		final TupleSet s1bound = f.range(f.tuple("e10"), f.tuple("e16"));
+		final TupleSet s2bound = f.range(f.tuple("e20"), f.tuple("e26"));
+		
+		b.boundExactly(s1, s1bound);
+		b.boundExactly(s2, s2bound);
 		
 		// axioms 9, 10, 11
 		for(int i = 0; i < 7; i++) {
@@ -247,12 +323,14 @@ public abstract class Quasigroups7 {
 		}
 		
 		// axom 1
-		final TupleSet op1h = f.area(f.tuple("e10", "e10", "e10"), f.tuple("e16", "e16", "e16"));
+		b.bound(op1, f.area(f.tuple("e10", "e10", "e10"), f.tuple("e16", "e16", "e16")));
 		// axiom 4
-		final TupleSet op2h = f.area(f.tuple("e20", "e20", "e20"), f.tuple("e26", "e26", "e26"));
+		b.bound(op2, f.area(f.tuple("e20", "e20", "e20"), f.tuple("e26", "e26", "e26")));
 		
-		b.bound(op1, op1h);
-		b.bound(op2, op2h);
+		final TupleSet hbound = s1bound.product(s2bound);
+		for(Relation r : h) {
+			b.bound(r, hbound);
+		}
 		
 		return b;
 	}
@@ -279,6 +357,38 @@ public abstract class Quasigroups7 {
 		for(int i = 0; i < 7; i++) {
 			System.out.println("\n"+h[i]+":");
 			System.out.println(instance.tuples(h[i]));
+		}
+	}
+	
+	private static void usage() {
+		System.out.println("java examples.tptp.ALG195_1");
+		System.exit(1);
+	}
+	
+	/**
+	 * Usage: java examples.tptp.ALG195_1
+	 */
+	public static void main(String[] args) {
+	
+		try {
+	
+			final ALG195_1 model = new ALG195_1();
+			final Solver solver = new Solver();
+			solver.options().setSolver(SATFactory.MiniSat);
+			final Formula f = model.axioms().and(model.co1().not());
+			final Bounds b = model.bounds();
+//			System.out.println(model.decls());
+//			System.out.println(model.ax2ax7());
+//			System.out.println(b);
+			final Solution sol = solver.solve(f, b);
+			if (sol.instance()==null) {
+				System.out.println(sol);
+			} else {
+				System.out.println(sol.stats());
+				model.display(sol.instance());
+			}
+		} catch (NumberFormatException nfe) {
+			usage();
 		}
 	}
 

@@ -146,7 +146,9 @@ public final class ALG195 extends Quasigroups7 {
 			solver.options().setSolver(SATFactory.MiniSat);
 			final Formula f = model.axioms().and(model.co1().not());
 			final Bounds b = model.bounds();
-//			System.out.println(f);
+			System.out.println(model.decls());
+//			System.out.println(model.ax2ax7());
+//			System.out.println(b);
 			final Solution sol = solver.solve(f, b);
 			if (sol.instance()==null) {
 				System.out.println(sol);

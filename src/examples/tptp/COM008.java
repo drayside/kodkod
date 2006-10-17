@@ -216,7 +216,7 @@ public final class COM008 {
 //			solver.options().setFlatten(false);
 			final Formula f = model.axioms().and(model.goalToBeProved());
 			final Bounds b = model.bounds(n);
-			System.out.println(f);
+//			System.out.println(f);
 			final Solution sol = solver.solve(f, b);
 			System.out.println(sol);
 		} catch (NumberFormatException nfe) {
