@@ -86,7 +86,7 @@ public final class Translator {
 		final Map<Decl, Relation> skolems;
 		if (options.skolemDepth()>=0) {
 			//System.out.println("skolemizing...");
-			Skolemizer skolemizer = Skolemizer.skolemize(annotated, bounds, constantFactory(options));
+			Skolemizer skolemizer = Skolemizer.skolemize(annotated, bounds, options);
 			annotated = skolemizer.skolemized();
 			skolems = skolemizer.skolems();
 		} else {
@@ -152,15 +152,6 @@ public final class Translator {
 
 	}
 	
-	/**
-	 * Returns a BooleanFactory with 0 variables, which is essentially a factory
-	 * that can manipulate only constants.
-	 * @return a BooleanFactory with 0 variables, which is essentially a factory
-	 * that can manipulate only constants.
-	 */
-	private static BooleanFactory constantFactory(Options options) { 
-		return BooleanFactory.factory(0, options);
-	}
 	
 	/**
 	 * Evaluates the given formula to a BooleanConstant using the provided instance and options.  
@@ -173,7 +164,7 @@ public final class Translator {
 	public static BooleanConstant evaluate(Formula formula, Instance instance, Options options) {
 		return (BooleanConstant) 
 		 FOL2BoolTranslator.translate(new AnnotatedNode<Formula>(formula), 
-				 new InstanceInterpreter(instance, constantFactory(options)));
+				 new InstanceInterpreter(instance, BooleanFactory.constantFactory(options)));
 	}
 	
 	/**
@@ -187,7 +178,7 @@ public final class Translator {
 	public static BooleanMatrix evaluate(Expression expression,Instance instance, Options options) {
 		return (BooleanMatrix) 
 		 FOL2BoolTranslator.translate(new AnnotatedNode<Expression>(expression),
-				 new InstanceInterpreter(instance, constantFactory(options)));
+				 new InstanceInterpreter(instance, BooleanFactory.constantFactory(options)));
 	}
 
 }

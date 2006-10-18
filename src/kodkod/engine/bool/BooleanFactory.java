@@ -84,6 +84,18 @@ public abstract class BooleanFactory {
 	}
 	
 	/**
+	 * Returns a BooleanFactory with no variables; the returned factory
+	 * can manipulate only constants.  
+	 * @return {f: BooleanFactory | f.components = BooleanConstant &&
+	 *                              f.comparisonDepth = options.sharing && 
+	 *                              f.bitwidth = options.bitwidth && f.intEncoding = options.intEncoding }
+	 * @throws NullPointerException - options = null
+	 */
+	public static BooleanFactory constantFactory(Options options) {
+		return factory(0, options);
+	}
+	
+	/**
 	 * Returns the depth (from the root) to which components are checked for 
 	 * semantic equality during gate construction.
 	 * @return this.comparisonDepth

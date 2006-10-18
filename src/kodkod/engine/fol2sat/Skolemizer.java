@@ -1,7 +1,9 @@
 package kodkod.engine.fol2sat;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -11,19 +13,18 @@ import kodkod.ast.Decl;
 import kodkod.ast.Decls;
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
-import kodkod.ast.LeafExpression;
 import kodkod.ast.Multiplicity;
 import kodkod.ast.Node;
 import kodkod.ast.QuantifiedFormula;
 import kodkod.ast.Relation;
 import kodkod.ast.Variable;
 import kodkod.ast.visitor.DepthFirstReplacer;
+import kodkod.engine.Options;
 import kodkod.engine.bool.BooleanFactory;
 import kodkod.engine.bool.BooleanMatrix;
 import kodkod.engine.bool.BooleanValue;
 import kodkod.instance.Bounds;
 import kodkod.instance.Universe;
-import kodkod.util.collections.IdentityHashSet;
 import kodkod.util.ints.IndexedEntry;
 import kodkod.util.ints.IntSet;
 import kodkod.util.ints.Ints;
@@ -73,7 +74,7 @@ final class Skolemizer {
 	}
 	
 	/**
-	 * Skolemizes the given annotated formula using the given bounds and factory.
+	 * Skolemizes the given annotated formula using the given bounds and options.
 	 * @effects upper bound mappings for skolem constants, if any, are added to the bounds
 	 * @return a Skolemizer whose skolemized field is a skolemized version of the given formula,
 	 * and whose skolem field contains the generated skolem constants
@@ -82,35 +83,17 @@ final class Skolemizer {
 	 * @throws UnsupportedOperationException - bounds is unmodifiable
 	 */
 	@SuppressWarnings("unchecked")
-	static Skolemizer skolemize(AnnotatedNode<Formula> annotated, Bounds bounds, BooleanFactory factory) {
-		final Set<QuantifiedFormula> formulas = AnnotatedNode.existentials(annotated);
+	static Skolemizer skolemize(AnnotatedNode<Formula> annotated, Bounds bounds, Options options) {
+		final Set<QuantifiedFormula> formulas = AnnotatedNode.skolemizables(annotated, options.skolemDepth());
+		
 		if (formulas.isEmpty()) {
 			return new Skolemizer(annotated, Collections.EMPTY_MAP);
 		} else {
-			final EQFReplacer replacer = new EQFReplacer(formulas, annotated.sharedNodes(), new BoundsInterpreter.Overapproximating(bounds, factory));
+			final EQFReplacer replacer = new EQFReplacer(formulas, annotated.sharedNodes(), bounds, options);
 			final Formula f = annotated.node().accept(replacer).and(replacer.skolemFormula);
-			if (identityMapping(replacer.cache)) {
-				return new Skolemizer(new AnnotatedNode<Formula>(f, annotated.sharedNodes()), replacer.skolems);
-			} else {
-				final Set<Node> newSharedNodes = new IdentityHashSet<Node>(annotated.sharedNodes().size());
-				for (Map.Entry<Node, Node> e : replacer.cache.entrySet()) {
-					newSharedNodes.add(e.getValue());
-				}
-				return new Skolemizer(new AnnotatedNode<Formula>(f, newSharedNodes), replacer.skolems);
-			}
+//			System.out.println(f);
+			return new Skolemizer(new AnnotatedNode<Formula>(f), replacer.skolems);
 		}
-	}
-	
-	/**
-	 * Returns true if the given map is an identity mapping.
-	 * @return all o: Object | map.containsKey(o) => map.get(o) = o
-	 */
-	private static boolean identityMapping(Map<?, ?> map) {
-		for (Map.Entry<?,?> e : map.entrySet()) {
-			if (e.getKey()!=e.getValue())
-				return false;
-		}
-		return true;
 	}
 
 	/**
@@ -132,45 +115,52 @@ final class Skolemizer {
 	 */
 	private static final class EQFReplacer extends DepthFirstReplacer {
 		private final Set<QuantifiedFormula> eqfs;
-		private Environment<LeafExpression> env;
+		/* replacement environment; maps skolemized variables to their skolem expressions,
+		 * and non-skolemized variables to themselves */
+		private Environment<Expression> env;
+		private final int skolemDepth;
+		/* a list of declInfo records for non-skolemizable decls, in the order of
+		 * occurrence; i.e. the first info corresponds to the outermost decl, the
+		 * second to the second outermost decl, etc.
+		 */
+		private final List<DeclInfo> nonSkolems;
+		/* when computing the upper bounds for skolems, all
+		 * expressions must be replaced with sound approximation.
+		 */
+		private final Approximator approximator ;
 		/* the interpreter used to determine the upper bounds for skolem constants;
 		 * the upper bounds for skolem constants will be added to interpreter.bounds */
 		private final BoundsInterpreter.Overapproximating interpreter;
-		/* when computing the upper bounds for skolems, all difference expressions must
-		 * be replaced with the left child to ensure soundness.
-		 */
-		private final DifferenceRemover diffRemover ;
-		
 		/* the cache used for storing the replacements for shared nodes */
-		final Map<Node,Node> cache;
-		/* the conjunction that constrains all the skolem constants; i.e.
-		 * for each decl->r in this.skolems, the conjunction contains the formula
-		 * 'r in decl.expression and one r'  */
+		private final Map<Node,Node> cache;
+		
+		/* the formula that constrains all the skolem constants */
 		Formula skolemFormula;
 		/* the mapping from skolemized declarations to their corresponding
 		 * skolem constants */
 		final Map<Decl, Relation> skolems;
-		final Bounds bounds;
+		
 		/**
 		 * Constructs a new EQFReplacer.  This replacer should only be applied to
-		 * the top-level formula, root.  The bounds backing the given interpreter will be modified to include
+		 * the top-level formula, root.  The bounds will be modified to include
 		 * upper bounds for the skolem constants generated during replacement.
 		 * @requires sharedNodes = {n: Node | #(n.~children & this.root'.^children) > 1 }
 		 * @requires root.*children & Relation in interpreter.bounds.relations
 		 * @effects this.eqfs' = eqfs && this.bounds' = interpreter.bounds
 		 */
-		EQFReplacer(Set<QuantifiedFormula> eqfs, Set<Node> sharedNodes, BoundsInterpreter.Overapproximating manager) {
+		EQFReplacer(Set<QuantifiedFormula> eqfs, Set<Node> sharedNodes, Bounds bounds, Options options) {
 			this.eqfs = eqfs;
-			this.bounds = manager.boundingObject();
-			this.interpreter = manager;
+			this.interpreter = new BoundsInterpreter.Overapproximating(bounds, BooleanFactory.constantFactory(options));
 			this.skolems = new IdentityHashMap<Decl, Relation>(eqfs.size());
 			this.skolemFormula = Formula.TRUE;
 			this.cache = new IdentityHashMap<Node,Node>(sharedNodes.size());
 			for(Node n: sharedNodes) {
 				cache.put(n, null);
 			}
-			this.env = new Environment<LeafExpression>();
-			this.diffRemover = new DifferenceRemover(sharedNodes);
+			this.env = new Environment<Expression>();
+			this.skolemDepth = options.skolemDepth();
+			this.nonSkolems = new ArrayList<DeclInfo>(skolemDepth);
+			this.approximator = new Approximator(sharedNodes, nonSkolems);
 		}
 		
 		/**
@@ -234,15 +224,50 @@ final class Skolemizer {
 		}
 		
 		/**
-		 * Returns a mapping of each variable in decls to itself.
-		 * @return decls.variable->decls.variable & iden
+		 * Extends this.env with the mapping of declared
+		 * variables to themselves, in the order in which they
+		 * are declared.
+		 * @effects extends this.env with the mapping of declared
+		 * variables to themselves, in the order in which they
+		 * are declared.
 		 */
-		private Map<Variable,LeafExpression> identityMapping(Decls decls) {
-			final Map<Variable,LeafExpression> iden = new IdentityHashMap<Variable,LeafExpression>(decls.size());
+		private void extendEnv(Decls decls) {
 			for(Decl decl: decls) {
-				iden.put(decl.variable(), decl.variable());
+				env = env.extend(decl.variable(), decl.variable());
 			}
-			return iden;
+		}
+		
+		/**
+		 * Sets this.env to the ancestor reached in num steps.
+		 * @requires #(this.env.^parent-null) >= num
+		 * @effects sets this.env to the ancestor reached in num steps.
+		 */
+		private void shrinkEnv(int num) {
+			for(int i = 0; i < num; i++)
+				env = env.parent();
+		}
+		
+		/**
+		 * Extends this.nonSkolems with DeclInfos for the given Decls.
+		 * @effects extends this.nonSkolems with DeclInfos for the given Decls.
+		 */
+		private void extendNonSkolems(Decls decls) {
+			for(Decl decl: decls) {
+				nonSkolems.add(new DeclInfo(decl, decl.expression().accept(approximator)));
+			}
+			assert nonSkolems.size() <= skolemDepth;
+		}
+		
+		/**
+		 * Removes the last num elements from the tail of this.nonSkolems.
+		 * @requires num <= this.nonSkolems.size()
+		 * @effects removes the last num elements from the tail of this.nonSkolems.
+		 */
+		private void shrinkNonSkolems(int num) {
+			assert num <= nonSkolems.size();
+			for(int depth = nonSkolems.size(), i = depth-1; i >= depth-num; i--) {
+				nonSkolems.remove(i);
+			}
 		}
 		
 		/** 
@@ -257,39 +282,57 @@ final class Skolemizer {
 		public Expression visit(Comprehension comprehension) {
 			Expression ret = lookup(comprehension);
 			if (ret==null) {
-				env = env.extend(identityMapping(comprehension.declarations()));
+				extendEnv(comprehension.declarations());
 				final Decls decls = (Decls)comprehension.declarations().accept(this);
 				final Formula formula = comprehension.formula().accept(this);
 				ret = (decls==comprehension.declarations() && formula==comprehension.formula()) ? 
 					  comprehension : formula.comprehension(decls);
-				env = env.parent();
+				shrinkEnv(decls.size());
 			}
 			return cache(comprehension,ret);
 		}
 		
 		/**
-		 * Adds the formula 'skolem in decl.expression && decl.multiplicity skolem' to 
-		 * this.skolemFormula, computes and adds the upper bound for skolem
-		 * to this.allocator.bounds.
-		 * @effects this.skolemFormula' = this.skolemFormula && skolem in decl.expression
-		 *            && decl.multiplicity skolem
-		 * @effects this.allocator.bounds.upperBound' = 
-		 *            this.allocator.bounds.upperBound + skolem->Translator.evaluate(decl.expression, interpreter)
+		 * Adds a skolem constant for the given declaration to this.skolems,
+		 * and returns the expression that should replace decl.variable in 
+		 * the final formula.
+		 * @effects adds a skolem constant for the given declaration to this.skolems
+		 * @return the expression that should replace decl.variable in 
+		 * the final formula
 		 */
-		private void updateSkolemInfo(Relation skolem, Decl decl) {
-			final BooleanMatrix skolemBound = (BooleanMatrix) 
-			  FOL2BoolTranslator.translate(new AnnotatedNode<Expression>(decl.expression().accept(diffRemover)), interpreter);
-			final Universe universe = bounds.universe();
-			final int arity = decl.variable().arity();
+		private Expression extendSkolems(Decl decl) {
+			final int depth = nonSkolems.size();
+			final int arity = depth + decl.variable().arity();
+			final Relation skolem = Relation.nary("$"+decl.variable().name(), arity);
+			Expression exprBound = decl.expression().accept(approximator);
+			for(int i = depth-1; i >= 0; i--) {
+				exprBound = nonSkolems.get(i).upperBound.product(exprBound);
+			}
+			final BooleanMatrix tupleBound = (BooleanMatrix) 
+			  FOL2BoolTranslator.translate(new AnnotatedNode<Expression>(exprBound), interpreter);
+			final Universe universe = interpreter.universe();
 			final IntSet tuples = Ints.bestSet((int)StrictMath.pow(universe.size(), arity));
-			for(IndexedEntry<BooleanValue> cell : skolemBound) {
+			for(IndexedEntry<BooleanValue> cell : tupleBound) {
 				tuples.add(cell.index());
 			}
-			bounds.bound(skolem, universe.factory().setOf(arity, tuples));
-			skolemFormula = skolemFormula.and(skolem.in(decl.expression()));
-			if (decl.multiplicity()!=Multiplicity.SET) 
-				skolemFormula = skolemFormula.and(skolem.apply(decl.multiplicity()));
-			skolems.put(decl, skolem);
+			interpreter.boundingObject().bound(skolem, universe.factory().setOf(arity, tuples));
+			Expression skolemExpr = skolem;
+			for(DeclInfo d: nonSkolems) {
+				skolemExpr = d.decl.variable().join(skolemExpr);
+			}
+			Formula f = skolemExpr.in(decl.expression());
+			if (decl.multiplicity()!=Multiplicity.SET)
+				f = f.and(skolemExpr.apply(decl.multiplicity()));
+			if (depth>0) {
+				Decls decls = nonSkolems.get(0).decl;
+				for(int i = 1; i < depth; i++) {
+					decls = decls.and(nonSkolems.get(i).decl);
+				}
+				skolemFormula = skolemFormula.and(f.forAll(decls));
+			} else {
+				skolemFormula = skolemFormula.and(f);
+			}
+			return skolemExpr;
 		}
 		
 		/** 
@@ -304,44 +347,55 @@ final class Skolemizer {
 		public Formula visit(QuantifiedFormula quantFormula) {
 			Formula ret = lookup(quantFormula);
 			if (ret==null) {			
-				if (eqfs.contains(quantFormula)) { // an existentially quantified formula
-					final Map<Variable,LeafExpression> varMap = new IdentityHashMap<Variable,LeafExpression>(quantFormula.declarations().size());
-					env = env.extend(varMap);
-					for(Decl decl : quantFormula.declarations()) {
-						Relation skolem = Relation.nary(decl.variable().name(), decl.variable().arity());
-						updateSkolemInfo(skolem, (Decl) decl.accept(this));
-						varMap.put(decl.variable(), skolem);				
+				final Decls decls = quantFormula.declarations();
+				if (eqfs.contains(quantFormula)) { // skolemizable formula
+					for(Decl decl : decls) {
+						env = env.extend(decl.variable(), extendSkolems((Decl)decl.accept(this)));				
 					}
 					ret = quantFormula.formula().accept(this);
-				} else {
-					env = env.extend(identityMapping(quantFormula.declarations()));
-					final Decls decls = quantFormula.declarations().accept(this);
+				} else { // non-skolemizable formula
+					extendEnv(decls);
+					final Decls newDecls = decls.accept(this);
+					
+					final boolean updateNonSkolems = nonSkolems.size() < skolemDepth;
+//					System.out.println(updateNonSkolems + " " + nonSkolems);
+					if (updateNonSkolems) extendNonSkolems(newDecls);
 					final Formula formula = quantFormula.formula().accept(this);
-					ret = ((decls==quantFormula.declarations() && formula==quantFormula.formula()) ? 
-						    quantFormula : formula.quantify(quantFormula.quantifier(), decls));
+//					System.out.println(nonSkolems + " " + decls.size());
+					if (updateNonSkolems) shrinkNonSkolems(decls.size());
+					
+					ret = ((newDecls==decls && formula==quantFormula.formula()) ? 
+						    quantFormula : formula.quantify(quantFormula.quantifier(), newDecls));
 				}			
-				env = env.parent();
+				shrinkEnv(decls.size());
 			}
 			return cache(quantFormula,ret);
 		}
 	}
 	
 	/**
-	 * Replaces all instances of difference expressions in a given formula with
-	 * the expression's right child.
+	 * Replaces all subexpressions in a node with sound approximations; 
+	 * in particular, a difference expression is replaced with
+	 * its left child, and a free variable with the approximation
+	 * of its declared expression.  
 	 */
-	private static final class DifferenceRemover extends DepthFirstReplacer {
+	private static final class Approximator extends DepthFirstReplacer {
 		/* the cache used for storing the replacements for shared nodes */
 		private final Map<Node,Node> cache;
 		private final Set<Node> cached;
+		/* the upper bounds (approximations) for free variables */
+		private final List<DeclInfo> infos;
 		/**
 		 * Creates a difference remover which will cache replacement values
-		 * for the given nodes.
+		 * for the given nodes, and it will replace free variables with 
+		 * the upperBound expressions from the infos list.
 		 */
-		DifferenceRemover(Set<Node> sharedNodes) {
+		Approximator(Set<Node> sharedNodes, List<DeclInfo> infos) {
 			this.cache = new IdentityHashMap<Node,Node>();
 			this.cached = sharedNodes;
+			this.infos = infos;
 		}
+		
 		@SuppressWarnings("unchecked")
 		@Override
 		protected <N extends Node> N lookup(N node) {
@@ -356,12 +410,59 @@ final class Skolemizer {
 			return replacement;
 		}
 		
+		/**
+		 * Returns super.visit(binExpr) if binExpr is not a difference
+		 * expression, otherwise return binExpr.left().accept(this). 
+		 * @return super.visit(binExpr) if binExpr is not a difference
+		 * expression, otherwise return binExpr.left().accept(this). 
+		 */
 		public Expression visit(BinaryExpression binExpr) {
 			if (binExpr.op()==BinaryExpression.Operator.DIFFERENCE)
 				return cache(binExpr, binExpr.left().accept(this));
 			else
 				return super.visit(binExpr);
+		}	
+		
+		/**
+		 * Returns the upper bound (approximation) of the expression 
+		 * to which the given variable was most recently bound in 
+		 * this.infos list.  If no such Expression exists, the variable
+		 * must have been unbound, so an UnboundLeafException is thrown.
+		 * @return the upper bound (approximation) of the expression 
+		 * to which the given variable was most recently bound in 
+		 * this.infos list
+		 * @throws UnboundLeafException - this.infos contains no DeclInfo
+		 * for the given variable
+		 */
+		public Expression visit(Variable variable) {
+			for(int i = infos.size()-1; i >= 0; i--) {
+				DeclInfo d = infos.get(i);
+				if (d.decl.variable()==variable)
+					return d.upperBound;
+			}
+			throw new UnboundLeafException("Unbound variable",variable);
+		}
+	}
+	
+	/**
+	 * Stores info about non-skolemizable decls.
+	 * @specfield decl: Decl
+	 * @specfield upperBound: TupleSet
+	 * @invariant decl.expression in upperBound
+	 */
+	private static final class DeclInfo {
+		final Decl decl;
+		final Expression upperBound;
+		/**
+		 * Constructs a new NonSkolemInfo for the given 
+		 */
+		DeclInfo(Decl decl, Expression upperBound) {
+			this.decl = decl;
+			this.upperBound = upperBound;
 		}
 		
+		public String toString() {
+			return "(" +decl + " < " + upperBound + ")";
+		}
 	}
 }

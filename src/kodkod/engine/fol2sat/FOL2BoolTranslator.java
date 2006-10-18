@@ -341,7 +341,7 @@ final class FOL2BoolTranslator {
 			for(IndexedEntry<BooleanValue> entry : declTransl) {
 				
 				IntSet indices = Ints.singleton(entry.index());
-                	env.bind(decl.variable(), factory.matrix(declTransl.dimensions(), indices, indices));
+                	env.bindVarTo(factory.matrix(declTransl.dimensions(), indices, indices));
                 	comprehension(others, formula, factory.and(entry.value(), declConstraints), 
                 			partialIndex + entry.index()*position, matrix);
                 	
@@ -431,7 +431,7 @@ final class FOL2BoolTranslator {
 			for(IndexedEntry<BooleanValue> entry : declTransl) {
 				
 				IntSet indices = Ints.singleton(entry.index());
-                	env.bind(decl.variable(), factory.matrix(declTransl.dimensions(), indices, indices));
+                	env.bindVarTo(factory.matrix(declTransl.dimensions(), indices, indices));
                 	all(others, formula, factory.or(factory.not(entry.value()), declConstraints), acc);
                 	
 			}
@@ -469,7 +469,7 @@ final class FOL2BoolTranslator {
 			for(IndexedEntry<BooleanValue> entry : declTransl) {
 				
 				IntSet indices = Ints.singleton(entry.index());
-                	env.bind(decl.variable(), factory.matrix(declTransl.dimensions(), indices, indices));
+                	env.bindVarTo(factory.matrix(declTransl.dimensions(), indices, indices));
                 	some(others, formula, factory.and(entry.value(), declConstraints), acc);
                 	
 			}
@@ -737,7 +737,7 @@ final class FOL2BoolTranslator {
 			for(IndexedEntry<BooleanValue> entry : declTransl) {
 				
 				IntSet indices = Ints.singleton(entry.index());
-                	env.bind(decl.variable(), factory.matrix(declTransl.dimensions(), indices, indices));
+                	env.bindVarTo(factory.matrix(declTransl.dimensions(), indices, indices));
                 	partialSum = partialSum.plus(sum(others, expr, factory.and(entry.value(), declConstraints)));
                 	
 			}

@@ -85,12 +85,12 @@ public class ExamplesTest extends TestCase {
 		final Formula show = model.declarations().and(model.pigeonPerHole());
 		final Solution sol = solve(show, model.bounds(10,9));
 //		UNSATISFIABLE
-//		p cnf 983 1613
+//		p cnf 1133 1983
 //		primary variables: 90
 		assertEquals(Solution.Outcome.UNSATISFIABLE, sol.outcome());
 		assertEquals(90, sol.stats().primaryVariables());
-		assertEquals(983, sol.stats().variables());
-		assertEquals(1613, sol.stats().clauses());
+		assertEquals(1133, sol.stats().variables());
+		assertEquals(1983, sol.stats().clauses());
 	}
 	
 	/**
@@ -101,12 +101,12 @@ public class ExamplesTest extends TestCase {
 		final Formula checkAtMostOneElected = model.declsAndFacts().and(model.atMostOneElected().not());
 		final Solution sol = solve(checkAtMostOneElected, model.bounds(5,10));
 //		UNSATISFIABLE
-//		p cnf 8665 29615 
+//		p cnf 8665 29590 
 //		primary variables: 325
 		assertEquals(Solution.Outcome.UNSATISFIABLE, sol.outcome());
 		assertEquals(325, sol.stats().primaryVariables());
 		assertEquals(8665, sol.stats().variables());
-		assertEquals(29615, sol.stats().clauses());
+		assertEquals(29590, sol.stats().clauses());
 	}
 
 	/**

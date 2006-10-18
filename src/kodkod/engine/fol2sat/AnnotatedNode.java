@@ -130,12 +130,14 @@ final class AnnotatedNode<N extends Node> {
 	}
 	
 	/**
-	 * Returns the set of all top-level existentially quantified formulas in annotated.node.  An
-	 * existentially quantified formula is considered top-level, iff it can be
-	 * skolemized out of annotated.node
+	 * Returns the set of all skolemizable formulas at or above
+	 * the given depth in annotated.node.  A depth of 0 means that only existentials not
+	 * nested inside of universals are returned.  A depth of 1 means that the existentials 
+	 * nested within a single universal are also returned, etc.
+	 * @requires depth >= 0
 	 * @return the set of all top-level existentially quantified formulas in annotated.node
 	 */
-	static Set<QuantifiedFormula> existentials(AnnotatedNode<Formula> annotated) {
+	static Set<QuantifiedFormula> skolemizables(AnnotatedNode<Formula> annotated, final int depth) {
 		final Detector detector = new Detector(annotated.sharedNodes) {
 			public Boolean visit(QuantifiedFormula quantFormula) {
 				return Boolean.TRUE;
@@ -143,23 +145,28 @@ final class AnnotatedNode<N extends Node> {
 		};
 		final Set<QuantifiedFormula> formulas = new IdentityHashSet<QuantifiedFormula>();
 		final Collector collector = new Collector(applyDetector(detector, annotated.sharedNodes)) {
+			private int currentDepth = depth;
 			public void visit(QuantifiedFormula quantFormula) {
 				if (!visited(quantFormula)) { 
 					final boolean oldTop = topLevel;
 					topLevel = false;
 					quantFormula.declarations().accept(this);
-					topLevel = oldTop;
+
 					final QuantifiedFormula.Quantifier q = quantFormula.quantifier();
-					if (topLevel && (q==SOME && !negated || q==ALL && negated)) {
+					final boolean existential = (q==SOME && !negated || q==ALL && negated);
+					if (oldTop && existential) {
 						if (status(quantFormula)==flagCombo()) {
 							formulas.add(quantFormula);
 						}
 					} else {
 						formulas.remove(quantFormula);
-						topLevel = false;
 					}
+					final int oldDepth = currentDepth;
+					currentDepth -= existential ? 0 : quantFormula.declarations().size();
+					topLevel = oldTop && (currentDepth>=0);
 					quantFormula.formula().accept(this);
 					topLevel = oldTop;
+					currentDepth = oldDepth;
 				}
 			}
 		};
@@ -350,8 +357,8 @@ final class AnnotatedNode<N extends Node> {
 		 * For example, if, during each visit to a node n, the flags negated
 		 * and topLevel were set to either FT or TT, visitedNodes
 		 * would map n to flagCombos[2 | 8] = flagCombos[10].  Initially,
-		 * shared nodes with a descendent of type F are mapped to flagCombos[0], 
-		 * and those without a descendent of type F are mapped to flagCombos[15] 
+		 * shared nodes with a descendent of type T are mapped to flagCombos[0], 
+		 * and those without a descendent of type T are mapped to flagCombos[15] 
 		 * (since we never have to visit them).
 		 */
 		private final Map<Node, Byte> visitedNodes;

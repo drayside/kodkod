@@ -65,11 +65,11 @@ public class BugTests extends TestCase {
 		final Universe u = new Universe(Arrays.asList("a0","a1"));
 		final Bounds bounds = new Bounds(u);
 		bounds.bound(r, u.factory().allOf(3));
-		System.out.println(f); System.out.println(bounds);
+//		System.out.println(f); System.out.println(bounds);
 		solver.options().setSymmetryBreaking(0);
 		solver.options().setFlatten(false);
 		final Solution s = solver.solve(f, bounds);
-		System.out.println(s);
+//		System.out.println(s);
 		assertEquals(Solution.Outcome.SATISFIABLE, s.outcome());
 	}
 	

@@ -169,4 +169,58 @@ public class SkolemizationTest extends TestCase {
 		testSkolems(Multiplicity.SOME);
 		testSkolems(Multiplicity.SET);
 	}
+	
+	private final void testDeepSkolems(Multiplicity mult) {
+		final Variable va = Variable.unary("va");
+		final Variable vb = Variable.unary("vb");
+		final Variable vc = Variable.unary("vc");
+		final Variable vd = Variable.unary("vd");
+		final Set<String> skolems = new HashSet<String>(4);
+
+		Decl da1 = va.oneOf(r1a);
+		Decl db = vb.declare(mult, r1b);
+		Decl dc = vc.declare(mult, r1a);
+		Decl dc1 = vc.oneOf(r1a);
+		Decl dd = vd.declare(mult, r1b);
+		Decl dd1 = vd.oneOf(r1b);
+		
+		skolems.add(vb.name());
+		
+		Instance inst = solve(va.in(vb.join(r2b)).forSome(db).forAll(da1));
+		assertSkolems(bounds, inst, skolems);
+		
+		skolems.add(vc.name());
+		inst = solve(va.in(vb.join(r2b).union(vd.join(r2b)).union(vc)).
+				forSome(db).forAll(da1).forSome(dc).forAll(dd1));
+		assertSkolems(bounds, inst, skolems);
+		
+		inst = solve(va.in(vb.join(r2b).union(vd.join(r2b)).union(vc)).
+				forSome(db).forSome(dc).forAll(da1.and(dd1)));
+		assertSkolems(bounds, inst, skolems);
+		
+		skolems.add(vd.name());
+		inst = solve(va.in(vb.join(r2b).union(vd.join(r2b)).union(vc)).
+				forSome(db).forAll(da1).forSome(dc).not().forAll(dd).not());
+		
+		assertSkolems(bounds, inst, skolems);
+		
+		inst = solve(va.in(vb.join(r2b).union(vd.join(r2b)).union(vc)).
+				forAll(dc).forAll(db).forSome(da1).not().forAll(dd1));
+		skolems.remove(vd.name());
+		assertSkolems(bounds, inst, skolems);
+		
+		inst = solve(va.in(vb.join(r2b).union(vd.join(r2b)).union(vc)).
+				forSome(db).forAll(dc1).forAll(da1).forAll(dd1));
+		skolems.remove(vc.name());
+		assertSkolems(bounds, inst, skolems);
+	}
+	
+	public final void testDeepSkolems() {
+		solver.options().setSkolemDepth(3);
+		testDeepSkolems(Multiplicity.ONE);
+		testDeepSkolems(Multiplicity.LONE);
+		testDeepSkolems(Multiplicity.SOME);
+		testDeepSkolems(Multiplicity.SET);
+	}
+	
 }

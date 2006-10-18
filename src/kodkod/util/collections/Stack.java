@@ -69,7 +69,7 @@ public abstract class Stack<T> implements Iterable<T> {
 	public abstract boolean empty();
 
 	/**
-	 * Iterates over the items in this LinkedStack, starting
+	 * Iterates over the items in this Stack, starting
 	 * at the top of the stack and working its way down.
 	 * @return iterator over the elements in this stack.
 	 */

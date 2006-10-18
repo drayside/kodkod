@@ -4,27 +4,26 @@
  */
 package kodkod.engine.fol2sat;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import kodkod.ast.Variable;
 
 
 
 /** 
  * Represents a  variable binding environment as a 
- * map from {@link kodkod.ast.Variable variables} to  
- * {@link java.lang.Object values}.  An environment may have
+ * map from a {@link kodkod.ast.Variable variable} to a 
+ * {@link java.lang.Object value}.  An environment may have
  * a parent environment to which lookups that are unsuccessful in
  * the child's environment are delegated.
  * 
- * @specfield map:  Variable ->lone T
+ * @specfield var: lone Variable
+ * @specfield val: lone T
  * @specfield parent: lone Environment
  *
  * @author Emina Torlak 
  */
 final class Environment<T> {
-	private final Map<Variable, T> map;
+	private final Variable var;
+	private T val;
 	private final Environment<T> parent;
 	
 	
@@ -32,21 +31,23 @@ final class Environment<T> {
 	 * Constructs a new environment with the specified parent
 	 * and mapping.
 	 * 
-	 * @effects this.parent' = parent && this.map' = map
+	 * @effects this.parent' = parent && this.var' = var && this.val' = val
 	 */
-	private Environment(Environment<T> parent, Map<Variable, T> map) {
-		this.map = map;
+	private Environment(Environment<T> parent, Variable var, T val) {
+		this.var = var;
+		this.val = val;
 		this.parent = parent;
 	}
 	
 	/**  
-	 * Constructs a new environment with no parent.
+	 * Constructs a new empty environment with no parent.
 	 * 
-	 * @effects no this.parent' && no this.map'
+	 * @effects no this.parent' && no this.var' && no this.val'
 	 */
 	public Environment() {
-		this(null, new HashMap<Variable, T>(1));
+		this(null, null, null);
 	}
+	
 	
 	/**
 	 * Returns the parent environment of this, or null if this
@@ -59,56 +60,34 @@ final class Environment<T> {
 	/**
 	 * Returns a new environment that extends this environment with the specified
 	 * mapping.
-	 *  
-	 * @return e : Environment | e.parent = this && e.map = variable -> value
+	 * @return e : Environment | e.parent = this && e.var = variable && e.val = value
 	 */
 	public Environment<T> extend(Variable variable, T value) {
-		final Environment<T> ret = extend(new HashMap<Variable, T>(1));
-		ret.bind(variable, value);
-		return ret;
+		return new Environment<T>(this, variable, value);
 	}
 	
-	/**
-	 * Returns a new environment that extends this environment with the specified
-	 * mapping of variables to values.  Any changes to the argument map will be
-	 * reflected by this environment.
-	 * 
-	 * @return e : Environment | e.parent = this && e.map = variableToValue
-	 */
-	public Environment<T> extend(Map<Variable, T> variableToValue) {
-		return new Environment<T>(this, variableToValue);
-	}
 		
 	/**
-	 * Binds the specified variable to the specified value,
+	 * Binds this.var to the specified value,
 	 * erasing any prior mappings for the variable in this environment.
 	 * 
-	 * @effects this.map' = this.map ++ variable->value
+	 * @effects this.val' = value
 	 */
-	public void bind(Variable variable, T value) {
-		map.put(variable, value);
-	}
-	
-	
-	/**
-	 * Returns the binding for the given variable 
-	 * in this environment, if any.  If not, returns
-	 * null.
-	 * @return this.map[variable]
-	 */
-	public T get(Variable variable) {
-		return map.get(variable);
+	public void bindVarTo(T value) {
+		this.val = value;
 	}
 	
 	/**
 	 * Returns the closest ancestor of this environment (or this
 	 * environment itself) that contains a binding for the given
 	 * variable.  If the variable is not bound, null is returned.
-	 * @return this.binds(variable) => this, this.parent.bindingEnvironment(variable)
+	 * @return this.var = variable => this, this.parent.bindingEnvironment(variable)
 	 */
 	public Environment<T> bindingEnvironment(Variable variable) {
 		Environment<T> p = this;
-		while(p!=null && !p.map.containsKey(variable)) {
+		// ok to use == for testing variable equality: 
+		// see kodkod.ast.LeafExpression#equals
+		while(p!=null && p.var!=variable) {
 			p = p.parent;
 		}
 		return p;
@@ -121,27 +100,17 @@ final class Environment<T> {
 	 * If the variable is bound in multiple environments,
 	 * the first found binding is returned.  Note that null
 	 * will also be returned if the variable is bound to null.
-	 * @return some this.map[variable] => this.map[variable], this.parent.lookup(variable)
+	 * @return variable = this.var => this.val, this.parent.lookup(variable)
 	 */
 	public T lookup(Variable variable) {
 		final Environment<T> bindingEnv = bindingEnvironment(variable);
-		return bindingEnv==null ? null : bindingEnv.map.get(variable);
-//		T binding = map.get(variable);
-//		if (binding == null) {
-//			Environment<T> p = parent;
-//			while(binding==null && p!=null) {
-//				binding = p.map.get(variable);
-//				p = p.parent;
-//			}
-//		}
-//		
-//		return binding;
+		return bindingEnv==null ? null : bindingEnv.val;
 	}
 	
 	
 	
 	public String toString() {
-		return (parent == null ? "" : parent.toString()) + map.toString();
+		return (parent == null ? "" : parent.toString()) + "["+var+"="+val+"]";
 	}
 	
 	
