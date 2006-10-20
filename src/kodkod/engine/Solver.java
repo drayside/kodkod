@@ -112,11 +112,11 @@ public final class Solver {
 	private static Solution trivial(Bounds originalBounds, TrivialFormulaException desc, long translTime) {
 		final Statistics stats = new Statistics(0, 0, 0, translTime, 0);
 		if (desc.formulaValue().booleanValue()) {
-			return new Solution(Solution.Outcome.TRIVIALLY_SATISFIABLE, stats, desc.skolems(), 
+			return new Solution(Solution.Outcome.TRIVIALLY_SATISFIABLE, stats,  
 					padInstance(toInstance(desc.bounds()), originalBounds), desc.reduction(), null);
 		} else {
 			return new Solution(Solution.Outcome.TRIVIALLY_UNSATISFIABLE,
-					stats, desc.skolems(), null, desc.reduction(), null);
+					stats,  null, desc.reduction(), null);
 		}
 	}
 
@@ -137,7 +137,7 @@ public final class Solver {
 	 * @return the result of solving a sat formula.
 	 */
 	private static Solution sat(Bounds originalBounds, Translation translation, Statistics stats) {
-		final Solution sol = new Solution(Solution.Outcome.SATISFIABLE, stats, translation.skolems(),
+		final Solution sol = new Solution(Solution.Outcome.SATISFIABLE, stats, 
 				padInstance(translation.interpret(), originalBounds), null, null);
 		translation.cnf().free();
 		return sol;
@@ -152,11 +152,10 @@ public final class Solver {
 	private static Solution unsat(Translation translation, Statistics stats) {
 		final SATSolver cnf = translation.cnf();
 		if (cnf instanceof SATProver) {
-			return new Solution(Solution.Outcome.UNSATISFIABLE, stats, translation.skolems(), 
+			return new Solution(Solution.Outcome.UNSATISFIABLE, stats,  
 					null, null, new Proof((SATProver) cnf, translation.variableUsage()));
 		} else { // can free memory
-			final Solution sol = new Solution(Solution.Outcome.UNSATISFIABLE, stats,
-					translation.skolems(), null, null, null);
+			final Solution sol = new Solution(Solution.Outcome.UNSATISFIABLE, stats,  null, null, null);
 			cnf.free();
 			return sol;
 		}

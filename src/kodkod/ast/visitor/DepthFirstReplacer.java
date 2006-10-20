@@ -4,6 +4,10 @@
  */
 package kodkod.ast.visitor;
 
+import java.util.IdentityHashMap;
+import java.util.Map;
+import java.util.Set;
+
 import kodkod.ast.BinaryExpression;
 import kodkod.ast.BinaryFormula;
 import kodkod.ast.BinaryIntExpression;
@@ -43,19 +47,45 @@ import kodkod.ast.Variable;
  * equality is used to determine if two nodes are the same.
  * 
  * @specfield cached: set Node // result of visiting these nodes will be cached
- * @specfield cache: cached ->lone Node
+ * @specfield cache: Node ->lone Node
+ * @invariant cached in cache.Node
  * @author Emina Torlak 
  */
 public abstract class DepthFirstReplacer implements ReturnVisitor<Expression, Formula, Decls, IntExpression> {
+	protected final Map<Node,Node> cache;
+	protected final Set<Node> cached;
 	
-	protected DepthFirstReplacer() { }
+	/**
+	 * Constructs a depth-first replaces which will cache
+	 * the results of visiting the given nodes and re-use them
+	 * on subsequent visits.
+	 * @effects this.cached' = cached && no this.cache'
+	 */
+	protected DepthFirstReplacer(Set<Node> cached) { 
+		this.cached = cached;
+		this.cache = new IdentityHashMap<Node,Node>(cached.size());
+	}
+	
+	/**
+	 * Constructs a depth-first replaces which will cache
+	 * the results of visiting the given nodes in the given map,
+	 * and re-use them on subsequent visits.
+	 * @effects this.cached' = cached &&  this.cache' = cache
+	 */
+	protected DepthFirstReplacer(Set<Node> cached, Map<Node, Node> cache) {
+		this.cached = cached;
+		this.cache = cache;
+	}
 	
 	/**
 	 * If the given node has already been visited and its replacement
 	 * cached, the cached value is returned.  Otherwise, null is returned.
 	 * @return this.cache[node]
 	 */
-	protected abstract <N extends Node> N lookup(N node) ;
+	@SuppressWarnings("unchecked")
+	protected <N extends Node> N lookup(N node) {
+		return (N) cache.get(node);
+	}
 	
 	/**
 	 * Caches the given replacement for the specified node, if this is 
@@ -65,7 +95,12 @@ public abstract class DepthFirstReplacer implements ReturnVisitor<Expression, Fo
 	 *           this.cache' = this.cache
 	 * @return replacement
 	 */
-	protected abstract <N extends Node> N cache(N node, N replacement);
+	protected <N extends Node> N cache(N node, N replacement) {
+		if (cached.contains(node)) {
+			cache.put(node, replacement);
+		}
+		return replacement;
+	}
 	
 	/** 
 	 * Calls lookup(decls) and returns the cached value, if any.  
@@ -77,18 +112,17 @@ public abstract class DepthFirstReplacer implements ReturnVisitor<Expression, Fo
 	 */
 	public Decls visit(Decls decls) { 
 		Decls ret = lookup(decls);
-		if (ret==null) {	
-			Decls visitedDecls = null;
-			boolean allSame = true;
-			for(Decl decl : decls) {
-				Decls newDecl = visit(decl);
-				if (newDecl != decl) 
-					allSame = false;
-				visitedDecls = (visitedDecls==null) ? newDecl : visitedDecls.and(newDecl);
-			}
-			
-			ret = allSame ? decls : visitedDecls;
+		if (ret!=null) return ret;
+		
+		Decls visitedDecls = null;
+		boolean allSame = true;
+		for(Decl decl : decls) {
+			Decls newDecl = visit(decl);
+			if (newDecl != decl) 
+				allSame = false;
+			visitedDecls = (visitedDecls==null) ? newDecl : visitedDecls.and(newDecl);
 		}
+		ret = allSame ? decls : visitedDecls;
 		return cache(decls, ret);
 	}
 	
@@ -103,12 +137,12 @@ public abstract class DepthFirstReplacer implements ReturnVisitor<Expression, Fo
 	 */
 	public Decl visit(Decl decl) {
 		Decl ret = lookup(decl);
-		if (ret==null) {
-			final Variable variable = (Variable) decl.variable().accept(this);
-			final Expression expression = decl.expression().accept(this);
-			ret = (variable==decl.variable() && expression==decl.expression()) ?
-				  decl : variable.declare(decl.multiplicity(), expression); 
-		}
+		if (ret!=null) return ret;
+		
+		final Variable variable = (Variable) decl.variable().accept(this);
+		final Expression expression = decl.expression().accept(this);
+		ret = (variable==decl.variable() && expression==decl.expression()) ?
+			  decl : variable.declare(decl.multiplicity(), expression); 
 		return cache(decl,ret);
 	}
 	
@@ -155,12 +189,12 @@ public abstract class DepthFirstReplacer implements ReturnVisitor<Expression, Fo
 	 */
 	public Expression visit(BinaryExpression binExpr) {
 		Expression ret = lookup(binExpr);
-		if (ret==null) {
-			final Expression left  = binExpr.left().accept(this);
-			final Expression right = binExpr.right().accept(this);
-			ret = (left==binExpr.left() && right==binExpr.right()) ?
-				  binExpr : left.compose(binExpr.op(), right);
-		}
+		if (ret!=null) return ret;
+		
+		final Expression left  = binExpr.left().accept(this);
+		final Expression right = binExpr.right().accept(this);
+		ret = (left==binExpr.left() && right==binExpr.right()) ?
+			  binExpr : left.compose(binExpr.op(), right);
 		return cache(binExpr,ret);
 	}
 	
@@ -173,11 +207,11 @@ public abstract class DepthFirstReplacer implements ReturnVisitor<Expression, Fo
 	 */
 	public Expression visit(UnaryExpression unaryExpr) {
 		Expression ret = lookup(unaryExpr);
-		if (ret==null) {
-			final Expression child = unaryExpr.expression().accept(this);
-			ret = (child==unaryExpr.expression()) ? 
-				  unaryExpr : child.apply(unaryExpr.op());
-		}
+		if (ret!=null) return ret;
+
+		final Expression child = unaryExpr.expression().accept(this);
+		ret = (child==unaryExpr.expression()) ? 
+			  unaryExpr : child.apply(unaryExpr.op());
 		return cache(unaryExpr,ret);
 	}
 	
@@ -191,12 +225,12 @@ public abstract class DepthFirstReplacer implements ReturnVisitor<Expression, Fo
 	 */
 	public Expression visit(Comprehension comprehension) {
 		Expression ret = lookup(comprehension);
-		if (ret==null) {
-			final Decls decls = (Decls)comprehension.declarations().accept(this);
-			final Formula formula = comprehension.formula().accept(this);
-			ret = (decls==comprehension.declarations() && formula==comprehension.formula()) ? 
-				  comprehension : formula.comprehension(decls); 
-		}
+		if (ret!=null) return ret;
+		
+		final Decls decls = (Decls)comprehension.declarations().accept(this);
+		final Formula formula = comprehension.formula().accept(this);
+		ret = (decls==comprehension.declarations() && formula==comprehension.formula()) ? 
+			  comprehension : formula.comprehension(decls); 
 		return cache(comprehension,ret);
 	}
 	
@@ -212,14 +246,14 @@ public abstract class DepthFirstReplacer implements ReturnVisitor<Expression, Fo
 	 */
 	public Expression visit(IfExpression ifExpr) {
 		Expression ret = lookup(ifExpr);
-		if (ret==null) {
-			final Formula condition = ifExpr.condition().accept(this);
-			final Expression thenExpr = ifExpr.thenExpr().accept(this);
-			final Expression elseExpr = ifExpr.elseExpr().accept(this);
-			ret = (condition==ifExpr.condition() && thenExpr==ifExpr.thenExpr() &&
-				   elseExpr==ifExpr.elseExpr()) ? 
-			      ifExpr : condition.thenElse(thenExpr, elseExpr);
-		}
+		if (ret!=null) return ret;
+
+		final Formula condition = ifExpr.condition().accept(this);
+		final Expression thenExpr = ifExpr.thenExpr().accept(this);
+		final Expression elseExpr = ifExpr.elseExpr().accept(this);
+		ret = (condition==ifExpr.condition() && thenExpr==ifExpr.thenExpr() &&
+			   elseExpr==ifExpr.elseExpr()) ? 
+		      ifExpr : condition.thenElse(thenExpr, elseExpr);
 		return cache(ifExpr,ret);
 	}
     
@@ -233,18 +267,18 @@ public abstract class DepthFirstReplacer implements ReturnVisitor<Expression, Fo
 	 */
 	public Expression visit(ProjectExpression project) { 
 		Expression ret = lookup(project);
-		if (ret==null) {	
-			final Expression expr = project.expression().accept(this);
-			final IntExpression[] cols = new IntExpression[project.arity()];
-			boolean allSame = expr==project.expression();
-			int i = 0;
-			for(IntExpression col : project.columns()) {
-				IntExpression newCol = col.accept(this);
-				cols[i++] = newCol;
-				allSame = allSame && (newCol==col);
-			}
-			ret = allSame ? project : expr.project(cols);
+		if (ret!=null) return ret;
+
+		final Expression expr = project.expression().accept(this);
+		final IntExpression[] cols = new IntExpression[project.arity()];
+		boolean allSame = expr==project.expression();
+		int i = 0;
+		for(IntExpression col : project.columns()) {
+			IntExpression newCol = col.accept(this);
+			cols[i++] = newCol;
+			allSame = allSame && (newCol==col);
 		}
+		ret = allSame ? project : expr.project(cols);
 		return cache(project, ret);
 	}
 	/**
@@ -255,10 +289,10 @@ public abstract class DepthFirstReplacer implements ReturnVisitor<Expression, Fo
 	 */
 	public Expression visit(IntToExprCast castExpr) {
 		Expression ret = lookup(castExpr);
-		if (ret==null) {
-			final IntExpression intExpr = castExpr.intExpr().accept(this);
-			ret = (intExpr==castExpr.intExpr()) ? castExpr : intExpr.toExpression();
-		}
+		if (ret!=null) return ret;
+
+		final IntExpression intExpr = castExpr.intExpr().accept(this);
+		ret = (intExpr==castExpr.intExpr()) ? castExpr : intExpr.toExpression();
 		return ret;
 	}
 	
@@ -268,8 +302,8 @@ public abstract class DepthFirstReplacer implements ReturnVisitor<Expression, Fo
 	 * @return intconst
 	 */
     public IntExpression visit(IntConstant intconst) {
-    		IntExpression ret = lookup(intconst);
-    		return ret==null ? cache(intconst, intconst) : intconst;
+		IntExpression ret = lookup(intconst);
+		return ret==null ? cache(intconst, intconst) : intconst;
     }
     
     /** 
@@ -283,14 +317,14 @@ public abstract class DepthFirstReplacer implements ReturnVisitor<Expression, Fo
 	 */
 	public IntExpression visit(IfIntExpression intExpr) {
 		IntExpression ret = lookup(intExpr);
-		if (ret==null) {
-			final Formula condition = intExpr.condition().accept(this);
-			final IntExpression thenExpr = intExpr.thenExpr().accept(this);
-			final IntExpression elseExpr = intExpr.elseExpr().accept(this);
-			ret = (condition==intExpr.condition() && thenExpr==intExpr.thenExpr() &&
-				   elseExpr==intExpr.elseExpr()) ? 
-			      intExpr : condition.thenElse(thenExpr, elseExpr);
-		}
+		if (ret!=null) return ret;
+
+		final Formula condition = intExpr.condition().accept(this);
+		final IntExpression thenExpr = intExpr.thenExpr().accept(this);
+		final IntExpression elseExpr = intExpr.elseExpr().accept(this);
+		ret = (condition==intExpr.condition() && thenExpr==intExpr.thenExpr() &&
+			   elseExpr==intExpr.elseExpr()) ? 
+		      intExpr : condition.thenElse(thenExpr, elseExpr);
 		return cache(intExpr,ret);
 	}
     
@@ -302,12 +336,12 @@ public abstract class DepthFirstReplacer implements ReturnVisitor<Expression, Fo
 	 * @return { i: ExprToIntCast | i.expression = intExpr.expression.accept(this) && i.op = intExpr.op}
 	 */
     public IntExpression visit(ExprToIntCast intExpr) {
-    		IntExpression ret = lookup(intExpr);
-    		if (ret==null) {
-    			final Expression expr = intExpr.expression().accept(this);
-    			ret = expr==intExpr.expression() ? intExpr : expr.apply(intExpr.op());
-    		}
-    		return cache(intExpr, ret);
+		IntExpression ret = lookup(intExpr);
+		if (ret!=null) return ret;
+	
+		final Expression expr = intExpr.expression().accept(this);
+		ret = expr==intExpr.expression() ? intExpr : expr.apply(intExpr.op());
+		return cache(intExpr, ret);
     }
  
     /** 
@@ -318,13 +352,13 @@ public abstract class DepthFirstReplacer implements ReturnVisitor<Expression, Fo
 	 * @return { c: IntExpression | [[c]] = intExpr.left.accept(this) op intExpr.right.accept(this) }
 	 */
     public IntExpression visit(BinaryIntExpression intExpr) {
-    		IntExpression ret = lookup(intExpr);
-		if (ret==null) {
-			final IntExpression left  = intExpr.left().accept(this);
-			final IntExpression right = intExpr.right().accept(this);
-			ret =  (left==intExpr.left() && right==intExpr.right()) ? 
-					intExpr : left.compose(intExpr.op(), right);
-		}
+		IntExpression ret = lookup(intExpr);
+		if (ret!=null) return ret;
+	
+		final IntExpression left  = intExpr.left().accept(this);
+		final IntExpression right = intExpr.right().accept(this);
+		ret =  (left==intExpr.left() && right==intExpr.right()) ? 
+				intExpr : left.compose(intExpr.op(), right);
 		return cache(intExpr,ret);
     }
     
@@ -336,13 +370,13 @@ public abstract class DepthFirstReplacer implements ReturnVisitor<Expression, Fo
 	 * @return { c: IntExpression | [[c]] = sum intExpr.decls.accept(this) | intExpr.intExpr.accept(this) }
 	 */
     public IntExpression visit(SumExpression intExpr) {
-    		IntExpression ret = lookup(intExpr);
-		if (ret==null) {
-			final Decls decls  = intExpr.declarations().accept(this);
-			final IntExpression expr = intExpr.intExpr().accept(this);
-			ret =  (decls==intExpr.declarations() && expr==intExpr.intExpr()) ? 
-					intExpr : expr.sum(decls);
-		}
+		IntExpression ret = lookup(intExpr);
+		if (ret!=null) return ret;
+	
+		final Decls decls  = intExpr.declarations().accept(this);
+		final IntExpression expr = intExpr.intExpr().accept(this);
+		ret =  (decls==intExpr.declarations() && expr==intExpr.intExpr()) ? 
+				intExpr : expr.sum(decls);
 		return cache(intExpr,ret);
     }
     
@@ -354,13 +388,13 @@ public abstract class DepthFirstReplacer implements ReturnVisitor<Expression, Fo
 	 * @return { c: Formula | [[c]] = intComp.left.accept(this) op intComp.right.accept(this) }
 	 */
     public Formula visit(IntComparisonFormula intComp) {
-    		Formula ret = lookup(intComp);
-		if (ret==null) {
-			final IntExpression left  = intComp.left().accept(this);
-			final IntExpression right = intComp.right().accept(this);
-			ret =  (left==intComp.left() && right==intComp.right()) ? 
-					intComp : left.compare(intComp.op(), right);
-		}
+		Formula ret = lookup(intComp);
+		if (ret!=null) return ret;
+
+		final IntExpression left  = intComp.left().accept(this);
+		final IntExpression right = intComp.right().accept(this);
+		ret =  (left==intComp.left() && right==intComp.right()) ? 
+				intComp : left.compare(intComp.op(), right);
 		return cache(intComp,ret);
     }
 	
@@ -382,12 +416,12 @@ public abstract class DepthFirstReplacer implements ReturnVisitor<Expression, Fo
 	 */
 	public Formula visit(QuantifiedFormula quantFormula) {
 		Formula ret = lookup(quantFormula);
-		if (ret==null) {
-			final Decls decls = (Decls)quantFormula.declarations().accept(this);
-			final Formula formula = quantFormula.formula().accept(this);
-			ret = (decls==quantFormula.declarations() && formula==quantFormula.formula()) ? 
-				  quantFormula : formula.quantify(quantFormula.quantifier(), decls);
-		}
+		if (ret!=null) return ret;
+		
+		final Decls decls = (Decls)quantFormula.declarations().accept(this);
+		final Formula formula = quantFormula.formula().accept(this);
+		ret = (decls==quantFormula.declarations() && formula==quantFormula.formula()) ? 
+			  quantFormula : formula.quantify(quantFormula.quantifier(), decls);
 		return cache(quantFormula,ret);
 	}
 	
@@ -401,12 +435,12 @@ public abstract class DepthFirstReplacer implements ReturnVisitor<Expression, Fo
 	 */
 	public Formula visit(BinaryFormula binFormula) {
 		Formula ret = lookup(binFormula);
-		if (ret==null) {
-			final Formula left  = binFormula.left().accept(this);
-			final Formula right = binFormula.right().accept(this);
-			ret = (left==binFormula.left() && right==binFormula.right()) ? 
-				  binFormula : left.compose(binFormula.op(), right);     
-		}
+		if (ret!=null) return ret;
+		
+		final Formula left  = binFormula.left().accept(this);
+		final Formula right = binFormula.right().accept(this);
+		ret = (left==binFormula.left() && right==binFormula.right()) ? 
+			  binFormula : left.compose(binFormula.op(), right);     
 		return cache(binFormula,ret);
 	}
 	
@@ -419,10 +453,10 @@ public abstract class DepthFirstReplacer implements ReturnVisitor<Expression, Fo
 	 */
 	public Formula visit(NotFormula not) {
 		Formula ret = lookup(not);
-		if (ret==null) {
-			final Formula child = not.formula().accept(this);
-			ret = (child==not.formula()) ? not : child.not();
-		}
+		if (ret!=null) return ret;
+
+		final Formula child = not.formula().accept(this);
+		ret = (child==not.formula()) ? not : child.not();
 		return cache(not,ret);
 	}
 	
@@ -437,12 +471,12 @@ public abstract class DepthFirstReplacer implements ReturnVisitor<Expression, Fo
 	 */
 	public Formula visit(ComparisonFormula compFormula) {
 		Formula ret = lookup(compFormula);
-		if (ret==null) {
-			final Expression left  = compFormula.left().accept(this);
-			final Expression right = compFormula.right().accept(this);
-			ret =  (left==compFormula.left() && right==compFormula.right()) ? 
-				   compFormula : left.compose(compFormula.op(), right);
-		}
+		if (ret!=null) return ret;
+			
+		final Expression left  = compFormula.left().accept(this);
+		final Expression right = compFormula.right().accept(this);
+		ret =  (left==compFormula.left() && right==compFormula.right()) ? 
+			   compFormula : left.compose(compFormula.op(), right);	
 		return cache(compFormula,ret);
 	}
 	
@@ -456,11 +490,11 @@ public abstract class DepthFirstReplacer implements ReturnVisitor<Expression, Fo
 	 */
 	public Formula visit(MultiplicityFormula multFormula) {
 		Formula ret = lookup(multFormula);
-		if (ret==null) {
-			final Expression expression = multFormula.expression().accept(this);
-			ret = (expression==multFormula.expression()) ? 
-				  multFormula : expression.apply(multFormula.multiplicity());
-		}
+		if (ret!=null) return ret;
+		
+		final Expression expression = multFormula.expression().accept(this);
+		ret = (expression==multFormula.expression()) ? 
+			  multFormula : expression.apply(multFormula.multiplicity());
 		return cache(multFormula,ret);
 	}
 	
@@ -479,32 +513,31 @@ public abstract class DepthFirstReplacer implements ReturnVisitor<Expression, Fo
 	 */
 	public Formula visit(RelationPredicate pred) {
 		Formula ret = lookup(pred);
-		if (ret==null) {
-			final Relation r = (Relation)pred.relation().accept(this);
-			switch(pred.name()) {
-			case ACYCLIC :  
-				ret = (r==pred.relation()) ? pred : r.acyclic(); 
-				break;
-			case FUNCTION :
-				final RelationPredicate.Function fp = (RelationPredicate.Function) pred;
-				final Expression domain = fp.domain().accept(this);
-				final Expression range = fp.range().accept(this);
-				ret = (r==fp.relation() && domain==fp.domain() && range==fp.range()) ?
-						fp : 
-						(fp.targetMult()==Multiplicity.ONE ? r.function(domain, range) : r.functional(domain,range));
-				break;
-			case TOTAL_ORDERING : 
-				final RelationPredicate.TotalOrdering tp = (RelationPredicate.TotalOrdering) pred;
-				final Relation ordered = (Relation) tp.ordered().accept(this);
-				final Relation first = (Relation)tp.first().accept(this);
-				final Relation last = (Relation)tp.last().accept(this);
-				ret = (r==tp.relation() && ordered==tp.ordered() && first==tp.first() && last==tp.last()) ? 
-						tp : r.totalOrder(ordered, first, last);
-				break;
-			default :
-				throw new IllegalArgumentException("unknown relation predicate: " + pred.name());
-			}
-			
+		if (ret!=null) return ret;
+	
+		final Relation r = (Relation)pred.relation().accept(this);
+		switch(pred.name()) {
+		case ACYCLIC :  
+			ret = (r==pred.relation()) ? pred : r.acyclic(); 
+			break;
+		case FUNCTION :
+			final RelationPredicate.Function fp = (RelationPredicate.Function) pred;
+			final Expression domain = fp.domain().accept(this);
+			final Expression range = fp.range().accept(this);
+			ret = (r==fp.relation() && domain==fp.domain() && range==fp.range()) ?
+					fp : 
+					(fp.targetMult()==Multiplicity.ONE ? r.function(domain, range) : r.functional(domain,range));
+			break;
+		case TOTAL_ORDERING : 
+			final RelationPredicate.TotalOrdering tp = (RelationPredicate.TotalOrdering) pred;
+			final Relation ordered = (Relation) tp.ordered().accept(this);
+			final Relation first = (Relation)tp.first().accept(this);
+			final Relation last = (Relation)tp.last().accept(this);
+			ret = (r==tp.relation() && ordered==tp.ordered() && first==tp.first() && last==tp.last()) ? 
+					tp : r.totalOrder(ordered, first, last);
+			break;
+		default :
+			throw new IllegalArgumentException("unknown relation predicate: " + pred.name());
 		}
 		return cache(pred,ret);
 	}

@@ -1,6 +1,5 @@
 package kodkod.engine.fol2sat;
 
-import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -9,7 +8,6 @@ import kodkod.ast.ComparisonFormula;
 import kodkod.ast.Formula;
 import kodkod.ast.IntComparisonFormula;
 import kodkod.ast.MultiplicityFormula;
-import kodkod.ast.Node;
 import kodkod.ast.QuantifiedFormula;
 import kodkod.ast.RelationPredicate;
 import kodkod.ast.visitor.DepthFirstReplacer;
@@ -23,19 +21,15 @@ import kodkod.ast.visitor.DepthFirstReplacer;
 final class TrivialFormulaReducer extends DepthFirstReplacer {
 
 	private final Set<Formula> trues, falses;
-	private final Map<Node,Node> cache;
 	
 	/**
 	 * Constructs a reducer for the given annotated formula, using the provided
 	 * sets of formulas to guide the reduction.
 	 */
 	private TrivialFormulaReducer(AnnotatedNode<Formula> reducible,FOL2BoolTranslator acircuit) {
+		super(reducible.sharedNodes());
 		this.trues = acircuit.trueFormulas();
 		this.falses = acircuit.falseFormulas();
-		this.cache = new IdentityHashMap<Node,Node>(reducible.sharedNodes().size());
-		for(Node n: reducible.sharedNodes()) {
-			cache.put(n,null);
-		}
 	}
 	
 	/**
@@ -71,33 +65,6 @@ final class TrivialFormulaReducer extends DepthFirstReplacer {
 			reduced = reduced.and(r.predicates(e.getValue(), rpreds.get(e.getKey())));
 		}
 		return reduced;
-	}
-	
-	
-	/**
-	 * If the given node is shared and its replacement
-	 * cached, the cached value is returned.  Otherwise, null is returned.
-	 * @return this.cache[node]
-	 */
-	@SuppressWarnings("unchecked")
-	@Override
-	protected <N extends Node> N lookup(N node) {
-		return (N) cache.get(node);
-	}
-	
-	/**
-	 * Caches the given replacement for the specified node, if the node
-	 * is shared.  Otherwise does nothing.  The method returns
-	 * the replacement node. 
-	 * @effects this.cache' = this.cache ++ node->replacement 
-	 * @return replacement
-	 */
-	@Override
-	protected <N extends Node> N cache(N node, N replacement) {
-		if (cache.containsKey(node)) {
-			cache.put(node, replacement);
-		}
-		return replacement;
 	}
 
 	/**

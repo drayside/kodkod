@@ -2,7 +2,6 @@ package kodkod.engine.fol2sat;
 
 import java.util.Map;
 
-import kodkod.ast.Decl;
 import kodkod.ast.Node;
 import kodkod.ast.Relation;
 import kodkod.engine.satlab.SATSolver;
@@ -31,19 +30,17 @@ public final class Translation {
 	 * map _always_ contains mappings for all non-constant relations in bounds.relations */
 	private final Map<Node, IntSet> varUsage; 
 	private final int maxPrimaryLit;
-	private final Map<Decl, Relation> skolems;
 	
 	/**
-	 * Constructs a new Translation object for the given solver, bounds, mapping
-	 * from Nodes to literals, and skolems.
+	 * Constructs a new Translation object for the given solver, bounds, and mapping
+	 * from Nodes to literals.
 	 * @requires maxPrimaryLit = max(varUsage[Relation].max)
 	 * @requires bounds.relations in varUsage.IntSet
 	 * @effects this.solver' = solver && this.bounds' = bounds
 	 */
-	Translation(SATSolver solver, Bounds bounds, Map<Decl, Relation> skolems, Map<Node, IntSet> varUsage, int maxPrimaryLit) {	
+	Translation(SATSolver solver, Bounds bounds, Map<Node, IntSet> varUsage, int maxPrimaryLit) {	
 		this.solver = solver;
 		this.bounds = bounds;
-		this.skolems = skolems;
 		this.varUsage = varUsage;
 		this.maxPrimaryLit = maxPrimaryLit;
 	}
@@ -122,15 +119,4 @@ public final class Translation {
 		return varUsage;
 	}
 	
-	/**
-	 * If this.options.skolemize is true, returns a 
-	 * mapping from this.formula's existentially quantified
-	 * declarations to their corresponding skolem constants.  
-	 * Otherwise returns null.
-	 * @return a mapping from this.formula.^children & Decl to
-	 * their corresponding skolem constants.
-	 */
-	public Map<Decl, Relation> skolems() {
-		return skolems;
-	}
 }

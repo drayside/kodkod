@@ -9,7 +9,6 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
 
-import kodkod.ast.Decl;
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
 import kodkod.ast.Node;
@@ -83,15 +82,10 @@ public final class Translator {
 				AnnotatedNode.usesIntBounds(annotated) ? bounds.ints() : Ints.EMPTY_SET, preds);
 
 		// skolemize
-		final Map<Decl, Relation> skolems;
 		if (options.skolemDepth()>=0) {
 			//System.out.println("skolemizing...");
-			Skolemizer skolemizer = Skolemizer.skolemize(annotated, bounds, options);
-			annotated = skolemizer.skolemized();
-			skolems = skolemizer.skolems();
-		} else {
-			skolems = null;
-		}
+			annotated = Skolemizer.skolemize(annotated, bounds, options);
+		} 
 		
 		// translate to boolean, checking for trivial (un)satisfiability
 		BoundsInterpreter.Exact interpreter = exactInterpreter(bounds, options);
@@ -104,14 +98,14 @@ public final class Translator {
 			circuit = acircuit.translation();
 			if (circuit.op()==Operator.CONST) {
 				throw new TrivialFormulaException(TrivialFormulaReducer.reduce(annotated,preds,acircuit), 
-						(BooleanConstant)circuit, bounds, skolems);
+						(BooleanConstant)circuit, bounds);
 			}
 			varUsage = new IdentityHashMap<Node, IntSet>(interpreter.vars().size() + acircuit.variableUsage().size());
 			varUsage.putAll(acircuit.variableUsage());
 		} else {
 			circuit = FOL2BoolTranslator.translate(annotated,  interpreter);
 			if (circuit.op()==Operator.CONST) {
-				throw new TrivialFormulaException(formula, (BooleanConstant)circuit, bounds, skolems);
+				throw new TrivialFormulaException(formula, (BooleanConstant)circuit, bounds);
 			}
 			varUsage = new IdentityHashMap<Node, IntSet>(interpreter.vars().size());
 		}
@@ -140,7 +134,7 @@ public final class Translator {
 		}
 		
 		if (circuit.op()==Operator.CONST) {
-			throw new TrivialFormulaException(formula, (BooleanConstant)circuit, bounds, skolems);
+			throw new TrivialFormulaException(formula, (BooleanConstant)circuit, bounds);
 		}
 		
 		// translate to cnf and return the translation
@@ -148,7 +142,7 @@ public final class Translator {
 		//System.out.println(circuit);
 		final SATSolver cnf = Bool2CNFTranslator.definitional((BooleanFormula)circuit, options.solver(), numPrimaryVariables);
 //		System.out.println("about to start sat solving p cnf " + cnf.numberOfVariables() + " " + cnf.numberOfClauses());
-		return new Translation(cnf, bounds, skolems, Collections.unmodifiableMap(varUsage), numPrimaryVariables);
+		return new Translation(cnf, bounds, Collections.unmodifiableMap(varUsage), numPrimaryVariables);
 
 	}
 	

@@ -118,7 +118,13 @@ public abstract class AbstractSparseSequence<V> implements SparseSequence<V> {
 				return ceil.index();
 			}
 			public IntSet clone() throws CloneNotSupportedException { 
-				throw new CloneNotSupportedException(); 
+				final IntSet s;
+				if (size()==0)
+					s = Ints.bestSet(Integer.MIN_VALUE, Integer.MAX_VALUE);
+				else 
+					s = Ints.bestSet(min(), max());
+				s.addAll(this);
+				return s;
 			}
 		};
 	}

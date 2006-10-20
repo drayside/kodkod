@@ -113,7 +113,7 @@ final class AnnotatedNode<N extends Node> {
 	 * integer bounds (i.e. an ExprToIntCast node with SUM operator or an IntToExprCast node).
 	 */
 	static boolean usesIntBounds(final AnnotatedNode<? extends Node> annotated) {
-		final Detector detector = new Detector(annotated.sharedNodes) {
+		final DepthFirstDetector detector = new DepthFirstDetector(annotated.sharedNodes) {
 			public Boolean visit(IntToExprCast expr) {
 				return Boolean.TRUE;
 			}
@@ -138,13 +138,13 @@ final class AnnotatedNode<N extends Node> {
 	 * @return the set of all top-level existentially quantified formulas in annotated.node
 	 */
 	static Set<QuantifiedFormula> skolemizables(AnnotatedNode<Formula> annotated, final int depth) {
-		final Detector detector = new Detector(annotated.sharedNodes) {
+		final NodeDetector detector = new NodeDetector(annotated.sharedNodes) {
 			public Boolean visit(QuantifiedFormula quantFormula) {
-				return Boolean.TRUE;
+				return cache(quantFormula, true);
 			}
 		};
 		final Set<QuantifiedFormula> formulas = new IdentityHashSet<QuantifiedFormula>();
-		final Collector collector = new Collector(applyDetector(detector, annotated.sharedNodes)) {
+		final Collector collector = new Collector(detector.detectAll()) {
 			private int currentDepth = depth;
 			public void visit(QuantifiedFormula quantFormula) {
 				if (!visited(quantFormula)) { 
@@ -183,9 +183,9 @@ final class AnnotatedNode<N extends Node> {
 	 * component of the top-level conjunction, if any, of annotated.node.  
 	 */
 	static Map<RelationPredicate.Name, Set<RelationPredicate>> predicates(AnnotatedNode<Formula> annotated) {
-		final Detector detector = new Detector(annotated.sharedNodes) {
+		final NodeDetector detector = new NodeDetector(annotated.sharedNodes) {
 			public Boolean visit(RelationPredicate pred) {
-				return Boolean.TRUE;
+				return cache(pred, true);
 			}
 		};
 		final EnumMap<RelationPredicate.Name, Set<RelationPredicate>> preds = 
@@ -193,7 +193,7 @@ final class AnnotatedNode<N extends Node> {
 		preds.put(ACYCLIC, new IdentityHashSet<RelationPredicate>(4));
 		preds.put(TOTAL_ORDERING, new IdentityHashSet<RelationPredicate>(4));
 		preds.put(FUNCTION, new IdentityHashSet<RelationPredicate>(8));
-		final Collector collector = new Collector(applyDetector(detector, annotated.sharedNodes)) {
+		final Collector collector = new Collector(detector.detectAll()) {
 			public void visit(RelationPredicate pred) {
 				super.visit(pred);
 				if (status(pred)==2) {
@@ -205,18 +205,6 @@ final class AnnotatedNode<N extends Node> {
 		};
 		annotated.node.accept(collector);
 		return preds;
-	}
-	
-	/**
-	 * Applies the given detector to each node in the specified set and returns the detector's cache.
-	 * @effects applies <tt>detector</tt> to each node in <tt>nodes</tt>
-	 * @return detector.cache
-	 */
-	private static Map<Node, Boolean> applyDetector(Detector detector, Set<Node> nodes) {
-		for(Node n : nodes) {
-			n.accept(detector);
-		}
-		return detector.cache;
 	}
 	
 	/**
@@ -276,47 +264,32 @@ final class AnnotatedNode<N extends Node> {
 		}
 	}
 	/**
-	 * A skeleton implementation of a caching formula detector.
-	 * 
-	 * @specfield cached: set Node
-	 * @specfield cache: cached -> lone Boolean
+	 * Provides an additional method to the DepthFirstDetector class
+	 * that returns the result of applying a given detector d to 
+	 * d.cached.
 	 * @author Emina Torlak
 	 */
-	private abstract static  class Detector extends DepthFirstDetector {
-		final Map<Node, Boolean> cache;
-		
+	private abstract static  class NodeDetector extends DepthFirstDetector {
 		/**
-		 * Constructs a FormulaDetector that will cache the results
-		 * of visiting each node in the given set.
-		 * @effects this.cached' = sharedNodes && no this.cache'
+		 * Constructs a new NodeDetector that will cache the results of 
+		 * visiting the given nodes.
+		 * @effects this.cached' = nodes
 		 */
-		Detector(Set<Node> sharedNodes) {
-			this.cache = new IdentityHashMap<Node, Boolean>(sharedNodes.size());
-			for(Node n: sharedNodes) 
-				cache.put(n, null);
+		NodeDetector(Set<Node> nodes) {
+			super(nodes);
 		}
-
 		/**
-		 * If n has been visited and a value for it cached,
-		 * the cached value is returned. Otherwise null is returned.
-		 * @return this.cache[n]
+		 * Returns the result of applying this detector
+		 * to the set of nodes with which it was constructed.
+		 * @effects all n: this.cached | n.accept(this)
+		 * @return this.cached'
 		 */
-		protected Boolean lookup(Node n) {
-			return cache.get(n);
+		final Map<Node,Boolean> detectAll() {
+			for(Node n: cached)
+				n.accept(this);
+//			System.out.println(cache);
+			return cache;
 		}
-		
-		/**
-		 * Caches the given value for the specified node, if
-		 * this is a caching visitor, and returns Boolean.valueOf(val).
-		 * @effects n in this.cached => this.cache' = this.cache ++ n->Boolean.valueOf(val), this.cache' = this.cache
-		 * @return Boolean.valueOf(val)
-		 */
-		protected Boolean cache(Node n, boolean val) {
-			final Boolean ret = Boolean.valueOf(val);
-			if (cache.containsKey(n))
-				cache.put(n, ret);
-			return ret;
-		}		
 	}
 	
 	/**

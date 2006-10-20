@@ -157,6 +157,16 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	}
 	
 	/**
+	 * Returns the set of all indices in this matrix that contain
+	 * non-FALSE values.
+	 * @return the set of all indices in this matrix that contain
+	 * non-FALSE values.
+	 */
+	public final IntSet denseIndices() {
+		return cells.indices();
+	}
+	
+	/**
 	 * Return FALSE if value is null; otherwise return value itself.
 	 * @return FALSE if value is null; otherwise return value itself.
 	 */

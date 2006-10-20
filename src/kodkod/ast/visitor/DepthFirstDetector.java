@@ -3,6 +3,10 @@
  */
 package kodkod.ast.visitor;
 
+import java.util.IdentityHashMap;
+import java.util.Map;
+import java.util.Set;
+
 import kodkod.ast.BinaryExpression;
 import kodkod.ast.BinaryFormula;
 import kodkod.ast.BinaryIntExpression;
@@ -38,22 +42,43 @@ import kodkod.ast.Variable;
  * the {@link #visit(Variable) } method to return TRUE.</p>
  * 
  * @specfield cached: set Node // result of visiting these nodes will be cached
- * @specfield cache: cached -> lone Boolean
+ * @specfield cache: Node -> lone Boolean
+ * @specfield cached in cache.Node
  * @author Emina Torlak
  */
 public abstract class DepthFirstDetector implements ReturnVisitor<Boolean, Boolean, Boolean, Boolean> {
+	protected final Map<Node, Boolean> cache;
+	protected final Set<Node> cached;
 	
 	/**
-	 * Constructs a depth first detector 
+	 * Constructs a depth first detector which will cache the results
+	 * of visiting the given nodes and re-use them on subsequent visits.
+	 * @effects this.cached' = cached && no this.cache
 	 */
-	protected DepthFirstDetector() {}
+	protected DepthFirstDetector(Set<Node> cached) { 
+		this.cached = cached;
+		this.cache = new IdentityHashMap<Node,Boolean>(cached.size());
+	}
 	
+	/**
+	 * Constructs a depth-first replaces which will cache
+	 * the results of visiting the given nodes in the given map,
+	 * and re-use them on subsequent visits.
+	 * @effects this.cached' = cached &&  this.cache' = cache
+	 */
+	protected DepthFirstDetector(Set<Node> cached, Map<Node, Boolean> cache) {
+		this.cached = cached;
+		this.cache = cache;
+	}
+			
 	/**
 	 * If n has been visited and a value for it cached,
 	 * the cached value is returned. Otherwise null is returned.
 	 * @return this.cache[n]
 	 */
-	protected abstract Boolean lookup(Node n) ;
+	protected Boolean lookup(Node n) {
+		return cache.get(n);
+	}
 	
 	/**
 	 * Caches the given value for the specified node, if
@@ -61,7 +86,12 @@ public abstract class DepthFirstDetector implements ReturnVisitor<Boolean, Boole
 	 * @effects n in this.cached => this.cache' = this.cache ++ n->Boolean.valueOf(val), this.cache' = this.cache
 	 * @return Boolean.valueOf(val)
 	 */
-	protected abstract Boolean cache(Node n, boolean val) ;
+	protected Boolean cache(Node n, boolean val) {
+		final Boolean ret = Boolean.valueOf(val);
+		if (cached.contains(n))
+			cache.put(n, ret);
+		return ret;
+	}		
 	
 	/** 
 	 * Calls lookup(decls) and returns the cached value, if any.  

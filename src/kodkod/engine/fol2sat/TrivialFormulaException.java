@@ -1,10 +1,6 @@
 package kodkod.engine.fol2sat;
 
-import java.util.Map;
-
-import kodkod.ast.Decl;
 import kodkod.ast.Formula;
-import kodkod.ast.Relation;
 import kodkod.engine.bool.BooleanConstant;
 import kodkod.instance.Bounds;
 
@@ -14,18 +10,15 @@ import kodkod.instance.Bounds;
  * 
  * @specfield formula: Formula
  * @specfield reduction: reduction.*children
- * @specfield skolems: formula.^children & Decl -> lone Relation
  * @specfield bounds: Bounds
  * @specfield formulaValue: BooleanConstant // the value to which the reduction simplified
  * @invariant reduction is a subtree of reduction that has caused it to simplify to a constant
- * @invariant skolems holds any skolem constants generated during translation
  * @author Emina Torlak
  */
 public final class TrivialFormulaException extends Exception {
 	private final BooleanConstant formulaValue;
 	private final Formula reduction;
 	private final Bounds bounds;
-	private final Map<Decl, Relation> skolems;
 	
 	private static final long serialVersionUID = 6251577831781586067L;
 
@@ -36,13 +29,12 @@ public final class TrivialFormulaException extends Exception {
 	 * @requires reduction != null && bounds != null && formulaValue != null
 	 * @effects this.reduction' = reduction && this.bounds' = bounds && this.formulaValue' = formulaValue 
 	 */
-	 TrivialFormulaException(Formula reduction, BooleanConstant formulaValue, Bounds bounds, Map<Decl, Relation> skolems) {
+	 TrivialFormulaException(Formula reduction, BooleanConstant formulaValue, Bounds bounds) {
 		super("Trivially " + ((formulaValue==BooleanConstant.FALSE) ? "un" : "" )  + "satisfiable formula.");
 		assert formulaValue != null && bounds != null && reduction != null;
 		this.reduction = reduction;
 		this.bounds = bounds;
 		this.formulaValue = formulaValue;
-		this.skolems = skolems;
 	}
 
 	/**
@@ -69,14 +61,4 @@ public final class TrivialFormulaException extends Exception {
 		return formulaValue;
 	}
 
-	/**
-	 * If the options with which this.formula was translated
-	 * specified skolemization, returns a map from existentially
-	 * quantified declarations in this.formula to their corrensponding
-	 * skolem constants.  Otherwise returns null.
-	 * @return this.skolems
-	 */
-	public Map<Decl, Relation> skolems() {
-		return skolems;
-	}
 }

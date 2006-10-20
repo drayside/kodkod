@@ -94,6 +94,7 @@ public class SkolemizationTest extends TestCase {
 		final Variable v1 = Variable.unary("v1");
 		final Decl d1 = v1.oneOf(f.thenElse(r1a, r1b));
 		final Formula f1 = v1.join(r2a).some().forAll(d1);
+
 		Instance inst = solve(f1.and(f));
 		assertEquals(bounds.relations(), inst.relations());
 	}
@@ -186,20 +187,20 @@ public class SkolemizationTest extends TestCase {
 		
 		skolems.add(vb.name());
 		
-		Instance inst = solve(va.in(vb.join(r2b)).forSome(db).forAll(da1));
-		assertSkolems(bounds, inst, skolems);
+//		Instance inst = solve(va.in(vb.join(r2b)).forSome(db).forAll(da1));
+//		assertSkolems(bounds, inst, skolems);
 		
 		skolems.add(vc.name());
-		inst = solve(va.in(vb.join(r2b).union(vd.join(r2b)).union(vc)).
-				forSome(db).forAll(da1).forSome(dc).forAll(dd1));
-		assertSkolems(bounds, inst, skolems);
-		
-		inst = solve(va.in(vb.join(r2b).union(vd.join(r2b)).union(vc)).
-				forSome(db).forSome(dc).forAll(da1.and(dd1)));
-		assertSkolems(bounds, inst, skolems);
+//		inst = solve(va.in(vb.join(r2b).union(vd.join(r2b)).union(vc)).
+//				forSome(db).forAll(da1).forSome(dc).forAll(dd1));
+//		assertSkolems(bounds, inst, skolems);
+//		
+//		inst = solve(va.in(vb.join(r2b).union(vd.join(r2b)).union(vc)).
+//				forSome(db).forSome(dc).forAll(da1.and(dd1)));
+//		assertSkolems(bounds, inst, skolems);
 		
 		skolems.add(vd.name());
-		inst = solve(va.in(vb.join(r2b).union(vd.join(r2b)).union(vc)).
+		Instance inst = solve(va.in(vb.join(r2b).union(vd.join(r2b)).union(vc)).
 				forSome(db).forAll(da1).forSome(dc).not().forAll(dd).not());
 		
 		assertSkolems(bounds, inst, skolems);

@@ -7,12 +7,9 @@ package kodkod.engine;
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
 import kodkod.engine.bool.BooleanMatrix;
-import kodkod.engine.bool.BooleanValue;
 import kodkod.engine.fol2sat.Translator;
 import kodkod.instance.Instance;
-import kodkod.instance.TupleFactory;
 import kodkod.instance.TupleSet;
-import kodkod.util.ints.IndexedEntry;
 
 /**
  * An evaluator for relational formulas and expressions with
@@ -97,15 +94,7 @@ public final class Evaluator {
 	public TupleSet evaluate(Expression expression){
 		if (expression == null) throw new NullPointerException("expression");
 		final BooleanMatrix sol = Translator.evaluate(expression,instance,options);
-		final TupleFactory factory = instance.universe().factory();
-		final int arity = expression.arity();
-		final TupleSet ret = factory.noneOf(arity);
-		
-		for(IndexedEntry<BooleanValue> cell : sol) {
-			ret.add(factory.tuple(arity, cell.index()));
-		}
-		
-		return ret;
+		return instance.universe().factory().setOf(expression.arity(), sol.denseIndices());
 	}
 	
 	/**

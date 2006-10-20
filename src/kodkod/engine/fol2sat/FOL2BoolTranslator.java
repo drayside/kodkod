@@ -71,7 +71,7 @@ final class FOL2BoolTranslator {
 	
 	/**
 	 * Translates the given annotated formula or expression into a boolean
-	 * formula or matrix, using the provided interpreter and integer encoding.
+	 * formula or matrix, using the provided interpreter g.
 	 * @requires interpreter.relations = AnnotatedNode.relations(annotated)
 	 * @return {transl: T | 
 	 *           annotated.node in Formula => transl in BooleanValue, 
@@ -82,6 +82,22 @@ final class FOL2BoolTranslator {
 	@SuppressWarnings("unchecked")
 	static final <T> T translate(AnnotatedNode<? extends Node> annotated, LeafInterpreter interpreter) {
 		return (T) annotated.node().accept(new Translator(new TranslationCache.Simple(annotated), interpreter));
+	}
+	
+	/**
+	 * Translates the given annotated formula or expression into a boolean
+	 * formula or matrix, using the provided interpreter and environment.
+	 * @requires interpreter.relations = AnnotatedNode.relations(annotated)
+	 * @return {transl: T | 
+	 *           annotated.node in Formula => transl in BooleanValue, 
+	 *           annotated.node in Expression => transl in BooleanMatrix}
+	 * @throws HigherOrderDeclException - annotated.node contains a higher order declaration
+	 * @throws UnboundLeafException - annotated.node refers to a variable that neither declared
+	 * nor bound in env
+	 **/
+	@SuppressWarnings("unchecked")
+	static final <T> T translate(AnnotatedNode<? extends Node> annotated, LeafInterpreter interpreter, Environment<BooleanMatrix> env) {
+		return (T) annotated.node().accept(new Translator(new TranslationCache.Simple(annotated), interpreter, env));
 	}
 	
 	/**
@@ -156,13 +172,22 @@ final class FOL2BoolTranslator {
 		final TranslationCache cache;
 	
 		/**
-		 * Constructs a new translator that will use the given interpreter, annotated universe, and cache to perform the 
-		 * translation.
+		 * Constructs a new translator that will use the given translation cache
+		 * and interpreter to perform the translation.
 		 * @effects this.node' = cache.node
 		 */   
 		Translator(TranslationCache cache,  LeafInterpreter interpreter) {
+			this(cache, interpreter, new Environment<BooleanMatrix>());
+		}
+		
+		/**
+		 * Constructs a new translator that will use the given translation cache,
+		 * interpreter and environment to perform the translation.
+		 * @effects this.node' = cache.node
+		 */   
+		Translator(TranslationCache cache,  LeafInterpreter interpreter, Environment<BooleanMatrix> env) {
 			this.interpreter = interpreter;
-			this.env = new Environment<BooleanMatrix>();
+			this.env = env;
 			this.cache = cache;
 		}
 		
@@ -341,7 +366,7 @@ final class FOL2BoolTranslator {
 			for(IndexedEntry<BooleanValue> entry : declTransl) {
 				
 				IntSet indices = Ints.singleton(entry.index());
-                	env.bindVarTo(factory.matrix(declTransl.dimensions(), indices, indices));
+                	env.setVal(factory.matrix(declTransl.dimensions(), indices, indices));
                 	comprehension(others, formula, factory.and(entry.value(), declConstraints), 
                 			partialIndex + entry.index()*position, matrix);
                 	
@@ -431,7 +456,7 @@ final class FOL2BoolTranslator {
 			for(IndexedEntry<BooleanValue> entry : declTransl) {
 				
 				IntSet indices = Ints.singleton(entry.index());
-                	env.bindVarTo(factory.matrix(declTransl.dimensions(), indices, indices));
+                	env.setVal(factory.matrix(declTransl.dimensions(), indices, indices));
                 	all(others, formula, factory.or(factory.not(entry.value()), declConstraints), acc);
                 	
 			}
@@ -469,7 +494,7 @@ final class FOL2BoolTranslator {
 			for(IndexedEntry<BooleanValue> entry : declTransl) {
 				
 				IntSet indices = Ints.singleton(entry.index());
-                	env.bindVarTo(factory.matrix(declTransl.dimensions(), indices, indices));
+                	env.setVal(factory.matrix(declTransl.dimensions(), indices, indices));
                 	some(others, formula, factory.and(entry.value(), declConstraints), acc);
                 	
 			}
@@ -737,7 +762,7 @@ final class FOL2BoolTranslator {
 			for(IndexedEntry<BooleanValue> entry : declTransl) {
 				
 				IntSet indices = Ints.singleton(entry.index());
-                	env.bindVarTo(factory.matrix(declTransl.dimensions(), indices, indices));
+                	env.setVal(factory.matrix(declTransl.dimensions(), indices, indices));
                 	partialSum = partialSum.plus(sum(others, expr, factory.and(entry.value(), declConstraints)));
                 	
 			}

@@ -66,31 +66,30 @@ final class Environment<T> {
 		return new Environment<T>(this, variable, value);
 	}
 	
-		
+	/**
+	 * Returns this.var.
+	 * @return this.var
+	 */
+	public Variable var() {
+		return this.var;
+	}
+	
+	/**
+	 * Returns this.val.
+	 * @return this.val
+	 */
+	public T val() {
+		return this.val;
+	}
+	
 	/**
 	 * Binds this.var to the specified value,
 	 * erasing any prior mappings for the variable in this environment.
 	 * 
 	 * @effects this.val' = value
 	 */
-	public void bindVarTo(T value) {
+	public void setVal(T value) {
 		this.val = value;
-	}
-	
-	/**
-	 * Returns the closest ancestor of this environment (or this
-	 * environment itself) that contains a binding for the given
-	 * variable.  If the variable is not bound, null is returned.
-	 * @return this.var = variable => this, this.parent.bindingEnvironment(variable)
-	 */
-	public Environment<T> bindingEnvironment(Variable variable) {
-		Environment<T> p = this;
-		// ok to use == for testing variable equality: 
-		// see kodkod.ast.LeafExpression#equals
-		while(p!=null && p.var!=variable) {
-			p = p.parent;
-		}
-		return p;
 	}
 	
 	/**
@@ -103,8 +102,13 @@ final class Environment<T> {
 	 * @return variable = this.var => this.val, this.parent.lookup(variable)
 	 */
 	public T lookup(Variable variable) {
-		final Environment<T> bindingEnv = bindingEnvironment(variable);
-		return bindingEnv==null ? null : bindingEnv.val;
+		Environment<T> p = this;
+		// ok to use == for testing variable equality: 
+		// see kodkod.ast.LeafExpression#equals
+		while(p!=null && p.var!=variable) {
+			p = p.parent;
+		}
+		return p==null ? null : p.val;
 	}
 	
 	
