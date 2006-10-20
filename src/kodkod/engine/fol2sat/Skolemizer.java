@@ -1,8 +1,8 @@
 package kodkod.engine.fol2sat;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Set;
 
 import kodkod.ast.BinaryExpression;
@@ -21,6 +21,7 @@ import kodkod.engine.Options;
 import kodkod.engine.bool.BooleanFactory;
 import kodkod.engine.bool.BooleanMatrix;
 import kodkod.instance.Bounds;
+import kodkod.instance.TupleSet;
 
 /**
  * Skolemizes away existential quantifiers, up to a given
@@ -74,12 +75,6 @@ final class Skolemizer {
 		/* replacement environment; maps skolemized variables to their skolem expressions,
 		 * and non-skolemized variables to themselves */
 		private Environment<Expression> repEnv;
-		/* approximation environment; maps variables declared in non-skolemizable formulas
-		 * with skolemizable descendents to BooleanMatrices which soundly
-		 * overapproximate the variables' values
-		 * @invariant the declarations of all variables bound in approxEnv 
-		 * occur in the same order in the nonSkolems list */
-		private Environment<BooleanMatrix> approxEnv;
 		/* when computing the upper bounds for skolems, all
 		 * expressions must be replaced with sound approximations;
 		 * specifically all difference expressions must replaced with 
@@ -92,7 +87,7 @@ final class Skolemizer {
 		/* non-skolemizable quantified declarations in the current scope, in the order of declaration
 		 * (most recent decl is last in the list) 
 		 */
-		private final List<Decl> nonSkolems;
+		private final List<DeclInfo> nonSkolems;
 		
 		/* the formula that constrains all the skolem constants */
 		Formula skolemFormula;
@@ -111,9 +106,8 @@ final class Skolemizer {
 			this.interpreter = new BoundsInterpreter.Overapproximating(bounds, BooleanFactory.constantFactory(options));
 			this.skolemFormula = Formula.TRUE;
 			this.repEnv = new Environment<Expression>();
-			this.approxEnv = new Environment<BooleanMatrix>();
 			this.diffRemover = new DifferenceRemover(sharedNodes);
-			this.nonSkolems = new ArrayList<Decl>();
+			this.nonSkolems = new ArrayList<DeclInfo>();
 		}
 		
 		
@@ -220,75 +214,75 @@ final class Skolemizer {
 		}
 		
 		/**
-		 * Fills the given environment; specifically,
-		 * if a variable in the environment is bound to 
-		 * null, the method computes its upper bounding matrix and re-binds
-		 * it to the matrix.  The initial value of env should be 
-		 * this.approxEnv and the initial value of decls should
-		 * be nonSkolems.listIterator(nonSkolems.size()).
-		 * @effects if a variable in the given environment is bound to 
-		 * null, the method computes its upper bounding matrix and re-binds
-		 * it to the matrix.
+		 * Removes all difference subexpression from expr and evaluates it using
+		 * this.intepreter and the given environment.
+		 * @return the least sound upper bound on the value of expr
 		 */
-		private void fillApproxEnv(Environment<BooleanMatrix> env, ListIterator<Decl> decls) {
-			if (env.val()==null && decls.hasPrevious()) {
-				final Decl decl = decls.previous();
-				final Expression approxExpr = decl.expression().accept(diffRemover);
-				final BooleanMatrix approxMatrix;
-				fillApproxEnv(env.parent(), decls);
-				approxMatrix = (BooleanMatrix) FOL2BoolTranslator.translate(new AnnotatedNode<Expression>(approxExpr), interpreter, env.parent());
-				env.setVal(approxMatrix);
-			}	
+		private final BooleanMatrix upperBound(Expression expr, Environment<BooleanMatrix> env) {
+			return (BooleanMatrix) 
+			  FOL2BoolTranslator.translate(new AnnotatedNode<Expression>(expr.accept(diffRemover)), interpreter, env);
 		}
-				
+
 		/**
-		 * Applies this to decl.expression; constructs a skolem relation for 
-		 * decl.variable; bounds the skolem in this.interpreter.boundingObject;
-		 * and adds the skolemization constraints to this.skolemFormula. 
-		 * Returns the expression that should replace decl.variable in 
-		 * the final formula.
-		 * @effects adds bounds for a skolem relation corresponding to 
-		 * the given declaration to this.interpreter.boundingObject
-		 * @effects adds skolemization constraints to this.skolemFormula
+		 * Creates a skolem relation for decl.variable, bounds it in 
+		 * this.interpreter.boundingObject, and returns the expression 
+		 * that should replace decl.variable in the final formula.
+		 * @requires decl has been visited by this 
+		 * @effects bounds the skolem relation for decl in this.interpreter.boundingObject
 		 * @return the expression that should replace decl.variable in 
 		 * the final formula
 		 */
-		private Expression skolemize(Decl decl) {
+		private Expression skolemExpr(Decl decl) {
 			final int depth = nonSkolems.size();
 			final int arity = depth + decl.variable().arity();
 			
 			final Relation skolem = Relation.nary("$"+decl.variable().name(), arity);
-			final Expression expr = decl.expression().accept(this);
-	
-			fillApproxEnv(approxEnv, nonSkolems.listIterator(depth));		
-			BooleanMatrix skolemBound = (BooleanMatrix) 
-			  FOL2BoolTranslator.translate(new AnnotatedNode<Expression>(expr.accept(diffRemover)), 
-					  interpreter, approxEnv);
-		
-			for(Environment<BooleanMatrix> env = approxEnv; env.parent()!=null; env = env.parent()) {
-				skolemBound = env.val().cross(skolemBound);
-			}
-		
-			interpreter.boundingObject().bound(skolem, interpreter.universe().factory().setOf(arity, skolemBound.denseIndices()));
-				
 			Expression skolemExpr = skolem;
-			for(Decl d: nonSkolems) {
-				skolemExpr = d.variable().join(skolemExpr);
+			Environment<BooleanMatrix> skolemEnv = new Environment<BooleanMatrix>();
+			
+			for(DeclInfo info : nonSkolems) {
+				if (info.upperBound==null) {
+					info.upperBound = upperBound(info.decl.expression(), skolemEnv);
+				}
+				skolemEnv = skolemEnv.extend(info.decl.variable(), info.upperBound);
+				skolemExpr = info.decl.variable().join(skolemExpr);
 			}
 			
-			Formula f = skolemExpr.in(expr);
+			BooleanMatrix matrixBound = upperBound(decl.expression(), skolemEnv);
+			for(int i = depth-1; i >= 0; i--) {
+				matrixBound = nonSkolems.get(i).upperBound.cross(matrixBound);
+			}
+			
+			final TupleSet skolemBound = interpreter.universe().factory().setOf(arity, matrixBound.denseIndices());
+			interpreter.boundingObject().bound(skolem, skolemBound);
+			
+			return skolemExpr;
+		}
+		
+		/**
+		 * Returns the skolemization constraints for the given 
+		 * declaration and its corresponding skolemization expression.
+		 * @requires decl has been visited by this
+		 * @requires skolemExpr = skolemExpr(decl)
+		 * @return skolemization constraints for the given 
+		 * declaration and its corresponding skolemization expression.
+		 */
+		private Formula skolemFormula(Decl decl, Expression skolemExpr) {
+			Formula f = skolemExpr.in(decl.expression());
+			
 			if (decl.multiplicity()!=Multiplicity.SET)
 				f = f.and(skolemExpr.apply(decl.multiplicity()));
-			if (depth>0) {
-				Decls decls = nonSkolems.get(0);
-				for(int i = 1; i < depth; i++) {
-					decls = decls.and(nonSkolems.get(i));
+			
+			final Iterator<DeclInfo> infos = nonSkolems.iterator();
+			if (infos.hasNext()) {
+				Decls decls = infos.next().decl;
+				while(infos.hasNext()) {
+					decls = decls.and(infos.next().decl);
 				}
-				skolemFormula = skolemFormula.and(f.forAll(decls));
-			} else {
-				skolemFormula = skolemFormula.and(f);
-			}
-			return skolemExpr;
+				f = f.forAll(decls);
+			} 
+			
+			return f;
 		}
 		
 		/** 
@@ -308,25 +302,25 @@ final class Skolemizer {
 			
 			if (eqfs.contains(quantFormula)) { // skolemizable formula
 				for(Decl decl : quantFormula.declarations()) {
-					repEnv = repEnv.extend(decl.variable(), skolemize(decl));				
+					Decl newDecl = visit(decl);
+					Expression skolemExpr = skolemExpr(newDecl);
+					repEnv = repEnv.extend(decl.variable(), skolemExpr);
+					skolemFormula = skolemFormula.and(skolemFormula(newDecl, skolemExpr));
 				}
 				ret = quantFormula.formula().accept(this);
 				
 			} else { // non-skolemizable formula
 				
 				final Decls decls = visit((Decls)quantFormula.declarations());
-				
-				final Environment<BooleanMatrix> oldApproxEnv = approxEnv;
+			
 				for(Decl d: decls) {
-					approxEnv = approxEnv.extend(d.variable(), null);
-					nonSkolems.add(d);
+					nonSkolems.add(new DeclInfo(d));
 				}
 			
 				final Formula formula = quantFormula.formula().accept(this);
 				ret = ((decls==quantFormula.declarations() && formula==quantFormula.formula()) ? 
 					    quantFormula : formula.quantify(quantFormula.quantifier(), decls));
 				
-				approxEnv = oldApproxEnv;
 				for(int i = decls.size(); i > 0; i--) { 
 					nonSkolems.remove(nonSkolems.size()-1); 
 				}
@@ -349,7 +343,6 @@ final class Skolemizer {
 		DifferenceRemover(Set<Node> sharedNodes) {
 			super(sharedNodes);
 		}
-		
 		/**
 		 * Returns super.visit(binExpr) if binExpr is not a difference
 		 * expression, otherwise return binExpr.left().accept(this). 
@@ -357,10 +350,34 @@ final class Skolemizer {
 		 * expression, otherwise return binExpr.left().accept(this). 
 		 */
 		public Expression visit(BinaryExpression binExpr) {
+			Expression ret = lookup(binExpr);
+			if (ret!=null) return ret;
 			if (binExpr.op()==BinaryExpression.Operator.DIFFERENCE)
 				return cache(binExpr, binExpr.left().accept(this));
 			else
 				return super.visit(binExpr);
 		}	
+	}
+	
+	/**
+	 * Contains info about an approximate bound for a 
+	 * non-skolemizable decl.
+	 * @specfield decl: Decl
+	 * @specfield upperBound: lone BooleanMatrix
+	 * @invariant decl.expression in upperBound
+	 * @author Emina Torlak
+	 */
+	private static final class DeclInfo {
+		final Decl decl;
+		BooleanMatrix upperBound;
+		
+		/**
+		 * Constructs a DeclInfo for the given decl.
+		 * @effects this.decl' = decl && this.upperBound' = null
+		 */
+		DeclInfo(Decl decl) {
+			this.decl = decl;
+			this.upperBound =  null;
+		}
 	}
 }

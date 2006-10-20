@@ -52,6 +52,20 @@ public class BugTests extends TestCase {
 //		System.out.println(Integer.toBinaryString(1));
 //	}
 	
+	public final void testFelix_10182006() {
+		//(some x: one { y: one SIG | true } | true)
+		Relation sig = Relation.unary("SIG");
+		final Variable x = Variable.unary("x");
+		final Variable y = Variable.unary("y");
+		final Expression e0 = Formula.TRUE.comprehension(y.oneOf(sig));
+		final Formula f0 = Formula.TRUE.forSome(x.oneOf(e0));
+		final Universe u = new Universe(Arrays.asList("a0"));
+		final Bounds bounds = new Bounds(u);
+		bounds.bound(sig, u.factory().allOf(1));
+		final Solution s = solver.solve(f0, bounds);
+		assertEquals(Solution.Outcome.SATISFIABLE, s.outcome());
+	}
+	
 	public final void testEmina_10092006() {
 		Relation r = Relation.ternary("r");
 		final Variable a = Variable.unary("A");
