@@ -1,4 +1,14 @@
+/**
+ * 
+ */
 package kodkod.engine.fol2sat;
+
+import static kodkod.ast.BinaryFormula.Operator.AND;
+import static kodkod.ast.BinaryFormula.Operator.IFF;
+import static kodkod.ast.BinaryFormula.Operator.IMPLIES;
+import static kodkod.ast.BinaryFormula.Operator.OR;
+import static kodkod.ast.QuantifiedFormula.Quantifier.ALL;
+import static kodkod.ast.QuantifiedFormula.Quantifier.SOME;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -6,29 +16,41 @@ import java.util.List;
 import java.util.Set;
 
 import kodkod.ast.BinaryExpression;
+import kodkod.ast.BinaryFormula;
+import kodkod.ast.ComparisonFormula;
 import kodkod.ast.Comprehension;
 import kodkod.ast.Decl;
 import kodkod.ast.Decls;
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
+import kodkod.ast.IntComparisonFormula;
+import kodkod.ast.IntExpression;
 import kodkod.ast.Multiplicity;
+import kodkod.ast.MultiplicityFormula;
 import kodkod.ast.Node;
+import kodkod.ast.NotFormula;
 import kodkod.ast.QuantifiedFormula;
 import kodkod.ast.Relation;
+import kodkod.ast.RelationPredicate;
+import kodkod.ast.SumExpression;
 import kodkod.ast.Variable;
+import kodkod.ast.visitor.DepthFirstDetector;
 import kodkod.ast.visitor.DepthFirstReplacer;
 import kodkod.engine.Options;
 import kodkod.engine.bool.BooleanFactory;
 import kodkod.engine.bool.BooleanMatrix;
 import kodkod.instance.Bounds;
 import kodkod.instance.TupleSet;
+import kodkod.util.collections.ArrayStack;
+import kodkod.util.collections.Stack;
 
 /**
- * Skolemizes away existential quantifiers, up to a given
+ * Skolemizes existential quantifiers, up to a given
  * number of nestings (within universal quantifiers). 
  * @author Emina Torlak
  */
 final class Skolemizer {
+
 	/**
 	 * Skolemizes the given annotated formula using the given bounds and options.
 	 * @effects upper bound mappings for skolem constants, if any, are added to the bounds
@@ -39,78 +61,90 @@ final class Skolemizer {
 	 */
 	@SuppressWarnings("unchecked")
 	static AnnotatedNode<Formula> skolemize(AnnotatedNode<Formula> annotated, Bounds bounds, Options options) {
-		final Set<QuantifiedFormula> formulas = AnnotatedNode.skolemizables(annotated, options.skolemDepth());
-		
-		if (formulas.isEmpty()) {
-			return annotated;
-		} else {
-			final EQFReplacer replacer = new EQFReplacer(formulas, annotated.sharedNodes(), bounds, options);
-			final Formula f = annotated.node().accept(replacer).and(replacer.skolemFormula);
-//			System.out.println(annotated.node());
-//			System.out.println(f);
-//			System.out.println(bounds);
-			return new AnnotatedNode<Formula>(f);
-		}
+		final SkolemReplacer r = new SkolemReplacer(annotated.sharedNodes(), bounds, options);
+		final Formula f = annotated.node().accept(r).and(r.skolemConstraints);
+//		System.out.println(annotated.node());
+//		System.out.println(f);
+		return f==annotated.node() ? annotated : new AnnotatedNode<Formula>(f);
 	}
 
 	/**
-	 * Given a set of existentially quantified formulas, s, and a Bounds b,
-	 * an EQFReplacer replaces the given formulas with their skolemizations and
-	 * modifies b to include upper bounds for the skolem constants.  Each given formula 
-	 * f is replaced with its body, in which all occurences
-	 * of d.variable are replaced by the skolem constant for d.variable.
-	 * 
-	 * @specfield root: Formula // an EQFReplaces should only be applied to top once
-	 * @specfield eqfs: set QuantifiedFormula 
-	 * @specfield bounds: Bounds
-	 * @invariant eqfs = { q: root.*children & QuantifiedFormula | 
-	 *                      all path: children | q in root.*path => 
-	 *                       all q': root.*path | 
-	 *                         (q'.quantifier = SOME => #{root.*path & NotFormula} % 2 = 0) &&
-	 *                         (q'.quantifier = ALL => #{root.*path & NotFormula} % 2 = 1) }
-	 * @invariant Relation & root.^children in bounds.relations   
+	 * Given a formula, bounds and depth, 
+	 * detects skolemizable formulas, replaces them
+	 * with their skolemized equivalents, and collects the necessary 
+	 * skolemization constraints. 
+	 * @author Emina Torlak
 	 */
-	private static final class EQFReplacer extends DepthFirstReplacer {
-		private final Set<QuantifiedFormula> eqfs;
+	private static final class SkolemReplacer extends DepthFirstReplacer {	
 		/* replacement environment; maps skolemized variables to their skolem expressions,
 		 * and non-skolemized variables to themselves */
 		private Environment<Expression> repEnv;
 		/* when computing the upper bounds for skolems, all
 		 * expressions must be replaced with sound approximations;
 		 * specifically all difference expressions must replaced with 
-		 * their left children.
-		 */
+		 * their left children. */
 		private final DifferenceRemover diffRemover ;
 		/* the interpreter used to determine the upper bounds for skolem constants;
 		 * the upper bounds for skolem constants will be added to interpreter.bounds */
 		private final BoundsInterpreter.Overapproximating interpreter;
 		/* non-skolemizable quantified declarations in the current scope, in the order of declaration
-		 * (most recent decl is last in the list) 
-		 */
+		 * (most recent decl is last in the list) */
 		private final List<DeclInfo> nonSkolems;
+		/* true if the polarity of the currently visited node is negative, otherwise false */
+		private boolean negated;
+		/* depth to which to skolemize; negative depth indicates that no skolemization can be done at that point */
+		private int skolemDepth;
 		
-		/* the formula that constrains all the skolem constants */
-		Formula skolemFormula;
+		/** holds the skolemization constraints at the end of the visit */
+		Formula skolemConstraints;
 		
 		/**
-		 * Constructs a new EQFReplacer.  This replacer should only be applied to
-		 * the top-level formula, root.  The bounds will be modified to include
-		 * upper bounds for the skolem constants generated during replacement.
-		 * @requires sharedNodes = {n: Node | #(n.~children & this.root'.^children) > 1 }
-		 * @requires root.*children & Relation in interpreter.bounds.relations
-		 * @effects this.eqfs' = eqfs && this.bounds' = interpreter.bounds
+		 * Constructs a skolem replacer from the given arguments. 
 		 */
-		EQFReplacer(Set<QuantifiedFormula> eqfs, Set<Node> sharedNodes, Bounds bounds, Options options) {
+		protected SkolemReplacer(Set<Node> sharedNodes, Bounds bounds, Options options) {
 			super(sharedNodes);
-			this.eqfs = eqfs;
+			
+			// only cache intermediate computations for expressions with no free variables
+			// and formula with no free variables and no quantified descendents
+			final FreeVarDetector fvdetect = new FreeVarDetector(sharedNodes);
+			final DepthFirstDetector qdetect = new DepthFirstDetector(sharedNodes) {
+				public Boolean visit(QuantifiedFormula quantFormula) {
+					return cache(quantFormula, true);
+				}
+			};
+			for(Node n: sharedNodes) {
+				if (!(Boolean)n.accept(fvdetect)) {
+					if (!(n instanceof Formula) || !((Boolean)n.accept(qdetect)))
+						this.cache.put(n, null);
+				}
+			}
+			this.diffRemover = new DifferenceRemover(this.cache.keySet());
+
 			this.interpreter = new BoundsInterpreter.Overapproximating(bounds, BooleanFactory.constantFactory(options));
-			this.skolemFormula = Formula.TRUE;
-			this.repEnv = new Environment<Expression>();
-			this.diffRemover = new DifferenceRemover(sharedNodes);
+			this.skolemConstraints = Formula.TRUE;
+			this.repEnv = Environment.empty();
 			this.nonSkolems = new ArrayList<DeclInfo>();
+			this.negated = false;
+			this.skolemDepth = options.skolemDepth();
 		}
 		
+		/**
+		 * Caches the given replacement for the specified node, if this is 
+		 * a caching visitor and the node is a syntactically shared expression with
+		 * no free variables or a syntactically shared formula with no free variables
+		 * and no quantified descendents.  Otherwise does nothing.  The method returns
+		 * the replacement node.  
+		 * @return replacement
+		 */
+		@Override
+		protected <N extends Node> N cache(N node, N replacement) {
+			if (cache.containsKey(node)) {
+				cache.put(node, replacement);
+			}
+			return replacement;
+		}
 		
+		/*-------declarations---------*/
 		/** 
 		 * Visits the given decl's expression.  Note that we must not visit variables 
 		 * in case they are re-used.  For example, consider the formula
@@ -126,48 +160,31 @@ final class Skolemizer {
 		public Decl visit(Decl decl) {
 			Decl ret = lookup(decl);
 			if (ret!=null) return ret;
-			
+			final int oldDepth = skolemDepth;
+			skolemDepth = -1; // can't skolemize inside a decl
 			final Expression expression = decl.expression().accept(this);
-			ret = (expression==decl.expression()) ?
-				  decl : decl.variable().declare(decl.multiplicity(), expression); 	
+			skolemDepth = oldDepth;
+			ret = (expression==decl.expression()) ? decl : decl.variable().declare(decl.multiplicity(), expression); 	
 			return cache(decl,ret);
 		}
 		
 		/** 
-		 * Returns the binding for the variable in this.env.
-		 * @return this.env.lookup(variable)
-		 * @throws IllegalArgumentException - no this.env.lookup(variable)
-		 */
-		@Override
-		public Expression visit(Variable variable) { 
-			final Expression ret = repEnv.lookup(variable);
-			if (ret==null)
-				throw new UnboundLeafException("Unbound variable", variable);
-			return ret;
-		}
-		
-		/** 
 		 * This method should be accessed only from the context of a non-skolemizable
-		 * formula or a comprehension, because it  extends the replacement environment
+		 * node, because it  extends the replacement environment
 		 * with  identity mappings for the variables declared in the given decls.  To ensure
 		 * that the environment is always extended, the method should be called using the
 		 * visit((Decls) node.declarations()) syntax, since the accept syntax may dynamically
 		 * dispatch the call to the {@link #visit(Decl)} method, producing UnboundLeafExceptions.
-		 * 
-		 * <p>Calls lookup(decls) and returns the cached value, if any.  
-		 * If a replacement has not been cached, visits each of the children's 
-		 * variable and expression.  If nothing changes, the argument is cached and
-		 * returned, otherwise a replacement Decls object is cached and returned.</p>
 		 * @effects this.repEnv in this.repEnv'.^parent &&
 		 * #(this.repEnv'.*parent - this.repEnv.*parent) = decls.size() &&
 		 * all v: decls.variable | this.repEnv'.lookup(v) = v
+		 * @requires this.skolemDepth < 0
 		 * @return { d: Decls | d.size = decls.size && 
 		 *                      all i: [0..d.size) | d.declarations[i] = decls.declarations[i].accept(this) } 
 		 */
 		public Decls visit(Decls decls) { 
 			Decls ret = lookup(decls);
-
-			if (ret==null) {	
+			if (ret==null) {
 				Decls visitedDecls = null;
 				boolean allSame = true;
 				for(Decl decl : decls) {
@@ -185,34 +202,45 @@ final class Skolemizer {
 				}
 				return ret;
 			}
-			
 		}
 		
+		/*-------expressions and intexpressions---------*/
 		/** 
-		 * Calls lookup(comprehension) and returns the cached value, if any.  
-		 * If a replacement has not been cached, visits the expression's 
-		 * children.  If nothing changes, the argument is cached and
-		 * returned, otherwise a replacement expression is cached and returned.
-		 * @return { c: Comprehension | c.declarations = comprehension.declarations.accept(this) &&
-		 *                              c.formula = comprehension.formula.accept(this) }
+		 * Returns the binding for the variable in this.repEnv.
+		 * @return this.repEnv.lookup(variable)
+		 * @throws IllegalArgumentException - no this.repEnv.lookup(variable)
 		 */
 		@Override
-		public Expression visit(Comprehension comprehension) {
-			Expression ret = lookup(comprehension);
+		public Expression visit(Variable variable) { 
+			final Expression ret = repEnv.lookup(variable);
+			if (ret==null)
+				throw new UnboundLeafException("Unbound variable", variable);
+			return ret;
+		}	
+		@Override
+		public Expression visit(Comprehension expr) {
+			Expression ret = lookup(expr);
 			if (ret!=null) return ret;
-			
-			final Environment<Expression> oldRepEnv = repEnv;
-			
-			final Decls decls = visit((Decls)comprehension.declarations());
-			final Formula formula = comprehension.formula().accept(this);
-			ret = (decls==comprehension.declarations() && formula==comprehension.formula()) ? 
-				  comprehension : formula.comprehension(decls);
-			
-			repEnv = oldRepEnv;
-			
-			return cache(comprehension,ret);
+			final Environment<Expression> oldRepEnv = repEnv; // skolemDepth < 0 at this point
+			final Decls decls = visit((Decls)expr.declarations());
+			final Formula formula = expr.formula().accept(this);
+			ret = (decls==expr.declarations() && formula==expr.formula()) ? expr : formula.comprehension(decls);
+			repEnv = oldRepEnv;		
+			return cache(expr,ret);
 		}
-		
+		@Override
+	    public IntExpression visit(SumExpression intExpr) {
+			IntExpression ret = lookup(intExpr);
+			if (ret!=null) return ret;	
+			final Environment<Expression> oldRepEnv = repEnv; // skolemDepth < 0 at this point
+			final Decls decls  = visit((Decls)intExpr.declarations());
+			final IntExpression expr = intExpr.intExpr().accept(this);
+			ret =  (decls==intExpr.declarations() && expr==intExpr.intExpr()) ? intExpr : expr.sum(decls);
+			repEnv = oldRepEnv;
+			return cache(intExpr,ret);
+	    }
+	    
+		/*-------formulas---------*/
 		/**
 		 * Removes all difference subexpression from expr and evaluates it using
 		 * this.intepreter and the given environment.
@@ -222,7 +250,6 @@ final class Skolemizer {
 			return (BooleanMatrix) 
 			  FOL2BoolTranslator.translate(new AnnotatedNode<Expression>(expr.accept(diffRemover)), interpreter, env);
 		}
-
 		/**
 		 * Creates a skolem relation for decl.variable, bounds it in 
 		 * this.interpreter.boundingObject, and returns the expression 
@@ -238,7 +265,7 @@ final class Skolemizer {
 			
 			final Relation skolem = Relation.nary("$"+decl.variable().name(), arity);
 			Expression skolemExpr = skolem;
-			Environment<BooleanMatrix> skolemEnv = new Environment<BooleanMatrix>();
+			Environment<BooleanMatrix> skolemEnv = Environment.empty();
 			
 			for(DeclInfo info : nonSkolems) {
 				if (info.upperBound==null) {
@@ -257,8 +284,7 @@ final class Skolemizer {
 			interpreter.boundingObject().bound(skolem, skolemBound);
 			
 			return skolemExpr;
-		}
-		
+		}	
 		/**
 		 * Returns the skolemization constraints for the given 
 		 * declaration and its corresponding skolemization expression.
@@ -283,51 +309,154 @@ final class Skolemizer {
 			} 
 			
 			return f;
-		}
+		}	
 		
-		/** 
-		 * Calls lookup(quantFormula) and returns the cached value, if any.  
-		 * If a replacement has not been cached, visits the formula's 
-		 * children.  If nothing changes, the argument is cached and
-		 * returned, otherwise a replacement formula is cached and returned.
-		 * @return { q: QuantifiedFormula | q.declarations = quantFormula.declarations.accept(this) &&
-		 *                                  q.formula = quantFormula.formula.accept(this) }
+		/**
+		 * Skolemizes the given formula, if possible, otherwise returns the result
+		 * of replacing its free variables according to the current repEnv.
+		 * @see kodkod.ast.visitor.DepthFirstReplacer#visit(kodkod.ast.QuantifiedFormula)
 		 */
-		@Override
-		public Formula visit(QuantifiedFormula quantFormula) {
-			Formula ret = lookup(quantFormula);
+		public Formula visit(QuantifiedFormula qf) {
+			Formula ret = lookup(qf);
 			if (ret!=null) return ret;
-			
-			final Environment<Expression> oldRepEnv = repEnv;
-			
-			if (eqfs.contains(quantFormula)) { // skolemizable formula
-				for(Decl decl : quantFormula.declarations()) {
+			final Environment<Expression> oldRepEnv = repEnv;	
+			final QuantifiedFormula.Quantifier quant = qf.quantifier();
+			if (skolemDepth>=0 && (negated && quant==ALL || !negated && quant==SOME)) { // skolemizable formula
+				for(Decl decl : qf.declarations()) {
 					Decl newDecl = visit(decl);
 					Expression skolemExpr = skolemExpr(newDecl);
 					repEnv = repEnv.extend(decl.variable(), skolemExpr);
-					skolemFormula = skolemFormula.and(skolemFormula(newDecl, skolemExpr));
+					skolemConstraints = skolemConstraints.and(skolemFormula(newDecl, skolemExpr));
 				}
-				ret = quantFormula.formula().accept(this);
-				
+				ret = qf.formula().accept(this);
 			} else { // non-skolemizable formula
-				
-				final Decls decls = visit((Decls)quantFormula.declarations());
-			
-				for(Decl d: decls) {
-					nonSkolems.add(new DeclInfo(d));
-				}
-			
-				final Formula formula = quantFormula.formula().accept(this);
-				ret = ((decls==quantFormula.declarations() && formula==quantFormula.formula()) ? 
-					    quantFormula : formula.quantify(quantFormula.quantifier(), decls));
-				
-				for(int i = decls.size(); i > 0; i--) { 
-					nonSkolems.remove(nonSkolems.size()-1); 
-				}
+				final Decls decls = visit((Decls)qf.declarations());
+				if (skolemDepth>=nonSkolems.size()+decls.size()) { // can skolemize below
+					for(Decl d: decls) { nonSkolems.add(new DeclInfo(d)); }
+					final Formula formula = qf.formula().accept(this);
+					ret = ((decls==qf.declarations() && formula==qf.formula()) ? qf : formula.quantify(quant, decls));
+					for(int i = decls.size(); i > 0; i--) { nonSkolems.remove(nonSkolems.size()-1); }
+				} else { // can't skolemize below
+					final int oldDepth = skolemDepth;
+					skolemDepth = -1; 
+					final Formula formula = qf.formula().accept(this);
+					ret = ((decls==qf.declarations() && formula==qf.formula()) ? qf : formula.quantify(quant, decls));
+					skolemDepth = oldDepth;
+				}				
 			}			
-			
 			repEnv = oldRepEnv;
-			return cache(quantFormula,ret);
+			return cache(qf,ret);
+		}
+		
+		/** 
+		 * Calls not.formula.accept(this) after flipping the negation flag and returns the result. 
+		 * @see kodkod.ast.visitor.DepthFirstReplacer#visit(kodkod.ast.NotFormula)
+		 **/
+		public Formula visit(NotFormula not) {
+			Formula ret = lookup(not);
+			if (ret!=null) return ret;
+			negated = !negated; // flip the negation flag
+			final Formula retChild = not.formula().accept(this);
+			negated = !negated;
+			return retChild==not.formula() ? cache(not,not) : cache(not, retChild.not());			
+		}
+		
+		/**
+		 * If not cached, visits the formula's children with appropriate settings
+		 * for the negated flag and the skolemDepth parameter.
+		 * @see kodkod.ast.visitor.DepthFirstReplacer#visit(kodkod.ast.BinaryFormula)
+		 */
+		public Formula visit(BinaryFormula bf) {
+			Formula ret = lookup(bf);
+			if (ret!=null) return ret;			
+			final BinaryFormula.Operator op = bf.op();
+			final int oldDepth = skolemDepth;
+			if (op==IFF || (negated && op==AND) || (!negated && (op==OR || op==IMPLIES))) { // cannot skolemize in these cases
+				skolemDepth = -1;
+			}
+			final Formula left, right;
+			if (negated && op==IMPLIES) { // !(a => b) = !(!a || b) = a && !b
+				negated = !negated;
+				left = bf.left().accept(this);
+				negated = !negated;
+				right = bf.right().accept(this);
+			} else {
+				left = bf.left().accept(this);
+				right = bf.right().accept(this);
+			}
+			skolemDepth = oldDepth;
+			ret = (left==bf.left()&&right==bf.right()) ? bf : left.compose(op, right);
+			return cache(bf,ret);
+		}
+		
+
+		/** 
+		 * Calls super.visit(icf) after disabling skolemization and returns the result. 
+		 * @return super.visit(icf) 
+		 **/
+		public Formula visit(IntComparisonFormula icf) {
+			final int oldDepth = skolemDepth;
+			skolemDepth = -1; // cannot skolemize inside an int comparison formula
+			final Formula ret = super.visit(icf);
+			skolemDepth = oldDepth;
+			return ret;
+		}
+		
+		/** 
+		 * Calls super.visit(cf) after disabling skolemization and returns the result. 
+		 * @return super.visit(cf) 
+		 **/
+		public Formula visit(ComparisonFormula cf) {
+			final int oldDepth = skolemDepth;
+			skolemDepth = -1; // cannot skolemize inside a comparison formula
+			final Formula ret = super.visit(cf);
+			skolemDepth = oldDepth;
+			return ret;
+		}
+		
+		/** 
+		 * Calls super.visit(mf) after disabling skolemization and returns the result. 
+		 * @return super.visit(mf) 
+		 **/
+		public Formula visit(MultiplicityFormula mf) {
+			final int oldDepth = skolemDepth;
+			skolemDepth = -1; // cannot skolemize inside a multiplicity formula
+			final Formula ret = super.visit(mf);
+			skolemDepth = oldDepth;
+			return ret;
+		}
+		
+		/** 
+		 * Calls super.visit(pred) after disabling skolemization and returns the result. 
+		 * @return super.visit(pred) 
+		 **/
+		public Formula visit(RelationPredicate pred) {
+			final int oldDepth = skolemDepth;
+			skolemDepth = -1; // cannot skolemize inside a relation predicate
+			final Formula ret = super.visit(pred);
+			skolemDepth = oldDepth;
+			return ret;
+		}
+	}
+	
+	/**
+	 * Contains info about an approximate bound for a 
+	 * non-skolemizable decl.
+	 * @specfield decl: Decl
+	 * @specfield upperBound: lone BooleanMatrix
+	 * @invariant decl.expression in upperBound
+	 * @author Emina Torlak
+	 */
+	private static final class DeclInfo {
+		final Decl decl;
+		BooleanMatrix upperBound;
+		/**
+		 * Constructs a DeclInfo for the given decl.
+		 * @effects this.decl' = decl && this.upperBound' = null
+		 */
+		DeclInfo(Decl decl) {
+			this.decl = decl;
+			this.upperBound =  null;
 		}
 	}
 	
@@ -353,31 +482,73 @@ final class Skolemizer {
 			Expression ret = lookup(binExpr);
 			if (ret!=null) return ret;
 			if (binExpr.op()==BinaryExpression.Operator.DIFFERENCE)
-				return cache(binExpr, binExpr.left().accept(this));
-			else
-				return super.visit(binExpr);
+				ret = binExpr.left().accept(this);
+			else {
+				final Expression left = binExpr.left().accept(this);
+				final Expression right = binExpr.right().accept(this);
+				ret = left==binExpr.left()&&right==binExpr.right() ? binExpr : 
+					left.compose(binExpr.op(), right);
+			}
+			return cache(binExpr, ret);
 		}	
 	}
 	
 	/**
-	 * Contains info about an approximate bound for a 
-	 * non-skolemizable decl.
-	 * @specfield decl: Decl
-	 * @specfield upperBound: lone BooleanMatrix
-	 * @invariant decl.expression in upperBound
-	 * @author Emina Torlak
+	 * Detects if a given node contains free variables.
 	 */
-	private static final class DeclInfo {
-		final Decl decl;
-		BooleanMatrix upperBound;
+	private static final class FreeVarDetector extends DepthFirstDetector {
+		/* Holds the variables that are currently in scope, with the
+		 * variable at the top of the stack being the last declared variable. */
+		private final Stack<Variable> varsInScope;
 		
+		protected FreeVarDetector(Set<Node> cached) {
+			super(cached);
+			this.varsInScope = new ArrayStack<Variable>();
+		}	
 		/**
-		 * Constructs a DeclInfo for the given decl.
-		 * @effects this.decl' = decl && this.upperBound' = null
+		 * Visits the given comprehension, quantified formula, or sum expression.  
+		 * The method returns TRUE if the creator body contains any 
+		 * variable not bound by the decls; otherwise returns FALSE.  
 		 */
-		DeclInfo(Decl decl) {
-			this.decl = decl;
-			this.upperBound =  null;
+		@SuppressWarnings("unchecked")
+		private Boolean visit(Node creator, Decls decls, Node body) {
+			Boolean ret = lookup(creator);
+			if (ret!=null) return ret;
+			boolean retVal = false;
+			for(Decl decl : decls) {
+				retVal = decl.expression().accept(this) || retVal;
+				varsInScope.push(decl.variable());
+			}
+			retVal = ((Boolean)body.accept(this)) || retVal;
+			for(int i = decls.size(); i > 0; i--) {
+				varsInScope.pop();
+			}
+			return cache(creator, retVal);
+		}
+		/**
+		 * Returns TRUE if the given variable is free in its parent, otherwise returns FALSE.
+		 * @return TRUE if the given variable is free in its parent, otherwise returns FALSE.
+		 */
+		public Boolean visit(Variable variable) {
+			return Boolean.valueOf(varsInScope.search(variable)<0);
+		}	
+		
+		public Boolean visit(Decl decl) {
+			Boolean ret = lookup(decl);
+			if (ret!=null) return ret;
+			return cache(decl, decl.expression().accept(this));
+		}	
+		
+		public Boolean visit(Comprehension comprehension) {
+			return visit(comprehension, comprehension.declarations(), comprehension.formula());
+		}		
+		
+		public Boolean visit(SumExpression intExpr) {
+			return visit(intExpr, intExpr.declarations(), intExpr.intExpr());
+		}
+		
+		public Boolean visit(QuantifiedFormula qformula) {
+			return visit(qformula, qformula.declarations(), qformula.formula());
 		}
 	}
 }

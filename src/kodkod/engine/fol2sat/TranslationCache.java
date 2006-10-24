@@ -3,47 +3,28 @@ package kodkod.engine.fol2sat;
 import static kodkod.engine.bool.BooleanConstant.TRUE;
 
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
-import kodkod.ast.BinaryExpression;
-import kodkod.ast.BinaryFormula;
-import kodkod.ast.BinaryIntExpression;
-import kodkod.ast.ComparisonFormula;
 import kodkod.ast.Comprehension;
-import kodkod.ast.ConstantExpression;
-import kodkod.ast.ConstantFormula;
 import kodkod.ast.Decl;
 import kodkod.ast.Decls;
-import kodkod.ast.ExprToIntCast;
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
-import kodkod.ast.IfExpression;
-import kodkod.ast.IfIntExpression;
-import kodkod.ast.IntComparisonFormula;
-import kodkod.ast.IntConstant;
-import kodkod.ast.IntExpression;
-import kodkod.ast.IntToExprCast;
-import kodkod.ast.MultiplicityFormula;
 import kodkod.ast.Node;
-import kodkod.ast.NotFormula;
-import kodkod.ast.ProjectExpression;
 import kodkod.ast.QuantifiedFormula;
-import kodkod.ast.Relation;
-import kodkod.ast.RelationPredicate;
 import kodkod.ast.SumExpression;
-import kodkod.ast.UnaryExpression;
 import kodkod.ast.Variable;
-import kodkod.ast.visitor.ReturnVisitor;
+import kodkod.ast.visitor.DepthFirstCollector;
 import kodkod.engine.bool.BooleanConstant;
 import kodkod.engine.bool.BooleanFormula;
 import kodkod.engine.bool.BooleanMatrix;
 import kodkod.engine.bool.BooleanValue;
 import kodkod.util.collections.ArrayStack;
 import kodkod.util.collections.IdentityHashSet;
+import kodkod.util.collections.Stack;
 import kodkod.util.ints.IndexedEntry;
 import kodkod.util.ints.IntSet;
 import kodkod.util.ints.Ints;
@@ -76,7 +57,7 @@ abstract class TranslationCache {
 	 */
 	@SuppressWarnings("unchecked") 
 	private TranslationCache(AnnotatedNode<? extends Node> annotated) {
-		final Collector collector = new Collector(annotated.sharedNodes());
+		final VarCollector collector = new VarCollector(annotated.sharedNodes());
 		annotated.node().accept(collector);
 //		System.out.println(collector.cachingInfo());
 		for(Map.Entry<Node, Object> e :  ((Map<Node, Object>)((Map)collector.cachingInfo())).entrySet()) {
@@ -411,34 +392,28 @@ abstract class TranslationCache {
 		
 	}	
 	
-	
 	/**
-	 * The helper visitor that examines the free variables of semantically shared nodes
+	 * Examines the free variables of semantically shared nodes
 	 * to determine which ones should be cached.  A node is considered 'semantically shared'
 	 * if it is syntactically shared or if it is a descendent of a quantifed formula
 	 * or comprehension. 
-	 * @specfield: node: Node // node for which we are collecting caching information
-	 * @specfield freeVarMap: Node -> lone Set<Variable>
+	 * @specfield: cached: set Node 
+	 * @specfield cach: Node -> lone Set<Variable>
 	 */
-	private static final class Collector implements ReturnVisitor<Set<Variable>,Set<Variable>,Set<Variable>,Set<Variable>> {
+	private static final class VarCollector extends DepthFirstCollector<Variable> {
 		/* Holds the variables that are currently in scope, with the
 		 * variable at the top of the stack being the last declared variable. */
-		private final ArrayStack<Variable> varsInScope;
-		private final Set<Node> sharedNodes;
+		private final Stack<Variable> varsInScope;
 		
-		private final Map<Node, Set<Variable>> freeVarMap;
-				
 		/**
 		 * Constructs a new collector using the given structural information.
 		 * The given set is required to contain the syntactically shared subtrees of the
 		 * node for which we are computing caching information.
 		 */
-		Collector(Set<Node> sharedNodes) {
-			this.freeVarMap = new IdentityHashMap<Node,Set<Variable>>(sharedNodes.size());
-			this.sharedNodes = sharedNodes;
+		protected VarCollector(Set<Node> cached) {
+			super(cached);
 			this.varsInScope = new ArrayStack<Variable>();
 		}
-		
 		/**
 		 * Returns the caching information collected by this collector.
 		 * This method should be called *after* this collector has been
@@ -447,18 +422,12 @@ abstract class TranslationCache {
 		 * their free variables.
 		 */
 		final Map<Node, Set<Variable>> cachingInfo() {
-			return freeVarMap;
+			return cache;
 		}
-		
-		/**
-		 * If the given node has already been visited and
-		 * it is a node for which we are collecting free 
-		 * variables, the previously computed set is returned.
-		 * Otherwise, null is returned.
-		 * @return freeVarMap[node]
-		 */
-		private final Set<Variable> lookup(Node node) {
-			return freeVarMap.get(node);
+
+		@Override
+		protected Set<Variable> newSet() {
+			return new IdentityHashSet<Variable>(4);
 		}
 		
 		/**
@@ -471,18 +440,19 @@ abstract class TranslationCache {
 		 * @effects node in sharedNodes || 
 		 *          ((node.^(~children) in (QuantifiedFormula + Comprehension)) &&
 		 *           (some varsInScope.top() => !freeVars.contains(varsInScope.top()))) => 
-		 *            freeVarMap' = freeVarMap ++ node->varsInScope,
-		 *            freeVarMap' = freeVarMap
+		 *            this.cache' = this.cache ++ node->varsInScope,
+		 *            this.cache' = this.cache
 		 * @return freeVars
 		 */
-		private final Set<Variable> cache(Node node, Set<Variable> freeVars) {
-			if (sharedNodes.contains(node) || 
+		@Override
+		protected final Set<Variable> cache(Node node, Set<Variable> freeVars) {
+			if (cached.contains(node) || 
 				!varsInScope.empty() && !freeVars.contains(varsInScope.peek())) {
 //				System.out.println("caching " + node + " for " + freeVars);
 //				System.out.println("varsInScope: " + varsInScope + " peek: " + (varsInScope.empty() ? "" : varsInScope.peek()));
 				final int numVars = freeVars.size();
 				if (numVars < 2)
-					freeVarMap.put(node, freeVars);
+					cache.put(node, freeVars);
 				else {
 					final Set<Variable> orderedVars = new LinkedHashSet<Variable>((numVars * 4) / 3 + 1);
 					for(Variable var : varsInScope) {
@@ -492,93 +462,10 @@ abstract class TranslationCache {
 								break;
 						}
 					}
-					freeVarMap.put(node,orderedVars);
+					cache.put(node,orderedVars);
 				}
 			}
 			return freeVars;
-		}
-		
-		/**
-		 * Returns an empty set that can grow up to 
-		 * the given size.  The returned set may or 
-		 * may not throw an UnsupportedOperationException
-		 * if required to accomodate more than the specified
-		 * number of elements.
-		 */
-		@SuppressWarnings("unchecked")
-		private final Set<Variable> setOfSize(int size) {
-			return size == 0 ? Collections.EMPTY_SET : 
-				   new HashSet<Variable>((size * 4) / 3 + 1);
-		}
-		
-		/**
-		 * Never gets called.  
-		 * @throws InternalError
-		 */
-		@SuppressWarnings("unchecked")
-		public Set<Variable> visit(Decls decls) {
-			throw new InternalError("Fatal error:  please contact emina@mit.edu");
-		}
-
-		/**
-		 * Returns the free variables in the given declaration.
-		 * @return freeVars(decl.expression)
-		 */
-		public Set<Variable> visit(Decl decl) {
-			final Set<Variable> vars = lookup(decl);
-			return vars != null ? vars : 
-				   cache(decl, decl.expression().accept(this));
-		}
-
-		/**
-		 * Returns the empty set.
-		 * @return {}
-		 */
-		@SuppressWarnings("unchecked")
-		public Set<Variable> visit(Relation relation) {
-			return Collections.EMPTY_SET;
-		}
-
-		/**
-		 * Returns the singleton set containing the given variable.
-		 * @return {variable}
-		 */
-		public Set<Variable> visit(Variable variable) {
-			return Collections.singleton(variable);
-		}
-
-		/**
-		 * Returns the empty set.
-		 * @return {}
-		 */
-		public Set<Variable> visit(ConstantExpression constExpr) {
-			return Collections.emptySet();
-		}
-		
-		/**
-		 * Returns the free variables in the given binary expression.
-		 * @return freeVars(binExpr.left) + freeVars(bin.right)
-		 */
-		public Set<Variable> visit(BinaryExpression binExpr) {
-			Set<Variable> vars = lookup(binExpr);
-			if (vars != null) return vars;
-			
-			final Set<Variable> left = binExpr.left().accept(this);
-			final Set<Variable> right = binExpr.right().accept(this);
-			vars = setOfSize(left.size() + right.size());
-			vars.addAll(left);
-			vars.addAll(right);
-			return cache(binExpr, vars);
-		}
-
-		/**
-		 * Returns the free variables in the given unary expression.
-		 * @return freeVars(unaryExpr.expression)
-		 */
-		public Set<Variable> visit(UnaryExpression unaryExpr) {
-			final Set<Variable> vars = lookup(unaryExpr);
-			return vars != null ? vars : 
-				   cache(unaryExpr, unaryExpr.expression().accept(this));
 		}
 		
 		/**
@@ -589,248 +476,68 @@ abstract class TranslationCache {
 		 */
 		@SuppressWarnings("unchecked")
 		private Set<Variable> visit(Node creator, Decls decls, Node body) {
-			Set<Variable> vars = lookup(creator);
-			if (vars!=null) return vars;
-		
-			final Set<Variable> declVars = setOfSize(decls.size());
+			Set<Variable> ret = lookup(creator);
+			if (ret!=null) return ret;
+			ret = newSet();
 			
-			// add the declared variables to the scoped variables stack 
-			varsInScope.ensureCapacity(varsInScope.size() + decls.size());
+			// add the declared variables to the scoped variables stack and to ret
 			for(Decl decl : decls) {
-				declVars.addAll(visit(decl));
+				ret.addAll(visit(decl));
 				varsInScope.push(decl.variable());
 			}
 			
-			// collect the free variables in the formula
-			final Set<Variable> bodyVars = (Set<Variable>) body.accept(this);
-			
-			// add the free variables in the decls and the formula to the creator's free vars set
-			vars = setOfSize(declVars.size() + bodyVars.size());
-			vars.addAll(declVars);
-			vars.addAll(bodyVars);
+			// add the free variables in the body to ret
+			ret.addAll((Set<Variable>) body.accept(this));
 			
 			// remove the variables that are actually declared by this creator
 			// from the creator's free variable set, as well as from the in-scope stack
 			for(int i = decls.size(); i > 0; i--) {
-				vars.remove(varsInScope.pop());
+				ret.remove(varsInScope.pop());
 			}
 			
-			return cache(creator, vars.isEmpty() ? Collections.EMPTY_SET : vars);
+			return cache(creator, ret);
 		}
 		
 		/**
-		 * Returns the free variables in the given comprehension.
-		 * @return freeVars(comprehension.declarations) + 
-		 *          freeVars(comprehension.body) - comprehension.declarations.declarations[int].Expression 
+		 * Returns the free variables in the given declaration.
+		 * @return freeVars(decl.expression)
 		 */
+		public Set<Variable> visit(Decl decl) {
+			final Set<Variable> ret = lookup(decl);
+			return ret != null ? ret : cache(decl, decl.expression().accept(this));
+		}
+		
+		/**
+		 * Returns the singleton set containing the given variable.
+		 * @return {variable}
+		 */
+		@Override
+		public Set<Variable> visit(Variable variable) {
+			return Collections.singleton(variable);
+		}
+		
+		/**
+		 * @see kodkod.ast.visitor.DepthFirstCollector#visit(kodkod.ast.Comprehension)
+		 */
+		@Override
 		public Set<Variable> visit(Comprehension comprehension) {
 			return visit(comprehension, comprehension.declarations(), comprehension.formula());
 		}
-
-		/**
-		 * Returns the free variables in the given if expression.
-		 * @return freeVars(ifExpr.condition) + freeVars(ifExpr.thenExpr) + freeVars(ifExpr.elseExpr)
-		 */
-		public Set<Variable> visit(IfExpression ifExpr) {
-			Set<Variable> vars = lookup(ifExpr);
-			if (vars != null) return vars;
-			
-			final Set<Variable> condition = ifExpr.condition().accept(this);
-			final Set<Variable> thenExpr = ifExpr.thenExpr().accept(this);
-			final Set<Variable> elseExpr = ifExpr.elseExpr().accept(this);
-			vars = setOfSize(condition.size() + thenExpr.size() + elseExpr.size());
-			vars.addAll(condition);
-			vars.addAll(thenExpr);
-			vars.addAll(elseExpr);
-			return cache(ifExpr, vars);
-		}
 		
 		/**
-		 * Returns the free variables in the given projection expression.
-		 * @return freeVars(project.expression) + freeVars(project.columns[int])
+		 * @see kodkod.ast.visitor.DepthFirstCollector#visit(kodkod.ast.SumExpression)
 		 */
-		public Set<Variable> visit(ProjectExpression project) {
-			Set<Variable> vars = lookup(project);
-			if (vars != null) return vars;
-			
-			vars = setOfSize(4);
-			vars.addAll(project.expression().accept(this));
-			for(IntExpression col: project.columns()) {
-				vars.addAll(col.accept(this));
-			}
-
-			return cache(project, vars);
-		}
-		
-		/**
-		 * Returns the free variables in the given quantified formula.
-		 * @return freeVars(quantFormula.declarations) + 
-		 *          freeVars(quantFormula.body) - quantFormula.declarations.declarations[int].Expression 
-		 */
-		public Set<Variable> visit(QuantifiedFormula quantFormula) {
-			return visit(quantFormula, quantFormula.declarations(), quantFormula.formula());
-		}
-
-		/**
-		 * Returns the free variables in the given binary formula.
-		 * @return freeVars(binFormula.left) + freeVars(binFormula.right) 
-		 */
-		public Set<Variable> visit(BinaryFormula binFormula) {
-			Set<Variable> vars = lookup(binFormula);
-			if (vars != null) return vars;
-			
-			final Set<Variable> left = binFormula.left().accept(this);
-			final Set<Variable> right = binFormula.right().accept(this);
-			vars = setOfSize(left.size() + right.size());
-			vars.addAll(left);
-			vars.addAll(right);
-			return cache(binFormula, vars);
-		}
-
-		/**
-		 * Returns the free variables in the given negation formula.
-		 * @return freeVars(not.formula)
-		 */
-		public Set<Variable> visit(NotFormula not) {
-			final Set<Variable> vars = lookup(not);
-			return vars != null ? vars :  
-				   cache(not, not.formula().accept(this));
-		}
-
-		/**
-		 * Returns the empty set.
-		 * @return {}
-		 */
-		public Set<Variable> visit(ConstantFormula constant) {
-			return Collections.emptySet();
-		}
-
-		/**
-		 * Returns the free variables in the given comparison formula.
-		 * @return freeVars(compFormula.left) + freeVars(compFormula.right) 
-		 */
-		public Set<Variable> visit(ComparisonFormula compFormula) {
-			Set<Variable> vars = lookup(compFormula);
-			if (vars != null) return vars;
-			
-			final Set<Variable> left = compFormula.left().accept(this);
-			final Set<Variable> right = compFormula.right().accept(this);
-			vars = setOfSize(left.size() + right.size());
-			vars.addAll(left);
-			vars.addAll(right);
-			return cache(compFormula, vars);
-		}
-
-		/**
-		 * Returns the free variables in the given multiplicity formula.
-		 * @return freeVars(multFormula.expression)
-		 */
-		public Set<Variable> visit(MultiplicityFormula multFormula) {
-			final Set<Variable> vars = lookup(multFormula);
-			return vars != null ? vars : 
-				   cache(multFormula, multFormula.expression().accept(this));
-		}
-		
-		/**
-		 * Returns the free variables in the given predicate.
-		 * @return pred.name = FUNCTION => freeVars(domain) + freeVars(range), {}
-		 */
-		public Set<Variable> visit(RelationPredicate pred) {
-			if (pred.name() != RelationPredicate.Name.FUNCTION) 
-				return Collections.emptySet();
-			Set<Variable> vars = lookup(pred);
-			if (vars != null) return vars;
-			
-			final RelationPredicate.Function fp = (RelationPredicate.Function) pred;
-			final Set<Variable> domain = fp.domain().accept(this);
-			final Set<Variable> range = fp.range().accept(this);
-			vars = setOfSize(domain.size() + range.size());
-			vars.addAll(domain);
-			vars.addAll(range);
-			return cache(pred, vars);
-		}
-
-		/**
-		 * Returns the empty set.
-		 * @return {}
-		 */
-		public Set<Variable> visit(IntConstant intConst) {
-			return Collections.emptySet();
-		}
-		
-		/**
-		 * Returns the free variables in the given if-int-expression.
-		 * @return freeVars(ifExpr.condition) + freeVars(ifExpr.thenExpr) + freeVars(ifExpr.elseExpr)
-		 */
-		public Set<Variable> visit(IfIntExpression ifExpr) {
-			Set<Variable> vars = lookup(ifExpr);
-			if (vars != null) return vars;
-			
-			final Set<Variable> condition = ifExpr.condition().accept(this);
-			final Set<Variable> thenExpr = ifExpr.thenExpr().accept(this);
-			final Set<Variable> elseExpr = ifExpr.elseExpr().accept(this);
-			vars = setOfSize(condition.size() + thenExpr.size() + elseExpr.size());
-			vars.addAll(condition);
-			vars.addAll(thenExpr);
-			vars.addAll(elseExpr);
-			return cache(ifExpr, vars);
-		}
-
-		/**
-		 * Returns the free variables in intExpr.expression.
-		 * @return freeVars(intExpr.expression)
-		 */
-		public Set<Variable> visit(ExprToIntCast intExpr) {
-			Set<Variable> ret = lookup(intExpr);
-			return ret != null ? ret : cache(intExpr, intExpr.expression().accept(this));
-		}
-
-		/**
-		 * Returns the free variables of intComp, if any.
-		 * @return freeVars(intComp.left) + freeVars(intComp.right)
-		 */
-		public Set<Variable> visit(IntComparisonFormula intComp) {
-			Set<Variable> vars = lookup(intComp);
-			if (vars != null) return vars;
-			final Set<Variable> left = intComp.left().accept(this);
-			final Set<Variable> right = intComp.right().accept(this);
-			vars = setOfSize(left.size() + right.size());
-			vars.addAll(left);
-			vars.addAll(right);
-			return cache(intComp, vars);
-		}
-
-		/**
-		 * Returns the free variables of intExpr, if any.
-		 * @return freeVars(intExpr.left) + freeVars(intExpr.right)
-		 */
-		public Set<Variable> visit(BinaryIntExpression intExpr) {
-			Set<Variable> vars = lookup(intExpr);
-			if (vars != null) return vars;
-			final Set<Variable> left = intExpr.left().accept(this);
-			final Set<Variable> right = intExpr.right().accept(this);
-			vars = setOfSize(left.size() + right.size());
-			vars.addAll(left);
-			vars.addAll(right);
-			return cache(intExpr, vars);
-		}
-		
-		/** 
-		 * Returns the free variables of intExpr, if any.
-		 * @return freeVars(intExpr.declarations) + 
-		 *          freeVars(intExpr.intExpr) - intExpr.declarations.declarations[int].Expression 
-		 */
+		@Override
 		public Set<Variable> visit(SumExpression intExpr) {
 			return visit(intExpr, intExpr.declarations(), intExpr.intExpr());
 		}
-
+		
 		/**
-		 * Returns the free variables of castExpr, if any.
-		 * @return freeVars(castExpr.intExpr)
+		 * @see kodkod.ast.visitor.DepthFirstCollector#visit(kodkod.ast.QuantifiedFormula)
 		 */
-		public Set<Variable> visit(IntToExprCast castExpr) {
-			Set<Variable> vars = lookup(castExpr);
-			return  (vars != null) ? vars : cache(castExpr, castExpr.intExpr().accept(this));
+		@Override
+		public Set<Variable> visit(QuantifiedFormula quantFormula) {
+			return visit(quantFormula, quantFormula.declarations(), quantFormula.formula());
 		}
 	}
 }

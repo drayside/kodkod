@@ -63,19 +63,10 @@ public class SkolemizationTest extends TestCase {
 		Instance inst = solve(f.not());
 		assertEquals(bounds.relations(), inst.relations());
 		
-		inst = solve(f.and(f.thenElse(r1a, r1b).some()));
-		assertEquals(bounds.relations(), inst.relations());
-		
-		inst = solve(f.and(f.comprehension(d).some()));
-		assertEquals(bounds.relations(), inst.relations());
-		
-		inst = solve(f.and(f.comprehension(d).in(r1a)));
-		assertEquals(bounds.relations(), inst.relations());
-		
 		inst = solve(f.or(r2a.in(r2b)));
 		assertEquals(bounds.relations(), inst.relations());
 		
-		inst = solve(f.implies(r2a.in(r2b)));
+		inst = solve(f.iff(r2a.in(r2b)));
 		assertEquals(bounds.relations(), inst.relations());
 		
 		inst = solve(r2a.in(r2b).implies(f));
@@ -90,13 +81,6 @@ public class SkolemizationTest extends TestCase {
 		testNoSkolems(d, v.join(r2a).some().forAll(d).not());
 		testNoSkolems(d, v.join(r2a).some().forSome(d));
 		
-		final Formula f = v.join(r2a).some().forSome(d);
-		final Variable v1 = Variable.unary("v1");
-		final Decl d1 = v1.oneOf(f.thenElse(r1a, r1b));
-		final Formula f1 = v1.join(r2a).some().forAll(d1);
-
-		Instance inst = solve(f1.and(f));
-		assertEquals(bounds.relations(), inst.relations());
 	}
 	
 	public final void testNoSkolems() {
@@ -118,7 +102,7 @@ public class SkolemizationTest extends TestCase {
 	private final void assertSkolems(Bounds bounds, Instance inst, Set<String> skolems) {
 		assertEquals(skolems.size(), inst.relations().size() - bounds.relations().size());
 		for(Relation r: inst.relations()) {
-			assertFalse(skolems.contains(r.name()) && bounds.relations().contains(r));
+			assertTrue(skolems.contains(r.name()) || bounds.relations().contains(r));
 		}
 	}
 	
@@ -130,7 +114,7 @@ public class SkolemizationTest extends TestCase {
 		Decl da = va.declare(mult, r1a);
 		Decl db = vb.declare(mult, r1b);
 		
-		skolems.add(va.name());
+		skolems.add("$"+va.name());
 		
 		Instance inst = solve(va.in(r1b.join(r2b)).forAll(da).not());
 		assertSkolems(bounds, inst, skolems);
@@ -146,7 +130,7 @@ public class SkolemizationTest extends TestCase {
 		assertSkolems(bounds, inst, skolems);
 		
 		
-		skolems.add(vb.name());
+		skolems.add("$"+vb.name());
 		
 		inst = solve(va.in(vb.join(r2b)).forSome(da.and(vb.oneOf(va.join(r2a)))));
 		assertSkolems(bounds, inst, skolems);
@@ -185,12 +169,12 @@ public class SkolemizationTest extends TestCase {
 		Decl dd = vd.declare(mult, r1b);
 		Decl dd1 = vd.oneOf(r1b);
 		
-		skolems.add(vb.name());
+		skolems.add("$"+vb.name());
 		
 		Instance inst = solve(va.in(vb.join(r2b)).forSome(db).forAll(da1));
 		assertSkolems(bounds, inst, skolems);
 		
-		skolems.add(vc.name());
+		skolems.add("$"+vc.name());
 		inst = solve(va.in(vb.join(r2b).union(vd.join(r2b)).union(vc)).
 				forSome(db).forAll(da1).forSome(dc).forAll(dd1));
 		assertSkolems(bounds, inst, skolems);
@@ -199,7 +183,7 @@ public class SkolemizationTest extends TestCase {
 				forSome(db).forSome(dc).forAll(da1.and(dd1)));
 		assertSkolems(bounds, inst, skolems);
 		
-		skolems.add(vd.name());
+		skolems.add("$"+vd.name());
 		inst = solve(va.in(vb.join(r2b).union(vd.join(r2b)).union(vc)).
 				forSome(db).forAll(da1).forSome(dc).not().forAll(dd).not());
 		
@@ -207,13 +191,16 @@ public class SkolemizationTest extends TestCase {
 		
 		inst = solve(va.in(vb.join(r2b).union(vd.join(r2b)).union(vc)).
 				forAll(dc).forAll(db).forSome(da1).not().forAll(dd1));
-		skolems.remove(vd.name());
+		skolems.remove("$"+vd.name());
 		assertSkolems(bounds, inst, skolems);
 		
 		inst = solve(va.in(vb.join(r2b).union(vd.join(r2b)).union(vc)).
 				forSome(db).forAll(dc1).forAll(da1).forAll(dd1));
-		skolems.remove(vc.name());
+		skolems.remove("$"+vc.name());
 		assertSkolems(bounds, inst, skolems);
+	
+		
+
 	}
 	
 	public final void testDeepSkolems() {
@@ -222,6 +209,15 @@ public class SkolemizationTest extends TestCase {
 		testDeepSkolems(Multiplicity.LONE);
 		testDeepSkolems(Multiplicity.SOME);
 		testDeepSkolems(Multiplicity.SET);
+		final Variable va = Variable.unary("va");
+		final Variable vb = Variable.unary("vb");
+		Decl da1 = va.oneOf(r1a);
+		Decl db = vb.oneOf(r1b);
+		final Formula f0 = va.in(vb.join(r2b));
+		final Formula f1 = f0.forAll(db).not().forAll(da1);
+		final Formula f2 = f0.forSome(db).forSome(da1);
+		Instance inst = solve(f1.and(f2));
+		assertEquals(bounds.relations().size()+3, inst.relations().size());
 	}
 	
 }

@@ -15,39 +15,39 @@ import kodkod.ast.Variable;
  * a parent environment to which lookups that are unsuccessful in
  * the child's environment are delegated.
  * 
- * @specfield var: lone Variable
- * @specfield val: lone T
+ * @specfield variable: lone Variable
+ * @specfield value: lone T
  * @specfield parent: lone Environment
  *
  * @author Emina Torlak 
  */
+@SuppressWarnings("unchecked")
 final class Environment<T> {
-	private final Variable var;
-	private T val;
+	private final Variable variable;
+	private final T value;
 	private final Environment<T> parent;
 	
+	private static final Environment EMPTY = new Environment(null,null,null);
 	
 	/**  
 	 * Constructs a new environment with the specified parent
 	 * and mapping.
 	 * 
-	 * @effects this.parent' = parent && this.var' = var && this.val' = val
+	 * @effects this.parent' = parent && this.variable' = variable && this.value' = value
 	 */
-	private Environment(Environment<T> parent, Variable var, T val) {
-		this.var = var;
-		this.val = val;
+	private Environment(Environment<T> parent, Variable variable, T value) {
+		this.variable = variable;
+		this.value = value;
 		this.parent = parent;
 	}
 	
-	/**  
-	 * Constructs a new empty environment with no parent.
-	 * 
-	 * @effects no this.parent' && no this.var' && no this.val'
+	/**
+	 * Returns the empty environment.
+	 * @return the empty environment.
 	 */
-	public Environment() {
-		this(null, null, null);
+	public static <T> Environment<T> empty() {
+		return (Environment<T>) EMPTY;
 	}
-	
 	
 	/**
 	 * Returns the parent environment of this, or null if this
@@ -60,38 +60,30 @@ final class Environment<T> {
 	/**
 	 * Returns a new environment that extends this environment with the specified
 	 * mapping.
-	 * @return e : Environment | e.parent = this && e.var = variable && e.val = value
+	 * @requires variable != null
+	 * @return e : Environment | e.parent = this && e.variable = variable && e.value = value
 	 */
 	public Environment<T> extend(Variable variable, T value) {
+		assert variable !=  null;
 		return new Environment<T>(this, variable, value);
 	}
 	
 	/**
-	 * Returns this.var.
-	 * @return this.var
+	 * Returns this.variable.
+	 * @return this.variable
 	 */
-	public Variable var() {
-		return this.var;
+	public Variable variable() {
+		return this.variable;
 	}
 	
 	/**
-	 * Returns this.val.
-	 * @return this.val
+	 * Returns this.value.
+	 * @return this.value
 	 */
-	public T val() {
-		return this.val;
+	public T value() {
+		return this.value;
 	}
-	
-	/**
-	 * Binds this.var to the specified value,
-	 * erasing any prior mappings for the variable in this environment.
-	 * 
-	 * @effects this.val' = value
-	 */
-	public void setVal(T value) {
-		this.val = value;
-	}
-	
+		
 	/**
 	 * Looks up the given variable in this environment and its
 	 * ancestors.  If the variable is not bound in this
@@ -99,22 +91,22 @@ final class Environment<T> {
 	 * If the variable is bound in multiple environments,
 	 * the first found binding is returned.  Note that null
 	 * will also be returned if the variable is bound to null.
-	 * @return variable = this.var => this.val, this.parent.lookup(variable)
+	 * @return variable = this.variable => this.value, this.parent.lookup(variable)
 	 */
 	public T lookup(Variable variable) {
 		Environment<T> p = this;
 		// ok to use == for testing variable equality: 
 		// see kodkod.ast.LeafExpression#equals
-		while(p!=null && p.var!=variable) {
+		while(p!=EMPTY && p.variable!=variable) {
 			p = p.parent;
 		}
-		return p==null ? null : p.val;
+		return p.value;
 	}
 	
 	
 	
 	public String toString() {
-		return (parent == null ? "" : parent.toString()) + "["+var+"="+val+"]";
+		return (parent == EMPTY ? "" : parent.toString()) + "["+variable+"="+value+"]";
 	}
 	
 	

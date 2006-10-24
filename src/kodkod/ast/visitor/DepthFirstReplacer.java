@@ -38,9 +38,6 @@ import kodkod.ast.SumExpression;
 import kodkod.ast.UnaryExpression;
 import kodkod.ast.Variable;
 
-
-
-
 /** 
  * A depth first replacer.  The default implementation
  * returns the tree to which it is applied.  Reference 
@@ -67,15 +64,16 @@ public abstract class DepthFirstReplacer implements ReturnVisitor<Expression, Fo
 	}
 	
 	/**
-	 * Constructs a depth-first replaces which will cache
-	 * the results of visiting the given nodes in the given map,
+	 * Constructs a depth-first replacer which will cache
+	 * the results of visiting the given nodes in the given map, 
 	 * and re-use them on subsequent visits.
-	 * @effects this.cached' = cached &&  this.cache' = cache
+	 * @effects this.cached' = cached && this.cache' = cache
 	 */
-	protected DepthFirstReplacer(Set<Node> cached, Map<Node, Node> cache) {
+	protected DepthFirstReplacer(Set<Node> cached, Map<Node,Node> cache) { 
 		this.cached = cached;
 		this.cache = cache;
 	}
+
 	
 	/**
 	 * If the given node has already been visited and its replacement

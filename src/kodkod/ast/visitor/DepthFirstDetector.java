@@ -59,18 +59,19 @@ public abstract class DepthFirstDetector implements ReturnVisitor<Boolean, Boole
 		this.cached = cached;
 		this.cache = new IdentityHashMap<Node,Boolean>(cached.size());
 	}
-	
+				
 	/**
-	 * Constructs a depth-first replaces which will cache
-	 * the results of visiting the given nodes in the given map,
+	 * Constructs a depth-first detector which will cache
+	 * the results of visiting the given nodes in the given map, 
 	 * and re-use them on subsequent visits.
-	 * @effects this.cached' = cached &&  this.cache' = cache
+	 * @effects this.cached' = cached && this.cache' = cache
 	 */
-	protected DepthFirstDetector(Set<Node> cached, Map<Node, Boolean> cache) {
+	protected DepthFirstDetector(Set<Node> cached, Map<Node,Boolean> cache) { 
 		this.cached = cached;
 		this.cache = cache;
 	}
-			
+		
+	
 	/**
 	 * If n has been visited and a value for it cached,
 	 * the cached value is returned. Otherwise null is returned.
@@ -444,7 +445,7 @@ public abstract class DepthFirstDetector implements ReturnVisitor<Boolean, Boole
 	}
 	
 	/** 
-	 * Calls lookup(compFormula) and returns the cached value, if any.  
+	 * Calls lookup(predicate) and returns the cached value, if any.  
 	 * If no cached value exists, visits each child, caches the
 	 * disjunction of the children's return values and returns it. 
 	 * @return let x = lookup(predicate) | 

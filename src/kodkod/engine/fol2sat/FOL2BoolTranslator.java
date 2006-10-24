@@ -46,7 +46,6 @@ import kodkod.engine.bool.Operator;
 import kodkod.util.ints.IndexedEntry;
 import kodkod.util.ints.IntIterator;
 import kodkod.util.ints.IntSet;
-import kodkod.util.ints.Ints;
 
 /**
  * Translates a first order logic formula into a boolean circuit, 
@@ -177,7 +176,9 @@ final class FOL2BoolTranslator {
 		 * @effects this.node' = cache.node
 		 */   
 		Translator(TranslationCache cache,  LeafInterpreter interpreter) {
-			this(cache, interpreter, new Environment<BooleanMatrix>());
+			this.interpreter = interpreter;
+			this.env = Environment.empty();
+			this.cache = cache;
 		}
 		
 		/**
@@ -362,14 +363,13 @@ final class FOL2BoolTranslator {
 			final BooleanMatrix declTransl = visit(decl);
 			final List<Decl> others = decls.subList(1, decls.size());
 			final int position = (int)StrictMath.pow(interpreter.universe().size(), decls.size()-1);
-			env = env.extend(decl.variable(), null);
+			final BooleanMatrix groundValue = factory.matrix(declTransl.dimensions());
+			env = env.extend(decl.variable(), groundValue);
 			for(IndexedEntry<BooleanValue> entry : declTransl) {
-				
-				IntSet indices = Ints.singleton(entry.index());
-                	env.setVal(factory.matrix(declTransl.dimensions(), indices, indices));
-                	comprehension(others, formula, factory.and(entry.value(), declConstraints), 
-                			partialIndex + entry.index()*position, matrix);
-                	
+				groundValue.set(entry.index(), BooleanConstant.TRUE);
+			    comprehension(others, formula, factory.and(entry.value(), declConstraints), 
+			    		partialIndex + entry.index()*position, matrix);
+                groundValue.set(entry.index(), BooleanConstant.FALSE);	
 			}
 			env = env.parent();
 		}
@@ -451,14 +451,12 @@ final class FOL2BoolTranslator {
 			final Decl decl = decls.get(0);
 			final BooleanMatrix declTransl = visit(decl);
 			final List<Decl> others = decls.subList(1, decls.size());
-			
-			env = env.extend(decl.variable(), null);
+			final BooleanMatrix groundValue = factory.matrix(declTransl.dimensions());
+			env = env.extend(decl.variable(), groundValue);
 			for(IndexedEntry<BooleanValue> entry : declTransl) {
-				
-				IntSet indices = Ints.singleton(entry.index());
-                	env.setVal(factory.matrix(declTransl.dimensions(), indices, indices));
-                	all(others, formula, factory.or(factory.not(entry.value()), declConstraints), acc);
-                	
+				groundValue.set(entry.index(), BooleanConstant.TRUE);
+				all(others, formula, factory.or(factory.not(entry.value()), declConstraints), acc);
+				groundValue.set(entry.index(), BooleanConstant.FALSE);	
 			}
 			env = env.parent();
 			
@@ -489,14 +487,12 @@ final class FOL2BoolTranslator {
 			final Decl decl = decls.get(0);
 			final BooleanMatrix declTransl = visit(decl);
 			final List<Decl> others = decls.subList(1, decls.size());
-			
-			env = env.extend(decl.variable(), null);
+			final BooleanMatrix groundValue = factory.matrix(declTransl.dimensions());
+			env = env.extend(decl.variable(), groundValue);
 			for(IndexedEntry<BooleanValue> entry : declTransl) {
-				
-				IntSet indices = Ints.singleton(entry.index());
-                	env.setVal(factory.matrix(declTransl.dimensions(), indices, indices));
-                	some(others, formula, factory.and(entry.value(), declConstraints), acc);
-                	
+				groundValue.set(entry.index(), BooleanConstant.TRUE);
+			    some(others, formula, factory.and(entry.value(), declConstraints), acc);
+			    groundValue.set(entry.index(), BooleanConstant.FALSE);	
 			}
 			env = env.parent();
 			
@@ -756,15 +752,13 @@ final class FOL2BoolTranslator {
 			final Decl decl = decls.get(0);
 			final BooleanMatrix declTransl = visit(decl);
 			final List<Decl> others = decls.subList(1, decls.size());
-			
-			env = env.extend(decl.variable(), null);
+			final BooleanMatrix groundValue = factory.matrix(declTransl.dimensions());
+			env = env.extend(decl.variable(), groundValue);
 			Int partialSum = zero;
 			for(IndexedEntry<BooleanValue> entry : declTransl) {
-				
-				IntSet indices = Ints.singleton(entry.index());
-                	env.setVal(factory.matrix(declTransl.dimensions(), indices, indices));
-                	partialSum = partialSum.plus(sum(others, expr, factory.and(entry.value(), declConstraints)));
-                	
+				groundValue.set(entry.index(), BooleanConstant.TRUE);
+				partialSum = partialSum.plus(sum(others, expr, factory.and(entry.value(), declConstraints)));
+				groundValue.set(entry.index(), BooleanConstant.FALSE);	
 			}
 			env = env.parent();
 			return partialSum;
