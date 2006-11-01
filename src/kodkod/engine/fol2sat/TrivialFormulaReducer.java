@@ -1,6 +1,5 @@
 package kodkod.engine.fol2sat;
 
-import java.util.Map;
 import java.util.Set;
 
 import kodkod.ast.BinaryFormula;
@@ -26,43 +25,25 @@ final class TrivialFormulaReducer extends DepthFirstReplacer {
 	 * Constructs a reducer for the given annotated formula, using the provided
 	 * sets of formulas to guide the reduction.
 	 */
-	private TrivialFormulaReducer(AnnotatedNode<Formula> reducible,FOL2BoolTranslator acircuit) {
+	private TrivialFormulaReducer(AnnotatedNode<Formula> reducible, Set<Formula> trues, Set<Formula> falses) {
 		super(reducible.sharedNodes());
-		this.trues = acircuit.trueFormulas();
-		this.falses = acircuit.falseFormulas();
+		this.trues = trues;
+		this.falses = falses;
 	}
-	
+			
 	/**
-	 * Returns a conjunction of all predicates from formulaPreds that are 
-	 * reduced to a constant, and that are not present in reducedPreds.
-	 * @return a conjunction of all predicates from formulaPreds that are 
-	 * reduced to a constant, and that are not present in reducedPreds.
+	 * Reduces the node of the given annotated formula to the subformula that causes it to simplify to a constant.
+	 * @param broken predicates on which symmetries have been broken
+	 * @param trues nodes that evaluated to true during translation to bool
+	 * @param falses nodes that evaluated to false during translation to bool
+	 * @return the subformula of the given formula that causes it to simplify to a constant.
 	 */
-	private Formula predicates(Set<RelationPredicate> formulaPreds, Set<RelationPredicate> reducedPreds) {
-		Formula ret = Formula.TRUE;
-		for(RelationPredicate p: formulaPreds) {
-			if (!reducedPreds.contains(p) && isConstant(p))
-				ret = ret.and(p);
-		}
-	    return ret;
-	}
-		
-	/**
-	 * Reduces the node of the given annotated formula to the subformula that causes it to simplify
-	 * to a constant.
-	 * @requires preds = AnnotatedNode.predicates(reducible)
-	 * @requires acircuit.formula = reducible.node
-	 * @return the subformula of the given formula that causes it to simplify
-	 * to a constant.
-	 */
-	static Formula reduce(AnnotatedNode<Formula> reducible, Map<RelationPredicate.Name, Set<RelationPredicate>> preds, FOL2BoolTranslator fol2bool) {
-		final TrivialFormulaReducer r = new TrivialFormulaReducer(reducible, fol2bool);
+	static Formula reduce(AnnotatedNode<Formula> reducible, Set<RelationPredicate> broken, Set<Formula> trues, Set<Formula> falses) {
+		final TrivialFormulaReducer r = new TrivialFormulaReducer(reducible, trues, falses);
 		Formula reduced = reducible.node().accept(r);
-		final Map<RelationPredicate.Name, Set<RelationPredicate>> rpreds = 
-			AnnotatedNode.predicates(new AnnotatedNode<Formula>(reduced));
-		
-		for(Map.Entry<RelationPredicate.Name, Set<RelationPredicate>> e : preds.entrySet()) {
-			reduced = reduced.and(r.predicates(e.getValue(), rpreds.get(e.getKey())));
+	
+		for(RelationPredicate p : broken) {
+			reduced = reduced.and(p);
 		}
 		return reduced;
 	}

@@ -11,7 +11,6 @@ import java.util.Arrays;
 import java.util.Iterator;
 
 import junit.framework.TestCase;
-import kodkod.engine.Options;
 import kodkod.engine.bool.BooleanAccumulator;
 import kodkod.engine.bool.BooleanConstant;
 import kodkod.engine.bool.BooleanFactory;
@@ -20,6 +19,7 @@ import kodkod.engine.bool.BooleanValue;
 import kodkod.engine.bool.BooleanVariable;
 import kodkod.engine.bool.Dimensions;
 import kodkod.engine.bool.Operator;
+import kodkod.engine.settings.Options;
 import kodkod.util.ints.IndexedEntry;
 import kodkod.util.ints.IntRange;
 import kodkod.util.ints.Ints;

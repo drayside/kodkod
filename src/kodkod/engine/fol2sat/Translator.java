@@ -5,16 +5,12 @@
 package kodkod.engine.fol2sat;
 
 import java.util.Collections;
-import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Set;
 
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
 import kodkod.ast.Node;
-import kodkod.ast.Relation;
-import kodkod.ast.RelationPredicate;
-import kodkod.engine.Options;
 import kodkod.engine.bool.BooleanConstant;
 import kodkod.engine.bool.BooleanFactory;
 import kodkod.engine.bool.BooleanFormula;
@@ -22,11 +18,11 @@ import kodkod.engine.bool.BooleanMatrix;
 import kodkod.engine.bool.BooleanValue;
 import kodkod.engine.bool.Operator;
 import kodkod.engine.satlab.SATSolver;
+import kodkod.engine.settings.Options;
+import kodkod.engine.settings.Reporter;
 import kodkod.instance.Bounds;
 import kodkod.instance.Instance;
-import kodkod.util.ints.IntRange;
 import kodkod.util.ints.IntSet;
-import kodkod.util.ints.Ints;
 
 
 /** 
@@ -36,24 +32,6 @@ import kodkod.util.ints.Ints;
  * @author Emina Torlak 
  */
 public final class Translator {
-	
-	/**
-	 * Returns an exact interpreter based on the given bounds and options.
-	 * @return an exact interpreter based on the given bounds and options.
-	 */
-	private static BoundsInterpreter.Exact exactInterpreter(Bounds bounds, Options options) {
-		final Map<Relation, IntRange> vars = new IdentityHashMap<Relation,IntRange>();
-		int maxLit = 1;
-		for(Relation r : bounds.relations()) {
-			int rLits = bounds.upperBound(r).size() - bounds.lowerBound(r).size();
-			if (rLits > 0) {
-				vars.put(r, Ints.range(maxLit, maxLit + rLits - 1));
-				maxLit += rLits;
-			}
-		}
-		return new BoundsInterpreter.Exact(bounds, BooleanFactory.factory(maxLit-1, options), vars);
-	}
-
 	
 	/**
 	 * Translates the given formula using the specified bounds and options.
@@ -66,68 +44,65 @@ public final class Translator {
 	 * @throws HigherOrderDeclException - the formula contains a higher order declaration that cannot
 	 * be skolemized, or it can be skolemized but options.skolemize is false.
 	 */
+	@SuppressWarnings("unchecked")
 	public static Translation translate(Formula formula, Bounds bounds, Options options) throws TrivialFormulaException {
+		final Reporter reporter = options.reporter(); // grab the reporter
+		
 		// extract structural information about the formula (i.e. syntactically shared internal nodes)
-		//System.out.println("finding syntactically shared nodes...");
+		reporter.collectingStructuralInfo();
 		AnnotatedNode<Formula> annotated = new AnnotatedNode<Formula>(formula);
-		// extract top-level predicates
-		//System.out.println("finding top-level predicates...");
-		Map<RelationPredicate.Name, Set<RelationPredicate>> preds = AnnotatedNode.predicates(annotated);
-		
-		// copy the bounds and optimize the copy by breaking symmetry on total orders and acyclic
-		//System.out.println("optimizing bounds...");
+				
+		// copy the bounds and remove bindings for unused relations/ints
 		bounds = bounds.clone();
+		bounds.relations().retainAll(annotated.relations());
+		if (!annotated.usesIntBounds()) bounds.ints().clear();
 		
-		Set<IntSet> symmetricParts = BoundsOptimizer.optimize(bounds, AnnotatedNode.relations(annotated), 
-				AnnotatedNode.usesIntBounds(annotated) ? bounds.ints() : Ints.EMPTY_SET, preds);
-
+		// break symmetries on total orders and acyclic relations
+		SymmetryBreaker breaker = new SymmetryBreaker(bounds, options);
+		breaker.breakPredicateSymmetries(annotated.predicates());
+			
 		// skolemize
 		if (options.skolemDepth()>=0) {
-			//System.out.println("skolemizing...");
 			annotated = Skolemizer.skolemize(annotated, bounds, options);
 		} 
 		
 		// translate to boolean, checking for trivial (un)satisfiability
-		BoundsInterpreter.Exact interpreter = exactInterpreter(bounds, options);
+		LeafInterpreter interpreter = LeafInterpreter.exact(bounds, options);
 		
+		reporter.translatingToBoolean(formula, bounds);
 		final Map<Node, IntSet> varUsage;
 		BooleanValue circuit;
-		//System.out.println("translating to bool...");
 		if (options.trackVars()) {
-			FOL2BoolTranslator acircuit = FOL2BoolTranslator.translateAndTrack(annotated,  interpreter);
-			circuit = acircuit.translation();
+			final TranslationCache.Tracking c = new TranslationCache.Tracking(annotated);
+			circuit = FOL2BoolTranslator.translate(annotated,  interpreter, c, Environment.EMPTY);
 			if (circuit.op()==Operator.CONST) {
-				throw new TrivialFormulaException(TrivialFormulaReducer.reduce(annotated,preds,acircuit), 
-						(BooleanConstant)circuit, bounds);
+				final Formula redux = TrivialFormulaReducer.reduce(annotated,breaker.broken(),c.trueFormulas(),c.falseFormulas());
+				throw new TrivialFormulaException(redux, (BooleanConstant)circuit, bounds);
 			}
-			varUsage = new IdentityHashMap<Node, IntSet>(interpreter.vars().size() + acircuit.variableUsage().size());
-			varUsage.putAll(acircuit.variableUsage());
+			varUsage = c.varUsage();
 		} else {
 			circuit = FOL2BoolTranslator.translate(annotated,  interpreter);
 			if (circuit.op()==Operator.CONST) {
 				throw new TrivialFormulaException(formula, (BooleanConstant)circuit, bounds);
 			}
-			varUsage = new IdentityHashMap<Node, IntSet>(interpreter.vars().size());
+			varUsage = new LinkedHashMap<Node, IntSet>();
 		}
 		
+		varUsage.putAll(interpreter.vars());
 		annotated = null; // release structural information
-		
-		for(Map.Entry<Relation, IntRange> e: interpreter.vars().entrySet()) {
-			varUsage.put(e.getKey(), Ints.rangeSet(e.getValue()));
-		}
 
 		BooleanFactory factory = interpreter.factory();
 		final int numPrimaryVariables = factory.numberOfVariables();
 		
-		// break symmetries on the remaining relations
-		//System.out.println("generating symmetry breaking predicates...");
-		circuit = factory.and(circuit, SymmetryBreaker.generateSBP(symmetricParts, interpreter, options.symmetryBreaking()));
+		// break lex symmetries
+		reporter.breakingSymmetries();
+		circuit = factory.and(circuit, breaker.breakLexSymmetries(interpreter));
 	
-		interpreter = null; symmetricParts = null; // release the allocator and symmetric partitions
+		interpreter = null; breaker = null; // release the allocator and symmetry breaker
 
 		// flatten
 		if (options.flatten()) {
-			//System.out.println("flattening...");
+			reporter.flattening((BooleanFormula)circuit);
 			factory.clear(); // remove everything but the variables from the factory
 			circuit = BooleanFormulaFlattener.flatten((BooleanFormula)circuit, factory);
 			factory = null; // release the factory itself
@@ -138,10 +113,8 @@ public final class Translator {
 		}
 		
 		// translate to cnf and return the translation
-		//System.out.println("translating to cnf...");
-		//System.out.println(circuit);
+		reporter.translatingToCNF((BooleanFormula)circuit);
 		final SATSolver cnf = Bool2CNFTranslator.definitional((BooleanFormula)circuit, options.solver(), numPrimaryVariables);
-//		System.out.println("about to start sat solving p cnf " + cnf.numberOfVariables() + " " + cnf.numberOfClauses());
 		return new Translation(cnf, bounds, Collections.unmodifiableMap(varUsage), numPrimaryVariables);
 
 	}
@@ -158,7 +131,7 @@ public final class Translator {
 	public static BooleanConstant evaluate(Formula formula, Instance instance, Options options) {
 		return (BooleanConstant) 
 		 FOL2BoolTranslator.translate(new AnnotatedNode<Formula>(formula), 
-				 new InstanceInterpreter(instance, BooleanFactory.constantFactory(options)));
+				 LeafInterpreter.exact(instance, options));
 	}
 	
 	/**
@@ -172,7 +145,7 @@ public final class Translator {
 	public static BooleanMatrix evaluate(Expression expression,Instance instance, Options options) {
 		return (BooleanMatrix) 
 		 FOL2BoolTranslator.translate(new AnnotatedNode<Expression>(expression),
-				 new InstanceInterpreter(instance, BooleanFactory.constantFactory(options)));
+				 LeafInterpreter.exact(instance, options));
 	}
 
 }

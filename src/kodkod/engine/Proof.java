@@ -6,6 +6,7 @@ import java.util.Set;
 
 import kodkod.ast.Node;
 import kodkod.engine.satlab.SATProver;
+import kodkod.engine.settings.Options;
 import kodkod.util.ints.IntSet;
 import kodkod.util.ints.Ints;
 

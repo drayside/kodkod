@@ -36,9 +36,9 @@ import kodkod.ast.SumExpression;
 import kodkod.ast.Variable;
 import kodkod.ast.visitor.DepthFirstDetector;
 import kodkod.ast.visitor.DepthFirstReplacer;
-import kodkod.engine.Options;
-import kodkod.engine.bool.BooleanFactory;
 import kodkod.engine.bool.BooleanMatrix;
+import kodkod.engine.settings.Options;
+import kodkod.engine.settings.Reporter;
 import kodkod.instance.Bounds;
 import kodkod.instance.TupleSet;
 import kodkod.util.collections.ArrayStack;
@@ -86,7 +86,11 @@ final class Skolemizer {
 		private final DifferenceRemover diffRemover ;
 		/* the interpreter used to determine the upper bounds for skolem constants;
 		 * the upper bounds for skolem constants will be added to interpreter.bounds */
-		private final BoundsInterpreter.Overapproximating interpreter;
+		private final LeafInterpreter interpreter;
+		/* bounds on which the interpreter is based */
+		private final Bounds bounds;
+		/* reporter */
+		private final Reporter reporter;
 		/* non-skolemizable quantified declarations in the current scope, in the order of declaration
 		 * (most recent decl is last in the list) */
 		private final List<DeclInfo> nonSkolems;
@@ -101,7 +105,7 @@ final class Skolemizer {
 		/**
 		 * Constructs a skolem replacer from the given arguments. 
 		 */
-		protected SkolemReplacer(Set<Node> sharedNodes, Bounds bounds, Options options) {
+		SkolemReplacer(Set<Node> sharedNodes, Bounds bounds, Options options) {
 			super(sharedNodes);
 			
 			// only cache intermediate computations for expressions with no free variables
@@ -118,9 +122,10 @@ final class Skolemizer {
 						this.cache.put(n, null);
 				}
 			}
+			this.reporter = options.reporter();
 			this.diffRemover = new DifferenceRemover(this.cache.keySet());
-
-			this.interpreter = new BoundsInterpreter.Overapproximating(bounds, BooleanFactory.constantFactory(options));
+			this.bounds = bounds;
+			this.interpreter = LeafInterpreter.overapproximating(bounds, options);
 			this.skolemConstraints = Formula.TRUE;
 			this.repEnv = Environment.empty();
 			this.nonSkolems = new ArrayList<DeclInfo>();
@@ -205,6 +210,7 @@ final class Skolemizer {
 		}
 		
 		/*-------expressions and intexpressions---------*/
+		/* INVARIANT:  whenever an expression or intexpression is visited, skolemDepth < 0 */
 		/** 
 		 * Returns the binding for the variable in this.repEnv.
 		 * @return this.repEnv.lookup(variable)
@@ -264,6 +270,8 @@ final class Skolemizer {
 			final int arity = depth + decl.variable().arity();
 			
 			final Relation skolem = Relation.nary("$"+decl.variable().name(), arity);
+			reporter.skolemizing(decl, skolem);
+			
 			Expression skolemExpr = skolem;
 			Environment<BooleanMatrix> skolemEnv = Environment.empty();
 			
@@ -280,8 +288,8 @@ final class Skolemizer {
 				matrixBound = nonSkolems.get(i).upperBound.cross(matrixBound);
 			}
 			
-			final TupleSet skolemBound = interpreter.universe().factory().setOf(arity, matrixBound.denseIndices());
-			interpreter.boundingObject().bound(skolem, skolemBound);
+			final TupleSet skolemBound = bounds.universe().factory().setOf(arity, matrixBound.denseIndices());
+			bounds.bound(skolem, skolemBound);
 			
 			return skolemExpr;
 		}	

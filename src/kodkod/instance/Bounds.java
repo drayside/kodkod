@@ -35,15 +35,16 @@ import kodkod.util.ints.TreeSequence;
  **/
 public final class Bounds implements Cloneable {
 	private final TupleFactory factory;
-	private final Map<Relation, BoundPair> bounds;
+	private final Map<Relation, TupleSet> lowers, uppers;
 	private final SparseSequence<TupleSet> intbounds;
 	
 	/**
 	 * Constructs a Bounds object with the given factory and mappings.
 	 */
-	private Bounds(TupleFactory factory, Map<Relation, BoundPair> bounds, SparseSequence<TupleSet> intbounds) {
+	private Bounds(TupleFactory factory, Map<Relation, TupleSet> lower, Map<Relation, TupleSet> upper, SparseSequence<TupleSet> intbounds) {
 		this.factory = factory;
-		this.bounds = bounds;
+		this.lowers = lower;
+		this.uppers = upper;
 		this.intbounds = intbounds;
 	}
 	
@@ -54,7 +55,8 @@ public final class Bounds implements Cloneable {
 	 */
 	public Bounds(Universe universe) {
 		this.factory = universe.factory();
-		bounds = new LinkedHashMap<Relation, BoundPair>();
+		lowers = new LinkedHashMap<Relation, TupleSet>();
+		uppers = new LinkedHashMap<Relation, TupleSet>();
 		intbounds = new TreeSequence<TupleSet>();
 	}
 	
@@ -73,7 +75,7 @@ public final class Bounds implements Cloneable {
 	 * @return this.relations
 	 */
 	public Set<Relation> relations() {
-		return bounds.keySet();
+		return lowers.keySet();
 	}
 	
 	/**
@@ -92,10 +94,15 @@ public final class Bounds implements Cloneable {
 	 * @return r in this.relations => lowerBound[r], null
 	 */
 	public TupleSet lowerBound(Relation r) {
-		if (bounds.containsKey(r)) {
-			return bounds.get(r).lower;
-		}
-		return null;
+		return lowers.get(r);
+	}
+	
+	/**
+	 * Returns a map view of this.lowerBound.  The returned map is not modifiable.
+	 * @return a map view of this.lowerBound
+	 */
+	public Map<Relation, TupleSet> lowerBounds() {
+		return Collections.unmodifiableMap(lowers);
 	}
 	
 	/**
@@ -104,10 +111,15 @@ public final class Bounds implements Cloneable {
 	 * @return r in this.relations => upperBound[r], null
 	 */
 	public TupleSet upperBound(Relation r) {
-		if (bounds.containsKey(r)) {
-			return bounds.get(r).upper;
-		}
-		return null;
+		return uppers.get(r);
+	}
+	
+	/**
+	 * Returns a map view of this.upperBound.  The returned map is not modifiable.
+	 * @return a map view of this.upperBound
+	 */
+	public Map<Relation, TupleSet> upperBounds() {
+		return Collections.unmodifiableMap(uppers);
 	}
 	
 	/**
@@ -117,6 +129,15 @@ public final class Bounds implements Cloneable {
 	 */
 	public TupleSet exactBound(int i) {
 		return intbounds.get(i);
+	}
+	
+	/**
+	 * Returns a sparse sequence view of this.intBound.  The returned sequence
+	 * is not modifiable.
+	 * @return a sparse sequence view of this.intBound
+	 */
+	public SparseSequence<TupleSet> intBounds() {
+		return Ints.unmodifiableSequence(intbounds);
 	}
 	
 	/**
@@ -144,7 +165,8 @@ public final class Bounds implements Cloneable {
 	public void boundExactly(Relation r, TupleSet tuples) {
 		checkBound(r.arity(), tuples);
 		final TupleSet unmodifiableTuplesCopy = tuples.clone().unmodifiableView();
-		bounds.put(r, new BoundPair(unmodifiableTuplesCopy, unmodifiableTuplesCopy));
+		lowers.put(r, unmodifiableTuplesCopy);
+		uppers.put(r, unmodifiableTuplesCopy);
 	}
 	
 	/**
@@ -169,7 +191,8 @@ public final class Bounds implements Cloneable {
 		} else {
 			checkBound(r.arity(), lower);
 			checkBound(r.arity(), upper);		
-			bounds.put(r, new BoundPair(lower.clone().unmodifiableView(), upper.clone().unmodifiableView()));
+			lowers.put(r, lower.clone().unmodifiableView());
+			uppers.put(r, upper.clone().unmodifiableView());
 		}
 	}
 	
@@ -187,7 +210,8 @@ public final class Bounds implements Cloneable {
 	 */
 	public void bound(Relation r, TupleSet upper) {
 		checkBound(r.arity(), upper);
-		bounds.put(r, new BoundPair(factory.noneOf(r.arity()).unmodifiableView(), upper.clone().unmodifiableView()));
+		lowers.put(r, factory.noneOf(r.arity()).unmodifiableView());
+		uppers.put(r, upper.clone().unmodifiableView());
 	}
 	
 	/**
@@ -212,7 +236,7 @@ public final class Bounds implements Cloneable {
 	 * @return an unmodifiable view of his Bounds object.
 	 */
 	public Bounds unmodifiableView() {
-		return new Bounds(factory, Collections.unmodifiableMap(bounds), Ints.unmodifiableSequence(intbounds));
+		return new Bounds(factory, Collections.unmodifiableMap(lowers), Collections.unmodifiableMap(uppers), Ints.unmodifiableSequence(intbounds));
 	}
 	
 	/**
@@ -221,40 +245,34 @@ public final class Bounds implements Cloneable {
 	 */
 	public Bounds clone() {
 		try {
-			return new Bounds(factory, new LinkedHashMap<Relation, BoundPair>(bounds), intbounds.clone());
+			return new Bounds(factory, new LinkedHashMap<Relation, TupleSet>(lowers), 
+					new LinkedHashMap<Relation, TupleSet>(uppers), intbounds.clone());
 		} catch (CloneNotSupportedException cnse) {
 			throw new InternalError(); // should not be reached
 		}
 	}
 	
-	public String toString() {
-		return "relation bounds: " + bounds.toString() + "\nint bounds: " + intbounds;
-	}
-	
 	/**
-	 * Represents a pair of bounds, upper and lower.
-	 * 
-	 * @specfield lower: one TupleSet
-	 * @specfield upper: one TupleSet
-	 * @invariant lower.tuples in upper.tuples
-	 * @invariant lower.universe = upper.universe && lower.arity = upper.arity
+	 * @see java.lang.Object#toString()
 	 */
-	private static final class BoundPair {
-		final TupleSet lower;
-		final TupleSet upper;
-		
-		/**
-		 * Constructs a new BoundPair with the given lower and upper sets.
-		 * @requires lower.tuples in upper.tuples && lower.universe = upper.universe && lower.arity = upper.arity
-		 * @effects this.lower' = lower && this.upper' = upper
-		 */
-		BoundPair(TupleSet lower, TupleSet upper) {	
-			this.lower = lower;
-			this.upper = upper;
+	public String toString() {
+		final StringBuffer str = new StringBuffer();
+		str.append("relation bounds:");
+		for(Map.Entry<Relation, TupleSet> entry: lowers.entrySet()) {
+			str.append("\n ");
+			str.append(entry.getKey());
+			str.append(": [");
+			str.append(entry.getValue());
+			TupleSet upper = uppers.get(entry.getKey());
+			if (!upper.equals(entry.getValue())) {
+				str.append(", ");
+				str.append(upper);
+			} 
+			str.append("]");
 		}
-		
-		public String toString() {
-			return "[" + lower + ", " + upper + "]";
-		}
+		str.append("int bounds: ");
+		str.append("\n ");
+		str.append(intbounds);
+		return str.toString();
 	}
 }

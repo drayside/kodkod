@@ -17,6 +17,7 @@ import kodkod.engine.fol2sat.UnboundLeafException;
 import kodkod.engine.satlab.SATMinSolver;
 import kodkod.engine.satlab.SATProver;
 import kodkod.engine.satlab.SATSolver;
+import kodkod.engine.settings.Options;
 import kodkod.instance.Bounds;
 import kodkod.instance.Instance;
 import kodkod.util.ints.IntIterator;
@@ -27,7 +28,7 @@ import org.sat4j.specs.TimeoutException;
 /** 
  * Implementation of a computational engine for solving relational formulae.
  * A {@link kodkod.ast.Formula formula} is solved with respect to given 
- * {@link kodkod.instance.Bounds bounds} and {@link kodkod.engine.Options options}.
+ * {@link kodkod.instance.Bounds bounds} and {@link kodkod.engine.settings.Options options}.
  * 
  * @specfield options: Options 
  * @author Emina Torlak 
@@ -205,6 +206,7 @@ public final class Solver {
 				}
 			}
 			
+			options.reporter().solvingCNF(0, cnf.numberOfVariables(), cnf.numberOfClauses());
 			final long startSolve = System.currentTimeMillis();
 			final boolean isSat = cnf.solve();
 			final long endSolve = System.currentTimeMillis();
@@ -247,7 +249,8 @@ public final class Solver {
 			endTransl = System.currentTimeMillis();
 
 			final SATSolver cnf = translation.cnf();
-
+			
+			options.reporter().solvingCNF(translation.numberOfPrimaryVariables(), cnf.numberOfVariables(), cnf.numberOfClauses());
 			final long startSolve = System.currentTimeMillis();
 			final boolean isSat = cnf.solve();
 			final long endSolve = System.currentTimeMillis();
@@ -267,9 +270,5 @@ public final class Solver {
 	public String toString() {
 		return options.toString();
 	}
-
-	//	public static void main(String[] args) {
-	//		System.out.print("stuff");
-	//	}
 
 }

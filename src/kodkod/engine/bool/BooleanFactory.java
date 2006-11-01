@@ -6,8 +6,8 @@ import static kodkod.engine.bool.Operator.OR;
 import java.util.Collection;
 import java.util.Iterator;
 
-import kodkod.engine.Options;
-import kodkod.engine.Options.IntEncoding;
+import kodkod.engine.settings.Options;
+import kodkod.engine.settings.Options.IntEncoding;
 import kodkod.util.ints.IntSet;
 
 

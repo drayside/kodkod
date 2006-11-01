@@ -1,8 +1,11 @@
-/*
- * LeafInterpreter.java
- * Created on Aug 31, 2005
+/**
+ * 
  */
 package kodkod.engine.fol2sat;
+
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import kodkod.ast.ConstantExpression;
 import kodkod.ast.Expression;
@@ -10,69 +13,177 @@ import kodkod.ast.Relation;
 import kodkod.engine.bool.BooleanFactory;
 import kodkod.engine.bool.BooleanMatrix;
 import kodkod.engine.bool.Dimensions;
+import kodkod.engine.settings.Options;
+import kodkod.instance.Bounds;
+import kodkod.instance.Instance;
+import kodkod.instance.TupleSet;
 import kodkod.instance.Universe;
 import kodkod.util.ints.IntIterator;
+import kodkod.util.ints.IntRange;
 import kodkod.util.ints.IntSet;
 import kodkod.util.ints.Ints;
+import kodkod.util.ints.SparseSequence;
 
 /** 
  * <p>Interprets the unquantified leaf expressions of a kodkod ast, {@link kodkod.ast.Relation relations} and
  * {@link kodkod.ast.ConstantExpression constant expressions}, as {@link kodkod.engine.bool.BooleanMatrix matrices} of {@link kodkod.engine.bool.BooleanValue
- * boolean values}.  Depending on the implementation details of a particular
- * leaf interpreter, a {@link kodkod.engine.fol2sat.FOL2BoolTranslator
- * FOL to boolean translator} that uses it can act either as a translator or as an evaluator.</p> 
- * 
- * <p>A leaf interpreter also interprets primitive integers as corresponding to particular atoms in the {@link kodkod.instance.Universe universe
+ * boolean values}, and primitive integers as corresponding to particular atoms in the {@link kodkod.instance.Universe universe
  * of discourse}</p>
  * 
- * <p>All boolean values
- * are produced using the same {@link kodkod.engine.bool.BooleanFactory circuit factory}, and all relation,
- * constant,  and
- * integer interpretations are based on the same {@link kodkod.instance.Bounds bounds} or 
- * {@link kodkod.instance.Instance instance} object.
- * </p>
- * 
- * @specfield boundingObj: B
- * @specfield rBounds: boundingObj.relations() ->one (TupleSet one->one TupleSet)
+ * @specfield universe: Universe
+ * @specfield relations: set Relation
+ * @specfield ints: set int
+ * @specfield lbounds: relations ->one TupleSet 
+ * @specfield ubounds: relations ->one TupleSet
+ * @specfield ibounds: ints -> one TupleSet
  * @specfield factory: BooleanFactory
- * @invariant B in Bounds + Instance
- * @author Emina Torlak 
+ * @specfield vars: relations -> set BooleanVariable
+ * @invariant all r: relations | r.arity = lbounds[r].arity = ubounds[r].arity && ubounds[r].containsAll(lbounds[r])
+ * @invariant all r: relations | lbounds[r].atoms + ubounds[r] in universe 
+ * @invariant all r: relations | #vars[r] = ubounds[r].size() - lbounds[r].size()
+ * @invariant all i: ints | ibounds[i].arity = ibounds[i].size() = 1
+ * @invariant vars[relations] in factory.components
+ * 
+ * @author Emina Torlak
  */
-abstract class LeafInterpreter<B> {
+final class LeafInterpreter {
+	private final BooleanFactory factory;
+	private final Universe universe;
+	private final Map<Relation, IntRange> vars;
+	private final Map<Relation, TupleSet> lowers, uppers;
+	private final SparseSequence<TupleSet> ints;
 	
-	
-	LeafInterpreter() {}
-
 	/**
-	 * Returns the factory used to generate formulas by this allocator.
-	 * @return this.factory
+	 * Constructs a new LeafInterpreter using the given values.
+	 * @requires lowers.keySet() = uppers.keySet()
+	 * @effects this.universe' = universe && this.relations' = lowers.keySet() &&
+	 * this.ints' = ints.indices && this.factory' = factory && 
+	 * this.ubounds' = uppers && this.lbounds' = lowers && 
+	 * this.ibounds' = ints
 	 */
-	abstract BooleanFactory factory();
-
+	private LeafInterpreter(Universe universe, Map<Relation, TupleSet> lowers, Map<Relation, TupleSet> uppers, 
+			SparseSequence<TupleSet> ints, BooleanFactory factory, Map<Relation, IntRange> vars) {
+		this.universe = universe;
+		this.lowers = lowers;
+		this.uppers = uppers;
+		this.ints = ints;
+		this.factory = factory;
+		this.vars = vars;
+	}
+	
+	
+	/**
+	 * Constructs a new LeafInterpreter using the given values.
+	 * @requires lowers.keySet() = uppers.keySet()
+	 * @effects this.universe' = universe && this.relations' = lowers.keySet() &&
+	 * this.ints' = ints.indices && this.factory' = factory && 
+	 * this.ubounds' = uppers && this.lbounds' = lowers && 
+	 * this.ibounds' = ints
+	 */
+	@SuppressWarnings("unchecked")
+	private LeafInterpreter(Universe universe, Map<Relation, TupleSet> rbound, SparseSequence<TupleSet> ints, Options options) {
+		this(universe, rbound, rbound, ints, BooleanFactory.constantFactory(options), Collections.EMPTY_MAP);
+	}
+	
+	/**
+	 * Returns an exact leaf interpreter based on the given instance and options.
+	 * @return { l: LeafInterpreter | l.universe = instance.universe && l.relations = instance.relations() && 
+	 * l.ints = instance.ints() && l.lbounds = l.ubounds = instance.relationTuples() && 
+	 * l.ibounds = instance.intTuples && l.factory = BooleanFactory.constantFactory(options) && no l.vars }
+	 */
+	static final LeafInterpreter exact(Instance instance, Options options) {
+		return new LeafInterpreter(instance.universe(), instance.relationTuples(), instance.intTuples(), options);
+	}
+	
+	/**  
+	 * Returns an exact interpreter for the given bounds and options.
+	 * @return { l: LeafInterpreter | l.universe = bounds.universe && l.relations = bounds.relations() && 
+	 * l.ints = bounds.ints() && l.lbounds = bounds.lowerBound && l.ubounds = bounds.upperBound && 
+	 * l.ibounds = bounds.intBound && 
+	 * l.factory = BooleanFactory.factory(sum(r: l.relations | #(l.ubounds[r]-l.lbounds[r]))-1, options) &&
+	 * l.vars[relations] = l.factory & BooleanVariable}
+	 */
+	static final LeafInterpreter exact(Bounds bounds, Options options) {
+		final Map<Relation, IntRange> vars = new LinkedHashMap<Relation,IntRange>();
+		int maxLit = 1;
+		for(Relation r : bounds.relations()) {
+			int rLits = bounds.upperBound(r).size() - bounds.lowerBound(r).size();
+			if (rLits > 0) {
+				vars.put(r, Ints.range(maxLit, maxLit + rLits - 1));
+				maxLit += rLits;
+			}
+		}
+		return new LeafInterpreter(bounds.universe(), bounds.lowerBounds(), bounds.upperBounds(), 
+				bounds.intBounds(), BooleanFactory.factory(maxLit-1, options), vars);
+	}
+	
+	/**
+	 * Returns an overapproximating interpreter for the given bounds and options.
+	 * @return { l: LeafInterpreter | l.universe = bounds.universe && l.relations = bounds.relations() && 
+	 * l.ints = bounds.ints() && l.lbounds = l.ubounds = bounds.upperBound && 
+	 * l.ibounds = bounds.intBound && l.factory = BooleanFactory.constantFactory(options) && no l.vars }
+	 */
+	static final LeafInterpreter overapproximating(Bounds bounds, Options options) {
+		return new LeafInterpreter(bounds.universe(), bounds.upperBounds(), bounds.intBounds(), options);
+	}
+	
+	/**
+	 * Returns this.factory.
+	 * @return this.factory.
+	 */
+	public final BooleanFactory factory() {
+		return this.factory;
+	}
+	
 	/**
 	 * Returns the universe of discourse.
-	 * @return this.boundingObj.universe()
+	 * @return this.universe
 	 */
-	abstract Universe universe();
+	public final Universe universe() {
+		return universe;
+	}
 	
 	/**
-	 * Returns the bounding object used by this translation interpreter.
-	 * @return this.boundingObj
+	 * Returns this.vars.
+	 * @return this.vars.
 	 */
-	abstract B boundingObject();
+	public final Map<Relation, IntSet> vars() {
+		final Map<Relation, IntSet> ret = new LinkedHashMap<Relation,IntSet>((vars.size() * 4)/3);
+		for(Map.Entry<Relation, IntRange> e: vars.entrySet()) {
+			ret.put(e.getKey(), Ints.rangeSet(e.getValue()));
+		}
+		return ret;
+	}
 	
 	/**
 	 * Returns a {@link kodkod.engine.bool.BooleanMatrix matrix} m of 
 	 * {@link kodkod.engine.bool.BooleanValue boolean formulas} representing
 	 * the specified relation.    
-	 * @requires r in this.boundingObj.relations()
+	 * @requires r in this.relations
 	 * @return { m: BooleanMatrix | let lset = (this.rBounds[r].TupleSet).tuples.index, 
 	 *           hset = (this.rBounds[r][TupleSet]).tuples.index, dset = [0..this.universe.size()^r.arity) | 
 	 *           m.dimensions.dimensions = [0..r.arity) ->one this.universe.size() && 
 	 *           m.elements[lset] = TRUE && m.elements[dset-hset] = FALSE &&
-	 *           m.elements[hset-lset] != FALSE }
+	 *           all disj i, j: hset-lset | m.elements[i]+m.elements[j] in this.vars[r] && 
+	 *            m.elements[i].label < m.elements[j].label <=> i < j }
 	 */
-	abstract BooleanMatrix interpret(Relation r);  
+	public final BooleanMatrix interpret(Relation r) {
+			
+		final IntSet lowerBound = lowers.get(r).indexView();
+		final IntSet upperBound = uppers.get(r).indexView();
+		
+		final BooleanMatrix m = factory.matrix(Dimensions.square(universe().size(), r.arity()), upperBound, lowerBound);
+		
+		if (upperBound.size() > lowerBound.size()) {
+			int varId = vars.get(r).min();
+			for (IntIterator indeces = upperBound.iterator(); indeces.hasNext();) {
+				int tupleIndex = indeces.nextInt();
+				if (!lowerBound.contains(tupleIndex))  
+					m.set(tupleIndex, factory.variable(varId++));
+			}
+		}
+		return m;
+	}
 	
 	/**
 	 * Returns a {@link kodkod.engine.bool.BooleanMatrix matrix} m of 
@@ -84,7 +195,7 @@ abstract class LeafInterpreter<B> {
 	 *           c = IDEN => (all i: dset | (some j: int | i = j*(1+this.universe.size())) => m.elements[i] = TRUE, m.elements[i] = FALSE),
 	 *           c = INT => (all i: dset | (some j: int | this.interpret(j)=i) => m.elements[i] = TRUE, m.elements[i] = FALSE }
 	 */
-	final BooleanMatrix interpret(ConstantExpression c) {
+	public final BooleanMatrix interpret(ConstantExpression c) {
 		final int univSize = universe().size();
 		if (c==Expression.UNIV) {
 			final IntSet all =  Ints.rangeSet(Ints.range(0, univSize-1));
@@ -112,16 +223,18 @@ abstract class LeafInterpreter<B> {
 	/**
 	 * Returns the set of all integers corresponding to some
 	 * atom in this.universe.
-	 * @return this.boundingObj().ints()
+	 * @return this.ints
 	 */
-	abstract IntSet ints();
+	public final IntSet ints() {
+		return ints.indices();
+	}
 	
 	/**
 	 * Returns the index of the atom from this.universe which represents the given integer.
 	 * @requires i in this.ints
-	 * @return this.boundingObj in Instance => this.boundingObj.tuples[i].tuples[0],
-	 *         this.boundingObj.intBound[i].tuples[0]               
+	 * @return this.ibounds[i].indexView().min()               
 	 */
-	abstract int interpret(int i);
-	
+	public final int interpret(int i) {
+		return ints.get(i).indexView().min();
+	}
 }

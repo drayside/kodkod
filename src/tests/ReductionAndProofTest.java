@@ -89,7 +89,7 @@ public class ReductionAndProofTest extends TestCase {
 		bounds.boundExactly(rba, bounds.upperBound(rba));
 		f6 = rba.function(ra, rb); // F
 		
-		assertEquals(f6.and(f4).and(f2), reduce(f1.and(f2).and(f4).and(f6)));
+		assertEquals(f6.and(f2), reduce(f1.and(f2).and(f4).and(f6)));
 		
 	}
 	

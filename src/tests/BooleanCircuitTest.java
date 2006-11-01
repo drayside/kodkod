@@ -9,12 +9,12 @@ import java.util.LinkedList;
 import java.util.List;
 
 import junit.framework.TestCase;
-import kodkod.engine.Options;
 import kodkod.engine.bool.BooleanConstant;
 import kodkod.engine.bool.BooleanFactory;
 import kodkod.engine.bool.BooleanValue;
 import kodkod.engine.bool.BooleanVariable;
 import kodkod.engine.bool.Operator;
+import kodkod.engine.settings.Options;
 
 
 

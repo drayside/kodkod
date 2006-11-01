@@ -145,6 +145,14 @@ public final class Instance implements Cloneable {
 	}
 	
 	/**
+	 * Returns a map view of Relation<:this.tuples.  The returned map is unmodifiable.
+	 * @return a map view of Relation<:this.tuples.  
+	 */
+	public Map<Relation, TupleSet> relationTuples() {
+		return Collections.unmodifiableMap(tuples);
+	}
+	
+	/**
 	 * Returns the set of tuples assigned to the given integer by this Instance.
 	 * If the integer is not mapped by the model, null is returned.
 	 * 
@@ -152,6 +160,14 @@ public final class Instance implements Cloneable {
 	 */
 	public TupleSet tuples(int i) {
 		return ints.get(i);
+	}
+	
+	/**
+	 * Returns a sparse sequence view of int<:this.tuples.  The returned sequence is unmodifiable.
+	 * @return a sparse sequence view of int<:this.tuples.
+	 */
+	public SparseSequence<TupleSet> intTuples() {
+		return Ints.unmodifiableSequence(ints);
 	}
 	
 	/**

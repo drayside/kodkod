@@ -27,7 +27,10 @@ final class Environment<T> {
 	private final T value;
 	private final Environment<T> parent;
 	
-	private static final Environment EMPTY = new Environment(null,null,null);
+	/**
+	 * The empty environment.
+	 */
+	static final Environment EMPTY = new Environment(null,null,null);
 	
 	/**  
 	 * Constructs a new environment with the specified parent

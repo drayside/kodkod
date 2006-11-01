@@ -8,17 +8,18 @@ import kodkod.ast.Expression;
 import kodkod.ast.Formula;
 import kodkod.engine.bool.BooleanMatrix;
 import kodkod.engine.fol2sat.Translator;
+import kodkod.engine.settings.Options;
 import kodkod.instance.Instance;
 import kodkod.instance.TupleSet;
 
 /**
  * An evaluator for relational formulas and expressions with
  * respect to a given {@link kodkod.instance.Instance instance}
- * and {@link kodkod.engine.Options options}. 
+ * and {@link kodkod.engine.settings.Options options}. 
  * 
  * <p><b>Note: </b> you may observe surprising (though correct) 
  * evaluator behavior if you do not use the same set of integer
- * options (i.e. {@link kodkod.engine.Options#intEncoding() intEncoding} and {@link kodkod.engine.Options#bitwidth() bitwidth} 
+ * options (i.e. {@link kodkod.engine.settings.Options#intEncoding() intEncoding} and {@link kodkod.engine.settings.Options#bitwidth() bitwidth} 
  * when evaluating and solving a formula.  For example, suppose that
  * that an Instance i is a solution to a formula f found using options o.
  * If you create an evaluator e such that e.instance = i, but e.options

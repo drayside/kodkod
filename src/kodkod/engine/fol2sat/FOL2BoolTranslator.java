@@ -1,9 +1,6 @@
 package kodkod.engine.fol2sat;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import kodkod.ast.BinaryExpression;
 import kodkod.ast.BinaryFormula;
@@ -56,17 +53,6 @@ import kodkod.util.ints.IntSet;
  * @author Emina Torlak
  */
 final class FOL2BoolTranslator {
-	private final BooleanValue translation;
-	private final Map<Node,IntSet> variableUsage;
-	private final Set<Formula> trueFormulas, falseFormulas;
-	
-	private FOL2BoolTranslator(BooleanValue translation, Map<Node,IntSet> varUsage, 
-            Set<Formula> trueFormulas, Set<Formula> falseFormulas) {
-		this.translation = translation;
-		this.variableUsage = Collections.unmodifiableMap(varUsage);
-		this.trueFormulas = Collections.unmodifiableSet(trueFormulas);
-		this.falseFormulas = Collections.unmodifiableSet(falseFormulas);
-	}
 	
 	/**
 	 * Translates the given annotated formula or expression into a boolean
@@ -100,60 +86,20 @@ final class FOL2BoolTranslator {
 	}
 	
 	/**
-	 * Translates the given annotated formula into a boolean circuit using
-	 * the provided interpreter and integer encoding.  Additionally, it 
-	 * keeps track of which variables comprise the descendents of the formula,
-	 * and which of its descendents are reduced to constants during translation.
-	 * @requires interpreter.relations = AnnotatedNode.relations(annotated)
-	 * @return {ret: FOL2BoolTranslator | ret.node = annotated && ret.manager = interpreter } 
+	 * Translates the given annotated formula or expression into a boolean
+	 * formula or matrix, using the provided interpreter, translation cache, and environment.
+	 * @requires interpreter.relations = annotated.relations
+	 * @requires cache.node = annotated.node
+	 * @return {transl: T | 
+	 *           annotated.node in Formula => transl in BooleanValue, 
+	 *           annotated.node in Expression => transl in BooleanMatrix}
 	 * @throws HigherOrderDeclException - annotated.node contains a higher order declaration
-	 * @throws UnboundLeafException - annotated.node refers to an undeclared variable 
-	 */
-	static final FOL2BoolTranslator translateAndTrack(AnnotatedNode<Formula> annotated,  LeafInterpreter interpreter) {
-		final TranslationCache.Tracking c = new TranslationCache.Tracking(annotated);
-		return new FOL2BoolTranslator(annotated.node().accept(new Translator(c, interpreter)), 
-				            c.varUsage(), c.trueFormulas(), c.falseFormulas());
-	}
-	
-	
-	/**
-	 * Returns the translation of this.node to a boolean circuit.
-	 * @return the translation of this.node to a boolean circuit.
-	 */
-	BooleanValue translation() {
-		return translation;
-	}
-	
-	/**
-	 * Returns a map from the descendents of node to the 
-	 * literals representing the BooleanFormulas that comprise 
-	 * the descendents' translations.  Descendents that evaluate 
-	 * to BooleanConstants or BooleanMatrices comprised of BooleanConstants
-	 * are not mapped.
-	 * @return from the descendents of this.node to the 
-	 * literals representing the BooleanValues that comprise 
-	 * the descendents' translations.
-	 */
-	Map<Node, IntSet> variableUsage() {
-		return variableUsage;
-	}
-	
-	/**
-	 * Returns the set of descendents of this.node that 
-	 * evaluate to TRUE.
-	 * @return {f: this.node.node.*children & Formula | translate(f,this.manager) = TRUE}
-	 */
-	Set<Formula> trueFormulas() {
-		return trueFormulas;
-	}
-	
-	/**
-	 * Returns the set of descendents of this.node that 
-	 * evaluate to FALSE.
-	 * @return {f: this.node.node.*children & Formula | translate(f,this.manager) = FALSE}
-	 */
-	Set<Formula> falseFormulas() {
-		return falseFormulas;
+	 * @throws UnboundLeafException - annotated.node refers to a variable that neither declared
+	 * nor bound in env
+	 **/
+	@SuppressWarnings("unchecked")
+	static final <T> T translate(AnnotatedNode<? extends Node> annotated, LeafInterpreter interpreter, TranslationCache cache, Environment<BooleanMatrix> env) {
+		return (T) annotated.node().accept(new Translator(cache, interpreter, env));
 	}
 
 	/**

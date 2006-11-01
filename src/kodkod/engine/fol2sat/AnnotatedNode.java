@@ -15,10 +15,12 @@ import java.util.Set;
 
 import kodkod.ast.BinaryFormula;
 import kodkod.ast.ComparisonFormula;
+import kodkod.ast.Comprehension;
 import kodkod.ast.ConstantExpression;
 import kodkod.ast.ExprToIntCast;
 import kodkod.ast.Expression;
-import kodkod.ast.Formula;
+import kodkod.ast.IfExpression;
+import kodkod.ast.IfIntExpression;
 import kodkod.ast.IntComparisonFormula;
 import kodkod.ast.IntToExprCast;
 import kodkod.ast.MultiplicityFormula;
@@ -84,58 +86,57 @@ final class AnnotatedNode<N extends Node> {
 	}
 	
 	/**
-	 * Returns the set of all relations at the leaves of the given annotated node.
-	 * @return Relation & annotated.node.*children
+	 * Returns the set of all relations at the leaves of this annotated node.
+	 * @return Relation & this.node.*children
 	 */
-	static Set<Relation> relations(final AnnotatedNode<? extends Node> annotated) {
+	final Set<Relation> relations() {
 		final Set<Relation> relations = new IdentityHashSet<Relation>();
 		final DepthFirstVoidVisitor visitor = new DepthFirstVoidVisitor() {
-			private final Set<Node> shared = annotated.sharedNodes;
-			private final Set<Node> visited = new IdentityHashSet<Node>(shared.size());
+			private final Set<Node> visited = new IdentityHashSet<Node>(sharedNodes.size());
 			protected boolean visited(Node n) {
-				return shared.contains(n) && !visited.add(n);
+				return sharedNodes.contains(n) && !visited.add(n);
 			}
 			public void visit(Relation relation) {
 				relations.add(relation);
 			}
 		};
-		annotated.node.accept(visitor);
+		node.accept(visitor);
 		return relations;
 	}
 	
 	/**
-	 * Returns true if the given node contains a child whose meaning depends on 
-	 * integer bounds (i.e. an ExprToIntCast node with SUM operator or an IntToExprCast node).
-	 * @return true if the given node contains a child whose meaning depends on 
-	 * integer bounds (i.e. an ExprToIntCast node with SUM operator or an IntToExprCast node).
+	 * Returns true if this.node contains a child whose meaning depends on 
+	 * integer bounds (i.e. an ExprToIntCast node with SUM operator or an IntToExprCast node or Expression.INTS constant).
+	 * @return true if this.node contains a child whose meaning depends on 
+	 * integer bounds (i.e. an ExprToIntCast node with SUM operator or an IntToExprCast node or Expression.INTS constant).
 	 */
-	static boolean usesIntBounds(final AnnotatedNode<? extends Node> annotated) {
-		final DepthFirstDetector detector = new DepthFirstDetector(annotated.sharedNodes) {
+	final boolean usesIntBounds() {
+		final DepthFirstDetector detector = new DepthFirstDetector(sharedNodes) {
 			public Boolean visit(IntToExprCast expr) {
-				return Boolean.TRUE;
+				return cache(expr, Boolean.TRUE);
 			}
 			public Boolean visit(ExprToIntCast intExpr) {
 				if (intExpr.op()==ExprToIntCast.Operator.CARDINALITY)
 					super.visit(intExpr);
-				return Boolean.TRUE;
+				return cache(intExpr, Boolean.TRUE);
 			}
 			public Boolean visit(ConstantExpression expr) {
 				return expr==Expression.INTS ? Boolean.TRUE : Boolean.FALSE;
 			}
 		};
-		return (Boolean)annotated.node.accept(detector);
+		return (Boolean)node.accept(detector);
 	}
 	
 	/**
 	 * Returns a map of RelationPredicate names to sets of top-level relation predicates with
-	 * the corresponding names in the given annotated formula.
+	 * the corresponding names in this.node.  
 	 * @return a map of RelationPredicate names to sets of top-level relation predicates with
-	 * the corresponding names in the annotated formula.  A predicate is considered 'top-level'  
-	 * if it is a component of the top-level conjunction, if any, of annotated.node.  
+	 * the corresponding names in this.node.  A predicate is considered 'top-level'  
+	 * if it is a component of the top-level conjunction, if any, of this.node.  
 	 */
-	static Map<RelationPredicate.Name, Set<RelationPredicate>> predicates(AnnotatedNode<Formula> annotated) {
-		final PredicateCollector collector = new PredicateCollector(annotated.sharedNodes);
-		annotated.node.accept(collector);
+	final Map<RelationPredicate.Name, Set<RelationPredicate>> predicates() {
+		final PredicateCollector collector = new PredicateCollector(sharedNodes);
+		node.accept(collector);
 		return collector.preds;
 	}
 	
@@ -200,7 +201,7 @@ final class AnnotatedNode<N extends Node> {
 	 * A visitor that detects and collects
 	 * top-level relation predicates; i.e. predicates that
 	 * are components in the top-level conjunction, if any, on ANY
-	 * path starting at the root formula.
+	 * path starting at the root.
 	 */
 	private static final class PredicateCollector extends DepthFirstVoidVisitor {
 		protected boolean negated;
@@ -249,6 +250,27 @@ final class AnnotatedNode<N extends Node> {
 				}
 			}
 			return false;
+		}
+		/**
+		 * Calls visited(comp); comp's children are not top-level formulas
+		 * so they are not visited.
+		 */
+		public void visit(Comprehension comp) {
+			visited(comp);
+		}
+		/**
+		 * Calls visited(ifexpr); ifexpr's children are not top-level formulas
+		 * so they are not visited.
+		 */
+		public void visit(IfExpression ifexpr) {
+			visited(ifexpr);
+		}
+		/**
+		 * Calls visited(ifexpr); ifexpr's children are not top-level formulas
+		 * so they are not visited.
+		 */
+		public void visit(IfIntExpression ifexpr) {
+			visited(ifexpr);
 		}
 		/**
 		 * Calls visited(intComp); intComp's children are not top-level formulas
