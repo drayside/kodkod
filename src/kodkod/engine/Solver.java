@@ -11,6 +11,7 @@ import kodkod.ast.Node;
 import kodkod.ast.Relation;
 import kodkod.engine.fol2sat.HigherOrderDeclException;
 import kodkod.engine.fol2sat.Translation;
+import kodkod.engine.fol2sat.TranslationInterruptedException;
 import kodkod.engine.fol2sat.Translator;
 import kodkod.engine.fol2sat.TrivialFormulaException;
 import kodkod.engine.fol2sat.UnboundLeafException;
@@ -184,7 +185,7 @@ public final class Solver {
 	 * @see Cost
 	 */
 	public Solution solve(Formula formula, Bounds bounds, Cost cost)
-			throws HigherOrderDeclException, UnboundLeafException {
+			throws HigherOrderDeclException, UnboundLeafException, TranslationInterruptedException {
 		
 		if (!options.solver().minimizers())
 			throw new IllegalArgumentException(options.solver() + " is not a minimizing solver.");
@@ -236,13 +237,13 @@ public final class Solver {
 	 * a relation not mapped by the given bounds
 	 * @throws kodkod.engine.fol2sat.HigherOrderDeclException - the formula contains a higher order declaration that cannot
 	 * be skolemized, or it can be skolemized but this.options.skolemize is false.
-	 * @throws TimeoutException - it takes more than this.timeout of seconds to solve the formula
+	 * @throws TranslationInterruptedException - if translation was interruped by a call to Thread.interrupt().
 	 * @see Solution
 	 * @see Options
 	 * @see Proof
 	 */
 	public Solution solve(Formula formula, Bounds bounds)
-			throws HigherOrderDeclException, UnboundLeafException {
+			throws HigherOrderDeclException, UnboundLeafException, TranslationInterruptedException {
 		long startTransl = System.currentTimeMillis(), endTransl;
 		try {
 			final Translation translation = Translator.translate(formula, bounds, options);

@@ -66,7 +66,7 @@ final class FOL2BoolTranslator {
 	 **/
 	@SuppressWarnings("unchecked")
 	static final <T> T translate(AnnotatedNode<? extends Node> annotated, LeafInterpreter interpreter) {
-		return (T) annotated.node().accept(new Translator(new TranslationCache.Simple(annotated), interpreter));
+		return (T) annotated.node().accept(new Translator(new TranslationCache(annotated), interpreter));
 	}
 	
 	/**
@@ -82,7 +82,7 @@ final class FOL2BoolTranslator {
 	 **/
 	@SuppressWarnings("unchecked")
 	static final <T> T translate(AnnotatedNode<? extends Node> annotated, LeafInterpreter interpreter, Environment<BooleanMatrix> env) {
-		return (T) annotated.node().accept(new Translator(new TranslationCache.Simple(annotated), interpreter, env));
+		return (T) annotated.node().accept(new Translator(new TranslationCache(annotated), interpreter, env));
 	}
 	
 	/**
@@ -106,7 +106,7 @@ final class FOL2BoolTranslator {
 	 * Translates a FOL node to boolean
 	 * @specfield node: Node // the translated node
 	 */
-	private static class Translator implements ReturnVisitor<BooleanMatrix, BooleanValue, Object, Int> {
+	private static final class Translator implements ReturnVisitor<BooleanMatrix, BooleanValue, Object, Int> {
 		final LeafInterpreter interpreter;
 
 		
@@ -251,10 +251,10 @@ final class FOL2BoolTranslator {
 			switch(op) {
 			case UNION        	: ret = left.or(right); break;
 			case INTERSECTION	: ret = left.and(right); break;
-			case DIFFERENCE 		: ret = left.difference(right); break;
+			case DIFFERENCE 	: ret = left.difference(right); break;
 			case OVERRIDE 		: ret = left.override(right); break;
 			case JOIN 			: ret = left.dot(right); break;
-			case PRODUCT			: ret = left.cross(right); break;
+			case PRODUCT		: ret = left.cross(right); break;
 			default : 
 				throw new IllegalArgumentException("Unknown operator: " + op);
 			}
@@ -491,7 +491,7 @@ final class FOL2BoolTranslator {
 			
 			switch(op) {
 			case AND		: ret = f.and(left, right); break;
-			case OR		: ret = f.or(left, right); break;
+			case OR			: ret = f.or(left, right); break;
 			case XOR		: ret = f.xor(left, right); break;
 			case IMPLIES	: ret = f.implies(left, right); break;
 			case IFF		: ret = f.iff(left, right); break;
@@ -549,7 +549,7 @@ final class FOL2BoolTranslator {
 			final Multiplicity mult = multFormula.multiplicity();
 			
 			switch(mult) {
-			case NO 		: ret = child.none(); break;
+			case NO 	: ret = child.none(); break;
 			case SOME	: ret = child.some(); break;
 			case ONE 	: ret = child.one();  break;
 			case LONE 	: ret = child.lone(); break;
@@ -664,13 +664,13 @@ final class FOL2BoolTranslator {
 			case PLUS  		: ret = left.plus(right); break;
 			case MINUS 		: ret = left.minus(right); break;
 			case MULTIPLY 	: ret = left.multiply(right); break;
-			case DIVIDE 		: ret = left.divide(right); break;
-			case AND			: ret = left.and(right); break;
+			case DIVIDE 	: ret = left.divide(right); break;
+			case AND		: ret = left.and(right); break;
 			case OR			: ret = left.or(right); break;
-			case XOR			: ret = left.xor(right); break;
-			case SHL			: ret = left.shl(right); break;
-			case SHR			: ret = left.shr(right); break;
-			case SHA			: ret = left.sha(right); break;
+			case XOR		: ret = left.xor(right); break;
+			case SHL		: ret = left.shl(right); break;
+			case SHR		: ret = left.shr(right); break;
+			case SHA		: ret = left.sha(right); break;
 			default    :
 				throw new IllegalArgumentException("Unknown operator: " + intExpr.op());
 			}

@@ -11,6 +11,7 @@ import kodkod.ast.Variable;
 import kodkod.engine.Solution;
 import kodkod.engine.Solver;
 import kodkod.engine.satlab.SATFactory;
+import kodkod.engine.settings.ConsoleReporter;
 import kodkod.instance.Bounds;
 import kodkod.instance.TupleFactory;
 import kodkod.instance.TupleSet;
@@ -237,6 +238,7 @@ public class Bigconfig {
 	
 	/**
 	 * Usage: java tests.Bigconfig [# hq] [# sub] [# closure unwindings, 0 for true closure] [size of partial instance, 0 default] 
+	 * @throws InterruptedException 
 	 */
 	public static void main(String[] args) {
 		if (args.length < 3) 
@@ -263,9 +265,26 @@ public class Bigconfig {
 				System.out.println(sol.outcome());
 				System.out.println(sol.stats());
 			} else {
+				solver.options().setReporter(new ConsoleReporter());
+//				solver.options().setInterruptible(true);
 				final Bounds bounds =  model.bounds(hq, sub, hq + sub);
+//				final Thread t = new Thread() {
+//					@Override
+//					public void run() {
+//						final Solution sol = solver.solve(show, bounds);
+//						System.out.println(sol.outcome());
+//						System.out.println(sol.stats());
+//					}
+//				};
+//				
+//				t.start();
+//				try {
+//				t.join(1000);
+//				t.interrupt();
+//				} catch (InterruptedException e) {
+//					System.out.println("Interrupted");
+//				}
 				final Solution sol = solver.solve(show, bounds);
-				//System.out.println(show);
 				System.out.println(sol.outcome());
 				System.out.println(sol.stats());
 			}

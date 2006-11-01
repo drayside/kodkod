@@ -1,9 +1,7 @@
 package kodkod.engine.fol2sat;
 
-import static kodkod.engine.bool.BooleanConstant.TRUE;
 
 import java.util.Collections;
-import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
@@ -19,15 +17,11 @@ import kodkod.ast.SumExpression;
 import kodkod.ast.Variable;
 import kodkod.ast.visitor.DepthFirstCollector;
 import kodkod.engine.bool.BooleanConstant;
-import kodkod.engine.bool.BooleanFormula;
 import kodkod.engine.bool.BooleanMatrix;
 import kodkod.engine.bool.BooleanValue;
 import kodkod.util.collections.ArrayStack;
 import kodkod.util.collections.IdentityHashSet;
 import kodkod.util.collections.Stack;
-import kodkod.util.ints.IndexedEntry;
-import kodkod.util.ints.IntSet;
-import kodkod.util.ints.Ints;
 
 
 /**
@@ -48,7 +42,7 @@ import kodkod.util.ints.Ints;
  *               e.map.BooleanMatrix = Variable & n.*children - (n.*children & Decls).variable 
  * @author Emina Torlak
  */
-abstract class TranslationCache {
+class TranslationCache {
 	private final Map<Node,TranslationInfo> cache;
 	
 	/**
@@ -56,7 +50,7 @@ abstract class TranslationCache {
 	 * @effects this.node' = annotated.node 
 	 */
 	@SuppressWarnings("unchecked") 
-	private TranslationCache(AnnotatedNode<? extends Node> annotated) {
+	TranslationCache(AnnotatedNode<? extends Node> annotated) {
 		final VarCollector collector = new VarCollector(annotated.sharedNodes());
 		annotated.node().accept(collector);
 //		System.out.println(collector.cachingInfo());
@@ -79,7 +73,7 @@ abstract class TranslationCache {
 	 *         this.cache[node].map, null
 	 */
 	@SuppressWarnings("unchecked")
-	final <T> T get(Node node, Environment<BooleanMatrix> env) {
+	<T> T get(Node node, Environment<BooleanMatrix> env) {
 		final TranslationInfo info = cache.get(node);
 		return info==null ? null : (T) info.get(env);
 	}
@@ -99,7 +93,7 @@ abstract class TranslationCache {
 	 *           this.cache' = this.cache
 	 * @return translation
 	 */
-	final <T> T cache(Node node, T translation, Environment<BooleanMatrix> env) {
+	<T> T cache(Node node, T translation, Environment<BooleanMatrix> env) {
 		final TranslationInfo info = cache.get(node);
 		if (info != null) {
 			info.set(translation, env);
@@ -118,7 +112,9 @@ abstract class TranslationCache {
 	 *           this.cache' = this.cache
 	 * @return translation
 	 */
-	abstract BooleanMatrix cache(Expression expr, BooleanMatrix translation, Environment<BooleanMatrix> env);
+	BooleanMatrix cache(Expression expr, BooleanMatrix translation, Environment<BooleanMatrix> env) {
+		return cache((Node)expr, translation, env);
+	}
 	
 	/**
 	 * Caches the given translation for the specified node, if the node is
@@ -131,153 +127,8 @@ abstract class TranslationCache {
 	 *           this.cache' = this.cache
 	 * @return translation
 	 */
-	abstract BooleanValue cache(Formula formula, BooleanValue translation, Environment<BooleanMatrix> env);
-	
-	
-	/**
-	 * A TranslationCache that tracks variables in addition to 
-	 * caching translations.
-	 * 
-	 * @invariant node in Formula
-	 * @specfield varUsage: node.*children & (Expression + Formula) -> set int
-	 * @specfield trueFormulas: set node.*children & Formula
-	 * @specfield falseFormulas: set node.*children & Formula
-	 */
-	static final class Tracking extends TranslationCache {
-		private final Map<Node, IntSet> varUsage;
-		private final Set<Formula> trueFormulas, falseFormulas;
-		
-		/**
-		 * Constructs a new tracking translation cache for the given annotated node.
-		 * @effects this.node' = annotated.node 
-		 */
-		Tracking(AnnotatedNode<Formula> annotated) {
-			super(annotated);
-			this.varUsage = new IdentityHashMap<Node,IntSet>();
-			this.trueFormulas = new IdentityHashSet<Formula>();
-			this.falseFormulas = new IdentityHashSet<Formula>();
-		}
-
-		/**
-		 * Returns this.varUsage
-		 * @return this.varUsage
-		 */
-		Map<Node, IntSet> varUsage() {
-			return varUsage;
-		}
-		
-		/**
-		 * Return this.trueFormulas
-		 * @return this.trueFormulas
-		 */
-		Set<Formula> trueFormulas() {
-			return trueFormulas;
-		}
-		
-		/**
-		 * Return this.falseFormulas
-		 * @return this.falseFormulas
-		 */
-		Set<Formula> falseFormulas() {
-			return falseFormulas;
-		}
-		
-		/**
-		 * If the given expression is one for which we are caching translations,
-		 * the provided translation is cached and returned.  Otherwise,
-		 * the translation is simply returned.  In addition, this method records
-		 * the labels of BooleanFormulas that comprise the dense regions of 
-		 * the translation in the varUsage map. 
-		 * @return translation
-		 * @effects if the expression is one for which we are caching translations,
-		 * the provided translation is cached.
-		 * @effects this.varUsage' = this.varUsage + 
-		 *           expr -> {i: int | some b: translation.elements[int] - BooleanConstant | 
-		 *                     i = |b.label| }
-		 */
-		@Override
-		BooleanMatrix cache(Expression expr, BooleanMatrix translation, Environment<BooleanMatrix> env) {
-			IntSet vars;
-			if (env.parent()==null) { // top-level expression
-				vars = Ints.bestSet(1, Integer.MAX_VALUE-1);		
-			} else { // not a top-level expression
-				vars = varUsage.get(expr);
-				if (vars==null)
-					vars = Ints.bestSet(1, Integer.MAX_VALUE-1);
-			}
-			for(IndexedEntry<BooleanValue> e: translation) {
-				if (e.value() != TRUE)
-					vars.add(StrictMath.abs(((BooleanFormula)e.value()).label()));
-			}
-			varUsage.put(expr, vars);
-			return cache((Node)expr, translation, env);
-		}
-
-		/**
-		 * If the given formula is one for which we are caching translations,
-		 * the provided translation is cached and returned.  Otherwise,
-		 * the translation is simply returned. In addition, this method records
-		 * the label of the translation in the varUsage map, if the translation
-		 * is non-constant.  If it is constant, it records the formula as being
-		 * constant.  
-		 * @return translation
-		 * @effects if the formula is one for which we are caching translations,
-		 * the provided translation is cached.
-		 * @effects translation = BooleanConstant.TRUE => 
-		 * 	          this.trueFormulas' = this.trueFormulas + formula,
-		 *          translation = BooleanConstant.FALSE => 
-		 * 	          this.falseFormulas' = this.falseFormulas + formula,
-		 *          this.varUsage' = this.varUsage + formula -> |translation.label|
-		 */
-		@Override
-		BooleanValue cache(Formula formula, BooleanValue translation, Environment<BooleanMatrix> env) {
-			if (translation==BooleanConstant.TRUE) {
-				if (env.parent()==null) trueFormulas.add(formula);
-			} else if (translation==BooleanConstant.FALSE) {
-				if (env.parent()==null) falseFormulas.add(formula);
-			} else if (env.parent()==null) { // top-level formula
-				varUsage.put(formula, Ints.singleton(StrictMath.abs(((BooleanFormula)translation).label())));	
-			} else {
-				IntSet vars = varUsage.get(formula);
-				if (vars==null)
-					vars = Ints.bestSet(1, Integer.MAX_VALUE-1);
-				vars.add(StrictMath.abs(((BooleanFormula)translation).label()));
-				varUsage.put(formula, vars);
-			}
-			return cache((Node)formula, translation, env);
-		}
-		
-	}
-	
-	/**
-	 * A simple implementation of a translation cache.
-	 */
-	static final class Simple extends TranslationCache {
-		/**
-		 * Constructs a new simple translation cache for the given annotated node.
-		 * @effects this.node' = annotated.node 
-		 */
-		Simple(AnnotatedNode<? extends Node> annotated) {
-			super(annotated);
-		}
-		
-		/**
-		 * {@inheritDoc}
-		 * @see kodkod.engine.fol2sat.TranslationCache#cache(kodkod.ast.Expression, kodkod.engine.bool.BooleanMatrix, kodkod.engine.fol2sat.Environment)
-		 */
-		@Override
-		BooleanMatrix cache(Expression expr, BooleanMatrix translation, Environment<BooleanMatrix> env) {
-			return cache((Node)expr, translation, env);
-		}
-		
-		/**
-		 * {@inheritDoc}
-		 * @see kodkod.engine.fol2sat.TranslationCache#cache(kodkod.ast.Formula, kodkod.engine.bool.BooleanValue, kodkod.engine.fol2sat.Environment)
-		 */
-		@Override
-		BooleanValue cache(Formula formula, BooleanValue translation, Environment<BooleanMatrix> env) {
-			return cache((Node)formula, translation, env);
-		}
+	BooleanValue cache(Formula formula, BooleanValue translation, Environment<BooleanMatrix> env) {
+		return cache((Node)formula, translation, env);
 	}
 	
 	/**
@@ -446,8 +297,7 @@ abstract class TranslationCache {
 		 */
 		@Override
 		protected final Set<Variable> cache(Node node, Set<Variable> freeVars) {
-			if (cached.contains(node) || 
-				!varsInScope.empty() && !freeVars.contains(varsInScope.peek())) {
+			if (cached.contains(node) || !varsInScope.empty() && !freeVars.contains(varsInScope.peek())) {
 //				System.out.println("caching " + node + " for " + freeVars);
 //				System.out.println("varsInScope: " + varsInScope + " peek: " + (varsInScope.empty() ? "" : varsInScope.peek()));
 				final int numVars = freeVars.size();
