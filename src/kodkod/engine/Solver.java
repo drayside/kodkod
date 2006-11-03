@@ -9,27 +9,26 @@ import java.util.Map;
 import kodkod.ast.Formula;
 import kodkod.ast.Node;
 import kodkod.ast.Relation;
+import kodkod.engine.config.Options;
 import kodkod.engine.fol2sat.HigherOrderDeclException;
 import kodkod.engine.fol2sat.Translation;
-import kodkod.engine.fol2sat.TranslationInterruptedException;
+import kodkod.engine.fol2sat.TranslationAbortedException;
 import kodkod.engine.fol2sat.Translator;
 import kodkod.engine.fol2sat.TrivialFormulaException;
 import kodkod.engine.fol2sat.UnboundLeafException;
 import kodkod.engine.satlab.SATMinSolver;
 import kodkod.engine.satlab.SATProver;
 import kodkod.engine.satlab.SATSolver;
-import kodkod.engine.settings.Options;
 import kodkod.instance.Bounds;
 import kodkod.instance.Instance;
 import kodkod.util.ints.IntIterator;
 import kodkod.util.ints.IntSet;
 
-import org.sat4j.specs.TimeoutException;
 
 /** 
  * Implementation of a computational engine for solving relational formulae.
  * A {@link kodkod.ast.Formula formula} is solved with respect to given 
- * {@link kodkod.instance.Bounds bounds} and {@link kodkod.engine.settings.Options options}.
+ * {@link kodkod.instance.Bounds bounds} and {@link kodkod.engine.config.Options options}.
  * 
  * @specfield options: Options 
  * @author Emina Torlak 
@@ -127,7 +126,7 @@ public final class Solver {
 	 * @return the statistics corresponding to the given translation, translation time, and solving time.
 	 */
 	private static Statistics stats(Translation translation, long translTime, long solveTime) {
-		return new Statistics(translation.cnf().numberOfVariables(), translation.numberOfPrimaryVariables(), 
+		return new Statistics(translation.cnf().numberOfVariables(), translation.primaryVariables(), 
 				translation.cnf().numberOfClauses(), translTime, solveTime);
 	}
 	
@@ -178,16 +177,16 @@ public final class Solver {
 	 * a relation not mapped by the given bounds
 	 * @throws kodkod.engine.fol2sat.HigherOrderDeclException - the formula contains a higher order declaration that cannot
 	 * be skolemized, or it can be skolemized but this.options.skolemize is false.
-	 * @throws TimeoutException - it takes more than this.timeout of seconds to solve the formula
+	 * @throws AbortedException - this solving task was interrupted with a call to Thread.interrupt on this thread
 	 * @throws IllegalArgumentException - !this.options.solver.minimizers || some cost.relations - (formula.^children & Relation)
 	 * @see Solution
 	 * @see Options
 	 * @see Cost
 	 */
 	public Solution solve(Formula formula, Bounds bounds, Cost cost)
-			throws HigherOrderDeclException, UnboundLeafException, TranslationInterruptedException {
+			throws HigherOrderDeclException, UnboundLeafException, AbortedException {
 		
-		if (!options.solver().minimizers())
+		if (!options.solver().minimizer())
 			throw new IllegalArgumentException(options.solver() + " is not a minimizing solver.");
 
 		long startTransl = System.currentTimeMillis(), endTransl;
@@ -237,30 +236,36 @@ public final class Solver {
 	 * a relation not mapped by the given bounds
 	 * @throws kodkod.engine.fol2sat.HigherOrderDeclException - the formula contains a higher order declaration that cannot
 	 * be skolemized, or it can be skolemized but this.options.skolemize is false.
-	 * @throws TranslationInterruptedException - if translation was interruped by a call to Thread.interrupt().
+	 * @throws AbortedException - this solving task was interrupted with a call to Thread.interrupt on this thread
 	 * @see Solution
 	 * @see Options
 	 * @see Proof
 	 */
 	public Solution solve(Formula formula, Bounds bounds)
-			throws HigherOrderDeclException, UnboundLeafException, TranslationInterruptedException {
+			throws HigherOrderDeclException, UnboundLeafException, AbortedException {
+		
 		long startTransl = System.currentTimeMillis(), endTransl;
-		try {
+		
+		try {		
+		
 			final Translation translation = Translator.translate(formula, bounds, options);
 			endTransl = System.currentTimeMillis();
 
 			final SATSolver cnf = translation.cnf();
 			
-			options.reporter().solvingCNF(translation.numberOfPrimaryVariables(), cnf.numberOfVariables(), cnf.numberOfClauses());
+			options.reporter().solvingCNF(translation.primaryVariables(), cnf.numberOfVariables(), cnf.numberOfClauses());
 			final long startSolve = System.currentTimeMillis();
 			final boolean isSat = cnf.solve();
 			final long endSolve = System.currentTimeMillis();
 
 			final Statistics stats = stats(translation, endTransl - startTransl, endSolve - startSolve);
 			return isSat ? sat(bounds, translation, stats) : unsat(translation, stats);
+			
 		} catch (TrivialFormulaException trivial) {
 			endTransl = System.currentTimeMillis();
 			return trivial(bounds, trivial, endTransl - startTransl);
+		} catch (TranslationAbortedException tie) {
+			throw new AbortedException(tie);
 		}
 	}
 
@@ -271,5 +276,6 @@ public final class Solver {
 	public String toString() {
 		return options.toString();
 	}
-
+	
+	
 }

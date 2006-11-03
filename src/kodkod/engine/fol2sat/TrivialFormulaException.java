@@ -29,7 +29,7 @@ public final class TrivialFormulaException extends Exception {
 	 * @requires reduction != null && bounds != null && formulaValue != null
 	 * @effects this.reduction' = reduction && this.bounds' = bounds && this.formulaValue' = formulaValue 
 	 */
-	 TrivialFormulaException(Formula reduction, BooleanConstant formulaValue, Bounds bounds) {
+	 TrivialFormulaException(Formula reduction, Bounds bounds, BooleanConstant formulaValue) {
 		super("Trivially " + ((formulaValue==BooleanConstant.FALSE) ? "un" : "" )  + "satisfiable formula.");
 		assert formulaValue != null && bounds != null && reduction != null;
 		this.reduction = reduction;

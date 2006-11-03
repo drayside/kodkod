@@ -103,7 +103,7 @@ public final class Translation {
 	 * @return the number of primary variables allocated
 	 * during translation.
 	 */
-	public int numberOfPrimaryVariables() {
+	public int primaryVariables() {
 		return maxPrimaryLit;
 	}
 	

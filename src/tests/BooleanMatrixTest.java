@@ -19,7 +19,7 @@ import kodkod.engine.bool.BooleanValue;
 import kodkod.engine.bool.BooleanVariable;
 import kodkod.engine.bool.Dimensions;
 import kodkod.engine.bool.Operator;
-import kodkod.engine.settings.Options;
+import kodkod.engine.config.Options;
 import kodkod.util.ints.IndexedEntry;
 import kodkod.util.ints.IntRange;
 import kodkod.util.ints.Ints;

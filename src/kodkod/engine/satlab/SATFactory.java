@@ -59,7 +59,7 @@ public abstract class SATFactory {
 			return new ZChaffProver(); 
 		}
 		@Override
-		public boolean provers() { return true; }
+		public boolean prover() { return true; }
 		public String toString() { return "ZChaffProver"; }
 	};
 	
@@ -75,7 +75,7 @@ public abstract class SATFactory {
 			return new ZChaffMincost();
 		}
 		@Override
-		public boolean minimizers() { return true; }
+		public boolean minimizer() { return true; }
 		public String toString() { return "ZChaffMincost"; }
 	};
 	
@@ -110,6 +110,34 @@ public abstract class SATFactory {
 	}
 	
 	/**
+	 * Returns a SATFactory that produces SATSolver wrappers for the external
+	 * SAT solver specified by the executable parameter.  The solver's input
+	 * and output formats must conform to the SAT competition standards
+	 * (http://www.satcompetition.org/2004/format-solvers2004.html).  The solver
+	 * will be called with the specified options, and the given tempFile name will
+	 * be used to store the generated CNF files.  It is the caller's responsibility to 
+	 * delete the temporary file when no longer needed.  External solvers are always
+	 * interruptible.
+	 * @return  Sa ATFactory that produces interruptible SATSolver wrappers for the specified external
+	 * SAT solver
+	 */
+	public static final SATFactory externalFactory(final String executable, final String options, final String tempFile) {
+		return new SATFactory() {
+
+			@Override
+			public SATSolver instance() {
+				return new ExternalSolver(executable, options, tempFile);
+			}
+			
+			@Override
+			public boolean interruptible() {
+				return true;
+			}
+		};
+	}
+	
+	
+	/**
 	 * Returns an instance of a SATSolver produced by this factory.
 	 * @return a SATSolver instance
 	 */
@@ -121,7 +149,7 @@ public abstract class SATFactory {
 	 * @return true if the solvers returned by this.instance() are
 	 * {@link SATProver SATProvers}.  Otherwise returns false.
 	 */
-	public boolean provers() {
+	public boolean prover() {
 		return false;
 	}
 	
@@ -131,7 +159,17 @@ public abstract class SATFactory {
 	 * @return true if the solvers returned by this.instance() are
 	 * {@link SATMinSolver SATMinSolvers}.  Otherwise returns false.
 	 */
-	public boolean minimizers() { 
+	public boolean minimizer() { 
+		return false;
+	}
+	
+	/**
+	 * Returns true if the solvers returned by this.instance() are interruptible;
+	 * i.e. if a solver return by this.instance() will terminate the current call 
+	 * to solve if the thread in which it is executing is interrupted. 
+	 * @return true if the solvers returned by this.instance() are interruptible.
+	 */
+	public boolean interruptible() {
 		return false;
 	}
 

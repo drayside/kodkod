@@ -17,7 +17,7 @@ abstract class NativeSolver implements SATSolver {
 	 */
 	private long peer;
 	private int clauses, vars;
-	private Boolean status;
+	private Boolean sat;
 	/**
 	 * Constructs a new wrapper for the given 
 	 * instance of the native solver.
@@ -25,7 +25,7 @@ abstract class NativeSolver implements SATSolver {
 	NativeSolver(long peer) {
 		this.peer = peer;
 		this.clauses = this.vars = 0;
-		this.status = null;
+		this.sat = null;
 //		System.out.println("created " + peer);
 	}
 	
@@ -81,9 +81,7 @@ abstract class NativeSolver implements SATSolver {
 	 * @see kodkod.engine.satlab.SATSolver#addClause(int[])
 	 */
 	public final void addClause(int[] lits) {
-		if (lits==null)
-			throw new NullPointerException();
-		else if (lits.length > 0) {
+		if (lits.length > 0) {
 //			for(int i : lits) {
 //				System.out.print(i + " ");
 //			}
@@ -104,13 +102,13 @@ abstract class NativeSolver implements SATSolver {
 	}
 	
 	/**
-	 * Returns the current status of the solver.
-	 * @return null if the status is unknown, TRUE if the last
+	 * Returns the current sat of the solver.
+	 * @return null if the sat is unknown, TRUE if the last
 	 * call to solve() yielded SAT, and FALSE if the last call to
 	 * solve() yielded UNSAT.
 	 */
 	final Boolean status() { 
-		return status;
+		return sat;
 	}
 	
 	/**
@@ -122,7 +120,7 @@ abstract class NativeSolver implements SATSolver {
 	 * @see kodkod.engine.satlab.SATSolver#solve()
 	 */
 	public final boolean solve() {
-		return (status = solve(peer));
+		return (sat = solve(peer));
 	}
 	
 	
@@ -149,7 +147,7 @@ abstract class NativeSolver implements SATSolver {
 	 * outcome of the last call was not <code>true</code>.
 	 */
 	public final boolean valueOf(int variable) {
-		if (!Boolean.TRUE.equals(status))
+		if (!Boolean.TRUE.equals(sat))
 			throw new IllegalStateException();
 		validateVariable(variable);
 		return valueOf(peer, variable);
@@ -169,7 +167,7 @@ abstract class NativeSolver implements SATSolver {
 	
 	
 	/**
-	 * Releases the memory used by this.zchaff.
+	 * Releases the resources used by this native solver.
 	 */
 	protected final void finalize() throws Throwable {
 		super.finalize();

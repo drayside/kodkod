@@ -20,7 +20,7 @@ import kodkod.engine.bool.BooleanFactory;
 import kodkod.engine.bool.BooleanMatrix;
 import kodkod.engine.bool.BooleanValue;
 import kodkod.engine.bool.Operator;
-import kodkod.engine.settings.Options;
+import kodkod.engine.config.Options;
 import kodkod.instance.Bounds;
 import kodkod.instance.TupleFactory;
 import kodkod.util.collections.IdentityHashSet;

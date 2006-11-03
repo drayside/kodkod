@@ -17,9 +17,9 @@ import kodkod.engine.bool.BooleanFormula;
 import kodkod.engine.bool.BooleanMatrix;
 import kodkod.engine.bool.BooleanValue;
 import kodkod.engine.bool.Operator;
+import kodkod.engine.config.Options;
+import kodkod.engine.config.Reporter;
 import kodkod.engine.satlab.SATSolver;
-import kodkod.engine.settings.Options;
-import kodkod.engine.settings.Reporter;
 import kodkod.instance.Bounds;
 import kodkod.instance.Instance;
 import kodkod.util.ints.IntSet;
@@ -77,14 +77,14 @@ public final class Translator {
 			circuit = FOL2BoolTranslator.translate(annotated,  interpreter, c, Environment.EMPTY);
 			if (circuit.op()==Operator.CONST) {
 				final Formula redux = TrivialFormulaReducer.reduce(annotated,breaker.broken(),c.trueFormulas(),c.falseFormulas());
-				throw new TrivialFormulaException(redux, (BooleanConstant)circuit, bounds);
+				throw new TrivialFormulaException(redux, bounds, (BooleanConstant)circuit);
 			}
 			varUsage = c.varUsage();
 		} else {
 			final TranslationCache c = options.interruptible() ? new InterruptibleCache(annotated) : new TranslationCache(annotated);
 			circuit = FOL2BoolTranslator.translate(annotated,  interpreter, c, Environment.EMPTY);
 			if (circuit.op()==Operator.CONST) {
-				throw new TrivialFormulaException(formula, (BooleanConstant)circuit, bounds);
+				throw new TrivialFormulaException(formula, bounds, (BooleanConstant)circuit);
 			}
 			varUsage = new LinkedHashMap<Node, IntSet>();
 		}
@@ -110,7 +110,7 @@ public final class Translator {
 		}
 		
 		if (circuit.op()==Operator.CONST) {
-			throw new TrivialFormulaException(formula, (BooleanConstant)circuit, bounds);
+			throw new TrivialFormulaException(formula, bounds, (BooleanConstant)circuit);
 		}
 		
 		// translate to cnf and return the translation

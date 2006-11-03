@@ -7,8 +7,8 @@ import static kodkod.engine.bool.Operator.OR;
 
 /**
 * An integer represented using {@link kodkod.engine.bool.BooleanValue boolean values}
-* and {@link kodkod.engine.settings.Options.IntEncoding#UNARY unary} or
-* {@link kodkod.engine.settings.Options.IntEncoding#BINARY binary} encoding.
+* and {@link kodkod.engine.config.Options.IntEncoding#UNARY unary} or
+* {@link kodkod.engine.config.Options.IntEncoding#BINARY binary} encoding.
 * 
 * @specfield factory: BooleanFactory
 * @specfield bits: [0..factory.bitwidth) -> one factory.components

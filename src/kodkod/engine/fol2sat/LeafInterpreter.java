@@ -13,7 +13,7 @@ import kodkod.ast.Relation;
 import kodkod.engine.bool.BooleanFactory;
 import kodkod.engine.bool.BooleanMatrix;
 import kodkod.engine.bool.Dimensions;
-import kodkod.engine.settings.Options;
+import kodkod.engine.config.Options;
 import kodkod.instance.Bounds;
 import kodkod.instance.Instance;
 import kodkod.instance.TupleSet;

@@ -55,8 +55,10 @@ public interface SATSolver {
 	 * If the satisfiability of this.clauses cannot be determined within
 	 * the given number of seconds, a TimeoutException is thrown.
 	 * @return true if this.clauses are satisfiable; otherwise false.
+	 * @throws SATAbortedException -- the call to solve was cancelled or
+	 * could not terminate normally.
 	 */
-	public abstract boolean solve();
+	public abstract boolean solve() throws SATAbortedException;
 	
 	/**
 	 * Returns the boolean value assigned to the given variable by the

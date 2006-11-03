@@ -10,8 +10,8 @@ import kodkod.ast.Relation;
 import kodkod.ast.Variable;
 import kodkod.engine.Solution;
 import kodkod.engine.Solver;
+import kodkod.engine.config.ConsoleReporter;
 import kodkod.engine.satlab.SATFactory;
-import kodkod.engine.settings.ConsoleReporter;
 import kodkod.instance.Bounds;
 import kodkod.instance.TupleFactory;
 import kodkod.instance.TupleSet;
@@ -243,7 +243,7 @@ public class Bigconfig {
 	public static void main(String[] args) {
 		if (args.length < 3) 
 			usage();
-		
+				
 		final Bigconfig model = new Bigconfig(Integer.parseInt(args[2]));
 		final Solver solver = new Solver();
 		solver.options().setSolver(SATFactory.ZChaffBasic);
@@ -266,12 +266,17 @@ public class Bigconfig {
 				System.out.println(sol.stats());
 			} else {
 				solver.options().setReporter(new ConsoleReporter());
-//				solver.options().setInterruptible(true);
 				final Bounds bounds =  model.bounds(hq, sub, hq + sub);
+				final Solution sol = solver.solve(show, bounds);
+				System.out.println(sol.outcome());
+				System.out.println(sol.stats());
+					
+//				solver.options().setSolver(SATFactory.externalFactory("/Users/emina/Desktop/MiniSat_v1.14/minisat", "", "/Users/emina/Desktop/temp.cnf"));
+//				solver.options().setInterruptible(true);
 //				final Thread t = new Thread() {
 //					@Override
 //					public void run() {
-//						final Solution sol = solver.solve(show, bounds);
+//						final Solution sol = solver.solve(show,bounds);
 //						System.out.println(sol.outcome());
 //						System.out.println(sol.stats());
 //					}
@@ -284,9 +289,8 @@ public class Bigconfig {
 //				} catch (InterruptedException e) {
 //					System.out.println("Interrupted");
 //				}
-				final Solution sol = solver.solve(show, bounds);
-				System.out.println(sol.outcome());
-				System.out.println(sol.stats());
+				
+		
 			}
 		} catch (NumberFormatException nfe) {
 			usage();

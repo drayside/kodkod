@@ -256,7 +256,7 @@ public final class Bounds implements Cloneable {
 	 * @see java.lang.Object#toString()
 	 */
 	public String toString() {
-		final StringBuffer str = new StringBuffer();
+		final StringBuilder str = new StringBuilder();
 		str.append("relation bounds:");
 		for(Map.Entry<Relation, TupleSet> entry: lowers.entrySet()) {
 			str.append("\n ");

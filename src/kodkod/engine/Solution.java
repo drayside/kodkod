@@ -2,7 +2,7 @@ package kodkod.engine;
 
 
 import kodkod.ast.Formula;
-import kodkod.engine.settings.Options;
+import kodkod.engine.config.Options;
 import kodkod.instance.Instance;
 
 /**

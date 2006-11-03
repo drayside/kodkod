@@ -21,7 +21,7 @@ import org.sat4j.specs.IVecInt;
 final class SAT4J implements SATSolver {
 	private ISolver solver;
 	private final ReadOnlyIVecInt wrapper;
-	private Boolean isSatisfiable; 
+	private Boolean sat; 
 	private int vars, clauses;
 	
 	/**
@@ -34,7 +34,7 @@ final class SAT4J implements SATSolver {
 			throw new NullPointerException("solver");
 		this.solver = solver;
 		this.wrapper = new ReadOnlyIVecInt();
-		this.isSatisfiable = null;
+		this.sat = null;
 		this.vars = this.clauses = 0;
 	}
 
@@ -83,7 +83,7 @@ final class SAT4J implements SATSolver {
 	 */
 	public void addClause(int[] lits) {
 		try {
-			if (!Boolean.FALSE.equals(isSatisfiable)) {
+			if (!Boolean.FALSE.equals(sat)) {
 				clauses++;
 				solver.addClause(wrapper.wrap(lits));
 //				for(int lit : lits) {
@@ -93,7 +93,7 @@ final class SAT4J implements SATSolver {
 			}
 			
 		} catch (ContradictionException e) {
-			isSatisfiable = Boolean.FALSE;
+			sat = Boolean.FALSE;
 		}
 	}
 
@@ -106,9 +106,9 @@ final class SAT4J implements SATSolver {
 	 */
 	public boolean solve() {
 		try {
-			if (!Boolean.FALSE.equals(isSatisfiable))
-				isSatisfiable = Boolean.valueOf(solver.isSatisfiable());
-			return isSatisfiable;
+			if (!Boolean.FALSE.equals(sat))
+				sat = Boolean.valueOf(solver.isSatisfiable());
+			return sat;
 		} catch (org.sat4j.specs.TimeoutException e) {
 			throw new RuntimeException("timed out");
 		} 
@@ -126,10 +126,10 @@ final class SAT4J implements SATSolver {
 	 * outcome of the last call was not <code>true</code>.
 	 */
 	public final boolean valueOf(int variable) {
-		if (!Boolean.TRUE.equals(isSatisfiable)) 
+		if (!Boolean.TRUE.equals(sat)) 
 			throw new IllegalStateException();
-		if (variable < 1 || variable > numberOfVariables())
-			throw new IllegalArgumentException(variable + " !in [1.." + numberOfVariables()+"]");
+		if (variable < 1 || variable > vars)
+			throw new IllegalArgumentException(variable + " !in [1.." + vars+"]");
 		return solver.model(variable);
 	}
 	
@@ -137,7 +137,7 @@ final class SAT4J implements SATSolver {
 	 * {@inheritDoc}
 	 * @see kodkod.engine.satlab.SATSolver#free()
 	 */
-	public void free() {
+	public synchronized final void free() {
 		solver = null;
 	}
 	

@@ -14,7 +14,7 @@ import kodkod.engine.bool.BooleanFactory;
 import kodkod.engine.bool.BooleanValue;
 import kodkod.engine.bool.BooleanVariable;
 import kodkod.engine.bool.Operator;
-import kodkod.engine.settings.Options;
+import kodkod.engine.config.Options;
 
 
 
