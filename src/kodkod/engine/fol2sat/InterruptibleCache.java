@@ -30,10 +30,11 @@ final class InterruptibleCache extends TranslationCache {
 	 *         this.cache[node].map, null
 	 * @throws TranslationAbortedException - Thread.currentTread.isInterrupted()
 	 */
+	@SuppressWarnings("unchecked")
 	<T> T get(Node node, Environment<BooleanMatrix> env) {
 		if (Thread.currentThread().isInterrupted()) 
 			throw new TranslationAbortedException();
-		return super.get(node, env);
+		return (T)super.get(node, env);
 	}
 
 }

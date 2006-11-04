@@ -74,7 +74,7 @@ public final class Translator {
 		BooleanValue circuit;
 		if (options.trackVars()) {
 			final TrackingCache c = new TrackingCache(annotated);
-			circuit = FOL2BoolTranslator.translate(annotated,  interpreter, c, Environment.EMPTY);
+			circuit = (BooleanValue)FOL2BoolTranslator.translate(annotated,  interpreter, c, Environment.EMPTY);
 			if (circuit.op()==Operator.CONST) {
 				final Formula redux = TrivialFormulaReducer.reduce(annotated,breaker.broken(),c.trueFormulas(),c.falseFormulas());
 				throw new TrivialFormulaException(redux, bounds, (BooleanConstant)circuit);
@@ -82,7 +82,7 @@ public final class Translator {
 			varUsage = c.varUsage();
 		} else {
 			final TranslationCache c = options.interruptible() ? new InterruptibleCache(annotated) : new TranslationCache(annotated);
-			circuit = FOL2BoolTranslator.translate(annotated,  interpreter, c, Environment.EMPTY);
+			circuit = (BooleanValue)FOL2BoolTranslator.translate(annotated,  interpreter, c, Environment.EMPTY);
 			if (circuit.op()==Operator.CONST) {
 				throw new TrivialFormulaException(formula, bounds, (BooleanConstant)circuit);
 			}
