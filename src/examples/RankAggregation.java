@@ -151,27 +151,11 @@ public final class RankAggregation {
 			
 			Formula f = model.show();
 			Bounds b = model.bounds(Integer.parseInt(args[0]));
-			
-			
-//			System.out.println("solving with basic");
-//			solver.options().setSolver(SATFactory.ZChaffBasic);
-//			Solution solb = solver.solve(f, b);
-//			System.out.println(solb);
-			
+						
 			System.out.println("solving with mincost");
 			solver.options().setSolver(SATFactory.ZChaffMincost);
 			Solution solm = solver.solve(f, b, model.cost());
 			System.out.println(solm);
-			
-//			System.out.println("solving with prover");
-//			solver.options().setSolver(SATFactory.ZChaffProver);
-//			Solution solp = solver.solve(f, b);
-//			System.out.println(solp); 
-			
-			
-			
-			
-			
 			
 		} catch (NumberFormatException nfe) {
 			usage();

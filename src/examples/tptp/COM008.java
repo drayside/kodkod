@@ -221,25 +221,6 @@ public final class COM008 {
 			final Solution sol = solver.solve(f, b);
 			System.out.println(sol);
 		
-//			solver.options().setSolver(SATFactory.externalFactory("/Users/emina/Desktop/MiniSat_v1.14/minisat", "", "/Users/emina/Desktop/temp.cnf"));
-//			solver.options().setInterruptible(true);
-//			final Thread t = new Thread() {
-//				@Override
-//				public void run() {
-//					final Solution sol = solver.solve(f,b);
-//					System.out.println(sol.outcome());
-//					System.out.println(sol.stats());
-//				}
-//			};
-//			
-//			t.start();
-//			try {
-//			t.join(1000);
-//			t.interrupt();
-//			} catch (InterruptedException e) {
-//				System.out.println("Interrupted");
-//			}
-			
 		} catch (NumberFormatException nfe) {
 			usage();
 		}
