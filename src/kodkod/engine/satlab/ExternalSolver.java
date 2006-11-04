@@ -5,6 +5,7 @@ package kodkod.engine.satlab;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.RandomAccessFile;
@@ -18,7 +19,7 @@ import java.util.BitSet;
 final class ExternalSolver implements SATSolver {
 	private final StringBuilder buffer;
 	private final int capacity = 8192;
-	private final String executable, options, temp;
+	private final String executable, options, inTemp, outTemp;
 	private final RandomAccessFile cnf;
 	private final BitSet solution;
 	private volatile Boolean sat;
@@ -26,13 +27,15 @@ final class ExternalSolver implements SATSolver {
 	
 	/**
 	 * Constructs an ExternalSolver that will execute the specified binary
-	 * with the given options on a tempFile with the specified name.  The tempFile
+	 * with the given options on the inTemp file with the specified name.  inTemp
 	 * will be initialized to contain all clauses added to this solver via the 
-	 * {@link #addClause(int[])} method.
+	 * {@link #addClause(int[])} method.  If outTemp is the empty string, 
+	 * the solver is assumed to write its output to standard out.  Otherwise,
+	 * it is assumed to write its output to the outTemp file.
 	 */
-	ExternalSolver(String executable, String options, String tempFile) {
+	ExternalSolver(String executable, String options, String inTemp, String outTemp) {
 		try {
-			this.cnf = new RandomAccessFile(tempFile,"rw");
+			this.cnf = new RandomAccessFile(inTemp,"rw");
 			this.cnf.setLength(0);
 			// get enough space into the buffer for the cnf header, which will be written last
 			this.buffer = new StringBuilder();
@@ -46,7 +49,8 @@ final class ExternalSolver implements SATSolver {
 			this.clauses = 0;
 			this.executable = executable;
 			this.options = options;
-			this.temp = tempFile;
+			this.inTemp = inTemp;
+			this.outTemp = outTemp;
 		} catch (FileNotFoundException e) {
 			throw new SATAbortedException(e);
 		} catch (IOException e) {
@@ -161,12 +165,17 @@ final class ExternalSolver implements SATSolver {
 				
 				final String[] command;
 				if (options.length()==0)
-					command = new String[]{executable,  temp};
+					command = new String[]{executable,  inTemp};
 				else 
-					command = new String[]{executable, options, temp};
+					command = new String[]{executable, options, inTemp};
 				p = Runtime.getRuntime().exec(command);
 				p.waitFor();
-				final BufferedReader out = new BufferedReader(new InputStreamReader(p.getInputStream()));
+				final BufferedReader out;
+				if (outTemp.length()==0) {
+					out = new BufferedReader(new InputStreamReader(p.getInputStream()));
+				} else {
+					out = new BufferedReader(new FileReader(outTemp));
+				}
 				String line = null;
 				while((line = out.readLine()) != null) {
 					String[] tokens = line.split("\\s");

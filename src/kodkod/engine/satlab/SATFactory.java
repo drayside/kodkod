@@ -114,19 +114,22 @@ public abstract class SATFactory {
 	 * SAT solver specified by the executable parameter.  The solver's input
 	 * and output formats must conform to the SAT competition standards
 	 * (http://www.satcompetition.org/2004/format-solvers2004.html).  The solver
-	 * will be called with the specified options, and the given tempFile name will
-	 * be used to store the generated CNF files.  It is the caller's responsibility to 
-	 * delete the temporary file when no longer needed.  External solvers are always
+	 * will be called with the specified options, and the given tempInput file name will
+	 * be used to store the generated CNF files.  If the tempOutput string is empty,
+	 * the solver specified by the executable string is assumed to write its output 
+	 * to standard out; otherwise, the
+	 * solver is assumed to write its output to the tempOutput file.  It is the caller's responsibility to 
+	 * delete the temporary file(s) when no longer needed.  External solvers are always
 	 * interruptible.
 	 * @return  Sa ATFactory that produces interruptible SATSolver wrappers for the specified external
 	 * SAT solver
 	 */
-	public static final SATFactory externalFactory(final String executable, final String options, final String tempFile) {
+	public static final SATFactory externalFactory(final String executable, final String options, final String tempInput, final String tempOutput) {
 		return new SATFactory() {
 
 			@Override
 			public SATSolver instance() {
-				return new ExternalSolver(executable, options, tempFile);
+				return new ExternalSolver(executable, options, tempInput, tempOutput);
 			}
 			
 			@Override
