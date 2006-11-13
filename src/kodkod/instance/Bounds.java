@@ -270,7 +270,7 @@ public final class Bounds implements Cloneable {
 			} 
 			str.append("]");
 		}
-		str.append("int bounds: ");
+		str.append("\nint bounds: ");
 		str.append("\n ");
 		str.append(intbounds);
 		return str.toString();

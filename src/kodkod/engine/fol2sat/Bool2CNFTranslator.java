@@ -56,7 +56,7 @@ final class Bool2CNFTranslator {
 		DefinitionalTranslator(SATSolver solver, int numPrimaryVars, BooleanFormula circuit) {
 			final int maxLiteral = StrictMath.abs(circuit.label());
 			this.solver = solver;
-			this.solver.addVariables(maxLiteral);
+			this.solver.addVariables(StrictMath.max(numPrimaryVars, maxLiteral));
 			this.pdetector = (new PolarityDetector(numPrimaryVars, maxLiteral)).apply(circuit);
 			this.visited = Ints.bestSet(pdetector.offset, StrictMath.max(pdetector.offset, maxLiteral));
 		}
@@ -181,7 +181,7 @@ final class Bool2CNFTranslator {
 		 */
 		PolarityDetector(int numPrimaryVars, int maxLiteral) {
 			this.offset = numPrimaryVars+1;
-			this.polarity = new int[maxLiteral-numPrimaryVars];
+			this.polarity = new int[StrictMath.max(0, maxLiteral-numPrimaryVars)];
 		}
 		
 		/**

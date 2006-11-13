@@ -51,6 +51,58 @@ public class BugTests extends TestCase {
 //		System.out.println(Integer.toBinaryString(-1));
 //		System.out.println(Integer.toBinaryString(1));
 //	}
+	public final void testFelix_11122006() {
+		Relation x0 = Relation.nary("Q", 1);
+		Relation x1 = Relation.nary("B", 1);
+		Relation x2 = Relation.nary("A", 1);
+		Relation x3 = Relation.nary("QQ", 3);
+
+		List<String> atomlist = Arrays.asList("A", "B", "Q");
+		Universe universe = new Universe(atomlist);
+		TupleFactory factory = universe.factory();
+		Bounds bounds = new Bounds(universe);
+
+		TupleSet x0_upper = factory.noneOf(1);
+		x0_upper.add(factory.tuple("Q"));
+		bounds.boundExactly(x0, x0_upper);
+
+		TupleSet x1_upper = factory.noneOf(1);
+		x1_upper.add(factory.tuple("B"));
+		bounds.boundExactly(x1, x1_upper);
+
+		TupleSet x2_upper = factory.noneOf(1);
+		x2_upper.add(factory.tuple("A"));
+		bounds.boundExactly(x2, x2_upper);
+
+		TupleSet x3_upper = factory.noneOf(3);
+		x3_upper.add(factory.tuple("Q").product(factory.tuple("A")).product(factory.tuple("A")));
+		x3_upper.add(factory.tuple("Q").product(factory.tuple("B")).product(factory.tuple("B")));
+		bounds.bound(x3, x3_upper);
+
+		Expression x7=x2.product(x2);
+		Expression x8=x0.join(x3);
+		Formula x6=x7.in(x8);
+		Formula x5=x6.not();
+
+		Expression x18=x1.product(x1);
+		Expression x17=x7.union(x18);
+		Expression x16=x0.product(x17);
+
+		Formula x15=x3.in(x16);
+		Formula x4=x5.and(x15);
+
+		Solver solver = new Solver();
+
+		solver.options().setSolver(SATFactory.DefaultSAT4J);
+		solver.options().setBitwidth(4);
+		solver.options().setIntEncoding(Options.IntEncoding.BINARY);
+
+//		System.out.println(bounds);
+//		System.out.println(x4);
+		Solution sol = solver.solve(x4,bounds);
+		assertEquals(sol.outcome(), Solution.Outcome.SATISFIABLE);
+//		System.out.println(sol.toString());
+	}
 	
 	public final void testFelix_10182006() {
 		//(some x: one { y: one SIG | true } | true)
