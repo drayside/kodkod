@@ -258,13 +258,31 @@ public final class Dijkstra {
 	 * Returns the DijkstraPreventsDeadlocks constraint.
 	 * @return
 	 * <pre> 
+	 *  some Process && GrabOrRelease() && GrabbedInOrder() => ! Deadlock()
+	 * </pre>
+	 */
+	public Formula dijkstraPreventsDeadlocks() {
+		return (Process.some().and(grabOrRelease()).and(grabbedInOrder())).implies(deadlock().not());
+	}
+	/**
+	 * Returns the DijkstraPreventsDeadlocks assertion.
+	 * @return
+	 * <pre> 
 	 * assert DijkstraPreventsDeadlocks {
 	 *  some Process && GrabOrRelease() && GrabbedInOrder() => ! Deadlock()
 	 * }
 	 * </pre>
 	 */
-	public Formula dijkstraPreventsDeadlocks() {
-		return (Process.some().and(grabOrRelease()).and(grabbedInOrder())).implies(deadlock().not());
+	public Formula dijkstraPreventsDeadlocksAssertion() {
+		return declarations().and(dijkstraPreventsDeadlocks().not());
+	}
+	
+	/**
+	 * Returns the showDijkstra predicate.
+	 * @return he showDijkstra predicate
+	 */
+	public Formula showDijkstra() {
+		return declarations().and(grabOrRelease()).and(deadlock()).and(waits.some());
 	}
 	
 	/**
@@ -325,7 +343,7 @@ public final class Dijkstra {
 		solver.options().setSolver(SATFactory.MiniSat);
 
 		try {
-			final Formula noDeadlocks = model.declarations().and(model.dijkstraPreventsDeadlocks().not());
+			final Formula noDeadlocks = model.dijkstraPreventsDeadlocksAssertion();
 			final int states = Integer.parseInt(args[0]);
 			final int processes = Integer.parseInt(args[1]);
 			final int mutexes = Integer.parseInt(args[2]);

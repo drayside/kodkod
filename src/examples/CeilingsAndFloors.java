@@ -120,6 +120,14 @@ public final class CeilingsAndFloors {
 	}
 	
 	/**
+	 * Returns the belowToo assertion.
+	 * @return declarations() && paulSimon() && !belowToo()
+	 */
+	public Formula belowTooAssertion() {
+		return declarations().and(paulSimon()).and(belowToo().not());
+	}
+	
+	/**
 	 * Creates bounds for the problem using the given number of platforms and men. 
 	 * @return bounds for the problem using the given number of platforms and men. 
 	 */

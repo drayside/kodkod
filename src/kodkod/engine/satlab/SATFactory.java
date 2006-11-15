@@ -120,8 +120,8 @@ public abstract class SATFactory {
 	 * to standard out; otherwise, the
 	 * solver is assumed to write its output to the tempOutput file.  It is the caller's responsibility to 
 	 * delete the temporary file(s) when no longer needed.  External solvers are always
-	 * interruptible.
-	 * @return  Sa ATFactory that produces interruptible SATSolver wrappers for the specified external
+	 * interruptible and never incremental.
+	 * @return  SATFactory that produces interruptible SATSolver wrappers for the specified external
 	 * SAT solver
 	 */
 	public static final SATFactory externalFactory(final String executable, final String options, final String tempInput, final String tempOutput) {
@@ -135,6 +135,11 @@ public abstract class SATFactory {
 			@Override
 			public boolean interruptible() {
 				return true;
+			}
+			
+			@Override
+			public boolean incremental() {
+				return false;
 			}
 		};
 	}
@@ -174,6 +179,16 @@ public abstract class SATFactory {
 	 */
 	public boolean interruptible() {
 		return false;
+	}
+	
+	/**
+	 * Returns true if the solvers returned by this.instance() are incremental;
+	 * i.e. if clauses/variables can be added to the solver between multiple
+	 * calls to solve().
+	 * @return true if the solvers returned by this.instance() are incremental
+	 */
+	public boolean incremental() {
+		return true;
 	}
 
 }

@@ -50,8 +50,7 @@ public class ExamplesTest extends TestCase {
 	 */
 	public void testCeilingsAndFloors() {
 		final CeilingsAndFloors model = new CeilingsAndFloors();
-		final Formula assertion = model.declarations().and(model.belowTooDoublePrime());
-		final Solution sol = solve(assertion, model.bounds(6, 6));
+		final Solution sol = solve(model.belowTooDoublePrime(), model.bounds(6, 6));
 //		UNSATISFIABLE
 //		p cnf 1749 3289
 //		primary variables: 90
@@ -66,7 +65,7 @@ public class ExamplesTest extends TestCase {
 	 */
 	public void testDijkstra() {
 		final Dijkstra model = new Dijkstra();
-		final Formula noDeadlocks = model.declarations().and(model.dijkstraPreventsDeadlocks().not());
+		final Formula noDeadlocks = model.dijkstraPreventsDeadlocksAssertion();
 		final Solution sol = solve(noDeadlocks, model.bounds(6,6,6));
 //		UNSATISFIABLE
 //		p cnf 4344 18609

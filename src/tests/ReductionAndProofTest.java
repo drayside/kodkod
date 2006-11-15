@@ -122,8 +122,9 @@ public class ReductionAndProofTest extends TestCase {
 			assertSame(1, sol.proof().variablesFor(f1).size());
 			assertSame(1, sol.proof().variablesFor(f2).size());
 			assertSame(1, sol.proof().variablesFor(f3).size());
-		
-		
+			sol.proof().refine(2);
+			sol.proof().refine();
+			
 	}
 	
  }

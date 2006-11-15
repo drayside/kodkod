@@ -68,11 +68,13 @@ public final class Proof {
 	 */
 	public void refine() {
 		if (fixed) return;
-	
-		for(int size = solver.coreSize(); solver.coreSize() < size; ) {
+		
+		int size;
+		do {
+			size = solver.coreSize();
 			solver.retainCore();
 			solver.solve();
-		}
+		} while (solver.coreSize()<size);
 		
 		fixed = true;
 	}
@@ -89,14 +91,14 @@ public final class Proof {
 	public void refine(int numOfIterations) {
 		if (numOfIterations < 0)
 			throw new IllegalArgumentException("numOfIterations < 0: " + numOfIterations);
-		if (fixed) return;
+		if (fixed || numOfIterations==0) return;
 		
-		for(int size = solver.coreSize(); numOfIterations > 0 && solver.coreSize() < size; 
-		    numOfIterations--) {
+		int size;
+		do {
+			size = solver.coreSize();
 			solver.retainCore();
 			solver.solve();
-		}
-		
+		} while (solver.coreSize()<size && --numOfIterations>0);
 		fixed = numOfIterations > 0;
 	}
 	
