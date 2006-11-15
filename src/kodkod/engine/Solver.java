@@ -404,7 +404,7 @@ public final class Solver {
 				for(Map.Entry<Relation, TupleSet> entry: raw.relationTuples().entrySet()) {
 					Relation r = entry.getKey();
 					Relation rmodel = Relation.nary(r.name()+"_"+trivial, r.arity());
-					bounds.boundExactly(r, entry.getValue());
+					bounds.boundExactly(rmodel, entry.getValue());
 					notModel = notModel.or(r.eq(rmodel).not());
 				}
 				formula = formula.and(notModel);
