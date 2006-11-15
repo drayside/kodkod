@@ -10,12 +10,14 @@ import java.util.Map;
 
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
+import kodkod.ast.IntExpression;
 import kodkod.ast.Node;
 import kodkod.engine.bool.BooleanConstant;
 import kodkod.engine.bool.BooleanFactory;
 import kodkod.engine.bool.BooleanFormula;
 import kodkod.engine.bool.BooleanMatrix;
 import kodkod.engine.bool.BooleanValue;
+import kodkod.engine.bool.Int;
 import kodkod.engine.bool.Operator;
 import kodkod.engine.config.Options;
 import kodkod.engine.config.Reporter;
@@ -149,6 +151,20 @@ public final class Translator {
 				 LeafInterpreter.exact(instance, options));
 	}
 
+	/**
+	 * Evalutes the given intexpression to an {@link kodkod.engine.bool.Int} using the provided instance and options. 
+	 * @return an {@link kodkod.engine.bool.Int} representing the value of the intExpr with respect
+	 * to the specified instance and options.
+	 * @throws NullPointerException - formula = null || instance = null || options = null
+	 * @throws UnboundLeafException - the expression refers to an undeclared variable or a relation not mapped by the instance
+	 * @throws HigherOrderDeclException - the expression contains a higher order declaration
+	 */
+	public static Int evaluate(IntExpression intExpr, Instance instance, Options options) {
+		return (Int)
+		 FOL2BoolTranslator.translate(new AnnotatedNode<IntExpression>(intExpr),
+				 LeafInterpreter.exact(instance,options));
+	}
+	
 }
 
 

@@ -6,7 +6,9 @@ package kodkod.engine;
 
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
+import kodkod.ast.IntExpression;
 import kodkod.engine.bool.BooleanMatrix;
+import kodkod.engine.bool.Int;
 import kodkod.engine.config.Options;
 import kodkod.engine.fol2sat.Translator;
 import kodkod.instance.Instance;
@@ -96,6 +98,22 @@ public final class Evaluator {
 		if (expression == null) throw new NullPointerException("expression");
 		final BooleanMatrix sol = Translator.evaluate(expression,instance,options);
 		return instance.universe().factory().setOf(expression.arity(), sol.denseIndices());
+	}
+	
+	/**
+	 * Evaluates the specified int expession with respect to the relation-tuple mappings 
+	 * given by this.instance and using this.options.
+	 * @return  the integer to which the expression evaluates given the
+	 * mappings in this.instance and the options in this.options.
+	 * @throws kodkod.engine.fol2sat.HigherOrderDeclException - intExpr contains a higher order declaration
+	 * @throws kodkod.engine.fol2sat.UnboundLeafException - intExpr contains an undeclared variable or
+	 * a relation not mapped by this.instance
+	 */
+	public int evaluate(IntExpression intExpr) {
+		if (intExpr == null) throw new NullPointerException("intexpression");
+		final Int sol = Translator.evaluate(intExpr, instance, options);
+//		System.out.println(sol);
+		return sol.value();
 	}
 	
 	/**
