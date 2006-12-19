@@ -26,7 +26,9 @@ public interface SATSolver {
 	
 	/**
 	 * Adds the specified number of new variables
-	 * to the solver's vocabulary.
+	 * to the solver's vocabulary.  The behavior of this 
+	 * method is undefined if it is called after this.solve()
+	 * has returned <tt>false</tt>.
 	 * @requires numVars >= 0
 	 * @effects this.variables' = [1..#this.variables + numVars]
 	 * @throws IllegalArgumentException - numVars < 0
@@ -39,7 +41,9 @@ public interface SATSolver {
 	 * be reused.  <b>The contents of the array may, however, 
 	 * be modified.</b>  It is the client's responsibility to 
 	 * ensure that no literals in a clause are repeated, or that
-	 * both a literal and its negation are present.
+	 * both a literal and its negation are present.  The behavior of this 
+	 * method is undefined if it is called after this.solve()
+	 * has returned <tt>false</tt>.
 	 * @requires all i: [0..lits.length) | lits[i] != 0 && |lits[i]| in this.variables 
 	 * @effects this.clauses' = this.clauses + lits
 	 * @effects lits' may not have the same contents as lits
