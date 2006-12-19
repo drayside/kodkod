@@ -146,5 +146,6 @@ public final class BinaryExpression extends Expression {
 		 * i.e. this.compatible(leftArity, rightArity).
 		 */
 		int arity(int leftArity, int rightArity) { return leftArity; }
+		
 	}
 }

@@ -15,80 +15,20 @@ import kodkod.ast.visitor.VoidVisitor;
  * @author Emina Torlak 
  */
 public abstract class ConstantFormula extends Formula {
-
-	static final ConstantFormula TRUE = new ConstantFormula() {
-		
-		@Override
-	    public Formula compose(BinaryFormula.Operator op, Formula formula) {
-			switch(op) {
-			case OR: return TRUE;
-			case AND: case IMPLIES: case IFF: return formula;
-			default: return super.compose(op, formula);
-			}
-	    }
-
-		@Override
-		public Formula not() {
-			return FALSE;
-		}
-
-		@Override
-		public Expression thenElse(Expression thenExpr, Expression elseExpr) {
-			return thenExpr;
-		}
-		
-		@Override
-		public IntExpression thenElse(IntExpression thenExpr, IntExpression elseExpr) {
-			return thenExpr;
-		}
-		
-		@Override
-		public boolean booleanValue() { return true; }
-		
-		
-	};
-	
-	static final ConstantFormula FALSE = new ConstantFormula() {
-		
-		@Override
-	    public Formula compose(BinaryFormula.Operator op, Formula formula) {
-			switch(op) {
-			case AND: return FALSE;
-			case OR: return formula;
-			case IMPLIES: return TRUE;
-			case IFF: return formula.not();
-			default: return super.compose(op, formula);
-			}
-	    }
-
-		@Override
-		public Formula not() {
-			return TRUE;
-		}
-
-		@Override
-		public Expression thenElse(Expression thenExpr, Expression elseExpr) {
-			return elseExpr;
-		}
-		
-		@Override
-		public IntExpression thenElse(IntExpression thenExpr, IntExpression elseExpr) {
-			return elseExpr;
-		}
-		
-		@Override
-		public boolean booleanValue() { return false; }
-		
-	};
-	
-	private ConstantFormula() {}
+	private final boolean value;
+	/**
+	 * Constructs a constant formula with the given value.
+	 */
+	ConstantFormula(boolean value) {
+		this.value = value;
+	}
     
 	/**
 	 * Returns the boolean value that corresponds to this 
 	 * constant formula.
 	 * @return this=TRUE => true, false
 	 */
-	public abstract boolean booleanValue();
+	public final boolean booleanValue() { return value; }
 	
 	/**
      * Accepts the given visitor and returns the result.
@@ -108,24 +48,7 @@ public abstract class ConstantFormula extends Formula {
     }
 	
 	public String toString() {
-		return "" + (this == TRUE);
+		return String.valueOf(booleanValue());
 	}
-	
-	/**
-     * Returns true if and only if compared to itself; otherwise returns false.
-     * 
-     * @return this = o
-     */
-    public final boolean equals(Object o) {
-        return this==o;
-    }
-	
-    /**
-     * Returns the default hash code.
-     * @return the default hash code.
-     */
-    public final int hashCode() {
-    	return super.hashCode();
-    }
 }
 

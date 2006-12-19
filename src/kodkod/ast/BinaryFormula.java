@@ -32,7 +32,6 @@ public final class BinaryFormula extends Formula {
      * @throws NullPointerException - left = null || right = null || op = null
      */
     BinaryFormula(Formula left, Operator op, Formula right) {
-        if (left == null  || right == null || op == null) throw new NullPointerException("null argument");
         this.left = left;
         this.right = right;
         this.op = op;

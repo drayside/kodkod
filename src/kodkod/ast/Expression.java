@@ -21,16 +21,16 @@ import kodkod.ast.visitor.ReturnVisitor;
 public abstract class Expression implements Node {
 	
 	/** The universal relation:  contains all atoms in a {@link kodkod.instance.Universe universe of discourse}. */
-	public static final Expression UNIV = ConstantExpression.UNIV;
+	public static final Expression UNIV = new ConstantExpression("univ", 1);
 	
 	/** The identity relation: maps all atoms in a {@link kodkod.instance.Universe universe of discourse} to themselves. */
-	public static final Expression IDEN = ConstantExpression.IDEN;
+	public static final Expression IDEN = new ConstantExpression("iden", 2);
 	
 	/** The empty relation: contains no atoms. */
-	public static final Expression NONE = ConstantExpression.NONE;
+	public static final Expression NONE = new ConstantExpression("none", 1);
 	
 	/** The integer relation: contains all atoms {@link kodkod.instance.Bounds bound} to integers */
-	public static final Expression INTS = ConstantExpression.INTS;
+	public static final Expression INTS = new ConstantExpression("ints", 1);
 	
     /**
      * Constructs a leaf expression
@@ -62,8 +62,7 @@ public abstract class Expression implements Node {
      * @return {e : Expression | e = this + expr}
      */
     public final Expression union(Expression expr) {
-    	return (this == expr) ? this :
-        	compose(BinaryExpression.Operator.UNION,expr);
+    	return compose(BinaryExpression.Operator.UNION,expr);
     }
     
     /**
@@ -72,8 +71,7 @@ public abstract class Expression implements Node {
      * @return {e : Expression | e = this - expr}
      */
     public final Expression difference(Expression expr) {
-    	return this == expr ? NONE :
-        	compose(BinaryExpression.Operator.DIFFERENCE,expr);
+    	return compose(BinaryExpression.Operator.DIFFERENCE,expr);
     }
     
     /**
@@ -82,8 +80,7 @@ public abstract class Expression implements Node {
      * @return {e : Expression | e = this & expr}
      */
     public final Expression intersection(Expression expr) {
-    	return this == expr ? this :
-        	compose(BinaryExpression.Operator.INTERSECTION,expr);
+    	return compose(BinaryExpression.Operator.INTERSECTION,expr);
     }
     
     /**
@@ -92,7 +89,7 @@ public abstract class Expression implements Node {
      * @return {e : Expression | e = this ++ expr}
      */
     public final Expression override(Expression expr) {
-    		return compose(BinaryExpression.Operator.OVERRIDE,expr);
+    	return compose(BinaryExpression.Operator.OVERRIDE,expr);
     }
     
     /**
@@ -100,7 +97,7 @@ public abstract class Expression implements Node {
      * given binary operator.
      * @return {e: Expression | e = this op expr }
      */
-    public Expression compose(BinaryExpression.Operator op, Expression expr) {
+    public final Expression compose(BinaryExpression.Operator op, Expression expr) {
     	return new BinaryExpression(this, op, expr);
     }
     
@@ -131,7 +128,7 @@ public abstract class Expression implements Node {
      * @throws IllegalArgumentException - this.arity != 2
      */
     public final Expression reflexiveClosure() {
-    		return apply(UnaryExpression.Operator.REFLEXIVE_CLOSURE);
+    	return apply(UnaryExpression.Operator.REFLEXIVE_CLOSURE);
     }
     
     /**
@@ -140,8 +137,8 @@ public abstract class Expression implements Node {
      * @return {e: Expression | e = op this }
      * @throws IllegalArgumentException - this.arity != 2
      */
-    public Expression apply(UnaryExpression.Operator op) {
-    		return new UnaryExpression(op, this);
+    public final Expression apply(UnaryExpression.Operator op) {
+    	return new UnaryExpression(op, this);
     }
     
     /**
@@ -149,8 +146,8 @@ public abstract class Expression implements Node {
      * @return {e: Expression | e = project(this, columns) }
      * @throws IllegalArgumentException - columns.length < 1
      */
-    public Expression project(IntExpression... columns) {
-    		return new ProjectExpression(this, columns);
+    public final Expression project(IntExpression... columns) {
+    	return new ProjectExpression(this, columns);
     }
     
     /**
@@ -159,7 +156,7 @@ public abstract class Expression implements Node {
      * @return {e: IntExpression | e = #this }
      */
     public final IntExpression count() {
-    		return apply(ExprToIntCast.Operator.CARDINALITY);
+    	return apply(ExprToIntCast.Operator.CARDINALITY);
     }
     
     /**
@@ -168,7 +165,7 @@ public abstract class Expression implements Node {
      * @return {e: IntExpression | e = sum(this) }
      */
     public final IntExpression sum() {
-    		return apply(ExprToIntCast.Operator.SUM);
+    	return apply(ExprToIntCast.Operator.SUM);
     }
     
     /**
@@ -177,8 +174,8 @@ public abstract class Expression implements Node {
      * or the sum of the integer atoms it contains (if op is SUM).
      * @return {e: IntExpression | e.op = op && e.expression = this} 
      */
-    public IntExpression apply(ExprToIntCast.Operator op) { 
-    	 return new ExprToIntCast(this, op);
+    public final IntExpression apply(ExprToIntCast.Operator op) { 
+    	return new ExprToIntCast(this, op);
     }
     
     /**
@@ -187,8 +184,7 @@ public abstract class Expression implements Node {
      * @return {f : Formula | f <=> this = expr}
      */
     public final Formula eq(Expression expr) {
-    	return (this == expr) ? ConstantFormula.TRUE :
-    		compose(ComparisonFormula.Operator.EQUALS, expr);
+    	return compose(ComparisonFormula.Operator.EQUALS, expr);
     }
     
     /**
@@ -197,8 +193,7 @@ public abstract class Expression implements Node {
      * @return {f : Formula | f <=> this in expr}
      */
     public final Formula in(Expression expr) {
-    	return (this == expr || expr == UNIV) ? ConstantFormula.TRUE :
-    		compose(ComparisonFormula.Operator.SUBSET, expr);
+    	return compose(ComparisonFormula.Operator.SUBSET, expr);
     }
     
     /**
@@ -206,8 +201,8 @@ public abstract class Expression implements Node {
      * given expression with the given comparison operator.
      * @return {f: Formula | f <=> this op expr }
      */
-    public Formula compose(ComparisonFormula.Operator op, Expression expr) {
-    	return new ComparisonFormula(this, op, expr);
+    public final Formula compose(ComparisonFormula.Operator op, Expression expr) {
+    	return this==expr ? Formula.TRUE : new ComparisonFormula(this, op, expr);
     }
     
     /**
@@ -252,7 +247,7 @@ public abstract class Expression implements Node {
      * @return {f: Formula | f <=> mult this}
      * @throws IllegalArgumentException - mult = Multiplicity.SET
      */
-    public Formula apply(Multiplicity mult) {
+    public final Formula apply(Multiplicity mult) {
     	return new MultiplicityFormula(mult, this);
     }
     

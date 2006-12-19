@@ -18,10 +18,39 @@ import kodkod.ast.visitor.ReturnVisitor;
 public abstract class Formula implements Node {
 	
 	/** constant formula true */
-	public static final Formula TRUE = ConstantFormula.TRUE;
+	public static final Formula TRUE = new ConstantFormula(true) {
+		@Override
+		public Formula not() {
+			return FALSE;
+		}
+		@Override
+	    public Formula compose(BinaryFormula.Operator op, Formula formula) {
+			switch(op) {
+			case OR: return TRUE;
+			case AND: case IMPLIES: case IFF: return formula;
+			case XOR: return formula.not();
+			default: throw new IllegalArgumentException("unknown operator: " + op);
+			}
+	    }
+	};
 	
 	/** constant formula false */
-	public static final Formula FALSE = ConstantFormula.FALSE;
+	public static final Formula FALSE = new ConstantFormula(false) {
+		@Override
+		public Formula not() {
+			return TRUE;
+		}
+		@Override
+	    public Formula compose(BinaryFormula.Operator op, Formula formula) {
+			switch(op) {
+			case AND: return FALSE;
+			case OR: case XOR: return formula;
+			case IMPLIES: return TRUE;
+			case IFF: return formula.not();
+			default: throw new IllegalArgumentException("unknown operator: " + op);
+			}
+	    }
+	};
 	
     Formula() {}
 
@@ -102,7 +131,7 @@ public abstract class Formula implements Node {
      * the specified declarations. 
      * @return {f: Formula | f <=> (quantifier decls | this) }
      */
-    public Formula quantify(QuantifiedFormula.Quantifier quantifier, Decls decls) {
+    public final Formula quantify(QuantifiedFormula.Quantifier quantifier, Decls decls) {
     	return new QuantifiedFormula(quantifier, decls, this);
     }
     
@@ -111,7 +140,7 @@ public abstract class Formula implements Node {
      * the given declarations.
      * @return {e: Expression | e = {decls | this} }
      */
-    public Expression comprehension(Decls decls) {
+    public final Expression comprehension(Decls decls) {
     	return new Comprehension(decls,this);
     }
     
@@ -120,8 +149,8 @@ public abstract class Formula implements Node {
      * specified then and else expressions.
      * @return {e: Expression | e = if this then thenExpr else elseExpr}
      */
-    public Expression thenElse(Expression thenExpr, Expression elseExpr) {
-    		return new IfExpression(this, thenExpr, elseExpr);
+    public final Expression thenElse(Expression thenExpr, Expression elseExpr) {
+    	return new IfExpression(this, thenExpr, elseExpr);
     }
     
     /**
@@ -129,8 +158,8 @@ public abstract class Formula implements Node {
      * specified then and else integer expressions.
      * @return {e: IntExpression | e = if this then thenExpr else elseExpr}
      */
-    public IntExpression thenElse(IntExpression thenExpr, IntExpression elseExpr) {
-    		return new IfIntExpression(this, thenExpr, elseExpr);
+    public final IntExpression thenElse(IntExpression thenExpr, IntExpression elseExpr) {
+    	return new IfIntExpression(this, thenExpr, elseExpr);
     }
     
     /**

@@ -40,27 +40,6 @@ public final class IntConstant extends IntExpression {
 	}
 	
 	/**
-	 * {@inheritDoc}
-	 * @see kodkod.ast.IntExpression#compare(kodkod.ast.IntComparisonFormula.Operator, kodkod.ast.IntExpression)
-	 */
-	public Formula compare(IntComparisonFormula.Operator op, IntExpression intexpr) {
-		if (intexpr instanceof IntConstant) 
-			return op.apply(value, ((IntConstant)intexpr).value) ? Formula.TRUE : Formula.FALSE;
-		else
-			return super.compare(op, intexpr);	
-	}
-	
-	/**
-	 * {@inheritDoc}
-	 * @see kodkod.ast.IntExpression#compose(kodkod.ast.BinaryIntExpression.Operator, kodkod.ast.IntExpression)
-	 */
-	public IntExpression compose(BinaryIntExpression.Operator op, IntExpression intexpr) {
-		if (intexpr instanceof IntConstant)
-			return constant(op.apply(value, ((IntConstant)intexpr).value));
-		else
-			return super.compose(op, intexpr);
-	}
-	/**
 	 * Return true if o is an IntConstant with the same value as this.
 	 * @return o in IntConstant && o.value = this.value
 	 */

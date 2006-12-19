@@ -168,21 +168,25 @@ public class IntTest extends TestCase {
 		assertNotNull(s.instance());
 		assertTrue(op.apply(s.instance().tuples(r2).size(), s.instance().tuples(r3).size()));
 		
-		f = IntConstant.constant(100000).compare(op, IntConstant.constant(100000 + (op==GT ? -1 : 1)));
-		s = solve(f);
-		assertEquals(Solution.Outcome.TRIVIALLY_SATISFIABLE, s.outcome());
+		
 	}
 	
 	public final void testLT() {
 		testLtGt(UNARY, LT);
 		solver.options().setBitwidth(8);
 		testLtGt(BINARY, LT);
+		Formula f = IntConstant.constant(100000).compare(LT, IntConstant.constant(100001));
+		Solution s = solve(f);
+		assertEquals(Solution.Outcome.TRIVIALLY_SATISFIABLE, s.outcome());
 	}
 	
 	public final void testGT() {
 		testLtGt(UNARY, GT);
 		solver.options().setBitwidth(8);
 		testLtGt(BINARY, GT);
+		Formula f = IntConstant.constant(100000).compare(GT, IntConstant.constant(99999));
+		Solution s = solve(f);
+		assertEquals(Solution.Outcome.TRIVIALLY_SATISFIABLE, s.outcome());
 	}
 	
 	private final void testPlus(Options.IntEncoding encoding) {
