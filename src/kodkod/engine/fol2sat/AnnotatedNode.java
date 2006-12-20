@@ -57,16 +57,6 @@ final class AnnotatedNode<N extends Node> {
 		node.accept(detector);
 		this.sharedNodes = Collections.unmodifiableSet(detector.sharedNodes());
 	}
-
-	/**
-	 * Constructs a new annotator for the given node.
-	 * @requires sharedNodes = {n: Node | some n.children && #(n.~children & node.*children) > 1 }
-	 * @effects this.node' = node
-	 */
-	AnnotatedNode(N node, Set<Node> sharedNodes) {
-		this.node = node;
-		this.sharedNodes = sharedNodes;
-	}
 	
 	/**
 	 * Returns this.node.
