@@ -64,7 +64,7 @@ import java.util.NoSuchElementException;
  * @specfield elems: set T
  * @author Emina Torlak
  */
-public class IdentityHashSet<T> extends AbstractSet<T> {
+public final class IdentityHashSet<T> extends AbstractSet<T> {
 	/* implementation adapted from java.util.IdentityHashMap */
 	/**
 	 * The minimum capacity, used if a lower value is implicitly specified
@@ -419,21 +419,20 @@ public class IdentityHashSet<T> extends AbstractSet<T> {
     }
 
     /**
-     * Returns the hash code value for this map.  The hash code of a map
-     * is defined to be the sum of the hashcode of each entry in the map's
-     * entrySet view.  This ensures that <tt>t1.equals(t2)</tt> implies
+     * Returns the hash code value for this set.  The hash code of a set
+     * is defined to be the sum of the hashcode of each entry in the set.  
+     * This ensures that <tt>t1.equals(t2)</tt> implies
      * that <tt>t1.hashCode()==t2.hashCode()</tt> for any two
-     * <tt>IdentityHashMap</tt> instances <tt>t1</tt> and <tt>t2</tt>, as
+     * <tt>IdentityHashSet</tt> instances <tt>t1</tt> and <tt>t2</tt>, as
      * required by the general contract of {@link Object#hashCode()}.
      *
      * <p><b>Owing to the reference-equality-based semantics of the
-     * <tt>Map.Entry</tt> instances in the set returned by this map's
-     * <tt>entrySet</tt> method, it is possible that the contractual
+     * elements in this set, it is possible that the contractual
      * requirement of <tt>Object.hashCode</tt> mentioned in the previous
      * paragraph will be violated if one of the two objects being compared is
-     * an <tt>IdentityHashMap</tt> instance and the other is a normal map.</b>
+     * an <tt>IdentityHashSet</tt> instance and the other is a normal set.</b>
      *
-     * @return the hash code value for this map.
+     * @return the hash code value for this set.
      * @see Object#hashCode()
      * @see Object#equals(Object)
      * @see #equals(Object)

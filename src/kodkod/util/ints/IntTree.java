@@ -206,7 +206,7 @@ final class IntTree<N extends IntTree.Node<N>> implements Cloneable {
 	 * @requires some o.left => n.key > o.left.key
 	 * @requires some o.right => n.key < o.right.key
 	 * @effects this.nodes' = this.nodes - o + n
-	 * @effects o.parent = o.left = o.right = null
+	 * @effects o.parent' = o.left' = o.right' = null
 	 */
 	@SuppressWarnings("unchecked")
 	final void replace(N o, N n) {
@@ -233,21 +233,7 @@ final class IntTree<N extends IntTree.Node<N>> implements Cloneable {
 	private static <N> N unwrap(Node n) {
 		return n==NIL ? null : (N) n;
 	}
-	
-	/**
-	 * Inserts all nodes in the given tree into this tree.
-	 * @requires no this.nodes
-	 * @effects this.nodes' = original.nodes
-	 */
-	final void insertAll(IntTree<N> original) {
-		assert root == NIL;
-		try {
-			this.root = original.root.clone();
-		} catch (CloneNotSupportedException e) {
-			throw new InternalError(); // unreachable code
-		}
-	}
-	
+		
 	/**
 	 * Implementation of the CLR insertion algorithm.
 	 * @requires no z.key & this.nodes.key
@@ -502,12 +488,15 @@ final class IntTree<N extends IntTree.Node<N>> implements Cloneable {
 		x.parent = y;
 	}
 	
+	/**
+	 * @see java.lang.Object#toString()
+	 */
 	public String toString() {
 		return root.toString();
 	}
 	
 	/**
-	 * A node an in an int tree.  Subclasses need to 
+	 * A node  in an int tree.  Subclasses need to 
 	 * implement the clone method iff IntTree.clone will
 	 * be called on the tree containing the nodes.
 	 * @specfield key: int
@@ -522,9 +511,9 @@ final class IntTree<N extends IntTree.Node<N>> implements Cloneable {
 		/**
 		 * Subclasses are required to maintain the following invariant:
 		 * @invariant 	this = this.parent.left => this.key < this.parent.key &&
-		 *  				this = this.parent.right => this.key > this.parent.key &&
-		 *  				some this.left => this.key > this.left.key &&
-		 *  				some this.right => this.key < this.right.key
+		 *  			this = this.parent.right => this.key > this.parent.key &&
+		 *  			some this.left => this.key > this.left.key &&
+		 *  			some this.right => this.key < this.right.key
 		 */
 		protected int key;
 		
@@ -583,6 +572,9 @@ final class IntTree<N extends IntTree.Node<N>> implements Cloneable {
 			return ret;
 		}
 		
+		/**
+		 * @see java.lang.Object#toString()
+		 */
 		public String toString() {
 			if (this==NIL) 
 				return "NIL";
