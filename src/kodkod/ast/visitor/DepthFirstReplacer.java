@@ -291,7 +291,7 @@ public abstract class DepthFirstReplacer implements ReturnVisitor<Expression, Fo
 
 		final IntExpression intExpr = castExpr.intExpr().accept(this);
 		ret = (intExpr==castExpr.intExpr()) ? castExpr : intExpr.toExpression();
-		return ret;
+		return cache(castExpr, ret);
 	}
 	
     /** 
@@ -396,12 +396,15 @@ public abstract class DepthFirstReplacer implements ReturnVisitor<Expression, Fo
 		return cache(intComp,ret);
     }
 	
-	/**
-	 * Returns the constant.
-	 * @return constant
+    /** 
+	 * Calls lookup(constant) and returns the cached value, if any.  
+	 * If a replacement has not been cached, the constant is cached and
+	 * returned.
+	 * @return constant 
 	 */
 	public Formula visit(ConstantFormula constant) {
-		return constant;
+		final Formula ret = lookup(constant);
+		return ret==null ? cache(constant,constant) : constant;
 	}
 
 	/** 
