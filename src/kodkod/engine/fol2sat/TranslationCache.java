@@ -22,7 +22,6 @@ import kodkod.engine.bool.BooleanMatrix;
 import kodkod.engine.bool.BooleanValue;
 import kodkod.engine.bool.Int;
 import kodkod.util.collections.ArrayStack;
-import kodkod.util.collections.IdentityHashSet;
 import kodkod.util.collections.Stack;
 
 
@@ -278,13 +277,14 @@ class TranslationCache {
 	 * to determine which ones should be cached.  A node is considered 'semantically shared'
 	 * if it is syntactically shared or if it is a descendent of a quantifed formula
 	 * or comprehension. 
-	 * @specfield: cached: set Node 
-	 * @specfield cach: Node -> lone Set<Variable>
+	 * @specfield cached: set Node 
+	 * @specfield cache: Node -> lone Set<Variable>
+	 * @specfield varsInScope: Stack<Variable> // variables currently in scope
 	 */
 	private static final class VarCollector extends DepthFirstCollector<Variable> {
 		/* Holds the variables that are currently in scope, with the
 		 * variable at the top of the stack being the last declared variable. */
-		private final Stack<Variable> varsInScope;
+		protected final Stack<Variable> varsInScope;
 		
 		/**
 		 * Constructs a new collector using the given structural information.
@@ -306,9 +306,12 @@ class TranslationCache {
 			return cache;
 		}
 
+		/**
+		 * @see kodkod.ast.visitor.DepthFirstCollector#newSet()
+		 */
 		@Override
 		protected Set<Variable> newSet() {
-			return new IdentityHashSet<Variable>(4);
+			return new LinkedHashSet<Variable>(2);
 		}
 		
 		/**
@@ -329,22 +332,7 @@ class TranslationCache {
 		@Override
 		protected final Set<Variable> cache(Node node, Set<Variable> freeVars) {
 			if (cached.contains(node) || !varsInScope.empty() && !freeVars.contains(varsInScope.peek())) {
-//				System.out.println("caching " + node + " for " + freeVars);
-//				System.out.println("varsInScope: " + varsInScope + " peek: " + (varsInScope.empty() ? "" : varsInScope.peek()));
-				final int numVars = freeVars.size();
-				if (numVars==0)			{ cache.put(node, Collections.EMPTY_SET); }
-				else if (numVars==0)	{ cache.put(node, Collections.singleton(freeVars.iterator().next())); }
-				else {
-					final Set<Variable> orderedVars = new LinkedHashSet<Variable>((numVars * 4) / 3 + 1);
-					for(Variable var : varsInScope) {
-						if (freeVars.contains(var)) {
-							orderedVars.add(var);
-							if (orderedVars.size()==numVars) 
-								break;
-						}
-					}
-					cache.put(node,orderedVars);
-				}
+				cache.put(node, reduce(freeVars));
 			}
 			return freeVars;
 		}
@@ -359,21 +347,31 @@ class TranslationCache {
 		private Set<Variable> visit(Node creator, Decls decls, Node body) {
 			Set<Variable> ret = lookup(creator);
 			if (ret!=null) return ret;
-			ret = newSet();
 			
-			// add the declared variables to the scoped variables stack and to ret
+			ret = newSet();
+			final Set<Variable> boundVars = newSet();
+			
+			// add the declared variables to the scoped variables stack;
+			// compute free vars for each decl, and the difference of the
+			// computed set and previously bound variables to ret
 			for(Decl decl : decls) {
-				ret.addAll(visit(decl));
+				for(Variable v : visit(decl)) {
+					if (!boundVars.contains(v))
+						ret.add(v);
+				}
 				varsInScope.push(decl.variable());
+				boundVars.add(decl.variable());
+			}
+
+			// add to ret the free variables in the body, minus the bound variables
+			for(Variable v: (Set<Variable>) body.accept(this)) {
+				if (!boundVars.contains(v))
+					ret.add(v);
 			}
 			
-			// add the free variables in the body to ret
-			ret.addAll((Set<Variable>) body.accept(this));
-			
-			// remove the variables that are actually declared by this creator
-			// from the creator's free variable set, as well as from the in-scope stack
+			// remove the declared variables from the in-scope stack
 			for(int i = decls.size(); i > 0; i--) {
-				ret.remove(varsInScope.pop());
+				varsInScope.pop();
 			}
 			
 			return cache(creator, ret);
@@ -397,24 +395,48 @@ class TranslationCache {
 			return Collections.singleton(variable);
 		}
 		
-		/**
-		 * @see kodkod.ast.visitor.DepthFirstCollector#visit(kodkod.ast.Comprehension)
+		/** 
+		 * Calls lookup(comprehension) and returns the cached value, if any.  
+		 * If no cached value exists, computes, caches and returns the set
+		 * of free variables in comprehension.
+		 * @return let x = lookup(comprehension), d = comprehension.declarations, f = comprehension.formula | 
+		 *          x != null => x,  
+		 *          cache(comprehension, 
+		 *            (f.accept(this) - d.children.variable) + 
+		 *            {v: Variable | some i: [0..d.size) | 
+		 *             v in d.declarations[i].accept(this) - d.declarations[0..i).variable } ) 
 		 */
 		@Override
 		public Set<Variable> visit(Comprehension comprehension) {
 			return visit(comprehension, comprehension.declarations(), comprehension.formula());
 		}
 		
-		/**
-		 * @see kodkod.ast.visitor.DepthFirstCollector#visit(kodkod.ast.SumExpression)
+		/** 
+		 * Calls lookup(intExpr) and returns the cached value, if any.  
+		 * If no cached value exists, computes, caches and returns the set
+		 * of free variables in intExpr.  
+		 * @return let x = lookup(intExpr), d = intExpr.declarations, e = intExpr.intExpr | 
+		 *          x != null => x,  
+		 *          cache(intExpr, 
+		 *            (e.accept(this) - d.children.variable) + 
+		 *            {v: Variable | some i: [0..d.size) | 
+		 *             v in d.declarations[i].accept(this) - d.declarations[0..i).variable } ) 
 		 */
 		@Override
 		public Set<Variable> visit(SumExpression intExpr) {
 			return visit(intExpr, intExpr.declarations(), intExpr.intExpr());
 		}
 		
-		/**
-		 * @see kodkod.ast.visitor.DepthFirstCollector#visit(kodkod.ast.QuantifiedFormula)
+		/** 
+		 * Calls lookup(quantFormula) and returns the cached value, if any.  
+		 * If no cached value exists, computes, caches and returns the set
+		 * of free variables in quantFormula.  
+		 * @return let x = lookup(quantFormula), d = quantFormula.declarations, f = quantFormula.formula | 
+		 *          x != null => x,  
+		 *          cache(quantFormula, 
+		 *            (f.accept(this) - d.children.variable) + 
+		 *            {v: Variable | some i: [0..d.size) | 
+		 *             v in d.declarations[i].accept(this) - d.declarations[0..i).variable } ) 
 		 */
 		@Override
 		public Set<Variable> visit(QuantifiedFormula quantFormula) {

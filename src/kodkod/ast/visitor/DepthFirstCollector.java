@@ -85,19 +85,31 @@ public abstract class DepthFirstCollector<T> implements
 	/**
 	 * Caches the given value for the specified node, if
 	 * this is a caching visitor, and returns it.
-	 * @effects n in this.cached => 
-	 *  (val.isEmpty() => this.cache' = this.cache ++ n->Collections.EMPTY_SET, 
-	 *   this.cache' = this.cache ++ n->val),
-	 *  this.cache' = this.cache ++ n->val, this.cache' = this.cache
+	 * @effects n in this.cached => this.cache' = this.cache ++ n->reduce(val), this.cache' = this.cache
 	 * @return val
 	 */
 	@SuppressWarnings("unchecked")
 	protected Set<T> cache(Node n, Set<T> val) {
 		if (cached.contains(n)) {
-			cache.put(n, val.isEmpty() ? Collections.EMPTY_SET : val);
+			cache.put(n, reduce(val));
 		}
 		return val;
 	}		
+	
+	/**
+	 * Returns the set that has the same contents as val, but that may
+	 * be more efficiently implemented than val.
+	 * @return val.size()=0 => Collections.EMPTY_SET,
+	 *         val.size()=1 => Collections.singleton(val.iterator().next()),
+	 *         val
+	 */
+	protected Set<T> reduce(Set<T> val) {
+		switch(val.size()) {
+		case 0	:	return Collections.emptySet();
+		case 1	: 	return Collections.singleton(val.iterator().next());
+		default	:	return val;
+		}
+	}
 	
 	/**
 	 * Returns a new, empty, modifiable set.
