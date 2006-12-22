@@ -752,8 +752,11 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 		}
 	}
 	
+	/**
+	 * @see java.lang.Object#toString()
+	 */
 	public String toString() {
-		final StringBuffer buff = new StringBuffer("dimensions: ");
+		final StringBuilder buff = new StringBuilder("dimensions: ");
 		buff.append(dims);
 		buff.append(", elements: ");
 		buff.append(cells);

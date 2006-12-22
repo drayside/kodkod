@@ -145,19 +145,19 @@ final class FOL2BoolTranslator {
 		 * null if not.
 		 */
 		@SuppressWarnings("unchecked") <T> T lookup(Node node) {
-			return (T) cache.get(node, env);
+			return (T) cache.lookup(node, env);
 		}
 		
 		/**
-		 * If the given node is one for which we are caching translations,
+		 * If we are caching translations for the given decl,
 		 * the provided translation is cached and returned.  Otherwise,
-		 * the translation is simply returned.
+		 * the translation is simply returned. 
 		 * @return translation
-		 * @effects if the node is one for which we are caching translations,
+		 * @effects if we are caching translations for the given decl,
 		 * the provided translation is cached.
 		 */
-		<T> T record(Node node, T translation) {
-			return cache.cache(node, translation, env);
+		BooleanMatrix cache(Decl decl, BooleanMatrix translation) {
+			return cache.cache(decl, translation, env);
 		}
 		
 		/**
@@ -168,7 +168,7 @@ final class FOL2BoolTranslator {
 		 * @effects if the expression is one for which we are caching translations,
 		 * the provided translation is cached.
 		 */
-		BooleanMatrix record(Expression expr, BooleanMatrix translation) {
+		BooleanMatrix cache(Expression expr, BooleanMatrix translation) {
 			return cache.cache(expr, translation, env);
 		}
 		
@@ -180,8 +180,20 @@ final class FOL2BoolTranslator {
 		 * @effects if the formula is one for which we are caching translations,
 		 * the provided translation is cached.
 		 */
-		BooleanValue record(Formula formula, BooleanValue translation) {
+		BooleanValue cache(Formula formula, BooleanValue translation) {
 			return cache.cache(formula, translation, env);
+		}
+		
+		/**
+		 * If the given int expression is one for which we are caching translations,
+		 * the provided translation is cached and returned.  Otherwise,
+		 * the translation is simply returned. 
+		 * @return translation
+		 * @effects if the int expression is one for which we are caching translations,
+		 * the provided translation is cached.
+		 */
+		Int cache(IntExpression intexpr, Int translation) {
+			return cache.cache(intexpr, translation, env);
 		}
 		
 		/**
@@ -189,7 +201,7 @@ final class FOL2BoolTranslator {
 		 * @throws InternalError
 		 */
 		public final List<BooleanMatrix> visit(Decls decls) {
-			throw new InternalError("Fatal error:  please contact emina@mit.edu");
+			throw new InternalError("Please contact emina@mit.edu");
 		}
 		
 		/**
@@ -200,7 +212,7 @@ final class FOL2BoolTranslator {
 			if (matrix!=null) return matrix;
 			if (decl.multiplicity()!=Multiplicity.ONE)
 				throw new HigherOrderDeclException(decl);
-			return record(decl, decl.expression().accept(this));
+			return cache(decl, decl.expression().accept(this));
 		}
 		
 		/**
@@ -259,7 +271,7 @@ final class FOL2BoolTranslator {
 				throw new IllegalArgumentException("Unknown operator: " + op);
 			}
 			
-			return record(binExpr, ret);
+			return cache(binExpr, ret);
 		}
 		/**
 		 * @return let tChild = translate(unaryExpr.child) |
@@ -280,7 +292,7 @@ final class FOL2BoolTranslator {
 			default : 
 				throw new IllegalArgumentException("Unknown operator: " + op);
 			}
-			return record(unaryExpr,ret);
+			return cache(unaryExpr,ret);
 		}
 		
 		/**
@@ -290,7 +302,7 @@ final class FOL2BoolTranslator {
 		 * let comprehension = "{ a: A, b: B, ..., x: X | F(a, b, ..., x) }" |
 		 *     { a: A, b: B, ..., x: X | a in A && b in B && ... && x in X && F(a, b, ..., x) }.
 		 * @param decls list of formula declarations; should be quantifiedFormula.declarations initially
-		 * @param formula the formula body
+		 * @param formula the body of the comprehension
 		 * @param declConstraints the constraints implied by the declarations; should be Boolean.TRUE intially
 		 * @param partialIndex partial index into the provided matrix; should be 0 initially
 		 * @param matrix boolean matrix that will retain the final results; should be an empty matrix of dimensions universe.size^decls.length initially
@@ -330,7 +342,7 @@ final class FOL2BoolTranslator {
 			ret = interpreter.factory().matrix(Dimensions.square(interpreter.universe().size(), cexpr.declarations().size()));
 			comprehension(cexpr.declarations().declarations(), cexpr.formula(), BooleanConstant.TRUE, 0, ret);
 			
-			return record(cexpr,ret);
+			return cache(cexpr,ret);
 		}
 		
 		/**
@@ -345,7 +357,7 @@ final class FOL2BoolTranslator {
 			final BooleanMatrix elseExpr = ifExpr.elseExpr().accept(this);
 			ret = thenExpr.choice(condition, elseExpr);
 			
-			return record(ifExpr,ret);
+			return cache(ifExpr,ret);
 		}
 		
 		/**
@@ -361,7 +373,7 @@ final class FOL2BoolTranslator {
 				cols[i++] = col.accept(this);
 			}
 			
-			return record(project, project.expression().accept(this).project(cols));
+			return cache(project, project.expression().accept(this).project(cols));
 		}
 		
 		
@@ -470,7 +482,7 @@ final class FOL2BoolTranslator {
 				throw new IllegalArgumentException("Unknown quantifier: " + quantifier);
 			}
 
-			return record(quantFormula,ret);
+			return cache(quantFormula,ret);
 		}
 		
 		/**
@@ -499,7 +511,7 @@ final class FOL2BoolTranslator {
 				throw new IllegalArgumentException("Unknown operator: " + op);
 			}
 		
-			return record(binFormula, ret);
+			return cache(binFormula, ret);
 		}
 		
 		/**
@@ -508,7 +520,7 @@ final class FOL2BoolTranslator {
 		public final BooleanValue visit(NotFormula not) {
 			BooleanValue ret = lookup(not);
 			return ret==null ? 
-				   record(not, interpreter.factory().not(not.formula().accept(this))) : ret;
+				   cache(not, interpreter.factory().not(not.formula().accept(this))) : ret;
 		}
 		
 		/**
@@ -531,7 +543,7 @@ final class FOL2BoolTranslator {
 				throw new IllegalArgumentException("Unknown operator: " + compFormula.op());
 			}
 	
-			return record(compFormula,ret);
+			return cache(compFormula,ret);
 		}
 		
 		/**
@@ -557,7 +569,7 @@ final class FOL2BoolTranslator {
 				throw new IllegalArgumentException("Unknown multiplicity: " + mult);
 			}
 			
-			return record(multFormula, ret);
+			return cache(multFormula, ret);
 		}
 		
 		/**
@@ -565,7 +577,7 @@ final class FOL2BoolTranslator {
 		 */
 		public final BooleanValue visit(RelationPredicate pred) {
 			BooleanValue ret = lookup(pred);
-			return ret != null ? ret : record(pred, pred.toConstraints().accept(this));
+			return ret != null ? ret : cache(pred, pred.toConstraints().accept(this));
 		}
 
 		/**
@@ -585,7 +597,7 @@ final class FOL2BoolTranslator {
 				ret.set(atomIndex, factory.or(ret.get(atomIndex), child.eq(factory.integer(i))));
 			}
 			
-			return record(castExpr, ret);
+			return cache(castExpr, ret);
 		}	
 		
 		/**
@@ -607,7 +619,7 @@ final class FOL2BoolTranslator {
 			final Int elseExpr = intExpr.elseExpr().accept(this);
 			ret = thenExpr.choice(condition, elseExpr);
 			
-			return record(intExpr, ret);
+			return cache(intExpr, ret);
 		}
 		
 		/**
@@ -649,7 +661,7 @@ final class FOL2BoolTranslator {
 			default: 
 				throw new IllegalArgumentException("unknown operator: " + intExpr.op());
 			}
-			return record(intExpr, ret);
+			return cache(intExpr, ret);
 		}
 
 		/**
@@ -674,7 +686,7 @@ final class FOL2BoolTranslator {
 			default    :
 				throw new IllegalArgumentException("Unknown operator: " + intExpr.op());
 			}
-			return record(intExpr, ret);
+			return cache(intExpr, ret);
 		}
 		
 		/**
@@ -717,7 +729,7 @@ final class FOL2BoolTranslator {
 		public Int visit(SumExpression intExpr) {
 			Int ret = lookup(intExpr);
 			return ret != null ? ret : 
-				record(intExpr, sum(intExpr.declarations().declarations(), intExpr.intExpr(), BooleanConstant.TRUE));
+				cache(intExpr, sum(intExpr.declarations().declarations(), intExpr.intExpr(), BooleanConstant.TRUE));
 		}
 		
 		/**
@@ -737,7 +749,7 @@ final class FOL2BoolTranslator {
 			default: 
 				throw new IllegalArgumentException("Unknown operator: " + intComp.op());
 			}
-			return record(intComp, ret);
+			return cache(intComp, ret);
 		}
 	}
 }

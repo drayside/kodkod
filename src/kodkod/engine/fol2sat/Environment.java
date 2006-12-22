@@ -11,13 +11,13 @@ import kodkod.ast.Variable;
 /** 
  * Represents a  variable binding environment as a 
  * map from a {@link kodkod.ast.Variable variable} to a 
- * {@link java.lang.Object value}.  An environment may have
- * a parent environment to which lookups that are unsuccessful in
- * the child's environment are delegated.
+ * {@link java.lang.Object value}.  An environment has
+ * a (possibly empty) parent environment to which unsuccessful lookups 
+ * are delegated.
  * 
  * @specfield variable: lone Variable
  * @specfield value: lone T
- * @specfield parent: lone Environment
+ * @specfield parent: Environment
  *
  * @author Emina Torlak 
  */
@@ -28,9 +28,9 @@ final class Environment<T> {
 	private final Environment<T> parent;
 	
 	/**
-	 * The empty environment.
+	 * The empty environment; EMPTY is its own parent.
 	 */
-	static final Environment EMPTY = new Environment(null,null,null);
+	static final Environment EMPTY = new Environment(EMPTY,null,null);
 	
 	/**  
 	 * Constructs a new environment with the specified parent
@@ -106,8 +106,9 @@ final class Environment<T> {
 		return p.value;
 	}
 	
-	
-	
+	/**
+	 * @see java.lang.Object#toString()
+	 */
 	public String toString() {
 		return (parent == EMPTY ? "" : parent.toString()) + "["+variable+"="+value+"]";
 	}

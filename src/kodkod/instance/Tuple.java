@@ -99,8 +99,11 @@ public abstract class Tuple  {
         return (arity() * 19 + index())^universe().hashCode();
     }
     
+    /**
+     * @see java.lang.Object#toString()
+     */
     public String toString() {
-        final StringBuffer ret = new StringBuffer("[");
+        final StringBuilder ret = new StringBuilder("[");
         ret.append(atom(0));
         for (int i = 1; i < arity(); i++) {
             ret.append(", ");

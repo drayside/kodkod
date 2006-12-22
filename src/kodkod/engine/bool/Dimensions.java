@@ -275,8 +275,11 @@ public abstract class Dimensions {
 		return intIndex;
 	}
 	
+	/**
+	 * @see java.lang.Object#toString()
+	 */
 	public String toString() {
-		StringBuffer buffer = new StringBuffer("[ ");
+		StringBuilder buffer = new StringBuilder("[ ");
 		for (int i = 0; i < numDimensions(); i++) {
 			buffer.append(dimension(i));
 			buffer.append(" ");

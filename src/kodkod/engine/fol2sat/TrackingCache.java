@@ -1,12 +1,9 @@
 package kodkod.engine.fol2sat;
 
-import static kodkod.engine.bool.BooleanConstant.TRUE;
-
 import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
 
-import kodkod.ast.Expression;
 import kodkod.ast.Formula;
 import kodkod.ast.Node;
 import kodkod.engine.bool.BooleanConstant;
@@ -14,7 +11,6 @@ import kodkod.engine.bool.BooleanFormula;
 import kodkod.engine.bool.BooleanMatrix;
 import kodkod.engine.bool.BooleanValue;
 import kodkod.util.collections.IdentityHashSet;
-import kodkod.util.ints.IndexedEntry;
 import kodkod.util.ints.IntSet;
 import kodkod.util.ints.Ints;
 
@@ -67,37 +63,6 @@ final class TrackingCache extends TranslationCache {
 	}
 	
 	/**
-	 * If the given expression is one for which we are caching translations,
-	 * the provided translation is cached and returned.  Otherwise,
-	 * the translation is simply returned.  In addition, this method records
-	 * the labels of BooleanFormulas that comprise the dense regions of 
-	 * the translation in the varUsage map. 
-	 * @return translation
-	 * @effects if the expression is one for which we are caching translations,
-	 * the provided translation is cached.
-	 * @effects this.varUsage' = this.varUsage + 
-	 *           expr -> {i: int | some b: translation.elements[int] - BooleanConstant | 
-	 *                     i = |b.label| }
-	 */
-	@Override
-	BooleanMatrix cache(Expression expr, BooleanMatrix translation, Environment<BooleanMatrix> env) {
-		IntSet vars;
-		if (env.parent()==null) { // top-level expression
-			vars = Ints.bestSet(1, Integer.MAX_VALUE-1);		
-		} else { // not a top-level expression
-			vars = varUsage.get(expr);
-			if (vars==null)
-				vars = Ints.bestSet(1, Integer.MAX_VALUE-1);
-		}
-		for(IndexedEntry<BooleanValue> e: translation) {
-			if (e.value() != TRUE)
-				vars.add(StrictMath.abs(((BooleanFormula)e.value()).label()));
-		}
-		varUsage.put(expr, vars);
-		return cache((Node)expr, translation, env);
-	}
-
-	/**
 	 * If the given formula is one for which we are caching translations,
 	 * the provided translation is cached and returned.  Otherwise,
 	 * the translation is simply returned. In addition, this method records
@@ -128,7 +93,7 @@ final class TrackingCache extends TranslationCache {
 			vars.add(StrictMath.abs(((BooleanFormula)translation).label()));
 			varUsage.put(formula, vars);
 		}
-		return cache((Node)formula, translation, env);
+		return super.cache(formula, translation, env);
 	}
 	
 }

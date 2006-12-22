@@ -11,6 +11,7 @@ import kodkod.ast.Decl;
 import kodkod.ast.Decls;
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
+import kodkod.ast.IntExpression;
 import kodkod.ast.Node;
 import kodkod.ast.QuantifiedFormula;
 import kodkod.ast.SumExpression;
@@ -19,6 +20,7 @@ import kodkod.ast.visitor.DepthFirstCollector;
 import kodkod.engine.bool.BooleanConstant;
 import kodkod.engine.bool.BooleanMatrix;
 import kodkod.engine.bool.BooleanValue;
+import kodkod.engine.bool.Int;
 import kodkod.util.collections.ArrayStack;
 import kodkod.util.collections.IdentityHashSet;
 import kodkod.util.collections.Stack;
@@ -34,7 +36,6 @@ import kodkod.util.collections.Stack;
  * @specfield cache: cached -> (BooleanMatrix + BooleanValue + List<BooleanMatrix> + Int) -> Environment
  * @invariant all n: cached | 
  *             n in Expression + Decl => cache[n] in BooleanMatrix -> Environment,
- *             n in Decls => cache[n] in List<BooleanMatrix> -> Environment,
  *             n in Formula => cache[n] in BooleanValue -> Environment,
  *             n in IntExpression => cache[n] in Int -> Environment
  * @invariant all e: Environment | some cache.e => 
@@ -73,7 +74,7 @@ class TranslationCache {
 	 *         this.cache[node].map, null
 	 */
 	@SuppressWarnings("unchecked")
-	<T> T get(Node node, Environment<BooleanMatrix> env) {
+	<T> T lookup(Node node, Environment<BooleanMatrix> env) {
 		final TranslationInfo info = cache.get(node);
 		return info==null ? null : (T) info.get(env);
 	}
@@ -84,7 +85,6 @@ class TranslationCache {
 	 * The method returns the specified translation. 
 	 * @requires freeVariables(node) in env.map.BooleanMatrix && 
 	 *           (node in Expression + Decl => translation in BooleanMatrix,
-	 *            node in Decls => translation in List<BooleanMatrix>,
 	 *            node in Formula => translation in BooleanValue, 
 	 *            node in IntExpression => translation in Int) 
 	 * @effects node in this.cached => 
@@ -93,12 +93,27 @@ class TranslationCache {
 	 *           this.cache' = this.cache
 	 * @return translation
 	 */
-	<T> T cache(Node node, T translation, Environment<BooleanMatrix> env) {
+	private final <T> T cache(Node node, T translation, Environment<BooleanMatrix> env) {
 		final TranslationInfo info = cache.get(node);
 		if (info != null) {
 			info.set(translation, env);
 		}
 		return translation;
+	}
+	
+	/**
+	 * Caches the given translation for the specified node, if the node is
+	 * one for which caching is performed.  Otherwise does nothing.  
+	 * The method returns the specified translation. 
+	 * @requires freeVariables(expr) in env.map.BooleanMatrix
+	 * @effects decl in this.cached => 
+	 *           this.cache' = this.cache ++ 
+	 *            decl->translation->{e: Environment | e.map = freeVariables(expr)<:env.map }, 
+	 *           this.cache' = this.cache
+	 * @return translation
+	 */
+	BooleanMatrix cache(Decl decl, BooleanMatrix translation, Environment<BooleanMatrix> env) {
+		return cache((Node)decl, translation, env);
 	}
 	
 	/**
@@ -129,6 +144,21 @@ class TranslationCache {
 	 */
 	BooleanValue cache(Formula formula, BooleanValue translation, Environment<BooleanMatrix> env) {
 		return cache((Node)formula, translation, env);
+	}
+	
+	/**
+	 * Caches the given translation for the specified node, if the node is
+	 * one for which caching is performed.  Otherwise does nothing.  
+	 * The method returns the specified translation. 
+	 * @requires freeVariables(expr) in env.map.BooleanMatrix
+	 * @effects intexpr in this.cached => 
+	 *           this.cache' = this.cache ++ 
+	 *            intexpr->translation->{e: Environment | e.map = freeVariables(expr)<:env.map }, 
+	 *           this.cache' = this.cache
+	 * @return translation
+	 */
+	Int cache(IntExpression intexpr, Int translation, Environment<BooleanMatrix> env) {
+		return cache((Node)intexpr, translation, env);
 	}
 	
 	/**
@@ -295,14 +325,15 @@ class TranslationCache {
 		 *            this.cache' = this.cache
 		 * @return freeVars
 		 */
+		@SuppressWarnings("unchecked")
 		@Override
 		protected final Set<Variable> cache(Node node, Set<Variable> freeVars) {
 			if (cached.contains(node) || !varsInScope.empty() && !freeVars.contains(varsInScope.peek())) {
 //				System.out.println("caching " + node + " for " + freeVars);
 //				System.out.println("varsInScope: " + varsInScope + " peek: " + (varsInScope.empty() ? "" : varsInScope.peek()));
 				final int numVars = freeVars.size();
-				if (numVars < 2)
-					cache.put(node, freeVars);
+				if (numVars==0)			{ cache.put(node, Collections.EMPTY_SET); }
+				else if (numVars==0)	{ cache.put(node, Collections.singleton(freeVars.iterator().next())); }
 				else {
 					final Set<Variable> orderedVars = new LinkedHashSet<Variable>((numVars * 4) / 3 + 1);
 					for(Variable var : varsInScope) {

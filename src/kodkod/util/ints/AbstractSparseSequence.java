@@ -313,7 +313,7 @@ public abstract class AbstractSparseSequence<V> implements SparseSequence<V> {
 	 * @return a String representation of this map.
 	 */
 	public String toString() {
-		final StringBuffer buf = new StringBuffer();
+		final StringBuilder buf = new StringBuilder();
 		buf.append("[");
 		
 		final Iterator<IndexedEntry<V>> i = iterator();

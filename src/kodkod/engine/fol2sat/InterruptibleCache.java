@@ -9,7 +9,7 @@ import kodkod.engine.bool.BooleanMatrix;
 
 /**
  * A TranslationCache that checks for interrupts on each call to 
- * {@link #get(Node, Environment)}.
+ * {@link #lookup(Node, Environment)}.
  * @author Emina Torlak
  */
 final class InterruptibleCache extends TranslationCache {
@@ -31,10 +31,10 @@ final class InterruptibleCache extends TranslationCache {
 	 * @throws TranslationAbortedException - Thread.currentTread.isInterrupted()
 	 */
 	@SuppressWarnings("unchecked")
-	<T> T get(Node node, Environment<BooleanMatrix> env) {
+	<T> T lookup(Node node, Environment<BooleanMatrix> env) {
 		if (Thread.currentThread().isInterrupted()) 
 			throw new TranslationAbortedException();
-		return (T)super.get(node, env);
+		return (T)super.lookup(node, env);
 	}
 
 }

@@ -103,7 +103,7 @@ public abstract class SpecTaglet implements Taglet {
 	
 	public String toString(Tag[] tags) {
 		if (tags.length==0) return null;
-		final StringBuffer ret = new StringBuffer();
+		final StringBuilder ret = new StringBuilder();
 		ret.append("<DT><B>");
 		ret.append(getName());
 		ret.append(":</B></DT>");
