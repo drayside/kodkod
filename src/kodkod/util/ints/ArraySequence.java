@@ -23,7 +23,7 @@ import java.util.NoSuchElementException;
  * @author Emina Torlak
  */
 public final class ArraySequence<V> extends AbstractSparseSequence<V> implements Cloneable {
-	private final SimpleEntry<V>[] entries;
+	private final EntryView<V>[] entries;
 	private int size;
 	
 	/**
@@ -34,11 +34,11 @@ public final class ArraySequence<V> extends AbstractSparseSequence<V> implements
 	 */
 	@SuppressWarnings("unchecked")
 	public ArraySequence(IntSet indices) {
-		this.entries = new SimpleEntry[indices.size()];
+		this.entries = new EntryView[indices.size()];
 		this.size = indices.size();
 		final IntIterator indexIter = indices.iterator();
 		for(int i = 0; indexIter.hasNext(); i++) {
-			entries[i] = new SimpleEntry<V>(indexIter.nextInt(), null);
+			entries[i] = new EntryView<V>(indexIter.nextInt(), null);
 		}
 	}
 	
@@ -50,13 +50,13 @@ public final class ArraySequence<V> extends AbstractSparseSequence<V> implements
 	 */
 	@SuppressWarnings("unchecked")
 	public ArraySequence(SparseSequence<? extends V> s) {
-		this.entries = new SimpleEntry[s.size()];
+		this.entries = new EntryView[s.size()];
 		this.size = s.size();
 		int i = 0;
 		for(IndexedEntry<?> entry : s) {
 			if (entry.value()==null)
 				throw new NullPointerException();
-			entries[i++] = new SimpleEntry<V>(entry.index(), (V)entry.value());
+			entries[i++] = new EntryView<V>(entry.index(), (V)entry.value());
 		}
 	}
 	
@@ -67,10 +67,10 @@ public final class ArraySequence<V> extends AbstractSparseSequence<V> implements
 	@SuppressWarnings("unchecked")
 	private ArraySequence(ArraySequence<V> original) {
 		this.size = original.size;
-		this.entries = new SimpleEntry[original.entries.length];
+		this.entries = new EntryView[original.entries.length];
 		int i = 0;
-		for(SimpleEntry<V> e : original.entries)
-			this.entries[i++] = new SimpleEntry<V>(e.index(), e.value);
+		for(EntryView<V> e : original.entries)
+			this.entries[i++] = new EntryView<V>(e.index(), e.value());
 	}
 	
 	/**
@@ -96,8 +96,8 @@ public final class ArraySequence<V> extends AbstractSparseSequence<V> implements
 	 * @see kodkod.util.ints.SparseSequence#clear()
 	 */
 	public void clear() {
-		for(SimpleEntry<V> e : entries) {
-			e.value=null;
+		for(EntryView<V> e : entries) {
+			e.setValue(null);
 		}
 	}
 	
@@ -158,7 +158,7 @@ public final class ArraySequence<V> extends AbstractSparseSequence<V> implements
 	 */
 	public V get(int index) {
 		final int position = search(index);
-		return position < 0 ? null : entries[position].value;
+		return position < 0 ? null : entries[position].value();
 	}
 	
 	/**
@@ -170,7 +170,7 @@ public final class ArraySequence<V> extends AbstractSparseSequence<V> implements
 		if (position < 0)  
 			return null;
 		else {
-			if (entries[position].value!=null) size--;
+			if (entries[position].value()!=null) size--;
 			return entries[position].setValue(null);
 		}
 	}
@@ -183,7 +183,7 @@ public final class ArraySequence<V> extends AbstractSparseSequence<V> implements
 	 */
 	public boolean containsIndex(int index) {
 		final int position = search(index);
-		return position >= 0 && entries[position].value!=null;
+		return position >= 0 && entries[position].value()!=null;
 	}
 	
 	/**
@@ -213,8 +213,8 @@ public final class ArraySequence<V> extends AbstractSparseSequence<V> implements
 	public IndexedEntry<V> first() {
 		if (size==0)
 			return null;
-		for(SimpleEntry<V> e : entries) {
-			if (e.value!=null)
+		for(EntryView<V> e : entries) {
+			if (e.value()!=null)
 				return e;
 		}
 		throw new InternalError(); // unreachable code
@@ -231,7 +231,7 @@ public final class ArraySequence<V> extends AbstractSparseSequence<V> implements
 		if (size==0)
 			return null;
 		for(int i = entries.length-1; i>=0; i--) {
-			if (entries[i].value!=null)
+			if (entries[i].value()!=null)
 				return entries[i];
 		}
 		throw new InternalError(); // unreachable code
@@ -248,7 +248,7 @@ public final class ArraySequence<V> extends AbstractSparseSequence<V> implements
 	public IndexedEntry<V> ceil(int index) {
 		final int position = search(index);
 		for(int i = position < 0 ? -position-1 : position; i < entries.length; i++) {
-			if (entries[i].value!=null)
+			if (entries[i].value()!=null)
 				return entries[i];
 		}
 		return null;
@@ -265,7 +265,7 @@ public final class ArraySequence<V> extends AbstractSparseSequence<V> implements
 	public IndexedEntry<V> floor(int index) {
 		final int position = search(index);
 		for(int i = position < -1 ? -position-2 : position; i >=0 ; i--) {
-			if (entries[i].value!=null)
+			if (entries[i].value()!=null)
 				return entries[i];
 		}
 		return null;
@@ -277,71 +277,6 @@ public final class ArraySequence<V> extends AbstractSparseSequence<V> implements
 	 */
 	public ArraySequence<V> clone() { 
 		return new ArraySequence<V>(this);
-	}
-	
-	/**
-	 * A simple indexed entry.
-	 * @author Emina Torlak
-	 */
-	@SuppressWarnings("hiding")
-	private static final class SimpleEntry<V> implements IndexedEntry<V> {
-		int index;
-		V value;
-		
-		/**
-		 * Constructs an indexed entry with the given index and value
-		 * @effects this.index' = index && this.value' = value
-		 */
-		SimpleEntry(int index, V value) {
-			this.index = index;
-			this.value = value;
-		}
-				
-		/**
-		 * @see kodkod.util.ints.IndexedEntry#index()
-		 */
-		public final int index() {
-			return index;
-		}
-
-		/**
-		 * @see kodkod.util.ints.IndexedEntry#value()
-		 */
-		public final V value() {
-			return value;
-		}
-		
-
-		/**
-		 * Sets this.value to the given value and returns the previous value.
-		 * @effects this.value' = value
-		 * @requires this.value
-		 */
-		final V setValue(V value) {
-			V oldValue = this.value;
-			this.value = value;
-			return oldValue;
-		}
-		
-		/**
-		 * @see java.lang.Object#equals(java.lang.Object)
-		 */
-		public final boolean equals(Object o) {
-			if (o==this) return true;
-			if (!(o instanceof IndexedEntry)) return false;
-			return AbstractSparseSequence.equal(this, (IndexedEntry<?>)o);
-		}
-		
-		/**
-		 * @see java.lang.Object#hashCode()
-		 */
-		public final int hashCode() {
-			return AbstractSparseSequence.hashCode(this);
-		}
-		
-		public final String toString() {
-			return index + "=" + value;
-		}
 	}
 	
 	/**
@@ -365,7 +300,7 @@ public final class ArraySequence<V> extends AbstractSparseSequence<V> implements
 		}
 		
 		public boolean hasNext() {
-			while (cursor < entries.length && entries[cursor].value==null)
+			while (cursor < entries.length && entries[cursor].value()==null)
 				cursor++;
 			return cursor<=endIndex;
 		}
@@ -379,7 +314,7 @@ public final class ArraySequence<V> extends AbstractSparseSequence<V> implements
 		public void remove() {
 			if (lastReturned==null)
 				throw new IllegalStateException();
-			entries[lastReturned.index()].value=null;
+			entries[lastReturned.index()].setValue(null);
 			lastReturned = null;
 		}
 	}
@@ -405,7 +340,7 @@ public final class ArraySequence<V> extends AbstractSparseSequence<V> implements
 		}
 		
 		public boolean hasNext() {
-			while (cursor >= 0 && entries[cursor].value==null)
+			while (cursor >= 0 && entries[cursor].value()==null)
 				cursor--;
 			return cursor>=endIndex;
 		}
@@ -419,7 +354,7 @@ public final class ArraySequence<V> extends AbstractSparseSequence<V> implements
 		public void remove() {
 			if (lastReturned==null)
 				throw new IllegalStateException();
-			entries[lastReturned.index()].value=null;
+			entries[lastReturned.index()].setValue(null);
 			lastReturned = null;
 		}
 		

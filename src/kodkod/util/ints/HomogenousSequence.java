@@ -43,7 +43,7 @@ import java.util.Iterator;
 public final class HomogenousSequence<V> extends AbstractSparseSequence<V> {
 	private final IntSet indices;
 	private final V value;
-	private final EntryView view;
+	private final EntryView<V> view;
 	
 	/**
 	 * Constructs a new homogenous sequence for the given value, backed
@@ -53,7 +53,7 @@ public final class HomogenousSequence<V> extends AbstractSparseSequence<V> {
 	public HomogenousSequence(V value) {
 		this.value = value;
 		this.indices = new IntTreeSet();
-		this.view = new EntryView();
+		this.view = new EntryView<V>(Integer.MIN_VALUE, value);
 	}
 
 	/**
@@ -67,7 +67,7 @@ public final class HomogenousSequence<V> extends AbstractSparseSequence<V> {
 	public HomogenousSequence(V value, IntSet indices) {
 		this.value = value;
 		this.indices = indices;
-		this.view = new EntryView();
+		this.view = new EntryView<V>(Integer.MIN_VALUE, value);
 	}
 	
 	/**
@@ -76,7 +76,7 @@ public final class HomogenousSequence<V> extends AbstractSparseSequence<V> {
 	 */
 	private HomogenousSequence(HomogenousSequence<V> original) {
 		this.value = original.value;
-		this.view = new EntryView();
+		this.view = new EntryView<V>(Integer.MIN_VALUE, value);
 		try {
 			this.indices = original.indices.clone();
 		} catch (CloneNotSupportedException e) {
@@ -98,7 +98,7 @@ public final class HomogenousSequence<V> extends AbstractSparseSequence<V> {
 			throw new IllegalArgumentException();
 		this.indices = new IntTreeSet();
 		this.value = seq.first().value();
-		this.view = new EntryView();
+		this.view = new EntryView<V>(Integer.MIN_VALUE, value);
 		for(IndexedEntry<?> e : seq) {
 			if (!value.equals(e.value()))
 				throw new IllegalArgumentException();
@@ -135,7 +135,7 @@ public final class HomogenousSequence<V> extends AbstractSparseSequence<V> {
 	 */
 	@Override
 	public Iterator<IndexedEntry<V>> iterator(int from, int to) {
-		return new HomogenousIterator(indices.iterator(from, to));
+		return new HomogenousIterator<V>(indices.iterator(from, to), value);
 	}
 
 	/**
@@ -223,7 +223,7 @@ public final class HomogenousSequence<V> extends AbstractSparseSequence<V> {
 	 * @see kodkod.util.ints.SparseSequence#first()
 	 */
 	public IndexedEntry<V> first() {
-		return indices.isEmpty() ? null : view.toIndex(indices.min());
+		return indices.isEmpty() ? null : view.setIndexView(indices.min());
 	}
 
 	/**
@@ -234,7 +234,7 @@ public final class HomogenousSequence<V> extends AbstractSparseSequence<V> {
 	 * @see kodkod.util.ints.SparseSequence#last()
 	 */
 	public IndexedEntry<V> last() {
-		return indices.isEmpty() ? null : view.toIndex(indices.max());
+		return indices.isEmpty() ? null : view.setIndexView(indices.max());
 	}
 
 	/**
@@ -249,7 +249,7 @@ public final class HomogenousSequence<V> extends AbstractSparseSequence<V> {
 		if (indices.isEmpty() || index > indices.max())
 			return null;
 		else 
-			return view.toIndex(indices.ceil(index));
+			return view.setIndexView(indices.ceil(index));
 	}
 
 	/**
@@ -264,7 +264,7 @@ public final class HomogenousSequence<V> extends AbstractSparseSequence<V> {
 		if (indices.isEmpty() || index < indices.min())
 			return null;
 		else 
-			return view.toIndex(indices.floor(index));
+			return view.setIndexView(indices.floor(index));
 	}
 
 	/**
@@ -276,50 +276,18 @@ public final class HomogenousSequence<V> extends AbstractSparseSequence<V> {
 		return new HomogenousSequence<V>(this);
 	}
 	
-	private class EntryView implements IndexedEntry<V> {
-		private int index;
-		
-	
-		final EntryView toIndex(int newIndex) {
-			this.index = newIndex;
-			return this;
-		}
-		
-		public final int index() {
-			return index;
-		}
-
-		public final V value() {
-			return value;
-		}
-		
-		public final String toString() {
-			return index + "=" + value;
-		}
-		
-		public final boolean equals(Object o) {
-			if (o==this) return true;
-			if (!(o instanceof IndexedEntry)) return false;
-			return AbstractSparseSequence.equal(this, (IndexedEntry<?>)o);
-		}
-		
-		public final int hashCode() {
-			return AbstractSparseSequence.hashCode(this);
-		}	
-		
-	}
-	
 	/**
 	 * An iterator over a homogenous sequence.
 	 * @author Emina Torlak
 	 */
-	private final class HomogenousIterator extends EntryView implements Iterator<IndexedEntry<V>> {
+	private static final class HomogenousIterator<V> extends EntryView<V> implements Iterator<IndexedEntry<V>> {
 		private final IntIterator iter;
 		
 		/**
 		 * Constructs a wrapper for the given IntIterator and value
 		 */
-		HomogenousIterator(IntIterator iter) {
+		HomogenousIterator(IntIterator iter, V value) {
+			super(Integer.MIN_VALUE, value);
 			this.iter = iter;
 		}
 		
@@ -328,7 +296,7 @@ public final class HomogenousSequence<V> extends AbstractSparseSequence<V> {
 		}
 
 		public IndexedEntry<V> next() {
-			return toIndex(iter.nextInt());
+			return setIndexView(iter.nextInt());
 		}
 
 		public void remove() {

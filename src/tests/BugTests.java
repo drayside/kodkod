@@ -51,6 +51,47 @@ public class BugTests extends TestCase {
 //		System.out.println(Integer.toBinaryString(-1));
 //		System.out.println(Integer.toBinaryString(1));
 //	}
+	
+	public final void testFelix_01032007() {
+		List<String> atomlist = Arrays.asList(
+				"-1", "-2", "-3", "-4", "-5", "-6", "-7", "-8", "0",
+				"1", "2", "3", "4", "5", "6", "7");
+
+				Universe universe = new Universe(atomlist);
+				TupleFactory factory = universe.factory();
+				Bounds bounds = new Bounds(universe);
+
+				bounds.boundExactly(-8,factory.range(factory.tuple("-8"),factory.tuple("-8")));
+				bounds.boundExactly(-7,factory.range(factory.tuple("-7"),factory.tuple("-7")));
+				bounds.boundExactly(-6,factory.range(factory.tuple("-6"),factory.tuple("-6")));
+				bounds.boundExactly(-5,factory.range(factory.tuple("-5"),factory.tuple("-5")));
+				bounds.boundExactly(-4,factory.range(factory.tuple("-4"),factory.tuple("-4")));
+				bounds.boundExactly(-3,factory.range(factory.tuple("-3"),factory.tuple("-3")));
+				bounds.boundExactly(-2,factory.range(factory.tuple("-2"),factory.tuple("-2")));
+				bounds.boundExactly(-1,factory.range(factory.tuple("-1"),factory.tuple("-1")));
+				bounds.boundExactly(0,factory.range(factory.tuple("0"),factory.tuple("0")));
+				bounds.boundExactly(1,factory.range(factory.tuple("1"),factory.tuple("1")));
+				bounds.boundExactly(2,factory.range(factory.tuple("2"),factory.tuple("2")));
+				bounds.boundExactly(3,factory.range(factory.tuple("3"),factory.tuple("3")));
+				bounds.boundExactly(4,factory.range(factory.tuple("4"),factory.tuple("4")));
+				bounds.boundExactly(5,factory.range(factory.tuple("5"),factory.tuple("5")));
+				bounds.boundExactly(6,factory.range(factory.tuple("6"),factory.tuple("6")));
+				bounds.boundExactly(7,factory.range(factory.tuple("7"),factory.tuple("7")));
+
+				Expression set=IntConstant.constant(8).toExpression();
+
+				Solver solver = new Solver();
+				solver.options().setSolver(SATFactory.DefaultSAT4J);
+				solver.options().setBitwidth(4);
+				solver.options().setIntEncoding(Options.IntEncoding.BINARY);
+				Solution sol = solver.solve(set.some(), bounds);
+
+				Evaluator eval = new Evaluator(sol.instance(), solver.options());
+				TupleSet ts = eval.evaluate(set);
+				assertFalse(ts.size()==0);
+	
+	}
+	
 	public final void testFelix_11122006() {
 		Relation x0 = Relation.nary("Q", 1);
 		Relation x1 = Relation.nary("B", 1);

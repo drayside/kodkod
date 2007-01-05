@@ -45,6 +45,7 @@ public final class RangeSequence<V> extends AbstractSparseSequence<V> implements
 	 *            (no disj n, n': tree.nodes | n.value=n'.value && n.max = n'.min-1)
 	 */
 	private final IntTree<Entry<V>> tree;
+	private final EntryView<V> view;
 	private int size;
 	
 	/**
@@ -52,6 +53,7 @@ public final class RangeSequence<V> extends AbstractSparseSequence<V> implements
 	 * @effects no this.entries'
 	 */
 	public RangeSequence() {
+		view = new EntryView<V>(Integer.MIN_VALUE,null);
 		tree = new IntTree<Entry<V>>();
 		size = 0;
 	}
@@ -68,6 +70,7 @@ public final class RangeSequence<V> extends AbstractSparseSequence<V> implements
 		} catch (CloneNotSupportedException e) {
 			throw new InternalError(); // unreachable code;
 		}
+		view = new EntryView<V>(Integer.MIN_VALUE,null);
 	}
 	
 	/**
@@ -268,40 +271,40 @@ public final class RangeSequence<V> extends AbstractSparseSequence<V> implements
 	 * {@inheritDoc}
 	 * @see kodkod.util.ints.SparseSequence#first()
 	 */
-	public Entry<V> first() {
+	public IndexedEntry<V> first() {
 		final Entry<V> e = tree.min();
-		return e==null ? null : e.toIndex(e.min());
+		return e==null ? null : view.setView(e.min(), e.value);
 	}
 
 	/**
 	 * {@inheritDoc}
 	 * @see kodkod.util.ints.SparseSequence#last()
 	 */
-	public Entry<V> last() {
+	public IndexedEntry<V> last() {
 		final Entry<V> e = tree.max();
-		return e==null ? null : e.toIndex(e.key);
+		return e==null ? null : view.setView(e.max(), e.value);
 	}
 
 	/**
 	 * {@inheritDoc}
 	 * @see kodkod.util.ints.SparseSequence#ceil(int)
 	 */
-	public Entry<V> ceil(int index) {
+	public IndexedEntry<V> ceil(int index) {
 		final Entry<V> e = tree.searchGTE(index);
-		return e == null ? null : e.toIndex(StrictMath.max(index, e.min()));
+		return e == null ? null : view.setView(StrictMath.max(index, e.min()), e.value);
 	}
 
 	/**
 	 * {@inheritDoc}
 	 * @see kodkod.util.ints.SparseSequence#floor(int)
 	 */
-	public Entry<V> floor(int index) {
+	public IndexedEntry<V> floor(int index) {
 		Entry<V> e = tree.searchGTE(index);
 		if (e==null || e.min() > index) {
 			e = tree.searchLTE(index);
-			return e == null ? null : e.toIndex(e.key);
+			return e == null ? null : view.setView(e.max(), e.value);
 		} else
-			return e.toIndex(index);
+			return view.setView(index, e.value);
 	}
 	
 	/**
@@ -324,8 +327,7 @@ public final class RangeSequence<V> extends AbstractSparseSequence<V> implements
 	 * @invariant max = key
 	 * @author Emina Torlak
 	 */
-	private static abstract class Entry<V> extends IntTree.Node<Entry<V>>
-	  implements IndexedEntry<V>, Cloneable {
+	private static abstract class Entry<V> extends IntTree.Node<Entry<V>> implements Cloneable {
 		V value;
 		
 		Entry(int max, V value) {
@@ -338,49 +340,18 @@ public final class RangeSequence<V> extends AbstractSparseSequence<V> implements
 			value = newValue;
 			return oldValue;
 		}
-		
-		/**
-		 * @see kodkod.util.ints.IndexedEntry#value()
-		 */
-		public V value() {
-			return value;
-		}
-		
-		public boolean equals(Object o) {
-			if (o==this) return true;
-			if (!(o instanceof IndexedEntry)) return false;
-			return AbstractSparseSequence.equal(this, (IndexedEntry<?>) o);
-		}
-		
-		/**
-		 * Returns the hash code value for this indexed entry. The hash code of an 
-		 * indexed entry e is defined to be:
-		 * e.index ^ (e.value=null ? 0 : e.value.hashCode()).
-		 * This ensures that e1.equals(e2) implies that e1.hashCode()==e2.hashCode() 
-		 * for any two IndexedEntries e1 and e2, as required by the general contract of 
-		 * Object.hashCode.
-		 */
-		public int hashCode() {
-			return AbstractSparseSequence.hashCode(this);
-		}
-		
-		public String toString() {
-			return index() + "=" + value;
-		}
-
-		/**
-		 * Sets this.index to the given value and returns this.
-		 * @requires index in this.key
-		 * @effects this.index' =  index
-		 * @return this
-		 */
-		abstract Entry<V> toIndex(int index);
-		
+				
 		/**
 		 * Returns the minimum of this.
 		 * @return this.min
 		 */
 		abstract int min();
+		
+		/**
+		 * Returns the maximum of this.
+		 * @return this.max
+		 */
+		final int max() { return key; }
 				
 		/**
 		 * Return true if this.min=this.max
@@ -417,22 +388,11 @@ public final class RangeSequence<V> extends AbstractSparseSequence<V> implements
 		}
 		
 		@Override
-		int min() { 	return key; }
-
-		@Override
-		Entry<V> toIndex(int index) {	return this; }
+		int min() { return key; }
 
 		@Override
 		boolean isPoint() { return true; }
-		
-		/**
-		 * {@inheritDoc}
-		 * @see kodkod.util.collections.sequences.IndexedEntry#index()
-		 */
-		public final int index() {
-			return key;
-		}
-		
+
 		protected Point<V> clone() throws CloneNotSupportedException {
 			return (Point<V>) super.clone();
 		}
@@ -443,11 +403,10 @@ public final class RangeSequence<V> extends AbstractSparseSequence<V> implements
 	 * @specfield min: int
 	 * @specfield max: int
 	 * @specfield value: V
-	 * @specfield index: [min..max]
 	 * @invariant min < max
 	 */
 	private static final class Range<V> extends Entry<V> {
-		int index, min;
+		int min;
 		
 		/**
 		 * Constructs an entry with the given min/max and value.
@@ -459,23 +418,12 @@ public final class RangeSequence<V> extends AbstractSparseSequence<V> implements
 			this.min = min;
 		}
 		
-		
 		@Override
-		int min() { 	return min; }
-
-		@Override
-		Entry<V> toIndex(int index) {
-			this.index = index;
-			return this;
-		}
+		int min() { return min; }
 
 		@Override
 		boolean isPoint() { return false; }
 
-		public int index() {
-			return index;
-		}
-		
 		protected Range<V> clone() throws CloneNotSupportedException {
 			return (Range<V>) super.clone();
 		}
