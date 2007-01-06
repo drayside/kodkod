@@ -5,6 +5,7 @@ import static kodkod.ast.Expression.UNIV;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 import junit.framework.TestCase;
@@ -51,6 +52,27 @@ public class BugTests extends TestCase {
 //		System.out.println(Integer.toBinaryString(-1));
 //		System.out.println(Integer.toBinaryString(1));
 //	}
+	public final void testFelix_01062007() {
+		Relation x1 = Relation.nary("A",1);
+		List<String> atomlist = Arrays.asList("A");
+		Universe universe = new Universe(atomlist);
+		TupleFactory factory = universe.factory();
+		Bounds bounds = new Bounds(universe);
+
+		TupleSet x1_upper = factory.noneOf(1);
+		x1_upper.add(factory.tuple("A"));
+		bounds.bound(x1, x1_upper);
+
+		Solver solver = new Solver();
+		solver.options().setSolver(SATFactory.DefaultSAT4J);
+
+		Iterator<Solution> sols = solver.solveAll(Formula.TRUE, bounds);
+		assertNotNull(sols.next().instance());
+
+		assertNotNull(sols.next().instance());
+
+		assertNull(sols.next().instance());
+	}
 	
 	public final void testFelix_01032007() {
 		List<String> atomlist = Arrays.asList(

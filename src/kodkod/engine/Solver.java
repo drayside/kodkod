@@ -366,6 +366,8 @@ public final class Solver {
 
 				final Statistics stats = stats(translation, translTime, endSolve - startSolve);
 				if (isSat) {
+					// extract the current solution
+					final Solution sol = new Solution(SATISFIABLE, stats,	padInstance(translation.interpret(), bounds), null, null);
 					// add the negation of the current model to the solver
 					final int primary = translation.primaryVariables();
 					final int[] notModel = new int[primary];
@@ -373,7 +375,7 @@ public final class Solver {
 						notModel[i-1] = cnf.valueOf(i) ? -i : i;
 					}
 					cnf.addClause(notModel);
-					return new Solution(SATISFIABLE, stats,	padInstance(translation.interpret(), bounds), null, null);
+					return sol;
 				} else {
 					formula = null; bounds = null; // unsat, no more solutions, free up some space
 					return unsat(translation, stats);
