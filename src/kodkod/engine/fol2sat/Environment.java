@@ -18,7 +18,7 @@ import kodkod.ast.Variable;
  * @specfield variable: lone Variable
  * @specfield value: lone T
  * @specfield parent: Environment
- *
+ * @invariant this = parent => no variable
  * @author Emina Torlak 
  */
 @SuppressWarnings("unchecked")
@@ -30,7 +30,16 @@ final class Environment<T> {
 	/**
 	 * The empty environment; EMPTY is its own parent.
 	 */
-	static final Environment EMPTY = new Environment(EMPTY,null,null);
+	static final Environment EMPTY = new Environment();
+	
+	/**
+	 * Constructs the empty environment.
+	 */
+	private Environment() {
+		this.variable = null;
+		this.value = null;
+		this.parent = this;
+	}
 	
 	/**  
 	 * Constructs a new environment with the specified parent
@@ -86,6 +95,15 @@ final class Environment<T> {
 	public T value() {
 		return this.value;
 	}
+	
+	/**
+	 * Returns true if this is the empty environment;
+	 * otherwise returns false.
+	 * @return this.parent = EMPTY
+	 */
+	public boolean isEmpty() {
+		return this==EMPTY;
+	}
 		
 	/**
 	 * Looks up the given variable in this environment and its
@@ -110,7 +128,7 @@ final class Environment<T> {
 	 * @see java.lang.Object#toString()
 	 */
 	public String toString() {
-		return (parent == EMPTY ? "" : parent.toString()) + "["+variable+"="+value+"]";
+		return (parent == EMPTY ? "[]" : parent.toString()) + "["+variable+"="+value+"]";
 	}
 	
 	

@@ -81,10 +81,10 @@ final class TrackingCache extends TranslationCache {
 	@Override
 	BooleanValue cache(Formula formula, BooleanValue translation, Environment<BooleanMatrix> env) {
 		if (translation==BooleanConstant.TRUE) {
-			if (env.parent()==null) trueFormulas.add(formula);
+			if (env.isEmpty()) trueFormulas.add(formula);
 		} else if (translation==BooleanConstant.FALSE) {
-			if (env.parent()==null) falseFormulas.add(formula);
-		} else if (env.parent()==null) { // top-level formula
+			if (env.isEmpty()) falseFormulas.add(formula);
+		} else if (env.isEmpty()) { // top-level formula
 			varUsage.put(formula, Ints.singleton(StrictMath.abs(((BooleanFormula)translation).label())));	
 		} else {
 			IntSet vars = varUsage.get(formula);
