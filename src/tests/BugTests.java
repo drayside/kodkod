@@ -64,7 +64,7 @@ public class BugTests extends TestCase {
 		bounds.bound(x1, x1_upper);
 
 		Solver solver = new Solver();
-		solver.options().setSolver(SATFactory.DefaultSAT4J);
+		solver.options().setSolver(SATFactory.ZChaffBasic);
 
 		Iterator<Solution> sols = solver.solveAll(Formula.TRUE, bounds);
 		assertNotNull(sols.next().instance());
