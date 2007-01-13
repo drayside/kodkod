@@ -48,10 +48,34 @@ public class BugTests extends TestCase {
 //			System.out.println(e); 
 //	}
 	
-//	public final void testStuff() {
-//		System.out.println(Integer.toBinaryString(-1));
-//		System.out.println(Integer.toBinaryString(1));
-//	}
+	public final void testFelix_01132007() {
+		Relation x1 = Relation.nary("A",1);
+		List<String> atomlist = Arrays.asList("A0", "A1", "A2");
+
+		Universe universe = new Universe(atomlist);
+		TupleFactory factory = universe.factory();
+		Bounds bounds = new Bounds(universe);
+
+		TupleSet x1_upper = factory.noneOf(1);
+
+		x1_upper.add(factory.tuple("A0"));
+		x1_upper.add(factory.tuple("A1"));
+		x1_upper.add(factory.tuple("A2"));
+
+		bounds.bound(x1, x1_upper);
+		Solver solver = new Solver();
+
+		solver.options().setSolver(SATFactory.ZChaffBasic);
+		solver.options().setSymmetryBreaking(0);
+		Iterator<Solution> sols = solver.solveAll(Formula.TRUE, bounds);
+		int i = 0;
+		while (sols.hasNext() && i < 9) {
+			System.out.println("Solution"+i+": " + sols.next().instance());
+			i++;
+		}
+		
+	}
+	
 	public final void testFelix_01062007() {
 		Relation x1 = Relation.nary("A",1);
 		List<String> atomlist = Arrays.asList("A");
