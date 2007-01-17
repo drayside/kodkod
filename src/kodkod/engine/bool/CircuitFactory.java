@@ -103,7 +103,7 @@ final class CircuitFactory {
 	
 	/**
 	 * Returns true if the given value
-	 * is a valid argument to one of the <tt>compose</tt>
+	 * is a valid argument to one of the <tt>assemble</tt>
 	 * methods.  Otherwise returns false.
 	 * @return v in this.values + this.values.negation + BooleanConstant
 	 */
@@ -570,7 +570,7 @@ final class CircuitFactory {
 	 * 15 Assembler entires representing all possible composition combinations of 
 	 * non-constant vertices using the operators AND and OR.  Note that there
 	 * are 15 of them rather than 25 because of the v0.op <= v1.op requirement
-	 * of the {@link Assembler#assemble(Operator.Nary, BooleanFormula, BooleanFormula) compose} method.
+	 * of the {@link Assembler#assemble(Operator.Nary, BooleanFormula, BooleanFormula)} method.
 	 */
 	private final Assembler[] ASSEMBLERS = {
 		JoJ,		/* AND op AND */

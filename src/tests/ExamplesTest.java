@@ -52,12 +52,12 @@ public class ExamplesTest extends TestCase {
 		final CeilingsAndFloors model = new CeilingsAndFloors();
 		final Solution sol = solve(model.belowTooDoublePrime(), model.bounds(6, 6));
 //		UNSATISFIABLE
-//		p cnf 1749 3289
+//		p cnf 1750 3290
 //		primary variables: 90
 		assertEquals(Solution.Outcome.UNSATISFIABLE, sol.outcome());
 		assertEquals(90, sol.stats().primaryVariables());
-		assertEquals(1749, sol.stats().variables());
-		assertEquals(3289, sol.stats().clauses());
+		assertEquals(1750, sol.stats().variables());
+		assertEquals(3290, sol.stats().clauses());
 	}
 	
 	/**

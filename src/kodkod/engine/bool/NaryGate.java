@@ -3,7 +3,7 @@ package kodkod.engine.bool;
 import java.util.Iterator;
 import java.util.Set;
 
-import kodkod.util.collections.Iterators;
+import kodkod.util.collections.Arrays;
 
 /**
  * Represents a multi gate with more than two inputs.
@@ -44,7 +44,7 @@ final class NaryGate extends MultiGate {
 	 */
 	@Override
 	public Iterator<BooleanFormula> iterator() {
-		return Iterators.iterate(inputs);
+		return Arrays.iterate(inputs);
 	}
 	
 	/**

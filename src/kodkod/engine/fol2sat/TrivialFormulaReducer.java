@@ -1,5 +1,6 @@
 package kodkod.engine.fol2sat;
 
+import java.util.Iterator;
 import java.util.Set;
 
 import kodkod.ast.BinaryFormula;
@@ -7,9 +8,14 @@ import kodkod.ast.ComparisonFormula;
 import kodkod.ast.Formula;
 import kodkod.ast.IntComparisonFormula;
 import kodkod.ast.MultiplicityFormula;
+import kodkod.ast.Node;
 import kodkod.ast.QuantifiedFormula;
 import kodkod.ast.RelationPredicate;
-import kodkod.ast.visitor.DepthFirstReplacer;
+import kodkod.ast.visitor.AbstractReplacer;
+import kodkod.engine.bool.BooleanConstant;
+import kodkod.util.collections.IdentityHashSet;
+import kodkod.util.ints.IntSet;
+import kodkod.util.ints.IntTreeSet;
 
 
 /**
@@ -17,29 +23,39 @@ import kodkod.ast.visitor.DepthFirstReplacer;
  * caused the formula's (un)satisfiability.
  * @author Emina Torlak
  */
-final class TrivialFormulaReducer extends DepthFirstReplacer {
+final class TrivialFormulaReducer extends AbstractReplacer {
 
-	private final Set<Formula> trues, falses;
+	private final Set<Node> trues, falses;
 	
 	/**
 	 * Constructs a reducer for the given annotated formula, using the provided
 	 * sets of formulas to guide the reduction.
 	 */
-	private TrivialFormulaReducer(AnnotatedNode<Formula> reducible, Set<Formula> trues, Set<Formula> falses) {
+	private TrivialFormulaReducer(AnnotatedNode<Formula> reducible, TranslationLog log) {
 		super(reducible.sharedNodes());
-		this.trues = trues;
-		this.falses = falses;
+		this.trues = new IdentityHashSet<Node>();
+		this.falses = new IdentityHashSet<Node>();
+		final IntSet constants = new IntTreeSet();
+		constants.add(BooleanConstant.TRUE.label());
+		constants.add(BooleanConstant.FALSE.label());
+		for(Iterator<TranslationLog.Record> i = log.replay(constants); i.hasNext(); ) {
+			TranslationLog.Record next = i.next();
+			if (next.env().isEmpty()) { // no free variables
+				if (next.literal()>0) 	{ trues.add(next.node()); }
+				else 					{ falses.add(next.node()); }
+			}
+		}
 	}
 			
 	/**
 	 * Reduces the node of the given annotated formula to the subformula that causes it to simplify to a constant.
 	 * @param broken predicates on which symmetries have been broken
-	 * @param trues nodes that evaluated to true during translation to bool
-	 * @param falses nodes that evaluated to false during translation to bool
+	 * @param log the translation log
+	 * @requires reducible.node() = log.formula
 	 * @return the subformula of the given formula that causes it to simplify to a constant.
 	 */
-	static Formula reduce(AnnotatedNode<Formula> reducible, Set<RelationPredicate> broken, Set<Formula> trues, Set<Formula> falses) {
-		final TrivialFormulaReducer r = new TrivialFormulaReducer(reducible, trues, falses);
+	static Formula reduce(AnnotatedNode<Formula> reducible, Set<RelationPredicate> broken, TranslationLog log) {
+		final TrivialFormulaReducer r = new TrivialFormulaReducer(reducible, log);
 		Formula reduced = reducible.node().accept(r);
 	
 		for(RelationPredicate p : broken) {
@@ -81,7 +97,7 @@ final class TrivialFormulaReducer extends DepthFirstReplacer {
 		
 		if (ret==null) {
 			// if this method was called with this argument,
-			// binFormula must be either in trues or falseDecendents
+			// binFormula must be either in trues or falses
 			boolean binValue = isTrue(binFormula); 
 			final Formula l = binFormula.left(), r = binFormula.right();
 			final Formula lnew, rnew; 

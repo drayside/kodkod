@@ -67,7 +67,7 @@ public final class SingletonIdentitySet<V> extends AbstractSet<V> {
 	 */
 	@SuppressWarnings("unchecked")
 	public Iterator<V> iterator() {
-		return Iterators.iterate(this.element);
+		return Arrays.iterate(this.element);
 	}
 
 	/**

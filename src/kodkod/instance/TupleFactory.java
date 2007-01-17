@@ -292,6 +292,7 @@ public final class TupleFactory {
 	            multiplier *= base;
 	        }
 	        this.index = tempIndex;
+	        assert this.index >= 0;
 	    }
 	    
 	    /**
@@ -309,6 +310,7 @@ public final class TupleFactory {
 				tempIndex = tempIndex*base + 1;
 			}
 			this.index = universe.index(atom) * tempIndex;
+	        assert this.index >= 0;
 	    }
 	    
 	    /** {@inheritDoc} */

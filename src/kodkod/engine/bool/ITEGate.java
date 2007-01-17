@@ -6,7 +6,7 @@ package kodkod.engine.bool;
 import java.util.Iterator;
 import java.util.Set;
 
-import kodkod.util.collections.Iterators;
+import kodkod.util.collections.Arrays;
 import kodkod.util.ints.Ints;
 
 /**
@@ -62,7 +62,7 @@ public final class ITEGate extends BooleanFormula {
 	 */
 	@Override
 	public Iterator<BooleanFormula> iterator() {
-		return Iterators.iterate(inputs);
+		return Arrays.iterate(inputs);
 	}
 	
 	/** 

@@ -2,7 +2,6 @@ package kodkod.engine.fol2sat;
 
 import java.util.Map;
 
-import kodkod.ast.Node;
 import kodkod.ast.Relation;
 import kodkod.engine.satlab.SATSolver;
 import kodkod.instance.Bounds;
@@ -26,23 +25,24 @@ import kodkod.util.ints.Ints;
 public final class Translation {
 	private final Bounds bounds;
 	private final SATSolver solver;
-	/* maps nodes to the literals that comprise their translations.  Note that this
-	 * map _always_ contains mappings for all non-constant relations in bounds.relations */
-	private final Map<Node, IntSet> varUsage; 
+	/* maps relations to the literals that comprise their translations */
+	private final Map<Relation, IntSet> primaryVarUsage;
+	private final TranslationLog log;
 	private final int maxPrimaryLit;
 	
 	/**
-	 * Constructs a new Translation object for the given solver, bounds, and mapping
-	 * from Nodes to literals.
+	 * Constructs a new Translation object for the given solver, bounds,  mapping
+	 * from Relations to literals, and TranslationLog.
 	 * @requires maxPrimaryLit = max(varUsage[Relation].max)
-	 * @requires bounds.relations in varUsage.IntSet
+	 * @requires bounds.relations = varUsage.IntSet
 	 * @effects this.solver' = solver && this.bounds' = bounds
 	 */
-	Translation(SATSolver solver, Bounds bounds, Map<Node, IntSet> varUsage, int maxPrimaryLit) {	
+	Translation(SATSolver solver, Bounds bounds, Map<Relation, IntSet> varUsage, int maxPrimaryLit, TranslationLog log) {	
 		this.solver = solver;
 		this.bounds = bounds;
-		this.varUsage = varUsage;
+		this.primaryVarUsage = varUsage;
 		this.maxPrimaryLit = maxPrimaryLit;
+		this.log = log;
 	}
 
 	/**
@@ -78,7 +78,7 @@ public final class Translation {
 			TupleSet lower = bounds.lowerBound(r);
 			IntSet indeces = Ints.bestSet(lower.capacity());
 			indeces.addAll(lower.indexView());
-			IntSet vars = varUsage.get(r);
+			IntSet vars = primaryVarUsage.get(r);
 			if (vars!=null) {
 				int lit = vars.min();
 				for(IntIterator iter = bounds.upperBound(r).indexView().iterator(); iter.hasNext();) {
@@ -93,6 +93,17 @@ public final class Translation {
 	}
 	
 	/**
+	 * Returns the set of primary variable literals  that represent
+	 * the tuples in the given relation.  If no literals were allocated
+	 * to the given relation, null is returned.
+	 * @return the set of primary variable literals that represent
+	 * the tuples in the given relation. 
+	 */
+	public IntSet primaryVariables(Relation relation) {
+		return primaryVarUsage.get(relation);
+	}
+	
+	/**
 	 * Returns the number of primary variables allocated 
 	 * during translation.  Primary variables represent
 	 * the tuples of Relations that are either leaves
@@ -103,20 +114,18 @@ public final class Translation {
 	 * @return the number of primary variables allocated
 	 * during translation.
 	 */
-	public int primaryVariables() {
+	public int numPrimaryVariables() {
 		return maxPrimaryLit;
 	}
 	
 	/**
-	 * Returns the mapping from a subset of this.formula's
-	 * descendents to the CNF variables that comprise their translations.  If this.options.trackVars
-	 * was set to true, then all non-constant descendents of the formula are mapped.
-	 * Otherwise, only the non-constant {@link Relation relations} are mapped.
-	 * @return a mapping from a subset of this.formula.*children to the CNF
-	 * variables that comprise their translations.
+	 * If this.options.logTranslation was set to true, returns the log of the
+	 * translation that produced this Translation object.  Otherwise returns null.
+	 * @return the log of the translation that produced this Translation
+	 * object, if this.options.logTranslation was enabled during translation, or null if not. 
 	 */
-	public Map<Node, IntSet> variableUsage() {
-		return varUsage;
+	public TranslationLog log() {
+		return log;
 	}
 	
 }

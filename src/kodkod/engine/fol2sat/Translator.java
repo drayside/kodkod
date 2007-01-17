@@ -4,16 +4,13 @@
  */
 package kodkod.engine.fol2sat;
 
-import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
 import kodkod.ast.IntExpression;
-import kodkod.ast.Node;
+import kodkod.ast.Relation;
 import kodkod.engine.bool.BooleanConstant;
-import kodkod.engine.bool.BooleanFactory;
 import kodkod.engine.bool.BooleanFormula;
 import kodkod.engine.bool.BooleanMatrix;
 import kodkod.engine.bool.BooleanValue;
@@ -59,7 +56,7 @@ public final class Translator {
 		bounds.relations().retainAll(annotated.relations());
 		if (!annotated.usesIntBounds()) bounds.ints().clear();
 		
-		// break symmetries on total orders and acyclic relations
+		// detect and break symmetries on total orders and acyclic relations
 		SymmetryBreaker breaker = new SymmetryBreaker(bounds, options);
 		breaker.breakPredicateSymmetries(annotated.predicates());
 			
@@ -68,48 +65,44 @@ public final class Translator {
 			annotated = Skolemizer.skolemize(annotated, bounds, options);
 		} 
 		
-		// translate to boolean, checking for trivial (un)satisfiability
-		LeafInterpreter interpreter = LeafInterpreter.exact(bounds, options);
 		
+		
+		// translate to boolean, checking for trivial (un)satisfiability
 		reporter.translatingToBoolean(formula, bounds);
-		final Map<Node, IntSet> varUsage;
-		BooleanValue circuit;
-		if (options.trackVars()) {
-			final TrackingCache c = new TrackingCache(annotated);
-			circuit = (BooleanValue)FOL2BoolTranslator.translate(annotated,  interpreter, c, Environment.EMPTY);
+		
+		LeafInterpreter interpreter = LeafInterpreter.exact(bounds, options);
+		BooleanValue circuit; TranslationLog log;	
+		if (options.logTranslation()) {
+			final TranslationLogger logger = new FileLogger(annotated, bounds);
+			circuit = FOL2BoolTranslator.translate(annotated, interpreter, logger, options.interruptible());
+			log = logger.log();
 			if (circuit.op()==Operator.CONST) {
-				final Formula redux = TrivialFormulaReducer.reduce(annotated,breaker.broken(),c.trueFormulas(),c.falseFormulas());
-				throw new TrivialFormulaException(redux, bounds, (BooleanConstant)circuit);
+				final Formula redux = TrivialFormulaReducer.reduce(annotated.node()==formula ? annotated : new AnnotatedNode(formula), breaker.broken(), log);
+				throw new TrivialFormulaException(redux, bounds, (BooleanConstant) circuit);
 			}
-			varUsage = c.varUsage();
 		} else {
-			final TranslationCache c = options.interruptible() ? new InterruptibleCache(annotated) : new TranslationCache(annotated);
-			circuit = (BooleanValue)FOL2BoolTranslator.translate(annotated,  interpreter, c, Environment.EMPTY);
+			circuit = (BooleanValue)FOL2BoolTranslator.translate(annotated, interpreter, options.interruptible());
+			log = null;
 			if (circuit.op()==Operator.CONST) {
 				throw new TrivialFormulaException(formula, bounds, (BooleanConstant)circuit);
 			}
-			varUsage = new LinkedHashMap<Node, IntSet>();
 		}
-		
-		varUsage.putAll(interpreter.vars());
 		annotated = null; // release structural information
-
-		BooleanFactory factory = interpreter.factory();
-		final int numPrimaryVariables = factory.numberOfVariables();
 		
 		// break lex symmetries
 		reporter.breakingSymmetries();
-		circuit = factory.and(circuit, breaker.breakLexSymmetries(interpreter));
+		circuit = interpreter.factory().and(circuit, breaker.breakLexSymmetries(interpreter));
+		breaker = null; // release the symmetry breaker
 	
-		interpreter = null; breaker = null; // release the allocator and symmetry breaker
-
 		// flatten
 		if (options.flatten()) {
 			reporter.flattening((BooleanFormula)circuit);
-			factory.clear(); // remove everything but the variables from the factory
-			circuit = BooleanFormulaFlattener.flatten((BooleanFormula)circuit, factory);
-			factory = null; // release the factory itself
+			circuit = BooleanFormulaFlattener.flatten((BooleanFormula)circuit, interpreter.factory());
 		}
+
+		final Map<Relation, IntSet> varUsage = interpreter.vars();
+		final int numPrimaryVariables = interpreter.factory().numberOfVariables();
+		interpreter = null; // release the interpreter
 		
 		if (circuit.op()==Operator.CONST) {
 			throw new TrivialFormulaException(formula, bounds, (BooleanConstant)circuit);
@@ -117,8 +110,8 @@ public final class Translator {
 		
 		// translate to cnf and return the translation
 		reporter.translatingToCNF((BooleanFormula)circuit);
-		final SATSolver cnf = Bool2CNFTranslator.definitional((BooleanFormula)circuit, options.solver(), numPrimaryVariables);
-		return new Translation(cnf, bounds, Collections.unmodifiableMap(varUsage), numPrimaryVariables);
+		final SATSolver cnf = Bool2CNFTranslator.translate((BooleanFormula)circuit, options.solver(), numPrimaryVariables);
+		return new Translation(cnf, bounds, varUsage, numPrimaryVariables, log);
 
 	}
 	
@@ -134,7 +127,7 @@ public final class Translator {
 	public static BooleanConstant evaluate(Formula formula, Instance instance, Options options) {
 		return (BooleanConstant) 
 		 FOL2BoolTranslator.translate(new AnnotatedNode<Formula>(formula), 
-				 LeafInterpreter.exact(instance, options));
+				 LeafInterpreter.exact(instance, options), false);
 	}
 	
 	/**
@@ -148,7 +141,7 @@ public final class Translator {
 	public static BooleanMatrix evaluate(Expression expression,Instance instance, Options options) {
 		return (BooleanMatrix) 
 		 FOL2BoolTranslator.translate(new AnnotatedNode<Expression>(expression),
-				 LeafInterpreter.exact(instance, options));
+				 LeafInterpreter.exact(instance, options), false);
 	}
 
 	/**
@@ -162,7 +155,7 @@ public final class Translator {
 	public static Int evaluate(IntExpression intExpr, Instance instance, Options options) {
 		return (Int)
 		 FOL2BoolTranslator.translate(new AnnotatedNode<IntExpression>(intExpr),
-				 LeafInterpreter.exact(instance,options));
+				 LeafInterpreter.exact(instance,options), false);
 	}
 	
 }

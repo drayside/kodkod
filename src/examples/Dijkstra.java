@@ -341,9 +341,7 @@ public final class Dijkstra {
 		final Dijkstra model = new Dijkstra();
 		final Solver solver = new Solver();
 		solver.options().setSolver(SATFactory.MiniSat);
-		solver.options().setSolver(SATFactory.ZChaffProver);
-		solver.options().setTrackVars(true);
-		
+
 		try {
 			final Formula noDeadlocks = model.dijkstraPreventsDeadlocksAssertion();
 			final int states = Integer.parseInt(args[0]);

@@ -1,17 +1,21 @@
 package kodkod.util.collections;
 
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
  * This class provides utility methods for constructing
- * iterators.
+ * iterators over arrays and convenience wrappers for 
+ * java.util.Arrays sorting procedures.
  * 
  * @author Emina Torlak
  */
-public final class Iterators {
+public final class Arrays {
+	private static Comparator<Object> identityComparator;
 	
+	private Arrays() {}	
 	/**
 	 * Returns a new iterator over the given array of items.
 	 * The iterator is backed by the given array.  The contents
@@ -54,6 +58,48 @@ public final class Iterators {
 	@SuppressWarnings("unchecked")
 	public static final <T> Iterator<T> emptyIterator() {
 		return (Iterator<T>) Collections.emptySet().iterator();
+	}
+	
+	/**
+	 * Returns a comparator that compares objects according to their
+	 * {@link System#identityHashCode(Object) identity hashcodes}.
+	 * @return a comparator that compares objects according to their 
+	 * {@link System#identityHashCode(Object) identity hashcodes}.
+	 */
+	private static final Comparator<Object> identityComparator() {
+		if (identityComparator==null) {
+			identityComparator = new Comparator<Object>() {
+				public int compare(Object o1, Object o2) {
+					final int c1 = System.identityHashCode(o1);
+					final int c2 = System.identityHashCode(o2);
+					return c1 == c2 ? 0 : (c1 < c2 ? -1 : 1);
+				}
+			};
+		}
+		return identityComparator;
+	}
+	
+	/**
+	 * Calls {@link java.util.Arrays#sort(Object[], Comparator)} on the 
+	 * given array and returns it.
+	 * @effects java.util.Arrays.sort(array, comparator) 
+	 * @return array
+	 */
+	public static final <T> T[] sort(T[] array, Comparator<? super T> comparator) {
+		java.util.Arrays.sort(array, comparator);
+		return array;
+	}
+	
+	/**
+	 * Calls {@link java.util.Arrays#sort(Object[], Comparator)} on the 
+	 * given array and returns it.  The elements are sorted in the ascending
+	 * order of their identity hashcodes.
+	 * @effects java.util.Arrays.sort(array, {@link #identityComparator()}) 
+	 * @return array
+	 */
+	public static final <T> T[] identitySort(T[] array) {
+		java.util.Arrays.sort(array, identityComparator());
+		return array;
 	}
 	
 	/**

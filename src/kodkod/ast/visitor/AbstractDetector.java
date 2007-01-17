@@ -46,7 +46,7 @@ import kodkod.ast.Variable;
  * @specfield cached in cache.Node
  * @author Emina Torlak
  */
-public abstract class DepthFirstDetector implements ReturnVisitor<Boolean, Boolean, Boolean, Boolean> {
+public abstract class AbstractDetector implements ReturnVisitor<Boolean, Boolean, Boolean, Boolean> {
 	protected final Map<Node, Boolean> cache;
 	protected final Set<Node> cached;
 	
@@ -55,7 +55,7 @@ public abstract class DepthFirstDetector implements ReturnVisitor<Boolean, Boole
 	 * of visiting the given nodes and re-use them on subsequent visits.
 	 * @effects this.cached' = cached && no this.cache
 	 */
-	protected DepthFirstDetector(Set<Node> cached) { 
+	protected AbstractDetector(Set<Node> cached) { 
 		this.cached = cached;
 		this.cache = new IdentityHashMap<Node,Boolean>(cached.size());
 	}
@@ -66,7 +66,7 @@ public abstract class DepthFirstDetector implements ReturnVisitor<Boolean, Boole
 	 * and re-use them on subsequent visits.
 	 * @effects this.cached' = cached && this.cache' = cache
 	 */
-	protected DepthFirstDetector(Set<Node> cached, Map<Node,Boolean> cache) { 
+	protected AbstractDetector(Set<Node> cached, Map<Node,Boolean> cache) { 
 		this.cached = cached;
 		this.cache = cache;
 	}

@@ -1,5 +1,6 @@
 package kodkod.engine.config;
 
+import kodkod.engine.fol2sat.TranslationLog;
 import kodkod.engine.satlab.SATFactory;
 
 /**
@@ -16,7 +17,7 @@ import kodkod.engine.satlab.SATFactory;
  * @specfield bitwidth: int // the bitwidth to use for integer representation / arithmetic
  * @specfield skolemDepth: int // skolemization depth
  * @specfield flatten: boolean // eliminate extraneous intermediate variables?
- * @specfield trackVars: boolean // keep track of variables assigned to non-leaf nodes?
+ * @specfield logTranslation: boolean // log translation events (see {@link TranslationLog}})?
  * @author Emina Torlak
  */
 public final class Options {
@@ -28,7 +29,7 @@ public final class Options {
 	private int sharing = 3;
 	private int skolemDepth = 0;
 	private boolean flatten = true;
-	private boolean trackVars = false;
+	private boolean logTranslation = false;
 	private volatile boolean interruptible = false;
 	
 	/**
@@ -43,7 +44,7 @@ public final class Options {
 	 *          this.bitwidth' = 5
 	 *          this.skolemDepth' = 0
 	 *          this.flatten' = true
-	 *          this.trackVars' = false
+	 *          this.logTranslation' = false
 	 */
 	public Options() {}
 	
@@ -61,7 +62,7 @@ public final class Options {
 	 *          this.bitwidth' = 5
 	 *          this.skolemDepth' = 0
 	 *          this.flatten' = true
-	 *          this.trackVars' = false
+	 *          this.logTranslation' = false
 	 * @throws NullPointerException - solver = null
 	 */
 	public Options(SATFactory solver) {
@@ -187,7 +188,7 @@ public final class Options {
 	/**
 	 * Returns the value of the flattening flag, which specifies whether
 	 * to eliminate extraneous intermediate variables.  The flag is true by default.  
-	 * Flattening must be off if the tracking of variables is enabled.  
+	 * Flattening must be off if translation logging is enabled.  
 	 * @return this.flatten
 	 */
 	public boolean flatten() {
@@ -197,11 +198,11 @@ public final class Options {
 	/**
 	 * Sets the flattening option to the given value.
 	 * @effects this.flatten' = flatten
-	 * @throws IllegalArgumentException - this.trackVars && flatten
+	 * @throws IllegalArgumentException - this.logTranslation && flatten
 	 */
 	public void setFlatten(boolean flatten) {
-		if (trackVars && flatten)
-			throw new IllegalStateException("trackVars enabled:  flattening must be off.");
+		if (logTranslation && flatten)
+			throw new IllegalStateException("trackFormulas enabled:  flattening must be off.");
 		this.flatten = flatten;
 	}
 	
@@ -270,39 +271,34 @@ public final class Options {
 	/**
 	 * Sets the skolemDepth to the given value. 
 	 * @effects this.skolemDepth' = skolemDepth
-	 * @throws IllegalArgumentException - this.trackVars && skolemDepth >= 0
 	 */
 	public void setSkolemDepth(int skolemDepth) {
-		if (trackVars && skolemDepth>=0)
-			throw new IllegalStateException("trackVars enabled:  skolemization must be off.");
 		this.skolemDepth = skolemDepth;
 	}
 	
 	/**
-	 * Returns true if a mapping from non-leaf nodes to boolean variables that
-	 * represent them should be generated during translation.  This is useful
-	 * for determining which formulas/expressions occur in the unsat core of an 
-	 * unsatisfiable formula.  Flattening and skolemization  must be off whenever 
-	 * this flag is enabled.  Variable tracking is off by default, since 
-	 * it incurs a non-trivial memory overheaad.
-	 * @return this.trackVars
+	 * Returns true if translation to cnf should be logged.  This is necessary
+	 * for determining which formulas occur in the unsat core of an 
+	 * unsatisfiable formula.  Flattening  must be off whenever 
+	 * this flag is enabled.  Logging is off by default, since 
+	 * it incurs a non-trivial time overhead.
+	 * @return this.logTranslation
 	 */
-	public boolean trackVars() {
-		return trackVars;
+	public boolean logTranslation() {
+		return logTranslation;
 	}
 	
 	/**
-	 * Sets the value of the variable tracking flag.  If the 
-	 * flag is turned on, flattening and skolemization are automatically disabled.
-	 * @effects this.trackVars' = trackVars &&
-	 *          trackVars => this.flatten' = false && this.skolemDepth' < 0
+	 * Sets the value of the translation logging flag.  If the 
+	 * flag is turned on, flattening is automatically disabled.
+	 * @effects this.logTranslation' = logTranslation &&
+	 *          logTranslation => this.flatten' = false 
 	 */
-	public void setTrackVars(boolean trackVars) {
-		if (trackVars) {
+	public void setLogTranslation(boolean logTranslation) {
+		if (logTranslation) {
 			flatten = false;
-			skolemDepth = -1;
 		}
-		this.trackVars = trackVars;
+		this.logTranslation = logTranslation;
 	}
 	
 	/**
@@ -330,8 +326,8 @@ public final class Options {
 		b.append(symmetryBreaking);
 		b.append("\n skolemDepth: ");
 		b.append(skolemDepth);
-		b.append("\n trackVars: ");
-		b.append(trackVars);
+		b.append("\n logTranslation: ");
+		b.append(logTranslation);
 		return b.toString();
 	}
 	

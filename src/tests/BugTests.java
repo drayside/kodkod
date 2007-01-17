@@ -96,6 +96,16 @@ public class BugTests extends TestCase {
 		assertNotNull(sols.next().instance());
 
 		assertNull(sols.next().instance());
+	
+//		Solution sol1=sols.next();
+//		System.out.println("Solution1:"+sol1.instance());
+//
+//		Solution sol2=sols.next();
+//		System.out.println("Solution2:"+sol2.instance());
+//
+//		Solution sol3=sols.next();
+//		System.out.println("Solution3:"+sol3.instance());
+	
 	}
 	
 	public final void testFelix_01032007() {

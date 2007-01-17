@@ -54,8 +54,8 @@ public final class Solution {
 	 * trivially (un)satisfiable subtree can be obtained by calling
 	 * {@link #reduction()} <i>provided that the {@link Options options} 
 	 * with which the {@link Solver solver}
-	 * was invoked specified tracking of variables (see {@link Options#setTrackVars(boolean)} and
-	 * {@link Options#trackVars()}).</i>.
+	 * was invoked specified tracking of variables (see {@link Options#setLogTranslation(boolean)} and
+	 * {@link Options#logTranslation()}).</i>.
 	 * @return an Outcome instance designating the 
 	 * satisfiability of this.formula with respect to this.bounds
 	 */

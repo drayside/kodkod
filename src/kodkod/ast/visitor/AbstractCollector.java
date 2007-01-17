@@ -48,7 +48,7 @@ import kodkod.ast.Variable;
  * @specfield cached in cache.Node
  * @author Emina Torlak
  */
-public abstract class DepthFirstCollector<T> implements
+public abstract class AbstractCollector<T> implements
 		ReturnVisitor<Set<T>, Set<T>, Set<T>, Set<T>> {
 	protected final Map<Node, Set<T>> cache;
 	protected final Set<Node> cached;
@@ -58,7 +58,7 @@ public abstract class DepthFirstCollector<T> implements
 	 * of visiting the given nodes and re-use them on subsequent visits.
 	 * @effects this.cached' = cached && no this.cache
 	 */
-	protected DepthFirstCollector(Set<Node> cached) { 
+	protected AbstractCollector(Set<Node> cached) { 
 		this.cached = cached;
 		this.cache = new IdentityHashMap<Node,Set<T>>(cached.size());
 	}
@@ -69,7 +69,7 @@ public abstract class DepthFirstCollector<T> implements
 	 * and re-use them on subsequent visits.
 	 * @effects this.cached' = cached && this.cache' = cache
 	 */
-	protected DepthFirstCollector(Set<Node> cached, Map<Node, Set<T>> cache) { 
+	protected AbstractCollector(Set<Node> cached, Map<Node, Set<T>> cache) { 
 		this.cached = cached;
 		this.cache = cache;
 	}

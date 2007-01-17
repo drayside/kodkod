@@ -32,9 +32,9 @@ import kodkod.ast.Variable;
  *
  * @author Emina Torlak 
  */
-public abstract class DepthFirstVoidVisitor implements VoidVisitor {
+public abstract class AbstractVoidVisitor implements VoidVisitor {
 	
-	protected DepthFirstVoidVisitor() {}
+	protected AbstractVoidVisitor() {}
 	
 	/**
 	 * Returns true if this node has already been visited. 

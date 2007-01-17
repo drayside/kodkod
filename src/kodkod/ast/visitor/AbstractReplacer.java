@@ -48,7 +48,7 @@ import kodkod.ast.Variable;
  * @invariant cached in cache.Node
  * @author Emina Torlak 
  */
-public abstract class DepthFirstReplacer implements ReturnVisitor<Expression, Formula, Decls, IntExpression> {
+public abstract class AbstractReplacer implements ReturnVisitor<Expression, Formula, Decls, IntExpression> {
 	protected final Map<Node,Node> cache;
 	protected final Set<Node> cached;
 	
@@ -58,7 +58,7 @@ public abstract class DepthFirstReplacer implements ReturnVisitor<Expression, Fo
 	 * on subsequent visits.
 	 * @effects this.cached' = cached && no this.cache'
 	 */
-	protected DepthFirstReplacer(Set<Node> cached) { 
+	protected AbstractReplacer(Set<Node> cached) { 
 		this.cached = cached;
 		this.cache = new IdentityHashMap<Node,Node>(cached.size());
 	}
@@ -69,7 +69,7 @@ public abstract class DepthFirstReplacer implements ReturnVisitor<Expression, Fo
 	 * and re-use them on subsequent visits.
 	 * @effects this.cached' = cached && this.cache' = cache
 	 */
-	protected DepthFirstReplacer(Set<Node> cached, Map<Node,Node> cache) { 
+	protected AbstractReplacer(Set<Node> cached, Map<Node,Node> cache) { 
 		this.cached = cached;
 		this.cache = cache;
 	}
