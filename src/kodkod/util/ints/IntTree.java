@@ -9,101 +9,91 @@ package kodkod.util.ints;
  */
 final class IntTree<N extends IntTree.Node<N>> implements Cloneable {
 	private static final boolean BLACK = true, RED = false;
-	
-	/**
-	 * NIL is a singleton.
-	 */
-	private static final Node NIL = new Node() {
-		protected Node clone() { return this; }
-	};
-	
-	private Node root;
-	
+
+	private N root;
+
 	/**
 	 * Creates an empty IntTree.
 	 * @effects no this.root'
 	 */
 	IntTree() {
-		root = NIL;
+		root = null;
 	}
-	
+
 	/**
 	 * Discards all elements from this tree.
 	 * @effects  no this.root' 
 	 **/
 	final void clear() {
-		root = NIL;
+		root = null;
 	}
-	
+
 	/**
 	 * Returns the node with the given key, or null no such node exists.
 	 * @return this.nodes & key.index 
 	 */
-	@SuppressWarnings("unchecked")
 	final N search(int k) {	
-		Node node = root;
-		while(node != NIL) {
+		N node = root;
+		while(node != null) {
 			if (node.key==k) break;
 			else if (node.key>k) node = node.left;
 			else node = node.right;
 		}
-		return (N)unwrap(node);
+		return node;
 	}
-	
+
 	/**
 	 * Returns the node whose key is the ceiling of <tt>k</tt> in this tree, or 
 	 * null if no such node exists.
 	 * @return {n: this.nodes | n.key >= k &&
 	 *           no n': this.nodes - n | n'.key >= k && n'.key < n.key }
 	 */
-	@SuppressWarnings("unchecked")
 	final N searchGTE(int k) {
-		if (root==NIL) return null;
-		Node c = root;
+		if (root==null) return null;
+		N c = root;
 		while (true) {
 			if (c.key==k) {
-				return (N)c;
+				return c;
 			} else if (c.key>k) {
-				if (c.left != NIL)
+				if (c.left != null)
 					c = c.left;
 				else
-					return (N)c;
+					return c;
 			} else {
-				if (c.right != NIL) 
+				if (c.right != null) 
 					c = c.right;
 				else 
-					return successor((N)c);
+					return successor(c);
 			}
 		}
 	}
-	
+
 	/**
 	 * Returns the node whose key is the floor of <tt>k</tt> in this tree, or 
 	 * null if no such node exists.
 	 * @return {n: this.nodes | n.key <= k &&
 	 *           no n': this.nodes - n | n'.key <= k && n'.key > n.key }
 	 */
-	@SuppressWarnings("unchecked")
 	final N searchLTE(int k) {
-		if (root==NIL) return null;
-		Node f = root;
+		if (root==null) return null;
+		N f = root;
 		while(true) {
 			if (f.key==k)
-				return (N) f;
+				return f;
 			else if (f.key>k) {
-				if (f.left != NIL)
+				if (f.left != null)
 					f = f.left;
 				else 
-					return predecessor((N)f);
+					return predecessor(f);
 			} else {
-				if (f.right != NIL) 
+				if (f.right != null) 
 					f = f.right;
 				else 
-					return (N)f;
+					return f;
 			}
 		}
 	}
-	
+
 	/**
 	 * Implementation of the tree-predecessor algorithm from CLR.
 	 * Returns the given node's predecessor, if it exists.  
@@ -111,21 +101,20 @@ final class IntTree<N extends IntTree.Node<N>> implements Cloneable {
 	 * @return the given node's predecessor
 	 * @throws NullPointerException - node = null
 	 */
-	@SuppressWarnings("unchecked")
 	final N predecessor(N node) {
-		if (node.left != NIL) {
-			return (N)unwrap(max(node.left));
+		if (node.left != null) {
+			return max(node.left);
 		} else {
-			Node n = node;
-			Node ancestor = n.parent;
-			while (ancestor != NIL && n == ancestor.left) {
+			N n = node;
+			N ancestor = n.parent;
+			while (ancestor != null && n == ancestor.left) {
 				n = ancestor;
 				ancestor = ancestor.parent;
 			}
-			return (N)unwrap(ancestor);
+			return ancestor;
 		}
 	}	
-	
+
 	/**
 	 * Implementation of the tree-successor algorithm from CLR.
 	 * Returns the given node's successor, if it exists.  
@@ -133,39 +122,36 @@ final class IntTree<N extends IntTree.Node<N>> implements Cloneable {
 	 * @return the given node's successor
 	 * @throws NullPointerException - node = null
 	 */
-	@SuppressWarnings("unchecked")
 	final N successor(N node) {
-		if (node.right != NIL) {
-			return (N)unwrap(min(node.right));
+		if (node.right != null) {
+			return min(node.right);
 		} else {
-			Node n = node;
-			Node ancestor = n.parent;
-			while (ancestor != NIL && n == ancestor.right) {
+			N n = node;
+			N ancestor = n.parent;
+			while (ancestor != null && n == ancestor.right) {
 				n = ancestor;
 				ancestor = ancestor.parent;
 			}
-			return (N)unwrap(ancestor);
+			return ancestor;
 		}
 	}
-	
+
 	/**
 	 * Returns the node with the smallest key.
 	 * @return key.(min(this.nodes.key))
 	 */
-	@SuppressWarnings("unchecked")
 	final N min() {
-		return (N)unwrap(min(root));
+		return min(root);
 	}
-	
+
 	/**
 	 * Returns the node with the largest key.
 	 * @return key.(max(this.nodes.key))
 	 */
-	@SuppressWarnings("unchecked")
 	final N max() {
-		return (N)unwrap(max(root));
+		return max(root);
 	}
-	
+
 	/**
 	 * Returns the leftmost node in the subtree rooted at start.
 	 * The behavior of this method is unspecified if the given node
@@ -173,15 +159,15 @@ final class IntTree<N extends IntTree.Node<N>> implements Cloneable {
 	 * @requires node in this.nodes
 	 * @return {n: start.*left | no n.left }
 	 */
-	private final Node min(Node start) {
-		if (start != NIL) {
-			while(start.left != NIL) {
+	private final N min(N start) {
+		if (start != null) {
+			while(start.left != null) {
 				start = start.left;
 			}
 		}
 		return start;
 	}
-	
+
 	/**
 	 * Returns the rightmost in the subtree rooted at start.
 	 * The behavior of this method is unspecified if the given node
@@ -189,15 +175,15 @@ final class IntTree<N extends IntTree.Node<N>> implements Cloneable {
 	 * @requires node in this.nodes
 	 * @return {n: start.*left | no n.right }
 	 */
-	private final Node max(Node start) {
-		if (start != NIL) {
-			while(start.right != NIL) {
+	private final N max(N start) {
+		if (start != null) {
+			while(start.right != null) {
 				start = start.right;
 			}
 		}
 		return start;
 	}
-	
+
 	/**
 	 * Replaces the old node, o, with the given new node, n, in this tree.
 	 * @requires no n.(left + right + parent)
@@ -214,26 +200,20 @@ final class IntTree<N extends IntTree.Node<N>> implements Cloneable {
 		n.parent = o.parent;
 		n.left = o.left;
 		n.right = o.right;
-		if (o.left != NIL) 			{ o.left.parent = n; }
-		if (o.right != NIL)			{ o.right.parent = n;	 }	 
-		if (o.parent==NIL)			{ root = n; }
+		if (o.left != null) 			{ o.left.parent = n; }
+		if (o.right != null)			{ o.right.parent = n;	 }	 
+		if (o.parent == null)			{ root = n; }
 		else if (o == o.parent.left) 	{ o.parent.left = n; }
-		else 						{ o.parent.right = n; }
+		else 							{ o.parent.right = n; }
 		o.parent = o.left = o.right = null;
 	}
-	
-	/**
-	 * Returns null if n is NIL, otherwise casts
-	 * n to type N and returns it.
-	 * @requires n in N
-	 * @return if (n=NIL) then null else n
-	 * @throws ClassCastException - n !in N
-	 */
-	@SuppressWarnings("unchecked")
-	private static <N> N unwrap(Node n) {
-		return n==NIL ? null : (N) n;
-	}
-		
+
+	private final N parentOf(N n) 					{ return n==null ? null : n.parent; }
+	private final N leftOf(N n) 					{ return n==null ? null : n.left; }
+	private final N rightOf(N n) 					{ return n==null ? null : n.right; }
+	private final boolean colorOf(N n) 				{ return n==null ? BLACK : n.color; }
+	private final void setColor(N n, boolean color)	{ if (n!=null) n.color = color; }
+
 	/**
 	 * Implementation of the CLR insertion algorithm.
 	 * @requires no z.key & this.nodes.key
@@ -241,30 +221,28 @@ final class IntTree<N extends IntTree.Node<N>> implements Cloneable {
 	 */
 	@SuppressWarnings("unchecked")
 	final void insert(N z) {
-		Node y = NIL;
-		for (Node x = root; x != NIL;) {
+		N y = null;
+		for (N x = root; x != null;) {
 			y = x;
 			if (x.key>z.key) 
 				x = x.left; 
 			else 
 				x = x.right; 
 		}
-		
+
 		z.parent = y;
-		z.left = z.right = NIL;
-		if (y==NIL) {	
+		z.left = z.right = null;
+		if (y==null) {	
 			root = z;
 		} else {
 			z.color = RED;
 			if (y.key>z.key)	{ y.left = z; }
-			else 			{ y.right = z; }
-			
+			else 				{ y.right = z; }
+
 			insertFixUp(z);
 		}
-		
-		assert NIL.color && NIL.parent == NIL && NIL.left == NIL && NIL.right == NIL;
 	}
-	
+
 	/**
 	 * A slightly modified implementation of the CLR deletion algorithm.
 	 * @requires z in this.nodes
@@ -272,53 +250,42 @@ final class IntTree<N extends IntTree.Node<N>> implements Cloneable {
 	 */
 	@SuppressWarnings("unchecked")
 	final void delete(N z) {
-				
-		Node y = (z.left==NIL || z.right==NIL ? z : successor(z));
-		Node x = (y.left != NIL ? y.left : y.right);
+		N y = (z.left==null || z.right==null ? z : successor(z));
+		N x = (y.left != null ? y.left : y.right);
 		
-		Node yparent = y.parent;
-		final boolean yleft = (y==y.parent.left);
+		N yparent = y.parent;
+		final boolean yleft = (y==leftOf(y.parent));
 		final boolean ycolor = y.color;
-				
-		if (x!=NIL)						{ x.parent = yparent; }
 		
-		if (yparent == NIL)				{ root = x; }
-		else if (yleft)					{ yparent.left = x; }
+		if (x!=null)						{ x.parent = yparent; }
+		
+		if (yparent == null)				{ root = x; }
+		else if (yleft)						{ yparent.left = x; }
 		else								{ yparent.right = x; }
 		
-		if (y != z) {
-			// Instead of copying y's data into z, as is done in CLR,
-			// we splice y into z's slot
-			y.color = z.color;
-			y.left = z.left;
-			y.right = z.right;
-			y.parent = z.parent;
-			if (z.left!=NIL) 			{ z.left.parent = y; }
-			if (z.right!=NIL) 			{ z.right.parent = y; }
-			if (z.parent==NIL) 			{ root = y; }
-			else if (z == z.parent.left) 	{ z.parent.left = y; }
-			else 						{ z.parent.right = y; }
-		}
+		if (y != z) { replace(z, y); }
 		
 		if (ycolor==BLACK) {
-			if (x!=NIL)					{ deleteFixUp(x); }
-			else { // use z as a phantom child of y, since we cannot change pointers of NIL
+			if (x!=null) { 
+				deleteFixUp(x); 
+			} else if (yparent!=null) { 	// z is not the only node
+
 				if (z==yparent) yparent = y; // y, z's successor, is z's right child
 				z.color = BLACK;
-				z.left = z.right = NIL;
+				z.left = z.right = null;
 				z.parent = yparent;
 				if (yleft)				{ yparent.left = z; }
 				else 					{ yparent.right = z; }
+		
 				deleteFixUp(z);
-				if (z==z.parent.left)		{ z.parent.left = NIL; }
-				else 					{ z.parent.right = NIL; }
+				if (z==z.parent.left)	{ z.parent.left = null; }
+				else 					{ z.parent.right = null; }				
 			}
 		}
 		
-		z.left = z.right = z.parent = null; // cut z out of the tree by nulling out its pointers			
-		assert NIL.color && NIL.parent == NIL && NIL.left == NIL && NIL.right == NIL;
+		z.left = z.right = z.parent = null; // cut z out of the tree by nulling out its pointers
 	}
-	
+
 	/**
 	 * {@inheritDoc}
 	 * @see java.lang.Object#clone()
@@ -327,138 +294,147 @@ final class IntTree<N extends IntTree.Node<N>> implements Cloneable {
 	@SuppressWarnings("unchecked")
 	protected IntTree clone() throws CloneNotSupportedException {
 		final IntTree<N> ret = (IntTree<N>) super.clone();
-		ret.root = clone(root, NIL);
+		ret.root = clone(root, null);
 		return ret;
 	}
-	
+
 	/**
 	 * Recursively clones the given node.
 	 */
 	@SuppressWarnings("unchecked")
-	private Node clone(Node n, Node parent) throws CloneNotSupportedException {
-		if (n==NIL) return NIL;
-		Node clone = (Node) n.clone();
+	private N clone(N n, N parent) throws CloneNotSupportedException {
+		if (n==null) return null;
+		N clone = (N) n.clone();
 		clone.parent = parent;
 		clone.left = clone(n.left, clone);
 		clone.right = clone(n.right, clone);
 		return clone;
 	}
-	
+
 	/*---------balancing operations (CLR, pp.278-289)---------*/
 	/**
 	 * From CLR.
 	 */
 	@SuppressWarnings("unchecked")
-	private void insertFixUp(Node z) {
-		while (z != NIL && z != root && z.parent.color==RED) {
-			if (z.parent == z.parent.parent.left) {
-				Node y = z.parent.parent.right;
-				if (y.color == RED) {
-					z.parent.color = BLACK;
-					y.color = BLACK;
-					z.parent.parent.color = RED;
-					z = z.parent.parent;
+	private void insertFixUp(N z) {
+		while (z != null && z != root && z.parent.color == RED) {
+			if (parentOf(z) == leftOf(parentOf(parentOf(z)))) {
+				N y = rightOf(parentOf(parentOf(z)));
+				if (colorOf(y) == RED) {
+					setColor(parentOf(z), BLACK);
+					setColor(y, BLACK);
+					setColor(parentOf(parentOf(z)), RED);
+					z = parentOf(parentOf(z));
 				} else {
-					if (z == z.parent.right) {
-						z = z.parent;
+					if (z == rightOf(parentOf(z))) {
+						z = parentOf(z);
 						rotateLeft(z);
 					}
-					z.parent.color = BLACK;
-					z.parent.parent.color = RED;
-					rotateRight(z.parent.parent);
+					setColor(parentOf(z), BLACK);
+					setColor(parentOf(parentOf(z)), RED);
+					if (parentOf(parentOf(z)) != null)
+						rotateRight(parentOf(parentOf(z)));
 				}
-			} else { // symmetric with left and right exchanged
-				Node y = z.parent.parent.left;
-				if (y.color == RED) {
-					z.parent.color = BLACK;
-					y.color = BLACK;
-					z.parent.parent.color = RED;
-					z = z.parent.parent;
+			} else {
+				N y = leftOf(parentOf(parentOf(z)));
+				if (colorOf(y) == RED) {
+					setColor(parentOf(z), BLACK);
+					setColor(y, BLACK);
+					setColor(parentOf(parentOf(z)), RED);
+					z = parentOf(parentOf(z));
 				} else {
-					if (z == z.parent.left) {
-						z = z.parent;
+					if (z == leftOf(parentOf(z))) {
+						z = parentOf(z);
 						rotateRight(z);
 					}
-					z.parent.color = BLACK;
-					z.parent.parent.color = RED;
-					rotateLeft(z.parent.parent);
+					setColor(parentOf(z),  BLACK);
+					setColor(parentOf(parentOf(z)), RED);
+					if (parentOf(parentOf(z)) != null)
+						rotateLeft(parentOf(parentOf(z)));
 				}
 			}
 		}
 		root.color = BLACK;
 	}
-	
+
 	/**
 	 * From CLR.
 	 */
 	@SuppressWarnings("unchecked")
-	private void deleteFixUp(Node x) {
-		while (x != root && x.color==BLACK) {
-			if (x == x.parent.left) {
-				Node w = x.parent.right;
-				if (w.color == RED) {
-					w.color = BLACK;
-					x.parent.color = RED;
-					rotateLeft(x.parent);
-					w = x.parent.right;
+	private void deleteFixUp(N x) {
+		while (x != root && colorOf(x) == BLACK) {
+			if (x == leftOf(parentOf(x))) {
+				N sib = rightOf(parentOf(x));
+
+				if (colorOf(sib) == RED) {
+					setColor(sib, BLACK);
+					setColor(parentOf(x), RED);
+					rotateLeft(parentOf(x));
+					sib = rightOf(parentOf(x));
 				}
-				if (w.left.color==BLACK && w.right.color==BLACK) {
-					w.color = RED;
-					x = x.parent;
+
+				if (colorOf(leftOf(sib))  == BLACK &&
+						colorOf(rightOf(sib)) == BLACK) {
+					setColor(sib,  RED);
+					x = parentOf(x);
 				} else {
-					if (w.right.color == BLACK) {
-						w.left.color = BLACK;
-						w.color = RED;
-						rotateRight(w);
-						w = x.parent.right;
+					if (colorOf(rightOf(sib)) == BLACK) {
+						setColor(leftOf(sib), BLACK);
+						setColor(sib, RED);
+						rotateRight(sib);
+						sib = rightOf(parentOf(x));
 					}
-					w.color = x.parent.color;
-					x.parent.color = BLACK;
-					w.right.color = BLACK;
-					rotateLeft(x.parent);
+					setColor(sib, colorOf(parentOf(x)));
+					setColor(parentOf(x), BLACK);
+					setColor(rightOf(sib), BLACK);
+					rotateLeft(parentOf(x));
 					x = root;
 				}
-			} else {// symmetric with left and right exchanged
-				Node w = x.parent.left;
-				if (w.color == RED) {
-					w.color = BLACK;
-					x.parent.color = RED;
-					rotateRight(x.parent);
-					w = x.parent.left;
+			} else { // symmetric
+				N sib = leftOf(parentOf(x));
+
+				if (colorOf(sib) == RED) {
+					setColor(sib, BLACK);
+					setColor(parentOf(x), RED);
+					rotateRight(parentOf(x));
+					sib = leftOf(parentOf(x));
 				}
-				if (w.left.color==BLACK && w.right.color==BLACK) {
-					w.color = RED;
-					x = x.parent;
+
+				if (colorOf(rightOf(sib)) == BLACK &&
+						colorOf(leftOf(sib)) == BLACK) {
+					setColor(sib,  RED);
+					x = parentOf(x);
 				} else {
-					if (w.left.color == BLACK) {
-						w.right.color = BLACK;
-						w.color = RED;
-						rotateLeft(w);
-						w = x.parent.left;
+					if (colorOf(leftOf(sib)) == BLACK) {
+						setColor(rightOf(sib), BLACK);
+						setColor(sib, RED);
+						rotateLeft(sib);
+						sib = leftOf(parentOf(x));
 					}
-					w.color = x.parent.color;
-					x.parent.color = BLACK;
-					w.left.color = BLACK;
-					rotateRight(x.parent);
+					setColor(sib, colorOf(parentOf(x)));
+					setColor(parentOf(x), BLACK);
+					setColor(leftOf(sib), BLACK);
+					rotateRight(parentOf(x));
 					x = root;
 				}
-			}	
+			}
 		}
-		x.color = BLACK;
-		
+
+		setColor(x, BLACK);
+
 	}
-	
+
 	/**
 	 * From CLR.
 	 */
 	@SuppressWarnings("unchecked")
-	private void rotateLeft(Node x) {
-		Node y = x.right;
+	private void rotateLeft(N x) {
+		N y = x.right;
 		x.right = y.left;
-		if (y.left != NIL) // must not change NIL's pointers
+		if (y.left != null) 
 			y.left.parent = x;
 		y.parent = x.parent;
-		if (x.parent == NIL)
+		if (x.parent == null)
 			root = y;
 		else if (x.parent.left == x)
 			x.parent.left = y;
@@ -467,18 +443,18 @@ final class IntTree<N extends IntTree.Node<N>> implements Cloneable {
 		y.left = x;
 		x.parent = y;
 	}
-	
+
 	/**
 	 * From CLR.
 	 */
 	@SuppressWarnings("unchecked")
-	private void rotateRight(Node x) {
-		Node y = x.left;
+	private void rotateRight(N x) {
+		N y = x.left;
 		x.left = y.right;  
-		if (y.right != NIL) // must not change NIL's pointers
+		if (y.right != null) 
 			y.right.parent = x;
 		y.parent = x.parent;
-		if (x.parent == NIL)
+		if (x.parent == null)
 			root = y;
 		else if (x.parent.right == x)
 			x.parent.right = y;
@@ -487,14 +463,14 @@ final class IntTree<N extends IntTree.Node<N>> implements Cloneable {
 		y.right = x;
 		x.parent = y;
 	}
-	
+
 	/**
 	 * @see java.lang.Object#toString()
 	 */
 	public String toString() {
 		return root.toString();
 	}
-	
+
 	/**
 	 * A node  in an int tree.  Subclasses need to 
 	 * implement the clone method iff IntTree.clone will
@@ -506,7 +482,7 @@ final class IntTree<N extends IntTree.Node<N>> implements Cloneable {
 	 * @author Emina Torlak
 	 */
 	abstract static class Node<N extends Node<N>> implements Cloneable {
-		private Node parent, left, right;
+		private N parent, left, right;
 		private boolean color;
 		/**
 		 * Subclasses are required to maintain the following invariant:
@@ -516,48 +492,35 @@ final class IntTree<N extends IntTree.Node<N>> implements Cloneable {
 		 *  			some this.right => this.key < this.right.key
 		 */
 		protected int key;
-		
-		/**
-		 * NIL node constructor
-		 * @effects this.color' = BLACK && this.left' = this.right' = this.parent' = this
-		 */
-		private Node() {
-			this.parent = this.left = this.right = this;
-			this.color = BLACK;
-			this.key = Integer.MIN_VALUE;
-		}
-		
+
 		/**
 		 * Constructs an empty node with the given key.
 		 * @effects no this.(parent' + left' + right') && this.key' = key 
 		 */
 		Node(int key) {
-			this.parent = this.left = this.right = NIL;
+			this.parent = this.left = this.right = null;
 			this.color = BLACK;
 			this.key = key;
 		}
-	
+
 		/**
 		 * Returns the left child of this node.
 		 * @return this.left
 		 */
-		@SuppressWarnings("unchecked")
-		final N left() { return (N)unwrap(left); }
-		
+		final N left() { return left; }
+
 		/**
 		 * Returns the right child of this node.
 		 * @return this.right
 		 */
-		@SuppressWarnings("unchecked")
-		final N right() { return (N)unwrap(right); }
-		
+		final N right() { return right; }
+
 		/**
 		 * Return the parent of this node.
 		 * @return this.parent
 		 */
-		@SuppressWarnings("unchecked")
-		final N parent() { return (N)unwrap(parent); }
-		
+		final N parent() { return parent; }
+
 		/**
 		 * Clones this node.  Subclasses must override
 		 * this method (and call super.clone()) in order
@@ -568,20 +531,17 @@ final class IntTree<N extends IntTree.Node<N>> implements Cloneable {
 		@SuppressWarnings("unchecked")
 		protected Node<N> clone() throws CloneNotSupportedException {
 			Node<N> ret = (Node<N>) super.clone();
-			ret.parent = ret.left = ret.right = NIL;
+			ret.parent = ret.left = ret.right = null;
 			return ret;
 		}
-		
+
 		/**
 		 * @see java.lang.Object#toString()
 		 */
 		public String toString() {
-			if (this==NIL) 
-				return "NIL";
-			else 
-				return "[" + key + " " + (color ? "b" : "r") + " " + (left==this ? key : left) + " "+ 
-				        (right==this ? key : right)  + "]";
-				      
+			return "[" + key + " " + (color ? "b" : "r") + " " + (left==this ? key : left) + " "+ 
+			(right==this ? key : right)  + "]";
+
 		}
 	}
 
