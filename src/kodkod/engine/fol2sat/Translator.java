@@ -43,7 +43,6 @@ public final class Translator {
 	 * @throws HigherOrderDeclException - the formula contains a higher order declaration that cannot
 	 * be skolemized, or it can be skolemized but options.skolemize is false.
 	 */
-	@SuppressWarnings("unchecked")
 	public static Translation translate(Formula formula, Bounds bounds, Options options) throws TrivialFormulaException {
 		final Reporter reporter = options.reporter(); // grab the reporter
 		
@@ -61,28 +60,22 @@ public final class Translator {
 		breaker.breakPredicateSymmetries(annotated.predicates());
 			
 		// skolemize
-		if (options.skolemDepth()>=0) {
-			annotated = Skolemizer.skolemize(annotated, bounds, options);
-		} 
-		
-		
-		
+		if (options.skolemDepth()>=0) {	annotated = Skolemizer.skolemize(annotated, bounds, options); } 
+
 		// translate to boolean, checking for trivial (un)satisfiability
-		reporter.translatingToBoolean(formula, bounds);
-		
+		reporter.translatingToBoolean(formula, bounds);	
 		LeafInterpreter interpreter = LeafInterpreter.exact(bounds, options);
-		BooleanValue circuit; TranslationLog log;	
+		BooleanValue circuit; 
+		TranslationLog log = null;	
 		if (options.logTranslation()) {
 			final TranslationLogger logger = new FileLogger(annotated, bounds);
 			circuit = FOL2BoolTranslator.translate(annotated, interpreter, logger, options.interruptible());
 			log = logger.log();
 			if (circuit.op()==Operator.CONST) {
-				final Formula redux = TrivialFormulaReducer.reduce(annotated.node()==formula ? annotated : new AnnotatedNode(formula), breaker.broken(), log);
-				throw new TrivialFormulaException(redux, bounds, (BooleanConstant) circuit);
+				throw new TrivialFormulaException(TrivialFormulaReducer.reduce(annotated.node()==formula ? annotated : new AnnotatedNode<Formula>(formula), breaker.broken(), log), bounds, (BooleanConstant) circuit);
 			}
 		} else {
 			circuit = (BooleanValue)FOL2BoolTranslator.translate(annotated, interpreter, options.interruptible());
-			log = null;
 			if (circuit.op()==Operator.CONST) {
 				throw new TrivialFormulaException(formula, bounds, (BooleanConstant)circuit);
 			}
@@ -112,7 +105,6 @@ public final class Translator {
 		reporter.translatingToCNF((BooleanFormula)circuit);
 		final SATSolver cnf = Bool2CNFTranslator.translate((BooleanFormula)circuit, options.solver(), numPrimaryVariables);
 		return new Translation(cnf, bounds, varUsage, numPrimaryVariables, log);
-
 	}
 	
 	

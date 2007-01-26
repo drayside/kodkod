@@ -217,7 +217,7 @@ public final class DNACuts {
 		try {
 			final DNACuts model = new DNACuts(Integer.parseInt(args[0]));
 			final Solver solver = new Solver();
-			solver.options().setSolver(SATFactory.ZChaffBasic);
+			solver.options().setSolver(SATFactory.ZChaff);
 			Formula f = model.show();
 			Bounds b = model.bounds(Integer.parseInt(args[1]));
 			System.out.println("solving...");

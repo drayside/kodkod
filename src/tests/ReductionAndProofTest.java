@@ -104,7 +104,7 @@ public class ReductionAndProofTest extends TestCase {
 	    Solution sol = null;
 	    
 	
-	    		solver.options().setLogTranslation(false);
+	    	solver.options().setLogTranslation(false);
 			sol = solver.solve(f3, bounds);
 			assertEquals(Solution.Outcome.UNSATISFIABLE, sol.outcome());
 			assertNull(sol.proof());
@@ -112,18 +112,17 @@ public class ReductionAndProofTest extends TestCase {
 			sol = solver.solve(f3, bounds);
 			assertNull(sol.proof());
 			
-			solver.options().setSolver(SATFactory.ZChaffProver);
+			solver.options().setSolver(SATFactory.MiniSatProver);
 			sol = solver.solve(f3, bounds);
-			assertTrue(sol.proof().size() > 0);
 			
-//			assertSame(5, sol.proof().variablesFor(ra).size());
-//			assertSame(5, sol.proof().variablesFor(rb).size());
-//			assertSame(25, sol.proof().variablesFor(rab).size());
-//			assertSame(1, sol.proof().variablesFor(f1).size());
-//			assertSame(1, sol.proof().variablesFor(f2).size());
-//			assertSame(1, sol.proof().variablesFor(f3).size());
+			//System.out.println(f3 + ", " + bounds);
+
 			sol.proof().refine(2);
 			sol.proof().refine();
+			
+//			for(Iterator<TranslationLog.Record> itr = sol.proof().core(); itr.hasNext(); ) {
+//				System.out.println(itr.next());
+//			}
 			
 	}
 	

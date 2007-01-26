@@ -92,31 +92,7 @@ public final class FixedMap<K, V> extends AbstractMap<K, V> implements Indexer<K
 	 * @return key in this.keys => this.indices[key], {i: int | i < 0 }
 	 */
 	public final int indexOf(K key) {
-		int low = 0;
-		int high = keys.length-1;
-		int index = System.identityHashCode(key);
-
-		while (low <= high) {
-			int mid = (low + high) >>> 1;
-			int midIndex = System.identityHashCode(keys[mid]);		
-			if (midIndex < index)
-				low = mid + 1;
-			else if (midIndex > index)
-				high = mid - 1;
-			else { // index found, now check that variables are the same
-				if (keys[mid]==key) return mid;
-				// check all variables with the same index (if any)
-				for(int i = mid+1; i < keys.length && System.identityHashCode(keys[i])==index; i++) {
-					if (keys[i]==key) return i;
-				}
-				for(int i = mid-1; i >= 0 && System.identityHashCode(keys[i])==index; i--) {
-					if (keys[i]==key) return i;
-				}
-				return -(mid+1); // var not found
-			}
-		}
-
-		return -(low + 1);  // key not found.
+		return Arrays.identityBinarySearch(keys, key);
 	}
 
 	/**

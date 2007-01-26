@@ -123,7 +123,7 @@ public final class Toughnut {
 			int n = args.length==0 ? 4 : Integer.parseInt(args[0]);
 			final Toughnut nut = new Toughnut();
 			final Solver solver = new Solver();
-			solver.options().setSolver(SATFactory.ZChaffBasic);
+			solver.options().setSolver(SATFactory.ZChaff);
 			final Formula covering = nut.covering();
 			final Bounds bounds = nut.board(n);
 			

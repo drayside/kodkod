@@ -8,12 +8,12 @@ package kodkod.engine.satlab;
  * Java wrapper for Niklas EŽn and Niklas Sšrensson MiniSAT solver.
  * @author Emina Torlak
  */
-final class MiniSAT extends NativeSolver {
+final class MiniSat extends NativeSolver {
 	
 	/**
 	 * Constructs a new MiniSAT wrapper.
 	 */
-	public MiniSAT() {
+	public MiniSat() {
 		super(make());
 	}
 	

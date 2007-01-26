@@ -5,8 +5,9 @@ package kodkod.engine.satlab;
  * Provides an interface to a SAT solver.
  * 
  * @specfield variables: set [1..)
- * @specfield clauses: set seq[{i: int | i in variables or -i in variables}]
+ * @specfield clauses: set IntSet
  * @invariant all i: [2..) | i in variables => i-1 in variables
+ * @invariant all c: clauses | all lit: c.ints | lit in variables || -lit in variables
  * @author Emina Torlak
  */
 public interface SATSolver {
@@ -45,7 +46,7 @@ public interface SATSolver {
 	 * method is undefined if it is called after this.solve()
 	 * has returned <tt>false</tt>.
 	 * @requires all i: [0..lits.length) | lits[i] != 0 && |lits[i]| in this.variables 
-	 * @effects this.clauses' = this.clauses + lits
+	 * @effects this.clauses' = this.clauses + {s: IntSet | s.ints = lits[int]}
 	 * @effects lits' may not have the same contents as lits
 	 * @throws NullPointerException - lits = null
 	 */

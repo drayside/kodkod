@@ -1,14 +1,16 @@
 package kodkod.util.collections;
 
+import java.util.AbstractSet;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.Set;
 
 /**
  * This class provides utility methods for constructing
  * iterators over arrays and convenience wrappers for 
- * java.util.Arrays sorting procedures.
+ * java.util.Arrays sorting and searching procedures.
  * 
  * @author Emina Torlak
  */
@@ -66,7 +68,7 @@ public final class Arrays {
 	 * @return a comparator that compares objects according to their 
 	 * {@link System#identityHashCode(Object) identity hashcodes}.
 	 */
-	private static final Comparator<Object> identityComparator() {
+	public static final Comparator<Object> identityComparator() {
 		if (identityComparator==null) {
 			identityComparator = new Comparator<Object>() {
 				public int compare(Object o1, Object o2) {
@@ -79,27 +81,82 @@ public final class Arrays {
 		return identityComparator;
 	}
 	
-	/**
-	 * Calls {@link java.util.Arrays#sort(Object[], Comparator)} on the 
-	 * given array and returns it.
-	 * @effects java.util.Arrays.sort(array, comparator) 
-	 * @return array
-	 */
-	public static final <T> T[] sort(T[] array, Comparator<? super T> comparator) {
-		java.util.Arrays.sort(array, comparator);
-		return array;
-	}
 	
 	/**
 	 * Calls {@link java.util.Arrays#sort(Object[], Comparator)} on the 
 	 * given array and returns it.  The elements are sorted in the ascending
 	 * order of their identity hashcodes.
 	 * @effects java.util.Arrays.sort(array, {@link #identityComparator()}) 
-	 * @return array
+	 * @return the given array, with its elements sorted in the increasing order of identity hashcodes
 	 */
 	public static final <T> T[] identitySort(T[] array) {
 		java.util.Arrays.sort(array, identityComparator());
 		return array;
+	}
+	
+	/**
+	 * Searches the specified array for the specified object using the binary search algorithm 
+	 * and reference equality. 
+	 * The array must be sorted into ascending order according to the identity hashcodes of its elements 
+	 * (as by {@link #identitySort(Object[])}) prior to making this call. If it is not sorted, 
+	 * the results are undefined.  If the array contains multiple occurences of the specified object, 
+	 * there is no guarantee which one will be found.
+	 * @requires all i, j: [0..array.length) | i < j => System.identityHashCode(array[i]) <= System.identityHashCode(array[j])
+	 * @return index of the search key, if it is contained in the array; otherwise, (-(insertion point) - 1). 
+	 * The insertion point is defined as the point at which the key would be inserted into the array: the 
+	 * index of the first element greater than the key, or array.length, if all elements in the array are less 
+	 * than the specified key. Note that this guarantees that the return value will be >= 0 if and only if the 
+	 * key is found.
+	 */
+	public static final int identityBinarySearch(Object[] array, Object key) {
+		int low = 0;
+		int high = array.length-1;
+		int index = System.identityHashCode(key);
+
+		while (low <= high) {
+			int mid = (low + high) >>> 1;
+			int midIndex = System.identityHashCode(array[mid]);		
+			if (midIndex < index)
+				low = mid + 1;
+			else if (midIndex > index)
+				high = mid - 1;
+			else { // index found, now check that variables are the same
+				if (array[mid]==key) return mid;
+				// check all variables with the same index (if any)
+				for(int i = mid+1; i < array.length && System.identityHashCode(array[i])==index; i++) {
+					if (array[i]==key) return i;
+				}
+				for(int i = mid-1; i >= 0 && System.identityHashCode(array[i])==index; i--) {
+					if (array[i]==key) return i;
+				}
+				return -(mid+1); // var not found
+			}
+		}
+
+		return -(low + 1);  // key not found.
+	}
+	
+	/**
+	 * Returns an identity set backed by the given array.
+	 * The array must contain no duplicates, its elements must be
+	 * sorted in the increasing order of identity hashcodes (as by {@link #identitySort(Object[])}), and its contents
+	 * must not be changed while it is in use by the returned set.
+	 * @requires all i, j: [0..array.length) | i < j => System.identityHashCode(array[i]) <= System.identityHashCode(array[j])
+	 * @return an unmodifiable identity Set view of the given array
+	 */
+	public static final <T> Set<T> asIdentitySet(final T[] array) {
+		return new AbstractSet<T>() {
+			public boolean contains(Object o) {
+				return identityBinarySearch(array, o) >= 0;
+			}
+			public Iterator<T> iterator() {	return iterate(array); }
+			public int size() { return array.length;	}		
+			public int hashCode() {
+				int result = 0;
+		        for (Object o : array) { result += System.identityHashCode(o); }
+		        return result; 
+		     }
+		};
 	}
 	
 	/**

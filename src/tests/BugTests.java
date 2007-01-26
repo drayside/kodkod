@@ -1215,7 +1215,7 @@ public class BugTests extends TestCase {
 		Formula x37=x38.and(x253);
 
 		Solver solver = new Solver();
-		solver.options().setSolver(SATFactory.ZChaffBasic);
+		solver.options().setSolver(SATFactory.ZChaff);
 		solver.options().setBitwidth(4);
 		solver.options().setIntEncoding(Options.IntEncoding.BINARY);
 //		System.out.println(x37);
@@ -1257,7 +1257,7 @@ public class BugTests extends TestCase {
 //		System.out.println(bounds);
 		
 		Solver solver = new Solver();
-		solver.options().setSolver(SATFactory.ZChaffBasic);
+		solver.options().setSolver(SATFactory.ZChaff);
 		solver.options().setBitwidth(4);
 		solver.options().setIntEncoding(Options.IntEncoding.BINARY);
 		Solution sol;

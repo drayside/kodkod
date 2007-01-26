@@ -385,7 +385,7 @@ public final class AbstractWorldDefinitions {
 				usage();
 			final AbstractWorldDefinitions model = new AbstractWorldDefinitions();
 			final Solver solver = new Solver();
-			solver.options().setSolver(SATFactory.ZChaffBasic);
+			solver.options().setSolver(SATFactory.ZChaff);
 			solver.options().setReporter(new ConsoleReporter());
 			final Method method = model.getClass().getMethod(assertion);
 			final Formula f = model.decls().and(((Formula)method.invoke(model)).not());

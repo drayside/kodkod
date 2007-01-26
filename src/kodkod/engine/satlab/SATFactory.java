@@ -38,37 +38,24 @@ public abstract class SATFactory {
 	 * The factory that produces instances of the zchaff solver from Princeton; 
 	 * the returned instances 
 	 * support only basic sat solver operations (adding variables/clauses,
-	 * solving, and obtaining a satisfying solution, if any).
+	 * solving, and obtaining a satisfying solution, if any).  ZChaff is not incremental.
 	 */
-	public static final SATFactory ZChaffBasic = new SATFactory() {
+	public static final SATFactory ZChaff = new SATFactory() {
 		public SATSolver instance() { 
-			return new ZChaffBasic(); 
+			return new ZChaff(); 
 		}
-		public String toString() { return "ZChaffBasic"; }
+		public boolean incremental() { return false; }
+		public String toString() { return "ZChaff"; }
 	};
 	
-	/**
-	 * The factory the produces {@link SATProver core-extracting} 
-	 * instances of the zchaff solver from Princeton.  Note that core
-	 * extraction can incur a significant memory overhead during solving,
-	 * so if you do not need this functionality, use the {@link #ZChaffBasic} factory
-	 * instead.
-	 */
-	public static final SATFactory ZChaffProver = new SATFactory() {
-		public SATSolver instance() { 
-			return new ZChaffProver(); 
-		}
-		@Override
-		public boolean prover() { return true; }
-		public String toString() { return "ZChaffProver"; }
-	};
+	
 	
 	/**
 	 * The factory the produces {@link SATMinSolver cost-minimizing} 
 	 * instances of the zchaff solver from Princeton.  Note that cost minimization
 	 * can incur a time and/or memory overhead during solving,
-	 * so if you do not need this functionality, use the {@link #ZChaffBasic} factory
-	 * instead.
+	 * so if you do not need this functionality, use the {@link #ZChaff} factory
+	 * instead.  ZChaffMincost is not incremental.
 	 */
 	public static final SATFactory ZChaffMincost = new SATFactory() {
 		public SATSolver instance() {
@@ -76,7 +63,24 @@ public abstract class SATFactory {
 		}
 		@Override
 		public boolean minimizer() { return true; }
+		public boolean incremental() { return false; }
 		public String toString() { return "ZChaffMincost"; }
+	};
+	
+	/**
+	 * The factory the produces {@link SATProver proof logging} 
+	 * instances of the MiniSat solver.  Note that core
+	 * extraction can incur a significant time overhead during solving,
+	 * so if you do not need this functionality, use the {@link #MiniSat} factory
+	 * instead.
+	 */
+	public static final SATFactory MiniSatProver = new SATFactory() {
+		public SATSolver instance() { 
+			return new MiniSatProver(); 
+		}
+		@Override
+		public boolean prover() { return true; }
+		public String toString() { return "MiniSatProver"; }
 	};
 	
 	/**
@@ -85,7 +89,7 @@ public abstract class SATFactory {
 	 */
 	public static final SATFactory MiniSat = new SATFactory() {
 		public SATSolver instance() {
-			return new MiniSAT();
+			return new MiniSat();
 		}
 		public String toString() { return "MiniSat"; }
 	};

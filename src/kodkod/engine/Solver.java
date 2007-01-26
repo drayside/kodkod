@@ -155,10 +155,10 @@ public final class Solver {
 	 * @param stats translation / solving stats
 	 * @return the result of solving an unsat formula.
 	 */
-	private static Solution unsat(Translation translation, Statistics stats) {
+	private static Solution unsat(Options options, Translation translation, Statistics stats) {
 		final SATSolver cnf = translation.cnf();
 		if (cnf instanceof SATProver) {
-			return new Solution(UNSATISFIABLE, stats, null, null, new Proof((SATProver) cnf, translation.log()));
+			return new Solution(UNSATISFIABLE, stats, null, null, new Proof(options.solver(), (SATProver) cnf, translation.log()));
 		} else { // can free memory
 			final Solution sol = new Solution(UNSATISFIABLE, stats,  null, null, null);
 			cnf.free();
@@ -219,7 +219,7 @@ public final class Solver {
 
 			final Statistics stats = stats(translation, endTransl - startTransl, endSolve - startSolve);
 			
-			return isSat ? sat(bounds, translation, stats) : unsat(translation, stats);
+			return isSat ? sat(bounds, translation, stats) : unsat(options, translation, stats);
 		} catch (TrivialFormulaException trivial) {
 			final long endTransl = System.currentTimeMillis();
 			return trivial(bounds, trivial, endTransl - startTransl);
@@ -270,7 +270,7 @@ public final class Solver {
 			final long endSolve = System.currentTimeMillis();
 
 			final Statistics stats = stats(translation, endTransl - startTransl, endSolve - startSolve);
-			return isSat ? sat(bounds, translation, stats) : unsat(translation, stats);
+			return isSat ? sat(bounds, translation, stats) : unsat(options, translation, stats);
 			
 		} catch (TrivialFormulaException trivial) {
 			final long endTransl = System.currentTimeMillis();
@@ -384,7 +384,7 @@ public final class Solver {
 					return sol;
 				} else {
 					formula = null; bounds = null; // unsat, no more solutions, free up some space
-					return unsat(translation, stats);
+					return unsat(options, translation, stats);
 				}
 			} catch (SATAbortedException sae) {
 				throw new AbortedException(sae);

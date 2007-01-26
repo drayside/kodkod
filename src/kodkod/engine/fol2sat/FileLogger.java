@@ -48,7 +48,7 @@ final class FileLogger extends TranslationLogger {
 	 */
 	FileLogger(final AnnotatedNode<Formula> annotated, Bounds bounds) {
 		try {
-			this.file = File.createTempFile("kodkod", "log");
+			this.file = File.createTempFile("kodkod", ".log");
 			this.out = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(file)));
 		} catch (IOException e1) {
 			throw new RuntimeException(e1);

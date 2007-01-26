@@ -4,11 +4,11 @@ package kodkod.engine.satlab;
  * Wrapper for an instance of zchaff that provides
  * access to basic functionality.
  */
-final class ZChaffBasic extends NativeSolver {
+final class ZChaff extends NativeSolver {
 	/**
 	 * Constructs an instance of ZChaffBasic.
 	 */
-	ZChaffBasic() {
+	ZChaff() {
 		super(make());
 	}
 
@@ -17,11 +17,11 @@ final class ZChaffBasic extends NativeSolver {
 	 * @see java.lang.Object#toString()
 	 */
 	public String toString() {
-		return "ZChaffBasic";
+		return "ZChaff";
 	}
 
 	static {
-	    loadLibrary("zchaff_basic");
+	    loadLibrary("zchaff");
 	}
 	
 	/**

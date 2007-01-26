@@ -232,4 +232,17 @@ public abstract class AbstractIntSet extends AbstractSet<Integer> implements Int
 	public IntSet clone() throws CloneNotSupportedException {
 		return (IntSet) super.clone();
 	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.util.ints.IntSet#toIntArray()
+	 */
+	public int[] toIntArray() {
+		final int[] ret = new int[size()];
+		final IntIterator itr = iterator();
+		for(int i = 0; i < ret.length; i++) {
+			ret[i] = itr.nextInt();
+		}
+		return ret;
+	}
 }

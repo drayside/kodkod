@@ -308,7 +308,7 @@ public class Netconfig {
 			usage();
 		final Netconfig model = new Netconfig();
 		final Solver solver = new Solver();
-		solver.options().setSolver(SATFactory.ZChaffBasic);
+		solver.options().setSolver(SATFactory.ZChaff);
 		try {
 			final Formula show = model.show();
 			final Solution sol = solver.solve(show, model.bounds(Integer.parseInt(args[0]),Integer.parseInt(args[1]),Integer.parseInt(args[2]),Integer.parseInt(args[3])));

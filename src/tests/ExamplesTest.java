@@ -21,7 +21,7 @@ public class ExamplesTest extends TestCase {
 	public ExamplesTest(String arg0) {
 		super(arg0);
 		this.solver = new Solver();
-		this.solver.options().setSolver(SATFactory.ZChaffBasic);
+		this.solver.options().setSolver(SATFactory.ZChaff);
 	}
 
 	private Solution solve(Formula formula, Bounds bounds) {

@@ -46,7 +46,7 @@ final class ZChaffMincost extends NativeSolver implements SATMinSolver {
 	}
 	
 	static {
-		loadLibrary("zchaff_mincost");
+		loadLibrary("zchaffmincost");
 	}
 
 	/**

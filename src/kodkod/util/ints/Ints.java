@@ -138,6 +138,30 @@ public final class Ints {
 		return min < 0 ? new IntTreeSet() : bestSet(max+1);
 	}
 	
+	/**
+	 * Returns an IntSet that is backed by the given array of integers.
+	 * The array must contain no duplicates, its elements must be sorted
+	 * in the ascending order, and its contents
+	 * must not be changed while it is in use by the returned set.
+	 * @requires all i, j: [0..ints.length) | i < j => array[i] <= Sarray[j]
+	 * @return an unmodifiable IntSet view of the given array
+	 */
+	public static IntSet asSet(int[] ints) {
+		return ints.length==0 ? EMPTY_SET : new ArrayIntSet(ints);
+	}
+	
+	/**
+	 * Returns an unmodifiable IntArray backed by the given array of integers.
+	 * @return an unmodifiable IntArray backed by the given array of integers.
+	 */
+	public static IntVector asIntVector(final int[] ints) {
+		return new AbstractIntVector() {
+			public int get(int index) { return ints[index]; }
+			public int length() { return ints.length; }
+			public void copyInto(int[] array) { System.arraycopy(ints, 0, array, 0, ints.length); }
+		};
+	}
+	
 	/*-----------SEQUENCES-----------*/
 	/**
 	 * Returns an unmodifiable view of the specified sparse sequence. This method 

@@ -4,7 +4,7 @@ import java.util.Collection;
 import java.util.Set;
 
 /**
- * Represents an ordered set of integers.  
+ * An ordered set of integers.  
  *
  * @specfield ints: set int
  * @author Emina Torlak
@@ -63,7 +63,7 @@ public interface IntSet extends Set<Integer> {
 	 * are in the closed range [from..to].  If from < to, 
 	 * the elements are returned in the ascending order.  
 	 * Otherwise, they are returned in the descending order.
-	 * @return an iterator over the elements in this sequence
+	 * @return an iterator over the elements in this set
 	 * that are in the closed range [from..to]. 
 	 */
 	public abstract IntIterator iterator(int from, int to);
@@ -108,5 +108,14 @@ public interface IntSet extends Set<Integer> {
 	 * @throws CloneNotSupportedException - this is not cloneable
 	 */
 	public abstract IntSet clone() throws CloneNotSupportedException;
+	
+	 /**
+     * Returns an array containing all of the elements in this set in the
+     * ascending order.
+     *
+     * @return an array containing all of the elements in this set in the
+     * ascending order.
+     */
+	public abstract int[] toIntArray();
 
 }

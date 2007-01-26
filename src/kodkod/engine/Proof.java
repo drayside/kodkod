@@ -3,7 +3,10 @@ package kodkod.engine;
 import java.util.Iterator;
 
 import kodkod.engine.fol2sat.TranslationLog;
+import kodkod.engine.satlab.SATFactory;
 import kodkod.engine.satlab.SATProver;
+import kodkod.util.ints.IntSet;
+import kodkod.util.ints.IntTreeSet;
 
 /**
  * Contains a proof of unsatisfiability of a
@@ -13,43 +16,85 @@ import kodkod.engine.satlab.SATProver;
  * @specfield bounds: Bounds // the bounds with respect to which the formula is unsatisfiable
  */
 public final class Proof {
-	private final SATProver solver;
 	private final TranslationLog log;
+	private final SATFactory factory;
+	private SATProver solver;
 	private boolean fixed;
 	/**
 	 * Constructs a new Proof that will extract the 
-	 * unsatisfiable core for this.formula from 
-	 * the given solver.  
+	 * unsatisfiable core for this.formula from the given solver.  
+	 * @requires the given factory produces SATProver instances
 	 * @requires solver.solve() has been called and 
 	 * it returned false.
 	 * @requires log.formula is the formula whose translation
 	 * resulted in the given SATProver
 	 */
-	Proof(SATProver solver, TranslationLog log) {
-		this.solver = (SATProver)solver;
+	Proof(SATFactory factory, SATProver solver, TranslationLog log) {
+		this.solver = solver;
 		this.fixed = false;
 		this.log = log;
+		this.factory = factory;
 	}
 	
 	/**
-	 * Returns the size of the proof:  the
-	 * number of clauses in this.formula's
-	 * unsatisfiable core.
-	 * @return the size of this proof
+	 * Collects the set of clause-identifying literals for the 
+	 * root clauses at the leaves of the given clause.  A clause-identifying
+	 * literal is the literal with the largest magnitude.  The method should
+	 * be initially called with this.solver.proof() and two modifiable, empty sets
+	 * as arguments.
+	 * @effects the set of clause-identifying literals for the 
+	 * root clauses at the leaves of the given clause are added to the core set.
+	 * @effects the indices of the given clause and its descendents are added to the visited set.
+	 * @return core
 	 */
-	public int size() {
-		return solver.coreSize();
+	private static IntSet core(SATProver.Clause clause, IntSet core, IntSet visited) {
+		if (visited.add(clause.index())) {
+			if (clause.learned()) {
+				for(SATProver.Clause c : clause.antecedents()) {
+					core(c, core, visited);
+				}
+			} else {
+				final IntSet literals = clause.literals();
+				final int idLit = StrictMath.max(StrictMath.abs(literals.min()), StrictMath.abs(literals.max()));
+				core.add(idLit);
+				core.add(-idLit);
+			}
+		}
+		return core;
 	}
 	
 	/**
-	 * Returns an iterator over the CNF clauses 
-	 * that constitute the proof of this.formula's
-	 * unsatisfiability with respect to this.bounds.
-	 * @return an iterator over this formula's 
-	 * unsatisfiable core.
+	 * Collects the root clauses at the leaves of the given clause. The method should
+	 * be initially called with an instance of this.factory.solver() initialized with
+	 * this.solver.numberOfVariables() variables and a modifiable, empty set
+	 * as arguments.
+	 * @effects the root clauses at the leaves of the given clause are added to the core 
+	 * @effects the indices of the given clause and its descendents are added to the visited set.
+	 * @return core
 	 */
-	public Iterator<int[]> clauses() {
-		return solver.unsatCore();
+	private static SATProver core(SATProver.Clause clause, SATProver core, IntSet visited) {
+		if (visited.add(clause.index())) {
+			if (clause.learned()) {
+				for(SATProver.Clause c : clause.antecedents()) {
+					core(c, core, visited);
+				}
+			} else {
+				core.addClause(clause.literals().toIntArray());
+			}
+		}
+		return core;
+	}
+	
+	/**
+	 * Returns a new SATProver with no clauses and the same
+	 * number of variables as this.solver.
+	 * @return a new SATProver with no clauses and the same
+	 * number of variables as this.solver.
+	 */
+	private SATProver newProver() {
+		final SATProver prover = (SATProver) factory.instance();
+		prover.addVariables(this.solver.numberOfVariables());
+		return prover;
 	}
 	
 	/**
@@ -62,12 +107,13 @@ public final class Proof {
 	public void refine() {
 		if (fixed) return;
 		
-		int size;
-		do {
-			size = solver.coreSize();
-			solver.retainCore();
+		SATProver next = core(solver.proof(), newProver(), new IntTreeSet());
+		
+		while(next.numberOfClauses() < solver.numberOfClauses()) {
+			solver = next;
 			solver.solve();
-		} while (solver.coreSize()<size);
+			next = core(solver.proof(), newProver(), new IntTreeSet());
+		}
 		
 		fixed = true;
 	}
@@ -86,19 +132,25 @@ public final class Proof {
 			throw new IllegalArgumentException("numOfIterations < 0: " + numOfIterations);
 		if (fixed || numOfIterations==0) return;
 		
-		int size;
-		do {
-			size = solver.coreSize();
-			solver.retainCore();
+		SATProver next = core(solver.proof(), newProver(), new IntTreeSet());
+		
+		while(next.numberOfClauses() < solver.numberOfClauses() && numOfIterations-- > 0) {
+			solver = next;
 			solver.solve();
-		} while (solver.coreSize()<size && --numOfIterations>0);
-		fixed = numOfIterations > 0;
+			next = core(solver.proof(), newProver(), new IntTreeSet());
+		}
+		
+		fixed = (next.numberOfClauses() == solver.numberOfClauses());
 	}
 	
 	/**
-	 * Returns the log of the translation events resulting in this.proof.
-	 * @return this.log
+	 * Returns an iterator over translation records for the formulas
+	 * that are in the unsatisfiable core of this.formula.
+	 * @return  an iterator over translation records for the formulas
+	 * that are in the unsatisfiable core of this.formula.
 	 */
-	public TranslationLog log() { return log; }
+	public Iterator<TranslationLog.Record> core() { 
+		return log.replay(core(solver.proof(), new IntTreeSet(), new IntTreeSet())); 
+	}
 	
 }
