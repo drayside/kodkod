@@ -2,10 +2,9 @@ kodkod.ast
 kodkod.ast.visitor
 kodkod.engine
 kodkod.engine.bool
+kodkod.engine.config
 kodkod.engine.fol2sat
 kodkod.engine.satlab
 kodkod.instance
 kodkod.util.collections
 kodkod.util.ints
-minisat
-zchaff
