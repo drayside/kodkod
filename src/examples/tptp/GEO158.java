@@ -37,7 +37,7 @@ public class GEO158 {
 	/**
 	 * Constructs a new instance of GEO0040.
 	 */
-	GEO158() {
+	public GEO158() {
 		super();
 		partOf = Relation.binary("partOf");
 		incident = Relation.binary("incident");
@@ -321,6 +321,13 @@ public class GEO158 {
 		 	and(c1()).and(c2()).and(c3()).and(c4()).and(c5()).and(c6()).and(c7()).and(c8()).and(c9());
 	}
 	
+	/**
+	 * Returns the formula "some Curve"
+	 * @return some Curve
+	 */
+	public Formula someCurve() { 
+		return curve.some();
+	}
 	
 	/**
 	 * Returns a bounds with the given number of maximum curves and points
@@ -358,7 +365,7 @@ public class GEO158 {
 	}
 	
 	/**
-	 * Usage: ava examples.tptp.GEO158 [# univ size ]
+	 * Usage: java examples.tptp.GEO158 [# univ size ]
 	 */
 	public static void main(String[] args) {
 		if (args.length < 1)
@@ -371,7 +378,7 @@ public class GEO158 {
 			solver.options().setSolver(SATFactory.MiniSat);
 	
 			final GEO158 model = new GEO158();
-			final Formula f = model.axioms().and(model.curve.some());
+			final Formula f = model.axioms().and(model.someCurve());
 			
 			
 //			System.out.println(model.decls());

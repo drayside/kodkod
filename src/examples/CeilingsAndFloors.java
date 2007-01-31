@@ -166,10 +166,10 @@ public final class CeilingsAndFloors {
 		
 		final CeilingsAndFloors model = new CeilingsAndFloors();
 		final Solver solver = new Solver();
-		final int m = Integer.parseInt(args[0]);
-		final int p = Integer.parseInt(args[1]);
 		solver.options().setSolver(SATFactory.MiniSat);
 		try {
+			final int m = Integer.parseInt(args[0]);
+			final int p = Integer.parseInt(args[1]);
 			final Formula show = model.belowTooDoublePrime();
 			final Solution sol = solver.solve(show, model.bounds(m,p));
 			System.out.println(show);

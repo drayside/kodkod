@@ -103,12 +103,13 @@ public final class Pigeonhole {
 			usage();
 		final Pigeonhole model = new Pigeonhole();
 		final Solver solver = new Solver();
-		final int p = Integer.parseInt(args[0]);
-		final int h = Integer.parseInt(args[1]);
-		solver.options().setSolver(SATFactory.MiniSat);
-		solver.options().setSymmetryBreaking(p);
-		solver.options().setFlatten(true);
+		
 		try {
+			final int p = Integer.parseInt(args[0]);
+			final int h = Integer.parseInt(args[1]);
+			solver.options().setSolver(SATFactory.MiniSat);
+			solver.options().setSymmetryBreaking(p);
+			solver.options().setFlatten(true);
 			final Formula show = model.declarations().and(model.pigeonPerHole());
 			final Solution sol = solver.solve(show, model.bounds(p,h));
 			//System.out.println(show);
