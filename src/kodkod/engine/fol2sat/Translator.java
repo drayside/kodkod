@@ -107,6 +107,19 @@ public final class Translator {
 		return new Translation(cnf, bounds, varUsage, numPrimaryVariables, log);
 	}
 	
+	/**
+	 * Overapproximates the value of the given expression using the provided bounds and options.
+	 * @return a BooleanMatrix whose TRUE entries represent the tuples contained in a sound overapproximation
+	 * of the expression.
+	 * @throws expression = null || instance = null || options = null
+	 * @throws UnboundLeafException - the expression refers to an undeclared variable or a relation not mapped by the instance
+	 * @throws HigherOrderDeclException - the expression contains a higher order declaration
+	 */
+	@SuppressWarnings("unchecked")
+	public static BooleanMatrix approximate(Expression expression, Bounds bounds, Options options) {
+		return FOL2BoolTranslator.approximate(new AnnotatedNode<Expression>(expression), 
+				LeafInterpreter.overapproximating(bounds, options), Environment.EMPTY);
+	}
 	
 	/**
 	 * Evaluates the given formula to a BooleanConstant using the provided instance and options.  
@@ -126,7 +139,7 @@ public final class Translator {
 	 * Evaluates the given expression to a BooleanMatrix using the provided instance and options.
 	 * 
 	 * @return a BooleanMatrix whose TRUE entries represent the tuples contained by the expression.
-	 * @throws NullPointerException - formula = null || instance = null || options = null
+	 * @throws NullPointerException - expression = null || instance = null || options = null
 	 * @throws UnboundLeafException - the expression refers to an undeclared variable or a relation not mapped by the instance
 	 * @throws HigherOrderDeclException - the expression contains a higher order declaration
 	 */
