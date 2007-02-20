@@ -63,17 +63,20 @@ JNIEXPORT void JNICALL Java_kodkod_engine_satlab_MiniSat_addVariables
  * Method:    addClause
  * Signature: (J[I)V
  */
-JNIEXPORT void JNICALL Java_kodkod_engine_satlab_MiniSat_addClause
+JNIEXPORT jint JNICALL Java_kodkod_engine_satlab_MiniSat_addClause
   (JNIEnv * env, jobject, jlong solver, jintArray clause) {
     jsize length = env->GetArrayLength(clause);
     jint* buf = env->GetIntArrayElements(clause, JNI_FALSE);
+    Solver* solverPtr = ((Solver*)solver);
     vec<Lit> lits;
     for(int i = 0; i < length; ++i) {
         int var = *(buf+i);
         lits.push((var > 0) ? Lit(var-1) : ~Lit(-var-1));
     }
-    ((Solver*)solver)->addClause(lits);
+    int oldSize = solverPtr->nClauses();
+    solverPtr->addClause(lits);
     env->ReleaseIntArrayElements(clause, buf, 0);
+    return oldSize < solverPtr->nClauses() ? 1 : -1;
  }
 
 /*

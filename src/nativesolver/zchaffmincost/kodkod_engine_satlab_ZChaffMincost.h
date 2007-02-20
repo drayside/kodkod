@@ -52,7 +52,7 @@ JNIEXPORT void JNICALL Java_kodkod_engine_satlab_ZChaffMincost_addVariables
  * Method:    addClause
  * Signature: (J[I)V
  */
-JNIEXPORT void JNICALL Java_kodkod_engine_satlab_ZChaffMincost_addClause
+JNIEXPORT jint JNICALL Java_kodkod_engine_satlab_ZChaffMincost_addClause
   (JNIEnv *, jobject, jlong, jintArray);
 
 /*

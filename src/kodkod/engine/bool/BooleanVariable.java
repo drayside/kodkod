@@ -2,7 +2,7 @@ package kodkod.engine.bool;
 
 import java.util.Iterator;
 
-import kodkod.util.collections.Arrays;
+import kodkod.util.collections.Containers;
 import kodkod.util.ints.Ints;
 
 
@@ -79,7 +79,7 @@ public final class BooleanVariable extends BooleanFormula {
 	 */
 	@Override
 	public Iterator<BooleanFormula> iterator() {
-		return Arrays.emptyIterator();
+		return Containers.emptyIterator();
 	}
 
 	/**

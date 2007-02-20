@@ -1,14 +1,12 @@
 package kodkod.util.ints;
 
-import java.util.AbstractSet;
-import java.util.Collection;
 import java.util.NoSuchElementException;
 
 /**
  * A skeletal implementation of the IntSet interface.  
  * @author Emina Torlak
  */
-public abstract class AbstractIntSet extends AbstractSet<Integer> implements IntSet {
+public abstract class AbstractIntSet implements IntSet {
 	
 	/**
 	 * Constructs an empty int set.
@@ -23,6 +21,12 @@ public abstract class AbstractIntSet extends AbstractSet<Integer> implements Int
 	final void checkNonEmpty() {
 		if  (isEmpty()) throw new NoSuchElementException("no this.ints");
 	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.util.ints.IntSet#isEmpty()
+	 */
+	public boolean isEmpty() { return size()==0; }
 	
 	/**
 	 * Returns an ascending iterator over all elements in this set.
@@ -104,127 +108,85 @@ public abstract class AbstractIntSet extends AbstractSet<Integer> implements Int
 	}
 	
 	/**
-	 * Returns true if o is in this set.
-	 * The method calls this.contains(((Integer)o).intValue()).
-	 * @return o in this.ints
-	 * @throws ClassCastException - o is not an Integer
-	 * @throws NullPointerException - o = null
-	 */
-	public boolean contains(Object o) {
-		return contains(((Integer)o).intValue());	
-	}
-	
-	/**
-	 * Adds the given integer to this set if not already present
-	 * and returns true.  Otherwise does nothing and returns false.
-	 * This method calls this.add(o.intValue()).
-	 * @effects this.ints' = this.ints + i
-	 * @return this.ints != this.ints'
-	 * @throws NullPointerException - o = null
-	 */
-	public boolean add(Integer o) {
-		return add(o.intValue());
-	}
-	
-	/**
 	 * {@inheritDoc}
-	 * @see java.util.Collection#containsAll(java.util.Collection)
+	 * @see kodkod.util.ints.IntSet#containsAll(kodkod.util.ints.IntSet)
 	 */
-	@SuppressWarnings("unchecked")
-	public boolean containsAll(Collection<?> c) {
-		if (c instanceof IntSet) {
-			final IntSet s = (IntSet) c;
-			if (size() < s.size()) 
-				return false;
-			for(IntIterator iter = s.iterator(); iter.hasNext(); ) {
-				if (!contains(iter.nextInt()))
+	public boolean containsAll(IntSet s) {
+		if (size()>=s.size()) {
+			for(IntIterator itr = s.iterator(); itr.hasNext(); ) {
+				if (!contains(itr.nextInt()))
 					return false;
 			}
 			return true;
 		}
-		return super.containsAll(c);
+		return false;
 	}
 	
 	/**
 	 * {@inheritDoc}
-	 * @see kodkod.util.ints.IntSet#addAll(java.util.Collection)
+	 * @see kodkod.util.ints.IntSet#addAll(kodkod.util.ints.IntSet)
 	 */
-	@SuppressWarnings("unchecked")
-	public boolean addAll(Collection<? extends Integer> c) {
-		if (c instanceof IntSet) {
-			final IntSet s = (IntSet) c;
-			final int oldSize = size();
-			for(IntIterator iter = s.iterator(); iter.hasNext(); ) {
-				add(iter.nextInt());
-			}
-			return size()!=oldSize;
+	public boolean addAll(IntSet s) {
+		boolean modified = false;
+		for(IntIterator itr = s.iterator(); itr.hasNext(); ) {
+			if (add(itr.nextInt()))
+				modified = true;
 		}
-		return super.addAll(c);
+		return modified;
 	}
 	
 	/**
 	 * {@inheritDoc}
-	 * @see java.util.Collection#retainAll(java.util.Collection)
+	 * @see kodkod.util.ints.IntSet#retainAll(kodkod.util.ints.IntSet)
 	 */
-	@SuppressWarnings("unchecked")
-	public boolean retainAll(Collection<?> c) {
-		if (c instanceof IntSet) {
-			final IntSet s = (IntSet) c;
-			final int oldSize =  size();
-			for(IntIterator iter = iterator(); iter.hasNext(); ) {
-				if (!s.contains(iter.nextInt())) {
-					iter.remove();
-				}
+	public boolean retainAll(IntSet s) {
+		boolean modified = false;
+		for(IntIterator itr = iterator(); itr.hasNext(); ) {
+			if (!s.contains(itr.nextInt())) {
+				modified = true;
+				itr.remove();
 			}
-			return size()!=oldSize;
 		}
-		return super.retainAll(c);
+		return modified;
 	}
 	
 	/**
 	 * {@inheritDoc}
-	 * @see java.util.Collection#removeAll(java.util.Collection)
+	 * @see kodkod.util.ints.IntSet#removeAll(kodkod.util.ints.IntSet)
 	 */
-	@SuppressWarnings("unchecked")
-	public boolean removeAll(Collection<?> c) {
-		if (c instanceof IntSet) {
-			final IntSet s = (IntSet) c;
-			final int oldSize =  size();
-			for(IntIterator iter = s.iterator(); iter.hasNext(); ) {
-				int i = iter.nextInt();
-				if (contains(i))
-					remove(i);
+	public boolean removeAll(IntSet s) {
+		boolean modified = false;
+		for(IntIterator itr = iterator(); itr.hasNext();) {
+			if (s.contains(itr.nextInt())) {
+				modified = true;
+				itr.remove();
 			}
-			return size()!=oldSize;
 		}
-		return super.removeAll(c);
+		return modified;
 	}
 	
-	/**
-	 * Removes the given integer from this set if already present and
-	 * returns true.  Otherwise does nothing and returns false.
-	 * This method calls this.remove(((Integer)o).intValue()).
-	 * @effects this.ints' = this.ints - i
-	 * @return this.ints != this.ints'
-	 * @throws NullPointerException - o = null
-	 * @throws ClassCastException - o is not an integer
-	 */
-	public boolean remove(Object o) {
-		return remove(((Integer)o).intValue());
+	 /**
+
+     * This implementation iterates over this set, removing each
+     * element using the <tt>Iterator.remove</tt> operation.  Most
+     * implementations will probably choose to override this method for
+     * efficiency.<p>
+     *
+     * Note that this implementation will throw an
+     * <tt>UnsupportedOperationException</tt> if the iterator returned by this
+     * collection's <tt>iterator</tt> method does not implement the
+     * <tt>remove</tt> method and this collection is non-empty.
+     *
+     * @throws UnsupportedOperationException if the <tt>clear</tt> method is
+     * 		  not supported by this collection.
+     */
+	public void clear() {
+		for(IntIterator itr = iterator(); itr.hasNext();) {
+			itr.nextInt();
+			itr.remove();
+		}
 	}
-	
-	/**
-	 * {@inheritDoc}
-	 * @see java.lang.Object#equals(java.lang.Object)
-	 */
-	public boolean equals(Object o) {
-		if (this==o) return true;
-		if (o instanceof IntSet) {
-			final IntSet s = (IntSet) o;
-			return size()==s.size() && containsAll(s);
-		} else return super.equals(o);
-	}
-	
+		
 	/**
 	 * Returns the result of calling super.clone().
 	 * @see java.lang.Object#clone()
@@ -235,14 +197,63 @@ public abstract class AbstractIntSet extends AbstractSet<Integer> implements Int
 	
 	/**
 	 * {@inheritDoc}
-	 * @see kodkod.util.ints.IntSet#toIntArray()
+	 * @see kodkod.util.ints.IntSet#toArray()
 	 */
-	public int[] toIntArray() {
+	public int[] toArray() {
 		final int[] ret = new int[size()];
 		final IntIterator itr = iterator();
 		for(int i = 0; i < ret.length; i++) {
 			ret[i] = itr.nextInt();
 		}
 		return ret;
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.util.ints.IntSet#copyInto(int[])
+	 */
+	public void copyInto(int[] array) {
+		if (array.length < size()) 
+			throw new IndexOutOfBoundsException();
+		int i = 0;
+		for(IntIterator itr = iterator(); itr.hasNext(); ) {
+			array[i++] = itr.nextInt();
+		}
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	public boolean equals(Object o) {
+		if (o==this) return true;
+		else if (o instanceof IntSet) {
+			final IntSet s = (IntSet) o;
+			return size()==s.size() && containsAll(s);
+		} else return false;
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see java.lang.Object#hashCode()
+	 */
+	public int hashCode() { 
+		return Ints.superFastHash(toArray());
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see java.lang.Object#toString()
+	 */
+	public String toString() {
+		final StringBuilder buf = new StringBuilder("{");
+		final IntIterator itr = iterator();
+		if (itr.hasNext()) buf.append(itr.nextInt());
+		while(itr.hasNext()) {
+			buf.append(", ");
+			buf.append(itr.nextInt());
+		}
+		buf.append("}");
+		return buf.toString();
 	}
 }

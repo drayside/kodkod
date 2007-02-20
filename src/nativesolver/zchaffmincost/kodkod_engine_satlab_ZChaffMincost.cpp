@@ -53,7 +53,7 @@ JNIEXPORT void JNICALL Java_kodkod_engine_satlab_ZChaffMincost_addVariables
   }
 }
 
-JNIEXPORT void JNICALL Java_kodkod_engine_satlab_ZChaffMincost_addClause
+JNIEXPORT jint JNICALL Java_kodkod_engine_satlab_ZChaffMincost_addClause
   (JNIEnv * env, jobject, jlong solver, jintArray clause) {
     jsize length = env->GetArrayLength(clause);
     jint* buf = env->GetIntArrayElements(clause, JNI_FALSE);
@@ -61,8 +61,9 @@ JNIEXPORT void JNICALL Java_kodkod_engine_satlab_ZChaffMincost_addClause
         int var = *(buf+i);
         *(buf+i) = var < 0 ? (-var << 1) | 1 : var << 1;
     }
-    ((MSolver*)solver)->add_orig_clause((int*)buf, length);
+    MClauseIdx clauseIdx = ((MSolver*)solver)->add_orig_clause((int*)buf, length);
     env->ReleaseIntArrayElements(clause, buf, 0);
+    return clauseIdx;
 }
 
 

@@ -45,8 +45,39 @@ final class TrivialFormulaReducer extends AbstractReplacer {
 				else 					{ falses.add(next.node()); }
 			}
 		}
+		completeConstantInit(reducible.node());
 	}
-			
+	
+	/**
+	 * Completes the initialization of the sets trues and falses.
+	 * @effects updates the sets trues and falses with the nodes whose
+	 * (in)validity is implied by the current members of the two sets.
+	 */
+	private void completeConstantInit(Formula formula) {
+		if (!isConstant(formula)) {
+			if (formula instanceof BinaryFormula) {
+				final BinaryFormula bin = (BinaryFormula) formula;
+				if (bin.op()==BinaryFormula.Operator.AND) {
+					completeConstantInit(bin.left());
+					completeConstantInit(bin.right());
+					if (isFalse(bin.left())||isFalse(bin.right())) {
+						falses.add(formula);
+					} else if (isTrue(bin.left())&&isTrue(bin.right())) {
+						trues.add(formula);
+					}
+				} else if (bin.op()==BinaryFormula.Operator.OR) {
+					completeConstantInit(bin.left());
+					completeConstantInit(bin.right());
+					if (isTrue(bin.left())||isTrue(bin.right())) {
+						trues.add(formula);
+					} else if (isFalse(bin.left())&&isFalse(bin.right())) {
+						falses.add(formula);
+					}
+				}
+			}
+		}
+	}
+	
 	/**
 	 * Reduces the node of the given annotated formula to the subformula that causes it to simplify to a constant.
 	 * @param broken predicates on which symmetries have been broken

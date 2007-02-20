@@ -59,11 +59,11 @@ final class MiniSat extends NativeSolver {
 	/**
 	 * Adds the specified clause to the instance
 	 * of minisat referenced by the first argument.
-	 * @requires all i: lits[int] | some l: [1..numVariables(minisat) | 
-	 *            i = l || i = -l
+	 * @requires all i: lits[int] | some l: [1..numVariables() | i = l || i = -l
 	 * @effects adds the given clause to the specified instance of minisat.
+	 * @return  a non-negative integer if the clause has been added to the peer; a negative integer if not.
 	 */
-	native void addClause(long peer, int[] lits);
+	native int addClause(long peer, int[] lits);
 	
 	/**
 	 * Calls the solve method on the instance of 
@@ -77,7 +77,7 @@ final class MiniSat extends NativeSolver {
 	 * by the specified instance of minisat:  1 means
 	 * the variable is TRUE, 0 that it's FALSE, and 
 	 * -1 that it is UNDECIDED.
-	 * @requires the last call to {@link #solve(long) solve(minisat)} returned SATISFIABLE
+	 * @requires the last call to {@link #solve(long) solve(peer)} returned SATISFIABLE
 	 * @return the assignment for the given literal
 	 */
 	native boolean valueOf(long peer, int literal);

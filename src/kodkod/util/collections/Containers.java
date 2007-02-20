@@ -8,16 +8,17 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 
 /**
- * This class provides utility methods for constructing
- * iterators over arrays and convenience wrappers for 
- * java.util.Arrays sorting and searching procedures.
+ * This class provides utility methods for 
+ * iterating over, searching, etc., arrays and 
+ * turning arrays into collections.
  * 
  * @author Emina Torlak
  */
-public final class Arrays {
+public final class Containers {
 	private static Comparator<Object> identityComparator;
+	private static Comparator<Object> hashComparator;
 	
-	private Arrays() {}	
+	private Containers() {}	
 	/**
 	 * Returns a new iterator over the given array of items.
 	 * The iterator is backed by the given array.  The contents
@@ -81,6 +82,41 @@ public final class Arrays {
 		return identityComparator;
 	}
 	
+	/**
+	 * Returns 0 if o is null, otherwise returns o.hashCode().
+	 * @return  o=null => 0, o.hashCode()
+	 */
+	static final int hash(Object o) {
+		return o==null ? 0 : o.hashCode();
+	}
+	
+	/**
+	 * Returns true if both o1 and o2 are null or if o1.equals(o2)
+	 * @return true if both o1 and o2 are null or if o1.equals(o2)
+	 */
+	static final boolean eq(Object o1, Object o2) {
+		return o1==null ? o2==null : o1.equals(o2);
+	}
+	
+	/**
+	 * Returns a comparator that compares objects according to their
+	 * {@link Object#hashCode() hashcodes}.  The null reference is 
+	 * considered to have a hashcode of 0.
+	 * @return a comparator that compares objects according to their 
+	 * {@link Object#hashCode() hashcodes}.
+	 */
+	public static final Comparator<Object> hashComparator() {
+		if (hashComparator==null) {
+			hashComparator = new Comparator<Object>() {
+				public int compare(Object o1, Object o2) {
+					final int c1 = hash(o1);
+					final int c2 = hash(o2);
+					return c1 == c2 ? 0 : (c1 < c2 ? -1 : 1);
+				}
+			};
+		}
+		return hashComparator;
+	}
 	
 	/**
 	 * Calls {@link java.util.Arrays#sort(Object[], Comparator)} on the 
@@ -95,13 +131,25 @@ public final class Arrays {
 	}
 	
 	/**
+	 * Calls {@link java.util.Arrays#sort(Object[], Comparator)} on the 
+	 * given array and returns it.  The elements are sorted in the ascending
+	 * order of their  hashcodes.
+	 * @effects java.util.Arrays.sort(array, {@link #hashComparator()}) 
+	 * @return the given array, with its elements sorted in the increasing order of  hashcodes
+	 */
+	public static final <T> T[] hashSort(T[] array) {
+		java.util.Arrays.sort(array, hashComparator());
+		return array;
+	}
+	
+	/**
 	 * Searches the specified array for the specified object using the binary search algorithm 
 	 * and reference equality. 
 	 * The array must be sorted into ascending order according to the identity hashcodes of its elements 
 	 * (as by {@link #identitySort(Object[])}) prior to making this call. If it is not sorted, 
 	 * the results are undefined.  If the array contains multiple occurences of the specified object, 
 	 * there is no guarantee which one will be found.
-	 * @requires all i, j: [0..array.length) | i < j => System.identityHashCode(array[i]) <= System.identityHashCode(array[j])
+	 * @requires all i, j: [0..array.length) | i < j => array[i].hashCode() <= array[j].hashCode())
 	 * @return index of the search key, if it is contained in the array; otherwise, (-(insertion point) - 1). 
 	 * The insertion point is defined as the point at which the key would be inserted into the array: the 
 	 * index of the first element greater than the key, or array.length, if all elements in the array are less 
@@ -137,7 +185,50 @@ public final class Arrays {
 	}
 	
 	/**
-	 * Returns an identity set backed by the given array.
+	 * Searches the specified array for the specified object using the binary search algorithm 
+	 * and object equality. 
+	 * The array must be sorted into ascending order according to the hashcodes of its elements 
+	 * (as by {@link #hashSort(Object[])}) prior to making this call. If it is not sorted, 
+	 * the results are undefined.  If the array contains multiple occurences of the specified object, 
+	 * there is no guarantee which one will be found.
+	 * @requires all i, j: [0..array.length) | i < j => System.identityHashCode(array[i]) <= System.identityHashCode(array[j])
+	 * @return index of the search key, if it is contained in the array; otherwise, (-(insertion point) - 1). 
+	 * The insertion point is defined as the point at which the key would be inserted into the array: the 
+	 * index of the first element greater than the key, or array.length, if all elements in the array are less 
+	 * than the specified key. Note that this guarantees that the return value will be >= 0 if and only if the 
+	 * key is found.
+	 */
+	public static final int hashBinarySearch(Object[] array, Object key) {
+		int low = 0;
+		int high = array.length-1;
+		int index = hash(key);
+
+		while (low <= high) {
+			int mid = (low + high) >>> 1;
+			int midIndex = hash(array[mid]);		
+			if (midIndex < index)
+				low = mid + 1;
+			else if (midIndex > index)
+				high = mid - 1;
+			else { // index found, now check that variables are the same
+				if (eq(array[mid], key)) return mid;
+				// check all variables with the same index (if any)
+				for(int i = mid+1; i < array.length && hash(array[i])==index; i++) {
+					if (eq(array[i], key)) return i;
+				}
+				for(int i = mid-1; i >= 0 && hash(array[i])==index; i--) {
+					if (eq(array[i], key)) return i;
+				}
+				return -(mid+1); // var not found
+			}
+		}
+
+		return -(low + 1);  // key not found.
+	}
+	
+	/**
+	 * Returns an identity set backed by the given array (i.e. a set that uses
+	 * reference equality for comparisons).
 	 * The array must contain no duplicates, its elements must be
 	 * sorted in the increasing order of identity hashcodes (as by {@link #identitySort(Object[])}), and its contents
 	 * must not be changed while it is in use by the returned set.
@@ -156,6 +247,25 @@ public final class Arrays {
 		        for (Object o : array) { result += System.identityHashCode(o); }
 		        return result; 
 		     }
+		};
+	}
+	
+	/**
+	 * Returns a set backed by the given array (i.e. a set that uses
+	 * object equality for comparisons). 
+	 * The array must contain no duplicates, its elements must be
+	 * sorted in the increasing order of hashcodes (as by {@link #hashSort(Object[])}), and its contents
+	 * must not be changed while it is in use by the returned set.
+	 * @requires all i, j: [0..array.length) | i < j => array[i].hashCode() <= array[j].hashCode
+	 * @return an unmodifiable Set view of the given array
+	 */
+	public static final <T> Set<T> asHashSet(final T[] array) {
+		return new AbstractSet<T>() {
+			public boolean contains(Object o) {
+				return hashBinarySearch(array, o) >= 0; 
+			}
+			public Iterator<T> iterator() { return iterate(array);}
+			public int size() { return array.length;}
 		};
 	}
 	

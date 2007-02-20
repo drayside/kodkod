@@ -164,7 +164,7 @@ bool Proof::save(cchar* filename)
     fp.seek(0);
 
     // Copy file:
-    File    out(filename, "wo");
+    File    out(filename, "wo"); // ORIGINAL flags "wox"; "wo" allows writing to existing files
     if (out.null())
         return false;
 

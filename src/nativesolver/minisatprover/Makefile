@@ -3,8 +3,8 @@ COMPILE = $(CC) -Wall -O3 -c
 LINK = $(CC) -dynamiclib
 
 CHEADERS = Heap.h SolverTypes.h VarOrder.h Sort.h Solver.h Proof.h File.h Global.h 
-CSRCS = Solver.C Proof.C  File.C 
-COBJS = Solver.o Proof.o  File.o 
+CSRCS = Solver.C Proof.C File.C 
+COBJS = Solver.o Proof.o File.o 
 
 U0=$(shell uname)
 U1=$(subst SunOS,solaris,${U0})

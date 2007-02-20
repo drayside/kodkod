@@ -12,9 +12,9 @@ import java.util.NoSuchElementException;
  * @specfield ints: set int
  * @author Emina Torlak
  */
-final class ArrayIntSet extends AbstractIntSet {
+public final class ArrayIntSet extends AbstractIntSet {
 	private final int[] ints;
-	
+	private final int hashcode;
 	/**
 	 * Constructs a set view for the given array.  The array must contain no duplicates, 
 	 * its elements must be sorted
@@ -25,6 +25,16 @@ final class ArrayIntSet extends AbstractIntSet {
 	 */
 	public ArrayIntSet(int[] ints) {
 		this.ints = ints;
+		this.hashcode = Ints.superFastHash(ints);
+	}
+	
+	/**
+	 * Constructs an ArrayIntSet that is <tt>equal</tt> to the
+	 * given set.
+	 * @effects this.ints' = s.ints
+	 */
+	public ArrayIntSet(IntSet s) {
+		this(s.toArray());
 	}
 	
 	/**
@@ -36,9 +46,9 @@ final class ArrayIntSet extends AbstractIntSet {
 	}
 
 	/**
-	 * @see java.util.AbstractCollection#size()
+	 * {@inheritDoc}
+	 * @see kodkod.util.ints.IntSet#size()
 	 */
-	@Override
 	public int size() {
 		return ints.length;
 	}
@@ -86,12 +96,38 @@ final class ArrayIntSet extends AbstractIntSet {
 	
 	/**
 	 * {@inheritDoc}
-	 * @see kodkod.util.ints.AbstractIntSet#toIntArray()
+	 * @see kodkod.util.ints.AbstractIntSet#toArray()
 	 */
-	public int[] toIntArray() {
+	public int[] toArray() {
 		final int[] ret = new int[ints.length];
 		System.arraycopy(ints, 0, ret, 0, ints.length);
 		return ret;
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.util.ints.IntSet#copyInto(int[])
+	 */
+	public void copyInto(int[] array) {
+		if (array.length < size()) 
+			throw new IndexOutOfBoundsException();
+		System.arraycopy(ints, 0, array, 0, ints.length);
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see java.util.AbstractSet#hashCode()
+	 */
+	public int hashCode() { return hashcode; }
+	
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.util.ints.AbstractIntSet#equals(java.lang.Object)
+	 */
+	public boolean equals(Object o) {
+		return (o instanceof ArrayIntSet) ? 
+				java.util.Arrays.equals(ints, ((ArrayIntSet)o).ints) : 
+				super.equals(o);
 	}
 	
 	private abstract class IntArrayIterator implements IntIterator {

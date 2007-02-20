@@ -117,6 +117,9 @@ public abstract class AbstractSparseSequence<V> implements SparseSequence<V> {
 					throw new NoSuchElementException();
 				return ceil.index();
 			}
+			public void clear() {
+				AbstractSparseSequence.this.clear();
+			}
 			public IntSet clone() throws CloneNotSupportedException { 
 				final IntSet s;
 				if (size()==0)

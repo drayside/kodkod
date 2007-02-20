@@ -117,7 +117,6 @@ public class ReductionAndProofTest extends TestCase {
 			
 			//System.out.println(f3 + ", " + bounds);
 
-			sol.proof().refine(2);
 			sol.proof().refine();
 			
 //			for(Iterator<TranslationLog.Record> itr = sol.proof().core(); itr.hasNext(); ) {

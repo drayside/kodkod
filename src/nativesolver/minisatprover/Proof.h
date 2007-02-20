@@ -60,7 +60,7 @@ public:
     ClauseId endChain  ();
     void     deleted   (ClauseId gone);
     ClauseId last      () { assert(id_counter != ClauseId_NULL); return id_counter - 1; }
-
+	ClauseId next      () { return id_counter; }
     void     compress  (Proof& dst, ClauseId goal = ClauseId_NULL);     // 'dst' should be a newly constructed, empty proof.
     bool     save      (cchar* filename);
     void     traverse  (ProofTraverser& trav, ClauseId goal = ClauseId_NULL) ;

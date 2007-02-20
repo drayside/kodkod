@@ -48,6 +48,39 @@ public class BugTests extends TestCase {
 //			System.out.println(e); 
 //	}
 	
+	public final void testMana_01312007() {
+		final Relation A = Relation.unary("A");
+		final Relation first1 = Relation.unary("first1");
+		final Relation first2 = Relation.unary("first2");
+		final Relation last1 = Relation.unary("last1");
+		final Relation last2 = Relation.unary("last2");
+		final Relation next1 = Relation.binary("next1");
+		final Relation next2 = Relation.binary("next2");
+		
+		final Formula f0 = next1.totalOrder(A, first1, last1);
+		final Formula f1 = next2.totalOrder(A, first2, last2);
+		final Formula f2 = first1.eq(last2);
+		
+		final Formula f3 = f0.and(f1).and(f2);
+		
+		final Universe u = new Universe(Arrays.asList("a0","a1","a2"));
+		final TupleFactory f = u.factory();
+		final Bounds b = new Bounds(u);
+		
+		b.bound(A, f.allOf(1));
+		b.bound(first1, f.allOf(1));
+		b.bound(first2, f.allOf(1));
+		b.bound(last1, f.allOf(1));
+		b.bound(last2, f.allOf(1));
+		b.bound(next1, f.allOf(2));
+		b.bound(next2, f.allOf(2));
+		
+		final Solver solver = new Solver();
+		final Solution sol = solver.solve(f3, b);
+		
+		assertEquals(Solution.Outcome.SATISFIABLE, sol.outcome());
+	}
+	
 	public final void testFelix_01132007() {
 //		Relation x1 = Relation.nary("A",1);
 //		List<String> atomlist = Arrays.asList("A0", "A1", "A2");

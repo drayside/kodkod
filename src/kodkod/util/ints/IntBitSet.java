@@ -1,7 +1,6 @@
 package kodkod.util.ints;
 
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.NoSuchElementException;
 
 /**
@@ -39,6 +38,24 @@ public final class IntBitSet extends AbstractIntSet implements Cloneable {
 		this.capacity = capacity;
 		elements = new long[(capacity >>> 6) + 1];
 		size = 0;
+	}
+	
+	/**
+	 * Constructs an IntBitSet that can store up to capacity elements.
+	 * The set is initialized to contain all integers i such that 
+	 * data[i>>>6] & (1L<<i) == 1.  This IntBitSet is backed by the given
+	 * data array.  The array must not be modified while in use by this set.
+	 * @requires 0 <= capacity < max({i: int | data[i>>>6] & (1L<<i) == 1}) or (capacity>>>6)+1 > data.length
+	 * @throws IllegalArgumentException - capacity is out of range
+	 */
+	public IntBitSet(int capacity, long[] data) {
+		if (capacity > (data.length<<6)) throw new IllegalArgumentException("capacity too large: " + capacity + ", max: " + (data.length<<6));
+		this.capacity = capacity;
+		this.elements = data;
+		recalculateSize();
+//		System.out.println("capacity: " + capacity + ", max: " + max() + ", data.length: " + data.length);
+//		System.out.println(Arrays.toString(data));
+		if (capacity <= max())  throw new IllegalArgumentException("capacity too small");
 	}
 	
 	/**
@@ -134,7 +151,6 @@ public final class IntBitSet extends AbstractIntSet implements Cloneable {
 	 * {@inheritDoc}
 	 * @see kodkod.util.ints.IntSet#size()
 	 */
-	@Override
 	public int size() {
 		return size;
 	}
@@ -235,11 +251,11 @@ public final class IntBitSet extends AbstractIntSet implements Cloneable {
 	
 	/**
 	 * {@inheritDoc}
-	 * @see java.util.Collection#containsAll(java.util.Collection)
+	 * @see kodkod.util.ints.IntSet#containsAll(kodkod.util.ints.IntSet)
 	 */
-	public boolean containsAll(Collection<?> c) {
-		if (c instanceof IntBitSet) {
-			final IntBitSet s = (IntBitSet) c;
+	public boolean containsAll(IntSet other) {
+		if (other instanceof IntBitSet) {
+			final IntBitSet s = (IntBitSet) other;
 			if (isEmpty() || s.isEmpty()) return isEmpty() ? s.isEmpty():true;
 			if (size < s.size || max() < s.max()) return false;
 			final int minLength = StrictMath.min(elements.length, s.elements.length);
@@ -249,7 +265,7 @@ public final class IntBitSet extends AbstractIntSet implements Cloneable {
 			}
 			return true;
 		}
-		return super.containsAll(c);
+		return super.containsAll(other);
 	}
 	 
 	/**
@@ -264,13 +280,13 @@ public final class IntBitSet extends AbstractIntSet implements Cloneable {
         return size!=oldSize;
     }
     
-    /**
-     * {@inheritDoc}
-     * @see kodkod.util.ints.IntSet#addAll(java.util.Collection)
-     */
-	public boolean addAll(Collection<? extends Integer> c) {
-		if (c instanceof IntBitSet) {
-			final IntBitSet s = (IntBitSet) c;
+   /**
+    * {@inheritDoc}
+    * @see kodkod.util.ints.IntSet#addAll(kodkod.util.ints.IntSet)
+    */
+	public boolean addAll(IntSet other) {
+		if (other instanceof IntBitSet) {
+			final IntBitSet s = (IntBitSet) other;
 			if (s.isEmpty()) return false;
 			if (s.max() >= capacity) 
 				throw new IllegalArgumentException(s.max()+" !in [0.." + capacity + ")");
@@ -280,16 +296,16 @@ public final class IntBitSet extends AbstractIntSet implements Cloneable {
 			}
 			return recalculateSize();
 		}
-		return super.addAll(c);
+		return super.addAll(other);
 	}
 
 	/**
 	 * {@inheritDoc}
-	 * @see java.util.Collection#retainAll(java.util.Collection)
+	 * @see kodkod.util.ints.IntSet#retainAll(kodkod.util.ints.IntSet)
 	 */
-	public boolean retainAll(Collection<?> c) {
-		if (c instanceof IntBitSet) {
-			final IntBitSet s = (IntBitSet) c;
+	public boolean retainAll(IntSet other) {
+		if (other instanceof IntBitSet) {
+			final IntBitSet s = (IntBitSet) other;
 			final int minLength = StrictMath.min(elements.length, s.elements.length);
 			int wordIndex = 0;
 			for(; wordIndex < minLength; wordIndex++) {
@@ -300,23 +316,23 @@ public final class IntBitSet extends AbstractIntSet implements Cloneable {
 			}
 			return recalculateSize();
 		}
-		return super.retainAll(c);
+		return super.retainAll(other);
 	}
 
 	/**
 	 * {@inheritDoc}
-	 * @see java.util.Collection#removeAll(java.util.Collection)
+	 * @see kodkod.util.ints.AbstractIntSet#removeAll(kodkod.util.ints.IntSet)
 	 */
-	public boolean removeAll(Collection<?> c) {
-		if (c instanceof IntBitSet) {
-			final IntBitSet s = (IntBitSet) c;
+	public boolean removeAll(IntSet other) {
+		if (other instanceof IntBitSet) {
+			final IntBitSet s = (IntBitSet) other;
 			final int minLength = StrictMath.min(elements.length, s.elements.length);
 			for(int wordIndex = 0; wordIndex < minLength; wordIndex++) {
 				elements[wordIndex] &= ~s.elements[wordIndex];
 			}
 			return recalculateSize();
 		}
-		return super.removeAll(c);
+		return super.removeAll(other);
 	}
 
 	/**

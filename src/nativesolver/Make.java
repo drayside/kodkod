@@ -267,8 +267,10 @@ public final class Make {
 			// subdirectories
 			out.print("SUBDIRS = ");
 			for(File sub: subdirs) {
-				out.print(sub.getName());
-				out.print(" ");
+				if (generate(sub)) {
+					out.print(sub.getName());
+					out.print(" ");
+				}
 			}
 			
 			out.println();
@@ -292,9 +294,7 @@ public final class Make {
 			out.close();
 			done(mainmake);	
 			
-			for(File sub: subdirs) {
-				generate(sub);
-			}
+			
 			return true;
 		} catch (IOException e) {
 			failed(mainmake, e.getMessage());

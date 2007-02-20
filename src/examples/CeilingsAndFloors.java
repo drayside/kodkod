@@ -83,7 +83,7 @@ public final class CeilingsAndFloors {
 	 * @return all m: Man | some n: Man | m.floor = n.ceiling
 	 */
 	public Formula belowToo() {
-		final Variable m = Variable.unary("m"), n = Variable.unary("n");
+		final Variable m = Variable.unary("m0"), n = Variable.unary("n0");
 //		 all m: Man | some n: Man | m.floor = n.ceiling
 		return ((m.join(floor).eq(n.join(ceiling))).forSome(n.oneOf(Man)).forAll(m.oneOf(Man)));
 
@@ -94,7 +94,7 @@ public final class CeilingsAndFloors {
 	 * @return all m, n: Man | !(m = n) => !(m.floor = n.floor || m.ceiling = n.ceiling) 
 	 */
 	public Formula noSharing() {
-		final Variable m = Variable.unary("m"), n = Variable.unary("n");
+		final Variable m = Variable.unary("m1"), n = Variable.unary("n1");
 //		 all m, n: Man | !(m = n) => !(m.floor = n.floor || m.ceiling = n.ceiling) 
 		final Formula body = (m.join(floor).eq(n.join(floor))).or(m.join(ceiling).eq(n.join(ceiling)));
 		return (m.eq(n).not().implies(body.not())).forAll(m.oneOf(Man).and(n.oneOf(Man)));
@@ -105,7 +105,7 @@ public final class CeilingsAndFloors {
 	 * @return all m: Man | some n: Man | n.floor = m.ceiling
 	 */
 	public Formula paulSimon() {
-		final Variable m = Variable.unary("m"), n = Variable.unary("n");
+		final Variable m = Variable.unary("m2"), n = Variable.unary("n2");
 //		 all m: Man | some n: Man | n.floor = m.ceiling
 		return ((n.join(floor).eq(m.join(ceiling))).forSome(n.oneOf(Man)).forAll(m.oneOf(Man)));
 

@@ -36,7 +36,7 @@ JNIEXPORT void JNICALL Java_kodkod_engine_satlab_MiniSat_addVariables
  * Method:    addClause
  * Signature: (J[I)V
  */
-JNIEXPORT void JNICALL Java_kodkod_engine_satlab_MiniSat_addClause
+JNIEXPORT jint JNICALL Java_kodkod_engine_satlab_MiniSat_addClause
   (JNIEnv *, jobject, jlong, jintArray);
 
 /*

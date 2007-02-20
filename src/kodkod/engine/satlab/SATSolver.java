@@ -5,9 +5,9 @@ package kodkod.engine.satlab;
  * Provides an interface to a SAT solver.
  * 
  * @specfield variables: set [1..)
- * @specfield clauses: set IntSet
+ * @specfield clauses: set Clause
  * @invariant all i: [2..) | i in variables => i-1 in variables
- * @invariant all c: clauses | all lit: c.ints | lit in variables || -lit in variables
+ * @invariant all c: clauses | all lit: c.literals | lit in variables || -lit in variables
  * @author Emina Torlak
  */
 public interface SATSolver {
@@ -37,16 +37,19 @@ public interface SATSolver {
 	public abstract void addVariables(int numVars);
 	
 	/**
-	 * Adds the specified sequence of literals to this.clauses.
+	 * Adds a clause corresponding to 
+	 * the specified literals to this.clauses.
 	 * No reference to the specified array is kept, so it can
 	 * be reused.  <b>The contents of the array may, however, 
 	 * be modified.</b>  It is the client's responsibility to 
-	 * ensure that no literals in a clause are repeated, or that
+	 * ensure that no literals in the given array are repeated, or that
 	 * both a literal and its negation are present.  The behavior of this 
 	 * method is undefined if it is called after this.solve()
 	 * has returned <tt>false</tt>.
 	 * @requires all i: [0..lits.length) | lits[i] != 0 && |lits[i]| in this.variables 
-	 * @effects this.clauses' = this.clauses + {s: IntSet | s.ints = lits[int]}
+	 * @effects #this.clauses' = #this.clauses + 1 and
+	 *  let c = this.clauses' - this.clauses | no c.antecedents and c.literals = lits[int] and
+	 *  no c.index & this.clauses.index
 	 * @effects lits' may not have the same contents as lits
 	 * @throws NullPointerException - lits = null
 	 */

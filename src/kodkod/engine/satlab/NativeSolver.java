@@ -196,12 +196,16 @@ abstract class NativeSolver implements SATSolver {
 	
 	/**
 	 * Adds the specified clause to the instance
-	 * of a native solver referenced by the first argument.
+	 * of a native solver referenced by the first argument.  Returns  
+	 * a non-negative integer if the clause has been added to the given
+	 * native peer; a negative integer if not.  The exact meaning of the
+	 * returned integer depends on the peer's specification.
 	 * @requires all i: lits[int] | some l: [1..this.numVariables()] | 
 	 *            i = l || i = -l
 	 * @effects adds the given clause to the specified instance of a native solver.
+	 * @return a non-negative integer if the clause has been added to the peer; a negative integer if not.
 	 */
-	abstract void addClause(long peer, int[] lits);
+	abstract int addClause(long peer, int[] lits);
 	
 	/**
 	 * Calls the solve method on the instance of 

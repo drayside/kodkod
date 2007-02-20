@@ -1,6 +1,5 @@
 package kodkod.util.ints;
 
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
@@ -379,7 +378,7 @@ public final class Ints {
 		public boolean contains(int i) { return s.contains(i); }
 		public int min() { return s.min();	}
 		public int max() { return s.max();	}
-		public boolean containsAll(Collection<?> c) { return s.containsAll(c); }	
+		public boolean containsAll(IntSet other) { return s.containsAll(other ); }	
 		public IntIterator iterator(final int from, final int to) { 	
 			return new IntIterator() {
 				IntIterator iter = s.iterator(from,to);
@@ -391,13 +390,6 @@ public final class Ints {
 				}	
 			};
 		}
-		public boolean equals(Object o) {
-			if (this==o) return true;
-			else if (o instanceof UnmodifiableIntSet) {
-				return s.equals(((UnmodifiableIntSet) o).s);
-			} else return s.equals(o); 	
-		}
-		public int hashCode() { 	return s.hashCode();	}
 		public int floor(int i) { return s.floor(i); }
 		public int ceil(int i) { return s.ceil(i); }
 		public IntSet clone() throws CloneNotSupportedException { return s.clone(); }

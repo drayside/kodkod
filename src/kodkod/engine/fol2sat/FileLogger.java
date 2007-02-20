@@ -24,7 +24,7 @@ import kodkod.engine.fol2sat.TranslationLog.Record;
 import kodkod.instance.Bounds;
 import kodkod.instance.TupleFactory;
 import kodkod.instance.TupleSet;
-import kodkod.util.collections.Arrays;
+import kodkod.util.collections.Containers;
 import kodkod.util.collections.FixedMap;
 import kodkod.util.ints.IntSet;
 import kodkod.util.ints.Ints;
@@ -82,7 +82,7 @@ final class FileLogger extends TranslationLogger {
 		for(Map.Entry<Node, Set<Variable>> e : freeVarMap.entrySet()) {
 			Set<Variable> val = e.getValue();
 			if (val.isEmpty()) { this.logged.put(e.getKey(), empty); } 
-			else { 	this.logged.put(e.getKey(), Arrays.identitySort(val.toArray(new Variable[val.size()]))); }
+			else { 	this.logged.put(e.getKey(), Containers.identitySort(val.toArray(new Variable[val.size()]))); }
 		}
 	
 	}

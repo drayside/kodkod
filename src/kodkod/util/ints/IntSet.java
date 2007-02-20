@@ -1,7 +1,6 @@
 package kodkod.util.ints;
 
-import java.util.Collection;
-import java.util.Set;
+import java.util.NoSuchElementException;
 
 /**
  * An ordered set of integers.  
@@ -9,7 +8,20 @@ import java.util.Set;
  * @specfield ints: set int
  * @author Emina Torlak
  */
-public interface IntSet extends Set<Integer> {
+public interface IntSet extends Cloneable, Iterable<Integer> {
+	
+	/**
+	 * Returns the cardinality of this set.
+	 * @return #this.ints
+	 */
+	public abstract int size();
+	
+	/**
+	 * Returns true if this set has no elements; 
+	 * otherwise returns false.
+	 * @return no this.ints
+	 */
+	public abstract boolean isEmpty();
 	
 	/**
 	 * Returns true if i is in this set.
@@ -87,17 +99,49 @@ public interface IntSet extends Set<Integer> {
 	public abstract boolean remove(int i);
 	
 	/**
-	 * Adds all of the elements in the specified collection to this set 
-	 * if they're not already presen. If the specified 
-	 * collection is also a set, the addAll operation effectively modifies 
-	 * this set so that its value is the union of the two sets.
-	 * @effects this.ints' = this.ints + c.elements 
-	 * @return this.ints' != this.ints
-	 * @throws NullPointerException - c = null || null in c.elements
-	 * @throws IllegalArgumentException - if this is a bounded set and
-	 * c contains an element that is out of bounds
+	 * Returns true if s is a subset of this set.
+	 * @return s.ints in this.ints
+	 * @throws NullPointerException - s = null
 	 */
-	public abstract boolean addAll(Collection<? extends Integer> c);
+	public abstract boolean containsAll(IntSet s);
+	
+	/**
+	 * Adds all of the elements in the specified set to this set 
+	 * if they're not already present. The addAll operation effectively modifies 
+	 * this set so that its value is the union of the two sets.
+	 * @effects this.ints' = this.ints + s.ints
+	 * @return this.ints' != this.ints
+	 * @throws NullPointerException - s = null
+	 * @throws IllegalArgumentException - if this is a bounded set and
+	 * s contains an element that is out of bounds
+	 */
+	public abstract boolean addAll(IntSet s);
+	
+	/**
+	 * Removes from this set all of its elements that are contained in the 
+	 * specified set. This operation effectively modifies this set so that 
+	 * its value is the asymmetric set difference of the two sets.
+	 * @effects this.ints' = this.ints - s.ints
+	 * @return this.ints' != this.ints
+	 * @throws NullPointerException - s = null
+	 */
+	public abstract boolean removeAll(IntSet s);
+	
+	/**
+	 * Retains only the elements in this set that are contained in the 
+	 * specified set. This operation effectively modifies this set so that 
+	 * its value is the intersection of the two sets.
+	 * @effects this.ints' = this.ints & s.ints
+	 * @return this.ints' != this.ints
+	 * @throws NullPointerException - s = null
+	 */
+	public abstract boolean retainAll(IntSet s);
+	
+	/**
+	 * Removes all elements from this set. 
+	 * @effects no this.ints'
+	 */
+	public abstract void clear();
 	
 	/**
 	 * Returns a copy of this IntSet.  The copy is independent of this 
@@ -116,6 +160,36 @@ public interface IntSet extends Set<Integer> {
      * @return an array containing all of the elements in this set in the
      * ascending order.
      */
-	public abstract int[] toIntArray();
-
+	public abstract int[] toArray();
+	
+	/**
+     * Copies the elements of this set into the specified array, in the ascending
+     * order. The array must be big enough 
+     * to hold all the elements in this set, else an IndexOutOfBoundsException is thrown.
+     * @effects all i: [0..this.size()) | array[i] in this.ints and #{e: this.ints | e < array[i]} = i
+     * @throws IndexOutOfBoundsException - array.length < this.size()
+     */
+    public abstract void copyInto(int[] array);
+    
+    /**
+     * Compares the specified object with this set for equality. 
+     * Returns true if the specified object is also an IntSet, 
+     * the two sets have the same size, and every member of the 
+     * specified set is contained in this set (or equivalently, 
+     * every member of this set is contained in the specified set). 
+     * This definition ensures that the equals method works properly 
+     * across different implementations of the IntSet interface.
+     * @return o instanceof IntSet and o.size() = this.size() and this.containsAll(o)
+     */
+    public abstract boolean equals(Object o);
+    
+    /**
+     * Returns the hash code value for this set. The hash code of a set is 
+     * defined to be the {@link Ints#superFastHash(int[])} of the elements in the set, 
+     * taken in the ascending order of values.  
+     * This ensures that s1.equals(s2) implies that s1.hashCode()==s2.hashCode() 
+     * for any two IntSets s1 and s2, as required by the general contract of the Object.hashCode method.
+     * @return Ints.superFastHash(this.toArray())
+     */
+    public abstract int hashCode();
 }

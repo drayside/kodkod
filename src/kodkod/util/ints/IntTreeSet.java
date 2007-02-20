@@ -3,7 +3,6 @@
  */
 package kodkod.util.ints;
 
-import java.util.Collection;
 import java.util.NoSuchElementException;
 
 /**
@@ -33,13 +32,13 @@ public final class IntTreeSet extends AbstractIntSet implements Cloneable {
 
 	/**
 	 * Constructs a new int set containing the elements
-	 * in the specified collection.
-	 * @effects this.ints' = c.elements
-	 * @throws NullPointerException - c = null
+	 * in the specified set.
+	 * @effects this.ints' = s.ints
+	 * @throws NullPointerException - s = null
 	 */
-	public IntTreeSet(Collection<? extends Integer> c) {
+	public IntTreeSet(IntSet s) {
 		this();
-		addAll(c);
+		addAll(s);
 	}
 	
 	/**
@@ -75,22 +74,12 @@ public final class IntTreeSet extends AbstractIntSet implements Cloneable {
 
 	/**
 	 * {@inheritDoc}
-	 * @see java.util.AbstractCollection#size()
+	 * @see kodkod.util.ints.IntSet#size()
 	 */
-	@Override
 	public int size() {
 		return size;
 	}
-	
-	/**
-	 * {@inheritDoc}
-	 * @see java.util.Collection#isEmpty()
-	 */
-	@Override
-	public boolean isEmpty() {
-		return size==0;
-	}
-	
+		
 	/**
 	 * {@inheritDoc}
 	 * @see kodkod.util.ints.IntSet#contains(int)
@@ -204,15 +193,12 @@ public final class IntTreeSet extends AbstractIntSet implements Cloneable {
 	}
 	
 	/**
-	 * Returns true if c is a collection of integers and
-	 * all its elements are contained in this.
-	 * @return c.elements in this.ints
-	 * @throws NullPointerException - c = null || null in c.elements
-	 * @throws ClassCastException - some e: c.elements | c !in Integer
+	 * {@inheritDoc}
+	 * @see kodkod.util.ints.IntSet#containsAll(kodkod.util.ints.IntSet)
 	 */
-	public boolean containsAll(Collection<?> c) {
-		if (c instanceof IntTreeSet) {
-			IntTreeSet s = (IntTreeSet) c;
+	public boolean containsAll(IntSet other) {
+		if (other instanceof IntTreeSet) {
+			IntTreeSet s = (IntTreeSet) other;
 			if (size>=s.size) {
 				for(Range r1 = s.tree.min(); r1 != null; r1 = s.tree.successor(r1)) {
 					Range r0 = tree.searchGTE(r1.key);
@@ -223,7 +209,7 @@ public final class IntTreeSet extends AbstractIntSet implements Cloneable {
 			}
 			return false;
 		}
-		return super.containsAll(c);
+		return super.containsAll(other);
 	}
 	
 	/**

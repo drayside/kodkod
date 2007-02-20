@@ -205,7 +205,7 @@ final class ExternalSolver implements SATSolver {
 				}
 				try { out.close(); } catch (IOException e) { } // do nothing, we are done 
 				if (sat==null) {
-					throw new RuntimeException("inconsistent " + executable + " output");
+					throw new RuntimeException("invalid " + executable + " output");
 				}
 			} catch (IOException e) {
 				throw new SATAbortedException(e);

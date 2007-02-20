@@ -53,7 +53,7 @@ JNIEXPORT void JNICALL Java_kodkod_engine_satlab_ZChaff_addVariables
   //cout << "added " << numVars << " variables to " << solver << endl;
 }
 
-JNIEXPORT void JNICALL Java_kodkod_engine_satlab_ZChaff_addClause
+JNIEXPORT jint JNICALL Java_kodkod_engine_satlab_ZChaff_addClause
   (JNIEnv * env, jobject, jlong solver, jintArray clause) {
     jsize length = env->GetArrayLength(clause);
     jint* buf = env->GetIntArrayElements(clause, JNI_FALSE);
@@ -61,8 +61,9 @@ JNIEXPORT void JNICALL Java_kodkod_engine_satlab_ZChaff_addClause
         int var = *(buf+i);
         *(buf+i) = var < 0 ? (-var << 1) | 1 : var << 1;
     }
-    ((CSolver*)solver)->add_orig_clause((int*)buf, length);
+    ClauseIdx clauseIdx = ((CSolver*)solver)->add_orig_clause((int*)buf, length);
     env->ReleaseIntArrayElements(clause, buf, 0);
+    return clauseIdx;
 }
 
 JNIEXPORT jboolean JNICALL Java_kodkod_engine_satlab_ZChaff_solve

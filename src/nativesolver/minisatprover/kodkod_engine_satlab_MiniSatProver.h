@@ -34,9 +34,9 @@ JNIEXPORT void JNICALL Java_kodkod_engine_satlab_MiniSatProver_addVariables
 /*
  * Class:     kodkod_engine_satlab_MiniSatProver
  * Method:    addClause
- * Signature: (J[I)V
+ * Signature: (J[I)I
  */
-JNIEXPORT void JNICALL Java_kodkod_engine_satlab_MiniSatProver_addClause
+JNIEXPORT jint JNICALL Java_kodkod_engine_satlab_MiniSatProver_addClause
   (JNIEnv *, jobject, jlong, jintArray);
 
 /*
@@ -57,11 +57,11 @@ JNIEXPORT jboolean JNICALL Java_kodkod_engine_satlab_MiniSatProver_valueOf
 
 /*
  * Class:     kodkod_engine_satlab_MiniSatProver
- * Method:    saveProof
- * Signature: (JLjava/lang/String;)V
+ * Method:    trace
+ * Signature: (JZ)[Ljava/lang/Object;
  */
-JNIEXPORT jint JNICALL Java_kodkod_engine_satlab_MiniSatProver_saveProof
-  (JNIEnv *, jobject, jlong, jstring);
+JNIEXPORT jobjectArray JNICALL Java_kodkod_engine_satlab_MiniSatProver_trace
+  (JNIEnv *, jobject, jlong, jboolean);
 
 #ifdef __cplusplus
 }

@@ -67,7 +67,7 @@ public final class FixedMap<K, V> extends AbstractMap<K, V> implements Indexer<K
 	 */
 	public FixedMap(Set<K> keys) {
 		final int size = keys.size();
-		this.keys = Arrays.identitySort(keys.toArray(new Object[size]));
+		this.keys = Containers.identitySort(keys.toArray(new Object[size]));
 		values = new Object[size];
 	}
 
@@ -92,7 +92,7 @@ public final class FixedMap<K, V> extends AbstractMap<K, V> implements Indexer<K
 	 * @return key in this.keys => this.indices[key], {i: int | i < 0 }
 	 */
 	public final int indexOf(K key) {
-		return Arrays.identityBinarySearch(keys, key);
+		return Containers.identityBinarySearch(keys, key);
 	}
 
 	/**
