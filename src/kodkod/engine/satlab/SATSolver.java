@@ -48,8 +48,7 @@ public interface SATSolver {
 	 * has returned <tt>false</tt>.
 	 * @requires all i: [0..lits.length) | lits[i] != 0 && |lits[i]| in this.variables 
 	 * @effects #this.clauses' = #this.clauses + 1 and
-	 *  let c = this.clauses' - this.clauses | no c.antecedents and c.literals = lits[int] and
-	 *  no c.index & this.clauses.index
+	 *   let c = this.clauses' - this.clauses | no c.antecedents and c.literals = lits[int] 
 	 * @effects lits' may not have the same contents as lits
 	 * @throws NullPointerException - lits = null
 	 */

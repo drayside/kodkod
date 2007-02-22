@@ -6,16 +6,23 @@ package tests;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import kodkod.ast.Formula;
+import kodkod.ast.Node;
+import kodkod.ast.Variable;
 import kodkod.engine.Proof;
 import kodkod.engine.Solution;
 import kodkod.engine.Solver;
 import kodkod.engine.fol2sat.TranslationLog;
 import kodkod.engine.satlab.SATFactory;
 import kodkod.instance.Bounds;
+import kodkod.instance.TupleSet;
 import examples.CeilingsAndFloors;
 import examples.Dijkstra;
 import examples.Pigeonhole;
@@ -162,13 +169,31 @@ public final class UCoreTest {
 			if (sol.outcome()==Solution.Outcome.UNSATISFIABLE) {
 				final Proof proof = sol.proof();
 				System.out.println("hardness: "+proof.relativeHardness());
-				
-				proof.refine();
+//				proof.refine();
+				final long start = System.currentTimeMillis();
+				proof.minimize();
+				final long end = System.currentTimeMillis();
 				System.out.println("hardness after refinement: "+proof.relativeHardness());
-				
+				System.out.println("time: " + (end-start) + " ms");
+				final Map<Node, Set<Map<Variable,TupleSet>>> nodes = new IdentityHashMap<Node,Set<Map<Variable,TupleSet>>>();
 				for(Iterator<TranslationLog.Record> itr = proof.core(); itr.hasNext();) {
-					System.out.println(itr.next());
+					TranslationLog.Record rec = itr.next();
+					Set<Map<Variable,TupleSet>> recVal = nodes.get(rec.node());
+					if (recVal==null) {
+						recVal = new LinkedHashSet<Map<Variable,TupleSet>>();
+					}
+					recVal.add(rec.env());
+					nodes.put(rec.node(), recVal);
 				}
+				int highlevel = 0;
+				for(Map.Entry<Node, Set<Map<Variable,TupleSet>>> e : nodes.entrySet()) {
+					Set<Map<Variable,TupleSet>> envs = e.getValue();
+					if (envs.size()==1 && envs.iterator().next().isEmpty()) {
+						highlevel++;
+						System.out.println(e);
+					}
+				}
+				System.out.println("highlevel formulas: " + highlevel);
 			}
 		} catch (SecurityException e) {
 			e.printStackTrace();

@@ -3,6 +3,7 @@
  */
 package kodkod.engine.satlab;
 
+import java.util.AbstractSet;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Iterator;
@@ -37,7 +38,7 @@ import kodkod.util.ints.Ints;
 public final class ResolutionTrace implements Iterable<Clause>{
 	private final int traceSize, coreSize, maxIndex;
 	private final Clause conflict;
-		
+	private Set<Clause> core;	
 	/**
 	 * Constructs a resolution trace from the given raw trace and resolvent indices.  
 	 * The raw trace is encoded as follows.  At each index i in the resolvents set, 
@@ -196,20 +197,54 @@ public final class ResolutionTrace implements Iterable<Clause>{
 	 * @return #this.resolvents + #this.core
 	 */
 	public int size() {	return traceSize; }
-	
-	/**
-	 * Returns the number of core clauses in this trace.
-	 * @return #this.core
-	 */
-	public int coreSize() { return coreSize; }
-	
+		
 	/**
 	 * Returns the largest index identifying 
 	 * a clause in this trace.
 	 * @return max((this.core + this.resolvents).index)
 	 */
 	public int maxIndex() {	return maxIndex; }
-		
+	
+	/**
+	 * Returns an unmodifiable view of this.core.
+	 * @return this.core
+	 */
+	public Set<Clause> core() {
+		if (core==null) {
+			core = new AbstractSet<Clause>() {
+				public int size() {	return coreSize; }
+				
+				public Iterator<Clause> iterator() {
+					return new Iterator<Clause>() {
+						final Iterator<Clause> itr = ResolutionTrace.this.iterator();
+						Clause next = null;
+						
+						public boolean hasNext() { 
+							if (next!=null) return true;
+							while(itr.hasNext()) {
+								Clause c = itr.next();
+								if (!c.learned()) {
+									next = c;
+									return true;
+								}
+							}
+							return false;
+						}
+						public Clause next() {
+							if (!hasNext()) throw new NoSuchElementException();
+							Clause last = next;
+							next = null;
+							return last;
+						}
+						public void remove() { throw new UnsupportedOperationException();}				
+					};
+				}	
+			};
+		}
+		return core;
+	}
+	
+	
 	/**
 	 * Returns the conflict clause (i.e. root of the resolution trace).
 	 * @return this.conflict
@@ -240,6 +275,44 @@ public final class ResolutionTrace implements Iterable<Clause>{
 		default : throw new InternalError(); // can't happen
 		}
 	}
+//	
+//	/**
+//	 * Returns an iterator that traverses this resolution
+//	 * trace in the default depth-first order and that only
+//	 * returns clauses that one of the given indices.
+//	 * @return an iterator that traverses this resolution
+//	 * trace in the default depth-first order and that only
+//	 * returns clauses that one of the given indices.
+//	 */
+//	public Iterator<Clause> iterator(final IntSet indices) {
+//		return new Iterator<Clause>() {
+//			final Iterator<Clause> itr = ResolutionTrace.this.iterator();
+//			Clause next = null;
+//			
+//			public boolean hasNext() {
+//				if (next!=null) return true;
+//				while(itr.hasNext()) {
+//					Clause c = itr.next();
+//					if (indices.contains(c.index())) {
+//						next = c;
+//						return true;
+//					}
+//				}
+//				return false;
+//			}
+//
+//			public Clause next() {
+//				if (!hasNext()) throw new NoSuchElementException();
+//				final Clause last = next;
+//				next = null;
+//				return last;
+//			}
+//			
+//			public void remove() { throw new UnsupportedOperationException();}
+//			
+//		};
+//	}
+	
 	
 	/**
 	 * A base class for a trace iterator.

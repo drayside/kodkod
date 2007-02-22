@@ -5,6 +5,7 @@ package kodkod.engine.satlab;
 
 import java.util.Set;
 
+
 /**
  * Strategy for reducing the unsatisfiable core of
  * a given {@link ResolutionTrace}.  Let T be a {@link ResolutionTrace} 
@@ -20,6 +21,12 @@ import java.util.Set;
  *  }
  * }
  * </pre>
+ * @specfield traces: [0..)->ResolutionTrace
+ * @specfield nexts: [0..)->Set<Clause>
+ * @invariant traces.ResolutionTrace = nexts.Set<Clause>
+ * @invariant all i: [1..) | some traces[i] => some traces[i-1]
+ * @invariant all i: [0..#nexts) | nexts[i] in traces[i].conflict.^antecedents
+ * @invariant no disj i,j: [0..#nexts) | traces[i] = traces[j] && nexts[i] = nexts[j]
  * @author Emina Torlak
  */
 public interface ReductionStrategy {
@@ -28,8 +35,20 @@ public interface ReductionStrategy {
 	 * Returns the next subset of clauses in the given trace to be analyzed.   
 	 * If there are no more subsets to be analyzed (i.e. the given trace is 
 	 * minimal according to the minimality measure used by this strategy),
-	 * returns the empty set.  
-	 * @return the next subset of clauses in the given trace to be analyzed.   
+	 * returns the empty set.
+	 * @requires some this.traces && unsat(last(this.nexts)) => trace.core in last(this.traces).core
+	 * @requires some this.traces && sat(last(this.nexts)) => trace = last(this.trace)
+	 * @effects 
+	 * <pre> 
+	 * last(this.nexts).isEmpty() => 
+	 *  this.traces' = this.traces and 
+	 *  this.nexts' = this.nexts 
+	 * else
+	 *  this.traces' = this.traces + #this.traces->trace and
+	 *  this.nexts' = this.nexts + #this.nexts->{ c: Clause | c in trace.conflict.^antecedents } and
+	 *  all i: this.traces.trace | this.nexts'[i] != last(this.nexts')
+	 * </pre>
+	 * @return last(this.nexts')
 	 */
 	public Set<Clause> next(ResolutionTrace trace);
 	

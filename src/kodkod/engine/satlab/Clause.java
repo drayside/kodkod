@@ -10,9 +10,8 @@ import kodkod.util.ints.Ints;
 
 /**
  * A propositional clause. 
- * @specfield index: [0...)
  * @specfield literals: set int \\ clause literals 
- * @specfield antecedents: set ProofClause 
+ * @specfield antecedents: set Clause 
  * @invariant 0 !in literals 
  * @invariant no lit: literals | -lit in literals
  * @invariant some antecedents => literals = { lit: antecedents.literals | -lit !in antecedents.literals }
@@ -29,10 +28,11 @@ public abstract class Clause {
 	
 	/**
 	 * A non-negative integer index that uniquely identifies this
-	 * clause in the {@link SATSolver sat solver} that contains it.
-	 * In other words, a sat solver never contains two clauses with
-	 * the same index.  Indices are kept as small as possible. 
-	 * @return this.index
+	 * clause in all {@link ResolutionTrace resolution traces} that contain it.
+	 * In other words, a resolution trace never contains two clauses with
+	 * the same index.  Indices are kept as small as possible.
+	 * @return a non-negative integer index that uniquely identifies this
+	 * clause in all {@link ResolutionTrace resolution traces} that contain it.
 	 */
 	public final int index() { return index; }
 	
@@ -56,7 +56,7 @@ public abstract class Clause {
 	
 	/**
 	 * Returns a new core clause with the given index and literals.
-	 * @return {c : ProofClause | c.literals = literals and no c.antecedents } 
+	 * @return {c : Clause | c.literals = literals and no c.antecedents } 
 	 */
 	static Clause core(int index, IntSet literals) {
 		return new Core(index, literals);
@@ -64,8 +64,8 @@ public abstract class Clause {
 	
 	/**
 	 * Returns a new learned clause with the given index and antecedents.
-	 * @invariant no index & antecdents.*antecedents.index
-	 * @return {c: ProofClause | c.index = index && c.antecedents = antecedents } 
+	 * @invariant no index & antecdents.*antecedents.index()
+	 * @return {c: Clause | c.index() = index && c.antecedents = antecedents } 
 	 */
 	static Clause learned(int index, Set<Clause> antecedents) {
 		return new Learned(index, antecedents);

@@ -1,17 +1,13 @@
 package kodkod.engine;
 
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
 
 import kodkod.engine.fol2sat.TranslationLog;
 import kodkod.engine.satlab.Clause;
-import kodkod.engine.satlab.EmptyClauseConeStrategy;
 import kodkod.engine.satlab.SATFactory;
 import kodkod.engine.satlab.SATProver;
-import kodkod.engine.satlab.TraversalStrategy;
-import kodkod.util.collections.ArrayStack;
-import kodkod.util.collections.Stack;
+import kodkod.engine.ucore.EmptyClauseConeStrategy;
+import kodkod.engine.ucore.RandomCRRStrategy;
 import kodkod.util.ints.IntSet;
 import kodkod.util.ints.IntTreeSet;
 
@@ -60,9 +56,8 @@ public final class Proof {
 	private IntSet coreLiterals() {
 		final IntSet idLits = new IntTreeSet();
 		
-		for(Clause clause : solver.proof()) {
-			if (!clause.learned()) 
-				idLits.add(idLiteral(clause)); 
+		for(Clause clause : solver.proof().core()) {
+			idLits.add(idLiteral(clause)); 
 		}
 		return idLits;
 	}
@@ -91,110 +86,11 @@ public final class Proof {
 	 * @return the relative hardness of the proof of this.formula's unsatisfiability.
 	 */
 	public double relativeHardness() {
+		System.out.println("coresize: " + solver.proof().core().size());
 		return solver.proof().relativeHardness();
 	}
 
-	
-	/**
-	 * Returns a mapping from each leaf (original clause) in the resolution trace to 
-	 * the indices of its ancestors.
-	 * @return a mapping from each leaf (original clause) in the resolution trace to 
-	 * the indices of its ancestors
-	 */
-	 Map<Clause, IntSet> ancestors() {
-		
-		final Map<Clause, IntSet> ret = new HashMap<Clause, IntSet>();
-		final Stack<Clause> path = new ArrayStack<Clause>();
-		
-		for(Clause clause : solver.proof()) {
-			if (clause.learned()) {
-				if (!path.empty() && !path.peek().antecedents().contains(clause)) path.pop();
-				path.push(clause);
-			} else {
-				IntSet ancestors = ret.get(clause);
-				if (ancestors==null) ancestors = new IntTreeSet();
-				for(Clause ancestor : path) {
-					ancestors.add(ancestor.index());
-				}
-				ret.put(clause, ancestors);
-			}
-		}
-		return ret;
-	}
-	
-	/**
-	 * Returns a mapping from each leaf (original clause) in the resolution trace to 
-	 * the length of the shortest path from the conflict clause to that leaf.
-	 * @return a mapping from each leaf (original clause) in the resolution trace to 
-	 * the length of the shortest path from the conflict clause to that leaf.
-	 */
-	 Map<Clause, Integer> shortestPaths() {
-		final Clause conflict = solver.proof().conflict();
-		final int maxIndex = solver.proof().maxIndex();
-		final Map<Clause, Integer> ret = new HashMap<Clause, Integer>();
-		
-		// traverse the dag in a topologically sorted order, and compute shortest paths
-		final int[] dist = new int[maxIndex+1];
-		java.util.Arrays.fill(dist, 0, maxIndex+1, Integer.MAX_VALUE);
-		dist[conflict.index()] = 0;
-		
-		for(Iterator<Clause> itr = solver.proof().iterator(TraversalStrategy.TOPOLOGICAL); itr.hasNext();) {
-			Clause next = itr.next();
-			if (next.learned()) {
-				for(Clause ante : next.antecedents()) {
-					if (dist[ante.index()] > dist[next.index()]+1) { // relax
-						dist[ante.index()] = dist[next.index()]+1;
-					}
-				}
-			} else { // core
-				ret.put(next, null);
-			}
-		}
-		
-		for(Map.Entry<Clause, Integer> e : ret.entrySet()) {
-			e.setValue(dist[e.getKey().index()]);
-		}
-		
-		return ret;
-	}
-	
-//	private Map<ProofClause, Integer> graphShortestPaths() {
-//		final Map<ProofClause, Integer> ret = new HashMap<ProofClause, Integer>();
-//		
-//		final SimpleDirectedGraph<ProofClause, DefaultEdge> g = 
-//			new SimpleDirectedGraph<ProofClause, DefaultEdge>(DefaultEdge.class);
-//		g.addVertex(solver.proof());
-//			
-//			
-//		final IntSet visited = new IntBitSet(solver.proof().index()+1);	
-//		final Stack<ProofClause> stack = new ArrayStack<ProofClause>();
-//		stack.push(solver.proof());
-//		while(!stack.empty()) {
-//			ProofClause front = stack.pop();
-//			if (front.learned()) {
-//				for(ProofClause ante : front.antecedents()) {
-//					if (visited.add(ante.index())) { // not yet visited
-//						stack.push(ante);
-//						g.addVertex(ante);
-//					}
-//					g.addEdge(front, ante);
-//				}
-//			} else {
-//				ret.put(front, null);
-//			}
-//		}
-//		
-//		final BellmanFordShortestPath<ProofClause, DefaultEdge> sp = 
-//			new BellmanFordShortestPath<ProofClause, DefaultEdge>(g, solver.proof());
-//		
-//		for(Map.Entry<ProofClause,Integer> e: ret.entrySet()) {
-//			e.setValue((int)sp.getCost(e.getKey()));
-//		}
-//		
-//		return ret;
-//	}
-	
-	
+
 	/**
 	 * Minimizes the proof of this.formula's unsatisfiability
 	 * using a variant of the Complete Resolution Refutation algorithm 
@@ -210,7 +106,9 @@ public final class Proof {
 	 * Satisfiability Testing (SAT '06). 2006.
 	 */
 	public void minimize() {
-		
+//		solver.proof(new DistExtremumCRRStrategy(false));
+		solver.proof(new RandomCRRStrategy());
+//		solver.proof(new FreqExtremumCRRStrategy(true));
 	}
 	
 	/**

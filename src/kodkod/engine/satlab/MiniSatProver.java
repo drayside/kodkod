@@ -54,6 +54,7 @@ final class MiniSatProver extends NativeSolver implements SATProver {
 				}
 			}
 			if (!solve(prover)) {
+				
 				Object[] trace = trace(prover, false);
 				free(prover);
 				for(int i = 0, j = 0, max = trace.length-1; i < max; i++) {
@@ -62,7 +63,10 @@ final class MiniSatProver extends NativeSolver implements SATProver {
 					}
 				}
 				proof = new ResolutionTrace(proof, trace, new IntBitSet(trace.length-1, (long[])trace[trace.length-1]));
+				
+//				System.out.println("UNSAT: " + proof.core().size());
 			} else {
+//				System.out.println("SAT");
 				free(prover);
 			}
 		}
