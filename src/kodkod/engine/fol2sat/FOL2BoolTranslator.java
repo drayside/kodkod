@@ -224,7 +224,8 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 	 * @return the cached translation for the given node, if any.
 	 * Otherwise returns null.
 	 */
-	@SuppressWarnings("unchecked") <T> T lookup(Node node) {
+	@SuppressWarnings("unchecked") 
+	final <T> T lookup(Node node) {
 		return (T) cache.lookup(node, env);
 	}
 

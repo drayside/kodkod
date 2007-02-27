@@ -7,7 +7,7 @@ import kodkod.engine.satlab.Clause;
 import kodkod.engine.satlab.SATFactory;
 import kodkod.engine.satlab.SATProver;
 import kodkod.engine.ucore.EmptyClauseConeStrategy;
-import kodkod.engine.ucore.RandomCRRStrategy;
+import kodkod.engine.ucore.HybridStrategy;
 import kodkod.util.ints.IntSet;
 import kodkod.util.ints.IntTreeSet;
 
@@ -107,8 +107,25 @@ public final class Proof {
 	 */
 	public void minimize() {
 //		solver.proof(new DistExtremumCRRStrategy(false));
-		solver.proof(new RandomCRRStrategy());
+		solver.proof(new HybridStrategy(log));
+//		solver.proof(new NaiveStrategy());
 //		solver.proof(new FreqExtremumCRRStrategy(true));
+//		System.out.println("testing minimality ...");
+//		ResolutionTrace trace = solver.proof();
+//		List<int[]> core = new ArrayList<int[]>(trace.core().size());
+//		for(Clause c : trace.core()) {
+//			core.add(c.literals().toArray());
+//		}
+//		for(int i = 0, max = core.size(); i < max; i++) {
+//			SATSolver s = SATFactory.MiniSat.instance();
+//			s.addVariables(solver.numberOfVariables());
+//			for(int j = 0; j < max; j++) {
+//				if (i!=j)
+//					s.addClause(core.get(j));
+//			}
+//			if (!s.solve())
+//				throw new IllegalStateException("");
+//		}
 	}
 	
 	/**

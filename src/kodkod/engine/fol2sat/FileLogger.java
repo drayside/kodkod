@@ -26,6 +26,7 @@ import kodkod.instance.TupleFactory;
 import kodkod.instance.TupleSet;
 import kodkod.util.collections.Containers;
 import kodkod.util.collections.FixedMap;
+import kodkod.util.ints.IntBitSet;
 import kodkod.util.ints.IntSet;
 import kodkod.util.ints.Ints;
 
@@ -36,8 +37,10 @@ import kodkod.util.ints.Ints;
  */
 final class FileLogger extends TranslationLogger {
 	
-	private final FixedMap<Node, Variable[]> logged;
+	private final FixedMap<Node, Variable[]> logMap;
+	private final Object[] seen;
 	private final File file;
+	private final int[] tempVals;
 	private DataOutputStream out;
 	private final TupleFactory factory;
 	
@@ -47,6 +50,8 @@ final class FileLogger extends TranslationLogger {
 	 * this.bounds' = bounds
 	 */
 	FileLogger(final AnnotatedNode<Formula> annotated, Bounds bounds) {
+		
+		this.factory = bounds.universe().factory();
 		try {
 			this.file = File.createTempFile("kodkod", ".log");
 			this.out = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(file)));
@@ -54,10 +59,46 @@ final class FileLogger extends TranslationLogger {
 			throw new RuntimeException(e1);
 		}
 		
-		this.factory = bounds.universe().factory();
+		final Map<Node,Set<Variable>> freeVarMap = freeVars(annotated);
+		final Variable[] empty = new Variable[0];
+	
+		this.logMap = new FixedMap<Node, Variable[]>(freeVarMap.keySet());	
+		this.seen = new Object[freeVarMap.keySet().size()];
 		
+		int index = 0, maxFreeVars = 0, usize = bounds.universe().size();
+		for(Map.Entry<Node, Variable[]> e : logMap.entrySet()) {
+			Set<Variable> vars = freeVarMap.get(e.getKey());
+			int size = vars.size();
+			if (size==0) {
+				e.setValue(empty);
+			} else {
+				e.setValue(Containers.identitySort(vars.toArray(new Variable[size])));
+				if (size==1) {
+					seen[index] = new IntBitSet(usize);
+				} else {
+					IntSet[] sets = new IntSet[size];
+					for(int i = 0; i < size; i++) {
+						sets[i] = new IntBitSet(usize);
+					}
+					seen[index] = sets;
+				}
+				if (size > maxFreeVars)
+					maxFreeVars = size;
+			}
+			index++;
+		}
+				
+		this.tempVals = new int[maxFreeVars];
+	}
+	
+	/**
+	 * Returns a map from the sources of all formulas in the given annotated node to their
+	 * free variables. 
+	 * @return a map from the sources of all formulas in the given annotated node to their
+	 * free variables.
+	 */
+	private static Map<Node,Set<Variable>> freeVars(final AnnotatedNode<Formula> annotated) {
 		final Map<Node,Set<Variable>> freeVarMap = new IdentityHashMap<Node,Set<Variable>>();
-		
 		annotated.node().accept(new FreeVariableCollector(annotated.sharedNodes()) {
 			protected Set<Variable> cache(Node node, Set<Variable> freeVars) {
 				if (node instanceof Formula) {
@@ -74,18 +115,10 @@ final class FileLogger extends TranslationLogger {
 				return super.cache(node, freeVars);
 			}
 		});
-		
-		this.logged = new FixedMap<Node, Variable[]>(freeVarMap.keySet());
-
-		final Variable[] empty = new Variable[0];
-	
-		for(Map.Entry<Node, Set<Variable>> e : freeVarMap.entrySet()) {
-			Set<Variable> val = e.getValue();
-			if (val.isEmpty()) { this.logged.put(e.getKey(), empty); } 
-			else { 	this.logged.put(e.getKey(), Containers.identitySort(val.toArray(new Variable[val.size()]))); }
-		}
-	
+		return freeVarMap;
 	}
+	
+	
 	
 	/**
 	 * @see kodkod.engine.fol2sat.TranslationLogger#close()
@@ -98,7 +131,42 @@ final class FileLogger extends TranslationLogger {
 			/* unused */
 		} finally { out = null; }
 	}
-
+	
+	/**
+	 * Update the log with the given index, boolean value label, and the
+	 * first numFreeVars values in this.tempVals. 
+	 * @effects out.writeInt(index) && out.writeInt(label) &&
+	 *  all v: [0..numFreeVars) | out.writeInt(this.tempVals[i])
+	 */
+	private void write(int index, int label, int numFreeVars) {
+		try {
+			out.writeInt(index);
+			out.writeInt(label);
+			for(int i = 0 ; i < numFreeVars; i++) {
+				out.writeInt(tempVals[i]);
+			}
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	/**
+	 * Fills the first logMap.get(index).length entries of the tempVals array with the bindings
+	 * for the corresonding variables in the given environment.  
+	 * @requires let vars = logMap.get(index).length | 
+	 *  all int i: [0..vars.length) | one env.lookup(vars[i]).denseIndices()
+	 * @effects let vars = logMap.get(index).length | 
+	 *  all int i: [0..vars.length) | this.tempVals[i] = env.lookup(vars[i]).denseIndices().min()
+	 * @return logMap.get(index).length
+	 */
+	private int lookupVars(int index, Environment<BooleanMatrix> env) {
+		final Variable[] vars = logMap.get(index);
+		for(int i = 0; i < vars.length; i++) {
+			tempVals[i] = env.lookup(vars[i]).denseIndices().min();
+		}
+		return vars.length;
+	}
+	
 	/**
 	 * @see kodkod.engine.fol2sat.TranslationLogger#log(kodkod.ast.Formula, kodkod.engine.bool.BooleanValue, kodkod.engine.fol2sat.Environment)
 	 */
@@ -106,19 +174,33 @@ final class FileLogger extends TranslationLogger {
 	void log(Node n, BooleanValue v, Environment<BooleanMatrix> env) {
 		if (out==null) throw new IllegalStateException();
 	
-		final int index = logged.indexOf(n);
+		final int index = logMap.indexOf(n);
 		if (index < 0) throw new IllegalArgumentException();
 		
-		final Variable[] freeVars = logged.get(index);
+		final int numFreeVars = lookupVars(index, env);
 		
-		try {
-			out.writeInt(index);
-			out.writeInt(v.label());
-			for(Variable var: freeVars) {
-				out.writeInt(env.lookup(var).denseIndices().min());
+		switch(numFreeVars) {
+		case 0 : // a node with no free variables
+			if (seen[index]==null) { // we haven't seen it before ...
+				seen[index] = Ints.EMPTY_SET;
+				write(index, v.label(), 0);
 			}
-		} catch (IOException e) {
-			throw new RuntimeException(e);
+			break;
+		case 1 : // a node with one free variable
+			if (((IntSet)seen[index]).add(tempVals[0])) { // unseen binding
+				write(index, v.label(), 1);
+			} 
+			break;
+		default : // a node with more than one free variable
+			final IntSet[] seenBindings = (IntSet[]) seen[index];
+			boolean unseen = false;
+			for(int i = 0; i < numFreeVars; i++) {
+				if (seenBindings[i].add(tempVals[i])) { // unseen binding
+					unseen = true;
+				}
+			}
+			if (unseen)
+				write(index, v.label(), numFreeVars);
 		}
 		
 	}
@@ -128,7 +210,7 @@ final class FileLogger extends TranslationLogger {
 	 */
 	@Override
 	TranslationLog log() {
-		return new FileLog(logged, file, factory);
+		return new FileLog(logMap, file, factory);
 	}
 	
 	/**
@@ -167,7 +249,7 @@ final class FileLogger extends TranslationLogger {
 	 * @author Emina Torlak
 	 */
 	private static final class FileLog extends TranslationLog {
-	    private final FixedMap<Node, Variable[]> logged;
+	    private final FixedMap<Node, Variable[]> logMap;
 	    private final File file;
 	    private final TupleFactory factory;
 	    /**
@@ -175,7 +257,7 @@ final class FileLogger extends TranslationLogger {
 	     * @requires the file was written by a FileLogger using the given map
 	     */
 	    FileLog(FixedMap<Node, Variable[]> logged, File file, TupleFactory factory) {
-	    	this.logged = logged;
+	    	this.logMap = logged;
 	    	this.file = file;
 	    	this.factory = factory;
 	    }
@@ -197,14 +279,14 @@ final class FileLogger extends TranslationLogger {
 								final long indexLiteral = in.readLong();
 								final int literal = (int) (indexLiteral);
 								final int index = (int) (indexLiteral>>>32);
-								final Variable[] freeVars = logged.get(index);
+								final Variable[] freeVars = logMap.get(index);
 								final int varBytes = freeVars.length << 2;
 								if (literals.contains(literal)) {			
 									final Map<Variable,TupleSet> env= new FixedMap<Variable,TupleSet>(freeVars);
 									for(int i = 0; i < freeVars.length; i++) {
 										env.put(freeVars[i], factory.setOf(1,Ints.singleton(in.readInt())));
 									}							
-									next.setAll(logged.keyAt(index), literal, env);							
+									next.setAll(logMap.keyAt(index), literal, env);							
 								} else {
 									for(int skip = in.skipBytes(varBytes); skip < varBytes; skip++) {
 										in.readByte();
