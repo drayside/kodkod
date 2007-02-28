@@ -210,7 +210,7 @@ final class FileLogger extends TranslationLogger {
 	 */
 	@Override
 	TranslationLog log() {
-		return new FileLog(logMap, file, factory);
+		return new FileLog(file, logMap, factory);
 	}
 	
 	/**
@@ -256,8 +256,8 @@ final class FileLogger extends TranslationLogger {
 	     * Constructs a new file log using the provided fixed map, file, and tuplefactory.
 	     * @requires the file was written by a FileLogger using the given map
 	     */
-	    FileLog(FixedMap<Node, Variable[]> logged, File file, TupleFactory factory) {
-	    	this.logMap = logged;
+	    FileLog(File file, FixedMap<Node, Variable[]> logMap, TupleFactory factory) {
+	    	this.logMap = logMap;
 	    	this.file = file;
 	    	this.factory = factory;
 	    }

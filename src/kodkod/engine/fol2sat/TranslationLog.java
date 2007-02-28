@@ -26,10 +26,14 @@ public abstract class TranslationLog {
 	
 	/**
 	 * Returns an iterator over the translation records in this log that contain
-	 * the given literals.  The record objects returned by the iterator are not 
+	 * the given literals.  The iterator returns the records in the order in which
+	 * they were generated.  This guarantees that records for the descendents of a 
+	 * node are always returned before the record for the node itself.  
+	 * 
+	 * <p><b>Note:</b>The record objects returned by the iterator are not 
 	 * required to be immutable.  In particular, the state of a record object
 	 * returned by <tt>next()</tt> is guaranteed to remain the same only until the
-	 * subsequent call to <tt>next()</tt>.
+	 * subsequent call to <tt>next()</tt>.</p>
 	 * @return an iterator over the translation records in this log that contain the
 	 * given literals
 	 */
@@ -39,11 +43,14 @@ public abstract class TranslationLog {
 	 * Returns an iterator over all translation records in this log.  The effect
 	 * of this method is equivalent to calling {@link #replay(IntSet)} with an
 	 * IntSet containing all integers in the range [{@link BooleanConstant#FALSE}.label, 
-	 * {@link BooleanConstant#TRUE}.label].  The record objects returned by the iterator are not 
+	 * {@link BooleanConstant#TRUE}.label].  
+	 * 
+	 * <p><b>Note:</b>The record objects returned by the iterator are not 
 	 * required to be immutable.  In particular, the state of a record object
 	 * returned by <tt>next()</tt> is guaranteed to remain the same only until the
-	 * subsequent call to <tt>next()</tt>.
+	 * subsequent call to <tt>next()</tt>.</p>
 	 * @return an iterator over all translation records in this.log.
+	 * @see kodkod.engine.fol2sat.TranslationLog#replay(IntSet)
 	 */
 	public final Iterator<Record> replay() {
 		return replay(Ints.rangeSet(Ints.range(BooleanConstant.FALSE.label(), BooleanConstant.TRUE.label())));

@@ -35,7 +35,10 @@ public final class Translator {
 	/**
 	 * Translates the given formula using the specified bounds and options.
 	 * @return a Translation whose solver is a SATSolver instance initalized with the 
-	 * CNF representation of the given formula, with respect to the given bounds.
+	 * CNF representation of the given formula, with respect to the given bounds.  The CNF
+	 * is generated in such a way that the magnitutude of a literal representing the truth
+	 * value of a given formula is strictly larger than the magnitudes of the literals representing
+	 * the truth values of the formula's descendents.  
 	 * @throws TrivialFormulaException - the given formula is reduced to a constant during translation
 	 * (i.e. the formula is trivially (un)satisfiable).
 	 * @throws NullPointerException - any of the arguments are null
