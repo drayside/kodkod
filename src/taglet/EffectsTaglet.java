@@ -1,11 +1,12 @@
 package taglet;
 
+import static taglet.SpecTaglet.Usage.CONSTRUCTOR;
+import static taglet.SpecTaglet.Usage.METHOD;
+
 import java.util.EnumSet;
 import java.util.Map;
 
 import com.sun.tools.doclets.Taglet;
-
-import static taglet.SpecTaglet.Usage.*;
 
 /**
  * Represents the </code>@effects</code> tag.  The

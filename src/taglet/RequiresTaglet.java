@@ -1,6 +1,7 @@
 package taglet;
 
-import static taglet.SpecTaglet.Usage.*;
+import static taglet.SpecTaglet.Usage.CONSTRUCTOR;
+import static taglet.SpecTaglet.Usage.METHOD;
 
 import java.util.EnumSet;
 import java.util.Map;

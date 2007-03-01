@@ -1,11 +1,14 @@
 package taglet;
 
+import static taglet.SpecTaglet.Usage.CONSTRUCTOR;
+import static taglet.SpecTaglet.Usage.FIELD;
+import static taglet.SpecTaglet.Usage.METHOD;
+import static taglet.SpecTaglet.Usage.TYPE;
+
 import java.util.EnumSet;
 import java.util.Map;
 
 import com.sun.tools.doclets.Taglet;
-
-import static taglet.SpecTaglet.Usage.*;
 
 /**
  * Represents the </code>@invariant</code> tag.  The

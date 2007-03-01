@@ -3,8 +3,8 @@
  */
 package examples.tptp;
 
-import static kodkod.ast.Expression.UNIV;
 import static kodkod.ast.Expression.IDEN;
+import static kodkod.ast.Expression.UNIV;
 
 import java.util.ArrayList;
 import java.util.List;

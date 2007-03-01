@@ -6,8 +6,6 @@ import java.util.Map;
 import com.sun.javadoc.Tag;
 import com.sun.tools.doclets.Taglet;
 
-import static taglet.SpecTaglet.Usage.*;
-
 /**
  * Represents a taglet for specification tags:  <code>@specfield</code>, <code>@invariant</code>,
  * <code>@effects</code>, and <code>@requires</code>.
