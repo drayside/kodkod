@@ -139,7 +139,7 @@ struct TraceGenerator : public ProofTraverser {
 	}
 	
 	 void chain  (const vec<ClauseId>& cs, const vec<Var>& xs) {
-        learned[(idx>>6)] |= (jlong)(((jlong)1)<<idx);
+        learned[(idx>>6)] |= ((jlong)(((jlong)1)<<(idx&0x3F)));
         jintArray ante = env->NewIntArray(cs.size());
         jint* data = env->GetIntArrayElements(ante, JNI_FALSE);
         for(int i = 0; i< cs.size(); i++) {
