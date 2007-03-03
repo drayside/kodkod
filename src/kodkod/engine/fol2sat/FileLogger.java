@@ -26,7 +26,6 @@ import kodkod.instance.TupleFactory;
 import kodkod.instance.TupleSet;
 import kodkod.util.collections.Containers;
 import kodkod.util.collections.FixedMap;
-import kodkod.util.ints.IntBitSet;
 import kodkod.util.ints.IntSet;
 import kodkod.util.ints.Ints;
 
@@ -38,7 +37,7 @@ import kodkod.util.ints.Ints;
 final class FileLogger extends TranslationLogger {
 	
 	private final FixedMap<Node, Variable[]> logMap;
-	private final Object[] seen;
+//	private final Object[] seen;
 	private final File file;
 	private final int[] tempVals;
 	private DataOutputStream out;
@@ -63,9 +62,9 @@ final class FileLogger extends TranslationLogger {
 		final Variable[] empty = new Variable[0];
 	
 		this.logMap = new FixedMap<Node, Variable[]>(freeVarMap.keySet());	
-		this.seen = new Object[freeVarMap.keySet().size()];
+//		this.seen = new Object[freeVarMap.keySet().size()];
 		
-		int index = 0, maxFreeVars = 0, usize = bounds.universe().size();
+		int index = 0, maxFreeVars = 0; //, usize = bounds.universe().size();
 		for(Map.Entry<Node, Variable[]> e : logMap.entrySet()) {
 			Set<Variable> vars = freeVarMap.get(e.getKey());
 			int size = vars.size();
@@ -73,15 +72,15 @@ final class FileLogger extends TranslationLogger {
 				e.setValue(empty);
 			} else {
 				e.setValue(Containers.identitySort(vars.toArray(new Variable[size])));
-				if (size==1) {
-					seen[index] = new IntBitSet(usize);
-				} else {
-					IntSet[] sets = new IntSet[size];
-					for(int i = 0; i < size; i++) {
-						sets[i] = new IntBitSet(usize);
-					}
-					seen[index] = sets;
-				}
+//				if (size==1) {
+//					seen[index] = new IntBitSet(usize);
+//				} else {
+//					IntSet[] sets = new IntSet[size];
+//					for(int i = 0; i < size; i++) {
+//						sets[i] = new IntBitSet(usize);
+//					}
+//					seen[index] = sets;
+//				}
 				if (size > maxFreeVars)
 					maxFreeVars = size;
 			}
@@ -178,30 +177,30 @@ final class FileLogger extends TranslationLogger {
 		if (index < 0) throw new IllegalArgumentException();
 		
 		final int numFreeVars = lookupVars(index, env);
-		
-		switch(numFreeVars) {
-		case 0 : // a node with no free variables
-			if (seen[index]==null) { // we haven't seen it before ...
-				seen[index] = Ints.EMPTY_SET;
-				write(index, v.label(), 0);
-			}
-			break;
-		case 1 : // a node with one free variable
-			if (((IntSet)seen[index]).add(tempVals[0])) { // unseen binding
-				write(index, v.label(), 1);
-			} 
-			break;
-		default : // a node with more than one free variable
-			final IntSet[] seenBindings = (IntSet[]) seen[index];
-			boolean unseen = false;
-			for(int i = 0; i < numFreeVars; i++) {
-				if (seenBindings[i].add(tempVals[i])) { // unseen binding
-					unseen = true;
-				}
-			}
-			if (unseen)
-				write(index, v.label(), numFreeVars);
-		}
+		write(index, v.label(), numFreeVars);
+//		switch(numFreeVars) {
+//		case 0 : // a node with no free variables
+//			if (seen[index]==null) { // we haven't seen it before ...
+//				seen[index] = Ints.EMPTY_SET;
+//				write(index, v.label(), 0);
+//			}
+//			break;
+//		case 1 : // a node with one free variable
+//			if (((IntSet)seen[index]).add(tempVals[0])) { // unseen binding
+//				write(index, v.label(), 1);
+//			} 
+//			break;
+//		default : // a node with more than one free variable
+//			final IntSet[] seenBindings = (IntSet[]) seen[index];
+//			boolean unseen = false;
+//			for(int i = 0; i < numFreeVars; i++) {
+//				if (seenBindings[i].add(tempVals[i])) { // unseen binding
+//					unseen = true;
+//				}
+//			}
+//			if (unseen)
+//				write(index, v.label(), numFreeVars);
+//		}
 		
 	}
 
