@@ -1,7 +1,7 @@
 package kodkod.engine.satlab;
 
 import java.util.Collections;
-import java.util.Set;
+import java.util.List;
 
 import kodkod.util.ints.IntIterator;
 import kodkod.util.ints.IntSet;
@@ -11,10 +11,12 @@ import kodkod.util.ints.Ints;
 /**
  * A propositional clause. 
  * @specfield literals: set int \\ clause literals 
- * @specfield antecedents: set Clause 
+ * @specfield antecedents: Clause[] 
  * @invariant 0 !in literals 
  * @invariant no lit: literals | -lit in literals
- * @invariant some antecedents => literals = { lit: antecedents.literals | -lit !in antecedents.literals }
+ * @invariant !antecedents.isEmpty() => 
+ *  literals = { lit: antecedents[int].literals | 
+ *   no i: int | lit in antecedents[i].literals && -lit in antecedents[i+1].literals }
  */
 public abstract class Clause {
 	private final int index;
@@ -43,10 +45,10 @@ public abstract class Clause {
 	public abstract IntSet literals();
 	
 	/**
-	 * Returns an unmodifiable Set view of this.antecedents.
-	 * @return an unmodifiable Set view of this.antecedents.
+	 * Returns an unmodifiable List view of this.antecedents.
+	 * @return an unmodifiable List view of this.antecedents.
 	 */
-	public abstract Set<Clause> antecedents();
+	public abstract List<Clause> antecedents();
 	
 	/**
 	 * Returns true if this clause was learned during solving.
@@ -67,7 +69,7 @@ public abstract class Clause {
 	 * @invariant no index & antecdents.*antecedents.index()
 	 * @return {c: Clause | c.index() = index && c.antecedents = antecedents } 
 	 */
-	static Clause learned(int index, Set<Clause> antecedents) {
+	static Clause learned(int index, List<Clause> antecedents) {
 		return new Learned(index, antecedents);
 	}
 		
@@ -83,7 +85,7 @@ public abstract class Clause {
 			super(index);
 			this.literals = literals;
 		}
-		public Set<Clause> antecedents() { return Collections.emptySet(); }
+		public List<Clause> antecedents() { return Collections.emptyList(); }
 		public boolean learned() { return false; }
 		public IntSet literals() { return literals;	}
 		public String toString() {
@@ -101,18 +103,18 @@ public abstract class Clause {
 	 * @author Emina Torlak
 	 */
 	private static final class Learned extends Clause {
-		final Set<Clause> antecedents;
+		final List<Clause> antecedents;
 		IntSet literals;
 		/**
 		 * Constructs a new learned clause with the given index and literals.
 		 */
-		Learned(int index, Set<Clause> antecedents) {
+		Learned(int index, List<Clause> antecedents) {
 			super(index);
 			this.antecedents = antecedents;
 			this.literals = null;
 		}
 		
-		public Set<Clause> antecedents() { return antecedents; }
+		public List<Clause> antecedents() { return antecedents; }
 		public boolean learned() { return true; }
 
 		public IntSet literals() {

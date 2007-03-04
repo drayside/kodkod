@@ -3,6 +3,7 @@
  */
 package kodkod.engine.satlab;
 
+import java.util.AbstractList;
 import java.util.AbstractSet;
 import java.util.ArrayList;
 import java.util.BitSet;
@@ -13,7 +14,6 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 
 import kodkod.util.collections.ArrayStack;
-import kodkod.util.collections.Containers;
 import kodkod.util.collections.Stack;
 import kodkod.util.ints.ArrayIntVector;
 import kodkod.util.ints.IntBitSet;
@@ -160,15 +160,25 @@ public final class ResolutionTrace implements Iterable<Clause>{
 	 * Returns the antecedents of the learned clause at the given index in the specified trace.  
 	 * @requires trace[learntIdx] instance of int[]
 	 * @requires all j: [0..trace[learntIdx].length) | trace[j] instanceof Clause
-	 * @return { c: Clause | some j: int | c = trace[learntIdx][j] }
+	 * @return l: List<Clause> | l.size() = trace[learntIdx].length && 
+	 *   all i: [0..l.size()) | l.get(i) = trace[trace[learntIdx][i]] }
 	 */
-	private static Set<Clause> antecedents(Object[] trace, int learntIdx) {
+	private static List<Clause> antecedents(Object[] trace, int learntIdx) {
 		final int[] anteIndices = (int[]) trace[learntIdx];
-		Clause[] ante = new Clause[anteIndices.length];
+		final Clause[] ante = new Clause[anteIndices.length];
 		for(int i = 0; i < ante.length; i++) {
 			ante[i] = (Clause) trace[anteIndices[i]];
 		}
-		return Containers.asIdentitySet(Containers.identitySort(ante));
+		return new AbstractList<Clause>() {
+			@Override
+			public Clause get(int index) {
+				return ante[index];
+			}
+			@Override
+			public int size() {
+				return ante.length;
+			}
+		};
 	}
 	
 	/**

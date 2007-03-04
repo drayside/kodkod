@@ -127,22 +127,6 @@ public final class HybridStrategy implements ReductionStrategy {
 	}
 	
 	/**
-	 * Returns true if the positive set contains the absolute value
-	 * of any of the literals from the mixed set.
-	 * @requires all i: positive.ints | i > 0
-	 * @return some i: mixed.ints | positive.contains(abs(i))
-	 */
-	private static boolean containsAbs(IntSet positive, IntSet mixed) {
-		if (!positive.isEmpty()) {
-			for(IntIterator itr =  mixed.iterator(); itr.hasNext(); ) {
-				if (positive.contains(Math.abs(itr.nextInt())))
-					return true;
-			}	
-		}
-		return false;
-	}
-	
-	/**
 	 * Returns the clauses that should be excluded from trace.core based on the
 	 * given exclusion index.  In particular, let 
 	 * R = { c1, c2: trace.core | absMax(c2) in abs(c1.literals) } and
@@ -156,30 +140,13 @@ public final class HybridStrategy implements ReductionStrategy {
 		final Clause[] core = trace.core().toArray(new Clause[trace.core().size()]);
 		Arrays.sort(core, cmp);
 		
-		System.out.println("trying "+exclude);
-		
-		
 		final int maxExcludeIndex = maxIndex(core, exclude);
 		assert maxExcludeIndex >= 0;
 				
 		final IntSet lits = new IntBitSet(absMax(core[core.length-1])+1);
 		
-		// make sure that all c: *R.E | lone R.c
-		for(int i = maxExcludeIndex+1, last = exclude; i < core.length; i++) {
-			IntSet s = core[i].literals();
-			if (containsAbs(lits, s)) 
-				return Collections.EMPTY_SET; // some c: *R.E | not lone R.c
-			if (s.contains(last) || s.contains(-last)) {
-				lits.add(last);
-				last = absMax(core[i]);
-			}
-		}
-		
-		System.out.println("not shared "+exclude);
-		
 		// get E.*R
 		final IntSet excluded = new IntBitSet(core.length);
-		lits.clear();
 		lits.add(exclude);
 		for(int i = maxExcludeIndex; i >= 0; i--) {
 			if (lits.contains(absMax(core[i]))) {
@@ -187,15 +154,6 @@ public final class HybridStrategy implements ReductionStrategy {
 				addAbsolute(lits, core[i]);
 			}
 		}
-		
-//		for(IntIterator itr = excluded.iterator(); itr.hasNext();) {
-//			System.out.println(core[itr.nextInt()]);
-//		}
-//		System.out.println("------------------------------------");
-//		for(Clause c : core) {
-//			System.out.println(c);
-//		}
-//		System.exit(0);
 		
 		// get { c: E.*R | *R.c - E.*R = *R.E }
 		lits.clear();

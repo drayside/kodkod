@@ -34,6 +34,9 @@ final class MiniSatProver extends NativeSolver implements SATProver {
 			final Object[] trace = trace(peer(), true);
 			free();
 			proof = new ResolutionTrace(trace, new IntBitSet(trace.length-1, (long[])trace[trace.length-1]));
+//			if (!proof.conflict().literals().isEmpty()) {
+//				throw new IllegalStateException();
+//			}
 		}
 		return proof;
 	}
