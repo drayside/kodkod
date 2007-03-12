@@ -53,9 +53,10 @@ public final class IntBitSet extends AbstractIntSet implements Cloneable {
 		this.capacity = capacity;
 		this.elements = data;
 		recalculateSize();
+		
 //		System.out.println("capacity: " + capacity + ", max: " + max() + ", data.length: " + data.length);
 //		System.out.println(Arrays.toString(data));
-		if (capacity <= max())  throw new IllegalArgumentException("capacity too small");
+		if (size > 0 && capacity <= max())  throw new IllegalArgumentException("capacity too small");
 	}
 	
 	/**

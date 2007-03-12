@@ -57,8 +57,15 @@ public final class Proof {
 		final IntSet idLits = new IntTreeSet();
 		
 		for(Clause clause : solver.proof().core()) {
-			idLits.add(idLiteral(clause)); 
+//			System.out.println(clause);
+			int id = idLiteral(clause);
+			idLits.add(id);
+			idLits.add(-id);
 		}
+		
+//		for(Iterator<TranslationLog.Record> itr = log.replay(); itr.hasNext();) {
+//			System.out.println(itr.next());
+//		}
 		return idLits;
 	}
 
