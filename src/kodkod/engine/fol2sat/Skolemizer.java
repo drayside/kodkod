@@ -51,7 +51,11 @@ abstract class Skolemizer extends AbstractReplacer {
 	/**
 	 * Skolemizes the given annotated formula using the given bounds and options.  If 
 	 * Options.trackFormulas is set and the formula is skolemizable, the resulting annotated
-	 * formula will contain source information for each of its subformulas.  Otherwise, no source information will be recorded.
+	 * formula will contain transitive source information for each of its subformulas. 
+	 * Specifically, let f be the returned annotated formula, t be a descendent of f.node, and
+	 * s a descendent of annotated.node from which t was derived.  Then, 
+	 * f.source[t] = annotated.source[s].  If options.trackFormulas is false, no source 
+	 * information will be recorded (i.e. f.source[t] = t for all descendents t of f).
 	 * @effects upper bound mappings for skolem constants, if any, are added to the bounds
 	 * @return the skolemized version of the given formula
 	 * @throws NullPointerException - any of the arguments are null
@@ -59,13 +63,14 @@ abstract class Skolemizer extends AbstractReplacer {
 	 * @throws UnsupportedOperationException - bounds is unmodifiable
 	 */
 	@SuppressWarnings("unchecked")
-	static AnnotatedNode<Formula> skolemize(AnnotatedNode<Formula> annotated, Bounds bounds, Options options) {
+	static AnnotatedNode<Formula> skolemize(final AnnotatedNode<Formula> annotated, Bounds bounds, Options options) {
 		if (options.logTranslation()) {
 			final Map<Node,Node> source = new IdentityHashMap<Node,Node>();
 			final Skolemizer r = new Skolemizer(annotated, bounds, options) {
 				protected Formula logSource(Formula f, Node n) {
 					//System.out.println("logging " + f + " <-- " + n);
-					if (f!=n) source.put(f, n);
+					final Node nsource = annotated.sourceOf(n);
+					if (f!=nsource) source.put(f, nsource);
 					return f;
 				}
 			};
@@ -124,7 +129,7 @@ abstract class Skolemizer extends AbstractReplacer {
 		super(annotated.sharedNodes());
 
 		// only cache intermediate computations for expressions with no free variables
-		// and formula with no free variables and no quantified descendents
+		// and formulas with no free variables and no quantified descendents
 		final AbstractDetector fvdetect = annotated.freeVariableDetector();
 		final AbstractDetector qdetect = annotated.quantifiedFormulaDetector();
 		for(Node n: annotated.sharedNodes()) {

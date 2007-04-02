@@ -48,7 +48,7 @@ import kodkod.util.collections.Stack;
  * @specfield node: N // annotated node
  * @specfield source: N.*children ->one Node // maps the subnodes of this.node to nodes from 
  *                                           // which they were derived by some transformation process
- *                                           // (e.g. skolemization)  
+ *                                           // (e.g. skolemization, predicate inlining)  
  * @author Emina Torlak
  */ 
 final class AnnotatedNode<N extends Node> {
@@ -67,6 +67,7 @@ final class AnnotatedNode<N extends Node> {
 		this.sharedNodes = Collections.unmodifiableSet(detector.sharedNodes());
 		this.source = Collections.emptyMap();
 	}
+	
 	
 	/**
 	 * Constructs a new annotator for the given node and source map.

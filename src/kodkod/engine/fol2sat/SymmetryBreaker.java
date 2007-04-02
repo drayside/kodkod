@@ -95,8 +95,8 @@ final class SymmetryBreaker {
 	}
 	
 	/**
-	 * Generates a lex leader symmetry breaking predicate for the given
-	 * symmetries, using the specified leaf interpreter and this.options.symmetryBreaking().
+	 * Generates a lex leader symmetry breaking predicate for this.symmetries 
+	 * (if any), using the specified leaf interpreter and this.options.symmetryBreaking().
 	 * @requires interpreter.relations in this.bounds.relations
 	 * @effects no this.symmetries'
 	 * @return a symmetry breaking predicate for this.symmetries
