@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import junit.framework.TestCase;
+import kodkod.ast.BinaryFormula;
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
 import kodkod.ast.Relation;
@@ -61,7 +62,7 @@ public class ReductionAndProofTest extends TestCase {
 	}
 
 	public final void testReduction() {
-		Formula f0, f1, f2, f3, f4, f5, f6;
+		Formula f0, f1, f2, f3, f4, f5, f6, reduction;
 		
 		f0 = ra.difference(rb).eq(ra); // T
 		assertEquals(f0, reduce(f0));
@@ -79,17 +80,26 @@ public class ReductionAndProofTest extends TestCase {
 		f2 = ta.totalOrder(oa, fa, la);
 		f3 = fa.join(ta).no(); // F
 		
-		assertEquals(f3.and(f2), reduce(f3.and(f0).and(f1).and(f2)));
-		 			   	
+		reduction = reduce(f3.and(f0).and(f1).and(f2));
+		assertTrue(reduction instanceof BinaryFormula);
+		assertTrue(f3==((BinaryFormula)reduction).left());
+		assertTrue(f2==((BinaryFormula)reduction).right());
+				 			   	
 		f4 = ta.acyclic();
 		f5 = ta.closure().intersection(Expression.IDEN).some(); // F
 		
-		assertEquals(f5.and(f4), reduce(f4.and(f1).and(f0).and(f5)));
-		
+		reduction = reduce(f4.and(f1).and(f0).and(f5));
+		assertTrue(reduction instanceof BinaryFormula);
+		assertTrue(f5==((BinaryFormula)reduction).left());
+		assertTrue(f4==((BinaryFormula)reduction).right());
+				
 		bounds.boundExactly(rba, bounds.upperBound(rba));
 		f6 = rba.function(ra, rb); // F
 		
-		assertEquals(f6.and(f2), reduce(f1.and(f2).and(f4).and(f6)));
+		reduction = reduce(f1.and(f2).and(f4).and(f6));
+		assertTrue(reduction instanceof BinaryFormula);
+		assertTrue(f6==((BinaryFormula)reduction).left());
+		assertTrue(f2==((BinaryFormula)reduction).right());
 		
 	}
 	
@@ -124,5 +134,6 @@ public class ReductionAndProofTest extends TestCase {
 //			}
 			
 	}
+	
 	
  }
