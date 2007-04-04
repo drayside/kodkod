@@ -18,7 +18,6 @@ import kodkod.ast.visitor.VoidVisitor;
 public final class IfIntExpression extends IntExpression {
 	private final Formula condition;
 	private final IntExpression thenExpr, elseExpr;
-	private final int hashcode;
 
 	/**
 	 * @effects this.condition' = condition && this.thenExpr' = thenExpr &&
@@ -29,7 +28,6 @@ public final class IfIntExpression extends IntExpression {
 		this.condition = condition;
 		this.thenExpr = thenExpr;
 		this.elseExpr = elseExpr;
-		this.hashcode = condition.hashCode() + thenExpr.hashCode() + elseExpr.hashCode();
 	}
 
 	/**
@@ -75,30 +73,8 @@ public final class IfIntExpression extends IntExpression {
 	}
 
 	/**
-	 * Returns true of o is an IfIntExpression with the
-	 * same tree structure as this.
-	 * @return o.condition.equals(this.condition) && o.thenExpr.equals(this.thenExpr) && o.elseExpr.equals(this.elseExpr) 
-	 */
-	public boolean equals(Object o) {
-		if (this == o) return true;
-		if (!(o instanceof IfIntExpression))	return false;
-		IfIntExpression that = (IfIntExpression) o;
-		return condition.equals(that.condition)
-				&& thenExpr.equals(that.thenExpr)
-				&& elseExpr.equals(that.elseExpr);
-	}
-
-	/**
-	 * {@inheritDoc}
-	 * @see java.lang.Object#hashCode()
-	 */
-	public int hashCode() {
-		return hashcode;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 * @see java.lang.Object#toString()
+	 * Returns the string representation of this int expression.
+	 * @return string representation of this int expression
 	 */
 	public String toString() {
 		return "(if " + condition + " then " + thenExpr + " else " + elseExpr + ")";

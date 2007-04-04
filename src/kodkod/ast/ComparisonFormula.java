@@ -22,7 +22,6 @@ public final class ComparisonFormula extends Formula {
     private final Expression left;
     private final Expression right;
     private final Operator op;
-    private final int hashCode;
     
     /**  
      * Constructs a new comparison formula: left op  right
@@ -40,7 +39,6 @@ public final class ComparisonFormula extends Formula {
         this.left = left;
         this.right = right;
         this.op = op;
-        this.hashCode = op.hashCode() + left.hashCode() + right.hashCode();
     }
 
     /**
@@ -77,25 +75,11 @@ public final class ComparisonFormula extends Formula {
     public void accept(VoidVisitor visitor) {
         visitor.visit(this);
     }
-    
-    /**
-     * Returns true of o is a ComparisonFormula with the
-     * same tree structure as this.
-     * @return o.op.equals(this.op) && o.left.equals(this.left) && o.right.equals(this.right) 
-     */
-    public boolean equals(Object o) {
-    	if (this == o) return true;
-    	if (!(o instanceof ComparisonFormula)) return false;
-    	ComparisonFormula that = (ComparisonFormula)o;
-    	return op.equals(that.op) &&
-    		left.equals(that.left) &&
-    		right.equals(that.right);
-    }
-    
-    public int hashCode() {
-    	return hashCode;
-    }
 
+    /**
+	 * Returns the string representation of this formula.
+	 * @return string representation of this formula
+	 */
     public String toString() {
         return "(" + left + " " + op + " " + right + ")";
     }

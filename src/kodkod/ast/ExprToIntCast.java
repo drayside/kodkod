@@ -19,7 +19,6 @@ import kodkod.ast.visitor.VoidVisitor;
 public final class ExprToIntCast extends IntExpression {
 	private final Expression expression;
 	private final Operator op; 
-	private final int hashcode;
 	/**  
 	 * Constructs a new cardinality expression.
 	 * 
@@ -32,7 +31,6 @@ public final class ExprToIntCast extends IntExpression {
 			throw new IllegalArgumentException("cannot apply " + op + " to " + child);
 		this.expression = child;
 		this.op = op;
-		this.hashcode = op.hashCode() + child.hashCode();
 	}
 	
 	/**
@@ -48,34 +46,13 @@ public final class ExprToIntCast extends IntExpression {
 	public Operator op() { return op; } 
 	
 	/**
-	 * Returns true of o is a ExprToIntCast with the
-	 * same tree structure as this.
-	 * @return o in ExprToIntCast && o.op.equals(this.op) && o.expression.equals(this.expression)
-	 */
-	public boolean equals(Object o) {
-		if (this == o) return true;
-		if (!(o instanceof ExprToIntCast)) return false;
-		ExprToIntCast that = (ExprToIntCast)o;
-		return op.equals(that.op) && expression.equals(that.expression);
-	}
-	
-	
-	/**
-	 * {@inheritDoc}
-	 * @see java.lang.Object#toString()
+	 * Returns the string representation of this int expression.
+	 * @return string representation of this int expression
 	 */
 	public String toString() {
 		return op + "("+expression.toString()+")";
 	}
-	
-	/**
-	 * {@inheritDoc}
-	 * @see java.lang.Object#hashCode()
-	 */
-	public int hashCode() { 
-		return  hashcode;
-	}
-	
+		
 	/**
 	 * {@inheritDoc}
 	 * @see kodkod.ast.IntExpression#accept(kodkod.ast.visitor.ReturnVisitor)

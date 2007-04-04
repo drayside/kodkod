@@ -61,30 +61,8 @@ public final class IntToExprCast extends Expression {
 	}
 
 	/**
-	 * {@inheritDoc}
-	 * @see java.lang.Object#hashCode()
-	 */
-	public int hashCode() { 
-		return intExpr.hashCode();
-	}
-	
-	/**
-	 * Returns true if o is an IntToExprCast whose intExpr is 
-	 * logically equal to this.intExpr.
-	 * @return o in IntToExprCast && o.intExpr.equals(this.intExpr)
-	 */
-	public boolean equals(Object o) {
-		if (this==o) 
-			return true;
-		else if (o instanceof IntToExprCast) 
-			return ((IntToExprCast)o).intExpr.equals(intExpr);
-		else	 
-			return false;
-	}
-	
-	/**
-	 * {@inheritDoc}
-	 * @see java.lang.Object#toString()
+	 * Returns the string representation of this expression.
+	 * @return string representation of this expression
 	 */
 	public String toString() { 
 		return "((Expression)" + intExpr + ")";

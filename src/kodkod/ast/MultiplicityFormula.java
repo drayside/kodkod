@@ -20,7 +20,6 @@ import kodkod.ast.visitor.VoidVisitor;
 public final class MultiplicityFormula extends Formula {
     private final Expression expression;
     private final Multiplicity multiplicity;
-    private final int hashCode;
     
     /**  
      * Constructs a new multiplicity formula:  multiplicity expression
@@ -34,7 +33,6 @@ public final class MultiplicityFormula extends Formula {
         if (multiplicity== null || expression == null) throw new NullPointerException("null arg");
         this.multiplicity = multiplicity;
         this.expression = expression;
-        this.hashCode = multiplicity.hashCode() + expression.hashCode();
     }
     
     /**
@@ -67,22 +65,9 @@ public final class MultiplicityFormula extends Formula {
     }
     
     /**
-     * Returns true of o is a MultiplicityFormula with the
-     * same tree structure as this.
-     * @return o.multiplicity.equals(this.multiplicity) && o.expression.equals(this.expression) 
-     */
-    public boolean equals(Object o) {
-    	if (this == o) return true;
-    	if (!(o instanceof MultiplicityFormula)) return false;
-    	MultiplicityFormula that = (MultiplicityFormula)o;
-    	return multiplicity.equals(that.multiplicity) &&
-    		expression.equals(that.expression);
-    }
-    
-    public int hashCode() {
-    	return hashCode;
-    }
-    
+	 * Returns the string representation of this formula.
+	 * @return string representation of this formula
+	 */
     public String toString() {
         return multiplicity + " " + expression;
     }

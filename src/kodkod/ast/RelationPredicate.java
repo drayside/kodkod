@@ -49,6 +49,10 @@ public abstract class RelationPredicate extends Formula {
 	 */
 	public abstract Formula toConstraints(); 
 	
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.ast.Formula#accept(kodkod.ast.visitor.ReturnVisitor)
+	 */
 	@Override
 	 public <E, F, D, I> F accept(ReturnVisitor<E, F, D, I> visitor) {
         return visitor.visit(this);
@@ -62,26 +66,6 @@ public abstract class RelationPredicate extends Formula {
     public void accept(VoidVisitor visitor) {
         visitor.visit(this);
     }
-	
-	/**
-	 * Returns true iff o is an instance of RelationPredicate and 
-	 * o has the same name and relation as this.
-	 * @return o.name = this.name && o.relation = this.relation
-	 */
-	@Override
-	public boolean equals(Object o) {
-		if (this==o) return true;
-		if (o instanceof RelationPredicate) {
-			final RelationPredicate p = (RelationPredicate) o;
-			return name().equals(p.name()) && relation.equals(p.relation);
-		}
-		return false;
-	}
-	
-	@Override
-	public int hashCode() {
-		return name().hashCode() ^ relation.hashCode();
-	}
 	
 	/**
 	 * The name of the predicate.
@@ -128,7 +112,10 @@ public abstract class RelationPredicate extends Formula {
 			return relation().closure().intersection(Expression.IDEN).no();
 		}
 		
-		@Override
+		/**
+		 * Returns the string representation of this predicate.
+		 * @return string representation of this predicate
+		 */
 		public String toString() {
 			return name() + "(" + relation() + ")";
 		}
@@ -218,28 +205,9 @@ public abstract class RelationPredicate extends Formula {
 		}
 		
 		/**
-		 * Returns true iff o is an instance of RelationPredicate.Function and 
-		 * o has the same relation, name, and domain as this.
-		 * @return o.name = this.name && o.relation = this.relation &&
-		 *         o.domain = this.domain && o.range = this.range && o.targetMult = this.targetMult
+		 * Returns the string representation of this predicate.
+		 * @return string representation of this predicate
 		 */
-		@Override
-		public boolean equals(Object o) {
-			if (this==o) return true;
-			if (super.equals(o)) {
-				final RelationPredicate.Function p = (RelationPredicate.Function) o;
-				return targetMult.equals(p.targetMult) && 
-				       domain.equals(p.domain) && range.equals(p.range);
-			}
-			return false;
-		}
-		
-		@Override
-		public int hashCode() {
-			return super.hashCode() + domain.hashCode() + range.hashCode() + targetMult.hashCode();
-		}
-		
-		@Override
 		public String toString() {
 			return name() + "(" + relation() + ", " + 
 			       domain + " ->" + targetMult + " " + range + ")";
@@ -332,27 +300,9 @@ public abstract class RelationPredicate extends Formula {
 		}
 		
 		/**
-		 * Returns true iff o is an instance of RelationPredicate.TotalOrdering and 
-		 * o has the same relation, ordered, first and last as this.
-		 * @return o.name = this.name && o.relation = this.relation &&
-		 *         o.ordered = this.ordered && o.first = this.first && o.last = this.last
+		 * Returns the string representation of this predicate.
+		 * @return string representation of this predicate
 		 */
-		@Override
-		public boolean equals(Object o) {
-			if (this==o) return true;
-			if (super.equals(o)) {
-				final RelationPredicate.TotalOrdering p = (RelationPredicate.TotalOrdering) o;
-				return first.equals(p.first) && last.equals(p.last) && ordered.equals(p.ordered);
-			}
-			return false;
-		}
-		
-		@Override
-		public int hashCode() {
-			return super.hashCode() + first.hashCode() + last.hashCode() + ordered.hashCode();
-		}
-		
-		@Override
 		public String toString() {
 			return name() + "(" + relation() + ", " + ordered + ", " + first + ", " + last + ")";
 		}

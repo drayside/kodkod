@@ -24,7 +24,6 @@ public final class IfExpression extends Expression {
 	private final Formula condition;
 	private final Expression thenExpr, elseExpr;
 	private final int arity;
-	private final int hashCode;
 	
 	/**
 	 * @effects this.condition' = condition && this.thenExpr' = thenExpr &&
@@ -41,8 +40,6 @@ public final class IfExpression extends Expression {
 		this.thenExpr = thenExpr;
 		this.elseExpr = elseExpr;
 		this.arity  = thenExpr.arity();
-		this.hashCode = condition.hashCode() + thenExpr.hashCode() +
-			elseExpr.hashCode();
 	}
 	
 	/**
@@ -95,30 +92,10 @@ public final class IfExpression extends Expression {
         visitor.visit(this);
     }
     
-	/**
-     * Returns true of o is an IfExpression with the
-     * same tree structure as this.
-     * @return o.condition.equals(this.condition) && o.thenExpr.equals(this.thenExpr) && o.elseExpr.equals(this.elseExpr) 
-     */
-    public boolean equals(Object o) {
-		if (this == o) return true;
-		if (!(o instanceof IfExpression)) return false;
-		IfExpression that = (IfExpression) o;
-		return condition.equals(that.condition)
-				&& thenExpr.equals(that.thenExpr)
-				&& elseExpr.equals(that.elseExpr);
-	}
-    
     /**
-     * {@inheritDoc}
-     * @see java.lang.Object#hashCode()
-     */
-    public int hashCode() { 	return hashCode; }
-	
-    /**
-     * {@inheritDoc}
-     * @see java.lang.Object#toString()
-     */
+	 * Returns the string representation of this expression.
+	 * @return string representation of this expression
+	 */
 	public String toString() {
 		return "(if " + condition + " then " + thenExpr + " else " + elseExpr + ")";
 	}

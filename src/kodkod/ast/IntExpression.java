@@ -210,7 +210,7 @@ public abstract class IntExpression implements Node {
 	public Expression toExpression() {
 		return new IntToExprCast(this);
 	}
-	
+		
 	/**
 	 * {@inheritDoc}
 	 * @see kodkod.ast.Node#accept(kodkod.ast.visitor.ReturnVisitor)

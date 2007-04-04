@@ -20,7 +20,6 @@ import kodkod.ast.visitor.VoidVisitor;
 public final class IntComparisonFormula extends Formula {
 	private final Operator op;
 	private final IntExpression left, right;
-	private final int hashCode;
 	
 	/**  
 	 * Constructs a new int comparison formula: left op right
@@ -32,7 +31,6 @@ public final class IntComparisonFormula extends Formula {
 		this.left = left;
 		this.right = right;
 		this.op = op;
-		this.hashCode = op.hashCode() + left.hashCode() + right.hashCode();
 	}
 
 	/**
@@ -54,28 +52,8 @@ public final class IntComparisonFormula extends Formula {
 	public Operator op() {return op;}
 	
 	/**
-	 * {@inheritDoc}
-	 * @see java.lang.Object#hashCode()
-	 */
-	public int hashCode() {
-		return hashCode;
-	}
-	
-	/**
-	 * Returns true of o is a IntComparisonFormula with the
-	 * same tree structure as this.
-	 * @return o.op.equals(this.op) && o.left.equals(this.left) && o.right.equals(this.right) 
-	 */
-	public boolean equals(Object o) {
-		if (this == o) return true;
-		if (!(o instanceof IntComparisonFormula)) return false;
-		IntComparisonFormula that = (IntComparisonFormula)o;
-		return op.equals(that.op) && left.equals(that.left) && right.equals(that.right);
-	}
-	
-	/**
-	 * {@inheritDoc}
-	 * @see java.lang.Object#toString()
+	 * Returns the string representation of this formula.
+	 * @return string representation of this formula
 	 */
 	public String toString() {
 		return "(" + left + " " + op + " " + right + ")";

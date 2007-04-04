@@ -23,7 +23,6 @@ public final class BinaryExpression extends Expression {
 	private final Expression left;
 	private final Expression right;
 	private final int arity;
-	private final int hashCode;
 	
 	/**  
 	 * Constructs a new binary expression: left op right
@@ -43,7 +42,6 @@ public final class BinaryExpression extends Expression {
 		this.left = left;
 		this.right = right;
 		this.arity = op.arity(left.arity(),right.arity());
-		this.hashCode = op.hashCode() + left.hashCode() + right.hashCode();
 	}
 	
 	/**
@@ -91,23 +89,9 @@ public final class BinaryExpression extends Expression {
 	}
 	
 	/**
-	 * Returns true of o is a BinaryExpression with the
-	 * same tree structure as this.
-	 * @return o.op.equals(this.op) && o.left.equals(this.left) && o.right.equals(this.right) 
+	 * Returns the string representation of this expression.
+	 * @return string representation of this expression
 	 */
-	public boolean equals(Object o) {
-		if (this == o) return true;
-		if (!(o instanceof BinaryExpression)) return false;
-		BinaryExpression that = (BinaryExpression)o;
-		return op.equals(that.op) &&
-		left.equals(that.left) &&
-		right.equals(that.right);
-	}
-	
-	public int hashCode() {
-		return hashCode;
-	}
-	
 	public String toString() {
 		return "(" + left + " " + op + " " + right + ")";
 	}

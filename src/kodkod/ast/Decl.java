@@ -27,7 +27,6 @@ public final class Decl extends Decls {
     private final Variable variable;
     private final Multiplicity mult;
     private final Expression expression;
-    private final int hashCode;
     
     /**  
      * Constructs a new declaration from the specified variable and
@@ -38,7 +37,7 @@ public final class Decl extends Decls {
      * @throws IllegalArgumentException - variable.arity != expression.arity 
      */
     Decl(Variable variable, Multiplicity mult, Expression expression) {
-    		if (mult==Multiplicity.NO)
+   		if (mult==Multiplicity.NO)
     			throw new IllegalArgumentException("NO is not a valid multiplicity in a declaration.");
         if (variable.arity() != expression.arity())
             throw new IllegalArgumentException("Unmatched arities in a declaration: " + variable + " and " + expression);
@@ -47,7 +46,6 @@ public final class Decl extends Decls {
         this.variable = variable;
         this.mult = mult;
         this.expression = expression;
-        this.hashCode = variable.hashCode() + mult.hashCode() + expression.hashCode();
     }
     
     /**
@@ -84,32 +82,11 @@ public final class Decl extends Decls {
     public void accept(VoidVisitor visitor) {
         visitor.visit(this);
     }
-    
+      
     /**
-     * Returns true of o is a Declaration with the
-     * same tree structure as this.
-     * @return o.variable.equals(this.variable) && o.multiplicity.equals(this.multiplicity) && o.expression.equals(this.expression) 
-     */
-    public boolean equals(Object o) {
-    	if (this == o) return true;
-    	if (!(o instanceof Decl)) return false;
-    	Decl that = (Decl)o;
-    	return variable.equals(that.variable) && mult.equals(that.mult) &&
-    		expression.equals(that.expression);
-    }
-    
-    /**
-     * {@inheritDoc}
-     * @see java.lang.Object#hashCode()
-     */
-    public int hashCode() {
-    	return hashCode;
-    }
-    
-    /**
-     * {@inheritDoc}
-     * @see java.lang.Object#toString()
-     */
+	 * Returns the string representation of this decl.
+	 * @return string representation of this decl
+	 */
     public String toString() { return variable + ": " + mult + " " + expression; }
    
 }

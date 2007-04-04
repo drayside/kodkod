@@ -9,7 +9,7 @@ import kodkod.ast.visitor.ReturnVisitor;
 
 
 /** 
- * A type representing a relational expression.  Unless otherwise noted,
+ * Represents a relational expression.  Unless otherwise noted,
  * all methods in this class throw a NullPointerException when given
  * null arguments.
  * 
@@ -256,7 +256,7 @@ public abstract class Expression implements Node {
      * @return this.arity
      */
     public abstract int arity();
-    
+        
     /**
      * Accepts the given visitor and returns the result.
      * @see kodkod.ast.Node#accept(kodkod.ast.visitor.ReturnVisitor)

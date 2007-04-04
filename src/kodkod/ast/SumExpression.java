@@ -18,7 +18,7 @@ import kodkod.ast.visitor.VoidVisitor;
 public final class SumExpression extends IntExpression {
 	private final Decls decls;
 	private final IntExpression intExpr;
-	private final int hashcode;
+
 	/**
 	 * Constructs a sum expression
 	 * @effects this.decls' = decls && this.intExpr' = intExpr
@@ -31,7 +31,6 @@ public final class SumExpression extends IntExpression {
 		}
 		this.decls = decls;
 		this.intExpr = intExpr;
-		this.hashcode = decls.hashCode() + intExpr.hashCode();
 	}
 
 	/**
@@ -69,34 +68,12 @@ public final class SumExpression extends IntExpression {
 	}
 	
 	/**
-	 * {@inheritDoc}
-	 * @see java.lang.Object#toString()
+	 * Returns the string representation of this int expression.
+	 * @return string representation of this int expression
 	 */
 	public String toString() { 
 		return "(sum " + decls + " | " + intExpr + ")";
 	}
 	
-	/**
-	 * {@inheritDoc}
-	 * @see java.lang.Object#hashCode()
-	 */
-	public int hashCode() { 
-		return hashcode;
-	}
 	
-	/**
-	 * Returns true if o is a SumExpression with the 
-	 * same structure as this.
-	 * @return o in SumExpression && o.intExpr.equals(this.intExpr) && o.decls.equals(this.decls)
-	 */
-	public boolean equals(Object o) {
-		if (this==o) return true;
-		if (o instanceof SumExpression) {
-			SumExpression s = (SumExpression) o;
-			return decls.equals(s.decls) && intExpr.equals(s.intExpr);
-		} else
-			return false;
-	}
-	
-
 }

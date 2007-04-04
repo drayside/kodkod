@@ -20,7 +20,6 @@ public final class UnaryExpression extends Expression {
     private final Expression expression;
     private final Operator op;
     private final int arity;
-    private final int hashCode;
     
     /**  
      * Constructs a new unary expression: op expression
@@ -36,7 +35,6 @@ public final class UnaryExpression extends Expression {
         this.expression = child;
         this.op = op;
         this.arity = op.arity(child.arity());
-        this.hashCode = op.hashCode() + expression.hashCode();
     }
 
     /**
@@ -79,22 +77,9 @@ public final class UnaryExpression extends Expression {
     }
     
     /**
-     * Returns true of o is a UnaryExpression with the
-     * same tree structure as this.
-     * @return o.op.equals(this.op) && o.expression.equals(this.expression) 
-     */
-    public boolean equals(Object o) {
-    	if (this == o) return true;
-    	if (!(o instanceof UnaryExpression)) return false;
-    	UnaryExpression that = (UnaryExpression)o;
-    	return op.equals(that.op) &&
-    		expression.equals(that.expression);
-    }
-    
-    public int hashCode() {
-    	return hashCode;
-    }
-
+	 * Returns the string representation of this expression.
+	 * @return string representation of this expression
+	 */    
     public String toString() {
         return op.toString() + expression.toString();
     }

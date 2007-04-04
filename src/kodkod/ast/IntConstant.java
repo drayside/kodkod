@@ -53,16 +53,16 @@ public final class IntConstant extends IntExpression {
 	}
 	
 	/**
-	 * {@inheritDoc}
-	 * @see java.lang.Object#hashCode()
+	 * Return this.value
+	 * @return this.value
 	 */
 	public int hashCode() { 
 		return value;
 	}
 	
 	/**
-	 * {@inheritDoc}
-	 * @see java.lang.Object#toString()
+	 * Returns the string representation of this int constant.
+	 * @return string representation of this int constant.
 	 */
 	public String toString() {
 		return String.valueOf(value);

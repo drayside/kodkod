@@ -24,7 +24,6 @@ import kodkod.ast.visitor.VoidVisitor;
  */
 public class Decls implements Node, Iterable<Decl> {
 	private final List<Decl> declarations;
-	private final int hashCode;
 	
 	/**
 	 * Constructs a Decls object with itself as its sole
@@ -37,7 +36,6 @@ public class Decls implements Node, Iterable<Decl> {
     Decls() {
     	Decl singleDecl = (Decl)this;
     	this.declarations = Collections.singletonList(singleDecl);
-    	this.hashCode = 0; // overridden by Decl
     }
     
     /**
@@ -53,7 +51,6 @@ public class Decls implements Node, Iterable<Decl> {
 		temp.addAll(head.declarations());
 		temp.addAll(tail.declarations());
 		this.declarations = Collections.unmodifiableList(temp);
-		this.hashCode = declarations.hashCode();
 	}
 	
     /**
@@ -107,21 +104,9 @@ public class Decls implements Node, Iterable<Decl> {
     }
     
     /**
-     * Returns true of o is a Decls with the
-     * same tree structure as this.
-     * @return o.declarations.equals(this.declarations) 
-     */
-    public boolean equals(Object o) {
-    	if (this == o) return true;
-    	if (!(o instanceof Decls)) return false;
-    	Decls that = (Decls)o;
-    	return declarations.equals(that.declarations);
-    }
-    
-    public int hashCode() {
-    	return hashCode;
-    }
-    
+	 * Returns the string representation of these decls.
+	 * @return string representation of these decls
+	 */
     public String toString() {
         return declarations.toString();
     }

@@ -23,7 +23,6 @@ public final class Comprehension extends Expression  {
 
     private final Decls declarations;
     private final Formula formula;
-    private final int hashCode;
 
     /**  
      * Constructs a comprehension expression with the specified declarations
@@ -36,7 +35,6 @@ public final class Comprehension extends Expression  {
         if (declarations == null || formula == null) throw new NullPointerException("null arg");
         this.declarations = declarations;
         this.formula = formula;
-        this.hashCode = declarations.hashCode() + formula.hashCode();
     }
 
     /**
@@ -78,24 +76,11 @@ public final class Comprehension extends Expression  {
     public void accept(VoidVisitor visitor) {
         visitor.visit(this);
     }
-    
+   
     /**
-     * Returns true of o is a Comprehension with the
-     * same tree structure as this.
-     * @return o.declarations.equals(this.declarations) && o.formula.equals(formula) 
-     */
-    public boolean equals(Object o) {
-    	if (this == o) return true;
-    	if (!(o instanceof Comprehension)) return false;
-    	Comprehension that = (Comprehension)o;
-    	return declarations.equals(that.declarations) &&
-    		formula.equals(that.formula);
-    }
-    
-    public int hashCode() {
-    	return hashCode;
-    }
-    
+	 * Returns the string representation of this expression.
+	 * @return string representation of this expression
+	 */
     public String toString() {
         return "{ " + declarations().toString() + " | " + formula().toString() + " }";
     }

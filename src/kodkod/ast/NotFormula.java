@@ -18,7 +18,6 @@ import kodkod.ast.visitor.VoidVisitor;
  */
 public final class NotFormula extends Formula {
     private final Formula formula;
-    private final int hashCode;
     
     /**
      * Constructs a new formula: !formula 
@@ -29,7 +28,6 @@ public final class NotFormula extends Formula {
     NotFormula(Formula child) {
         if (child == null) throw new NullPointerException("formula");
         this.formula = child;
-        this.hashCode = formula.hashCode() + 31;
     }
  
     /**
@@ -63,21 +61,9 @@ public final class NotFormula extends Formula {
     }
     
     /**
-     * Returns true of o is a NotFormula with the
-     * same tree structure as this.
-     * @return o in NotFormula && o.formula.equals(this.formula) 
-     */
-    public boolean equals(Object o) {
-    	if (this == o) return true;
-    	if (!(o instanceof NotFormula)) return false;
-    	NotFormula that = (NotFormula)o;
-    	return formula.equals(that.formula);
-    }
-    
-    public int hashCode() {
-    	return hashCode;
-    }
-   
+	 * Returns the string representation of this formula.
+	 * @return string representation of this formula
+	 */
     public String toString() {
         return "!" + formula;
     }

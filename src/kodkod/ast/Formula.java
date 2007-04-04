@@ -6,10 +6,8 @@ package kodkod.ast;
 
 import kodkod.ast.visitor.ReturnVisitor;
 
-
-
 /**
- * A type representing a formula.  Unless otherwise noted,
+ * Represents a first-order formula.  Unless otherwise noted,
  * all methods in this class throw a NullPointerException when given
  * null arguments.
  *

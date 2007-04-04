@@ -54,25 +54,12 @@ public abstract class LeafExpression extends Expression {
         return name;
     }
     
+    /**
+	 * Returns the string representation of this expression.
+	 * @return string representation of this expression
+	 */
     public String toString() {
         return name;
     }
     
-    /**
-     * Returns true if and only if compared to itself; otherwise returns false
-     * 
-     * @return this = o
-     */
-    public final boolean equals(Object o) {
-        return this == o;
-    }
-    
-    /**
-     * Returns the default hash code.
-     * @return the default hash code.
-     */
-    public final int hashCode() {
-    	return super.hashCode();
-    }
-
 }

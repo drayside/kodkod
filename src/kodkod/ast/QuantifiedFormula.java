@@ -22,8 +22,7 @@ public final class QuantifiedFormula extends Formula  {
     private final Quantifier quantifier;
     private final Decls declarations;
     private final Formula formula;
-    private final int hashCode;
-    
+   
     /**  
      * Constructs a new quantified formula: quantifier declarations | formula
      * 
@@ -38,8 +37,6 @@ public final class QuantifiedFormula extends Formula  {
         this.quantifier = quantifier;
         this.declarations = declarations;
         this.formula = formula;
-        this.hashCode = quantifier.hashCode() + declarations.hashCode() +
-        	formula.hashCode();
     }
     
     /**
@@ -78,24 +75,9 @@ public final class QuantifiedFormula extends Formula  {
     }
     
     /**
-     * Returns true of o is a QuantifiedFormula with the
-     * same tree structure as this.
-     * @return o.quantifier.equals(this.quantifier) && o.declarations.equals(this.declarations) && 
-     *         o.formula.equals(this.formula) 
-     */
-    public boolean equals(Object o) {
-    	if (this == o) return true;
-    	if (!(o instanceof QuantifiedFormula)) return false;
-    	QuantifiedFormula that = (QuantifiedFormula)o;
-    	return quantifier.equals(that.quantifier) &&
-    		declarations.equals(that.declarations) &&
-    		formula.equals(that.formula);
-    }
-    
-    public int hashCode() {
-    	return hashCode;
-    }
-    
+	 * Returns the string representation of this formula.
+	 * @return string representation of this formula
+	 */
     public String toString() {
         return "(" + quantifier + " " + declarations + " | " + formula + ")";
     }

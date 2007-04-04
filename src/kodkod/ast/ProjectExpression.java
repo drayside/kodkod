@@ -24,7 +24,7 @@ import kodkod.ast.visitor.VoidVisitor;
 public final class ProjectExpression extends Expression {
 	private final Expression expr;
 	private final List<IntExpression> columns;
-	private final int hashcode;
+
 	/**
 	 * Constructs a new projection expression using the given
 	 * expr and columns.
@@ -37,7 +37,6 @@ public final class ProjectExpression extends Expression {
 		final IntExpression[] temp = new IntExpression[columns.length];
 		System.arraycopy(columns, 0, temp, 0, columns.length);
 		this.columns = Collections.unmodifiableList(Arrays.asList(temp));
-		this.hashcode = expr.hashCode() + Arrays.hashCode(columns);
 	}
 
 	/**
@@ -83,32 +82,11 @@ public final class ProjectExpression extends Expression {
 	}
 
 	/**
-	 * {@inheritDoc}
-	 * @see java.lang.Object#hashCode()
-	 */
-	public int hashCode() {
-		return hashcode;
-	}
-	
-	/**
-	 * {@inheritDoc}
-	 * @see java.lang.Object#toString()
+	 * Returns the string representation of this expression.
+	 * @return string representation of this expression
 	 */
 	public String toString() {
 		return expr.toString() + columns.toString();
 	}
-	
-	/**
-	 * Returns true if o is a ProjectExpression with the same 
-	 * tree-structure as this.
-	 * @return o in ProjectExpression && o.expression.equals(this.expression) && o.columns.equals(this.columns)
-	 */
-	public boolean equals(Object o) {
-		if (o==this) return true;
-		else if (o instanceof ProjectExpression) {
-			final ProjectExpression p = (ProjectExpression) o;
-			return p.expr.equals(this.expr) && p.columns.equals(this.columns);
-		} else return false;
-	}
-	
+		
 }

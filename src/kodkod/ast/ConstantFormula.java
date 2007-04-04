@@ -47,6 +47,10 @@ public abstract class ConstantFormula extends Formula {
         visitor.visit(this);
     }
 	
+    /**
+	 * Returns the string representation of this formula.
+	 * @return string representation of this formula
+	 */
 	public String toString() {
 		return String.valueOf(booleanValue());
 	}
