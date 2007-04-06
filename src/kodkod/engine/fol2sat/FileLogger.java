@@ -36,7 +36,8 @@ import kodkod.util.ints.Ints;
  */
 final class FileLogger extends TranslationLogger {
 	
-	private final FixedMap<Node, Variable[]> logMap;
+	private final FixedMap<Formula, Variable[]> logMap;
+	private final AnnotatedNode<Formula> annotated;
 //	private final Object[] seen;
 	private final File file;
 	private final int[] tempVals;
@@ -49,7 +50,7 @@ final class FileLogger extends TranslationLogger {
 	 * this.bounds' = bounds
 	 */
 	FileLogger(final AnnotatedNode<Formula> annotated, Bounds bounds) {
-		
+		this.annotated = annotated;
 		this.factory = bounds.universe().factory();
 		try {
 			this.file = File.createTempFile("kodkod", ".log");
@@ -58,14 +59,14 @@ final class FileLogger extends TranslationLogger {
 			throw new RuntimeException(e1);
 		}
 		
-		final Map<Node,Set<Variable>> freeVarMap = freeVars(annotated);
+		final Map<Formula,Set<Variable>> freeVarMap = freeVars(annotated);
 		final Variable[] empty = new Variable[0];
 	
-		this.logMap = new FixedMap<Node, Variable[]>(freeVarMap.keySet());	
+		this.logMap = new FixedMap<Formula, Variable[]>(freeVarMap.keySet());	
 //		this.seen = new Object[freeVarMap.keySet().size()];
 		
 		int index = 0, maxFreeVars = 0; //, usize = bounds.universe().size();
-		for(Map.Entry<Node, Variable[]> e : logMap.entrySet()) {
+		for(Map.Entry<Formula, Variable[]> e : logMap.entrySet()) {
 			Set<Variable> vars = freeVarMap.get(e.getKey());
 			int size = vars.size();
 			if (size==0) {
@@ -91,25 +92,15 @@ final class FileLogger extends TranslationLogger {
 	}
 	
 	/**
-	 * Returns a map from the sources of all formulas in the given annotated node to their
-	 * free variables. 
-	 * @return a map from the sources of all formulas in the given annotated node to their
-	 * free variables.
+	 * Returns a map from all formulas in the given annotated node to their free variables. 
+	 * @return a map from all formulas in the given annotated node to their free variables.
 	 */
-	private static Map<Node,Set<Variable>> freeVars(final AnnotatedNode<Formula> annotated) {
-		final Map<Node,Set<Variable>> freeVarMap = new IdentityHashMap<Node,Set<Variable>>();
+	private static Map<Formula,Set<Variable>> freeVars(final AnnotatedNode<Formula> annotated) {
+		final Map<Formula,Set<Variable>> freeVarMap = new IdentityHashMap<Formula,Set<Variable>>();
 		annotated.node().accept(new FreeVariableCollector(annotated.sharedNodes()) {
 			protected Set<Variable> cache(Node node, Set<Variable> freeVars) {
 				if (node instanceof Formula) {
-					final Node source = annotated.sourceOf(node);
-					Set<Variable> sourceVars = freeVarMap.get(source);
-					if (sourceVars==null) {
-						sourceVars = newSet();
-						sourceVars.addAll(freeVars);
-						freeVarMap.put(source, sourceVars);
-					} else {
-						sourceVars.addAll(freeVars);
-					}
+					freeVarMap.put((Formula)node, freeVars);
 				}
 				return super.cache(node, freeVars);
 			}
@@ -170,10 +161,10 @@ final class FileLogger extends TranslationLogger {
 	 * @see kodkod.engine.fol2sat.TranslationLogger#log(kodkod.ast.Formula, kodkod.engine.bool.BooleanValue, kodkod.engine.fol2sat.Environment)
 	 */
 	@Override
-	void log(Node n, BooleanValue v, Environment<BooleanMatrix> env) {
+	void log(Formula f, BooleanValue v, Environment<BooleanMatrix> env) {
 		if (out==null) throw new IllegalStateException();
 	
-		final int index = logMap.indexOf(n);
+		final int index = logMap.indexOf(f);
 		if (index < 0) throw new IllegalArgumentException();
 		
 		final int numFreeVars = lookupVars(index, env);
@@ -209,7 +200,7 @@ final class FileLogger extends TranslationLogger {
 	 */
 	@Override
 	TranslationLog log() {
-		return new FileLog(file, logMap, factory);
+		return new FileLog(annotated, logMap, file, factory);
 	}
 	
 	/**
@@ -248,23 +239,39 @@ final class FileLogger extends TranslationLogger {
 	 * @author Emina Torlak
 	 */
 	private static final class FileLog extends TranslationLog {
-	    private final FixedMap<Node, Variable[]> logMap;
+	    private final Node[] indexedNodes;
+	    private final Variable[][] indexedVars;
 	    private final File file;
 	    private final TupleFactory factory;
 	    /**
-	     * Constructs a new file log using the provided fixed map, file, and tuplefactory.
+	     * Constructs a new file log for the sources of the given annotated formula,
+	     * using the provided fixed map, file, and tuplefactory.
+	     * @requires all f: annotated.node.*children & Formula | logMap.get(f) = freeVariables(f)
 	     * @requires the file was written by a FileLogger using the given map
 	     */
-	    FileLog(File file, FixedMap<Node, Variable[]> logMap, TupleFactory factory) {
-	    	this.logMap = logMap;
+	    FileLog(AnnotatedNode<Formula> annotated, FixedMap<Formula, Variable[]> logMap, File file, TupleFactory factory) {
 	    	this.file = file;
 	    	this.factory = factory;
+	    	
+	    	final int size = logMap.entrySet().size();
+	    	this.indexedNodes = new Node[size];
+	    	this.indexedVars = new Variable[size][];
+	    	int index = 0;
+	    	for(Map.Entry<Formula, Variable[]> e : logMap.entrySet()) {
+	    		indexedNodes[index] = annotated.sourceOf(e.getKey());
+	    		indexedVars[index] = e.getValue();
+	    		index++;
+	    	}
 	    }
 	    
 	    protected final void finalize() {
 	    	file.delete();
 	    }
 	    
+	    /**
+	     * {@inheritDoc}
+	     * @see kodkod.engine.fol2sat.TranslationLog#replay(kodkod.util.ints.IntSet)
+	     */
 		public Iterator<Record> replay(final IntSet literals) {
 			try {	
 				return new Iterator<Record>() {
@@ -278,14 +285,14 @@ final class FileLogger extends TranslationLogger {
 								final long indexLiteral = in.readLong();
 								final int literal = (int) (indexLiteral);
 								final int index = (int) (indexLiteral>>>32);
-								final Variable[] freeVars = logMap.get(index);
+								final Variable[] freeVars = indexedVars[index];
 								final int varBytes = freeVars.length << 2;
 								if (literals.contains(literal)) {			
 									final Map<Variable,TupleSet> env= new FixedMap<Variable,TupleSet>(freeVars);
 									for(int i = 0; i < freeVars.length; i++) {
 										env.put(freeVars[i], factory.setOf(1,Ints.singleton(in.readInt())));
 									}							
-									next.setAll(logMap.keyAt(index), literal, env);							
+									next.setAll(indexedNodes[index], literal, env);							
 								} else {
 									for(int skip = in.skipBytes(varBytes); skip < varBytes; skip++) {
 										in.readByte();

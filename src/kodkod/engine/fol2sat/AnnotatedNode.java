@@ -134,7 +134,7 @@ final class AnnotatedNode<N extends Node> {
 	 * @return true if this.node contains a child whose meaning depends on 
 	 * integer bounds (i.e. an ExprToIntCast node with SUM operator or an IntToExprCast node or Expression.INTS constant).
 	 */
-	final boolean usesIntBounds() {
+	final boolean usesInts() {
 		final AbstractDetector detector = new AbstractDetector(sharedNodes) {
 			public Boolean visit(IntToExprCast expr) {
 				return cache(expr, Boolean.TRUE);

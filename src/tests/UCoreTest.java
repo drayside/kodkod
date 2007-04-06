@@ -243,9 +243,11 @@ public final class UCoreTest {
 				int highlevel = 0;
 				for(Map.Entry<Node, Set<Map<Variable,TupleSet>>> e : nodes.entrySet()) {
 					Set<Map<Variable,TupleSet>> envs = e.getValue();
-					if (envs.size()==1 && envs.iterator().next().isEmpty()) {
-						highlevel++;
-						System.out.println(e);
+					for(Map<Variable,TupleSet> env: envs) {
+						if (env.isEmpty()) {
+							highlevel++;
+							System.out.println(e.getKey());
+						}
 					}
 				}
 				System.out.println("highlevel formulas: " + highlevel);

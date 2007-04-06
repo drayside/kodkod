@@ -4,20 +4,25 @@
  */
 package kodkod.engine.fol2sat;
 
+import java.util.IdentityHashMap;
 import java.util.Map;
+import java.util.Set;
 
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
 import kodkod.ast.IntExpression;
+import kodkod.ast.Node;
 import kodkod.ast.Relation;
+import kodkod.ast.RelationPredicate;
+import kodkod.ast.visitor.AbstractReplacer;
 import kodkod.engine.bool.BooleanConstant;
+import kodkod.engine.bool.BooleanFactory;
 import kodkod.engine.bool.BooleanFormula;
 import kodkod.engine.bool.BooleanMatrix;
 import kodkod.engine.bool.BooleanValue;
 import kodkod.engine.bool.Int;
 import kodkod.engine.bool.Operator;
 import kodkod.engine.config.Options;
-import kodkod.engine.config.Reporter;
 import kodkod.engine.satlab.SATSolver;
 import kodkod.instance.Bounds;
 import kodkod.instance.Instance;
@@ -25,91 +30,14 @@ import kodkod.util.ints.IntSet;
 
 
 /** 
- * Translates a formula in first order logic, represented as an
- * {@link kodkod.ast.Formula abstract syntax tree}, into a 
- * {@link kodkod.engine.satlab.SATSolver cnf formula}.
+ * Translates, evaluates, and approximates {@link Node nodes} with
+ * respect to given {@link Bounds bounds} (or {@link Instance instances}) and {@link Options}.
+ * 
  * @author Emina Torlak 
  */
 public final class Translator {
 	
-	/**
-	 * Translates the given formula using the specified bounds and options.
-	 * @return a Translation whose solver is a SATSolver instance initalized with the 
-	 * CNF representation of the given formula, with respect to the given bounds.  The CNF
-	 * is generated in such a way that the magnitutude of a literal representing the truth
-	 * value of a given formula is strictly larger than the magnitudes of the literals representing
-	 * the truth values of the formula's descendents.  
-	 * @throws TrivialFormulaException - the given formula is reduced to a constant during translation
-	 * (i.e. the formula is trivially (un)satisfiable).
-	 * @throws NullPointerException - any of the arguments are null
-	 * @throws UnboundLeafException - the formula refers to an undeclared variable or a relation not mapped by the given bounds.
-	 * @throws HigherOrderDeclException - the formula contains a higher order declaration that cannot
-	 * be skolemized, or it can be skolemized but options.skolemize is false.
-	 */
-	public static Translation translate(Formula formula, Bounds bounds, Options options) throws TrivialFormulaException {
-		final Reporter reporter = options.reporter(); // grab the reporter
-		
-		// extract structural information about the formula (i.e. syntactically shared internal nodes)
-		reporter.collectingStructuralInfo();
-		AnnotatedNode<Formula> annotated = new AnnotatedNode<Formula>(formula);
-				
-		// copy the bounds and remove bindings for unused relations/ints
-		bounds = bounds.clone();
-		bounds.relations().retainAll(annotated.relations());
-		if (!annotated.usesIntBounds()) bounds.ints().clear();
-		
-		// detect and break symmetries on total orders and acyclic relations
-		SymmetryBreaker breaker = new SymmetryBreaker(bounds, options);
-		breaker.breakPredicateSymmetries(annotated.predicates());
-			
-		// skolemize
-		if (options.skolemDepth()>=0) {	annotated = Skolemizer.skolemize(annotated, bounds, options); } 
-
-		// translate to boolean, checking for trivial (un)satisfiability
-		reporter.translatingToBoolean(formula, bounds);	
-		LeafInterpreter interpreter = LeafInterpreter.exact(bounds, options);
-		BooleanValue circuit; 
-		TranslationLog log = null;	
-		if (options.logTranslation()) {
-			final TranslationLogger logger = new FileLogger(annotated, bounds);
-			circuit = FOL2BoolTranslator.translate(annotated, interpreter, logger, options.interruptible());
-			log = logger.log();
-			if (circuit.op()==Operator.CONST) {
-				throw new TrivialFormulaException(TrivialFormulaReducer.reduce(annotated.node()==formula ? annotated : new AnnotatedNode<Formula>(formula), breaker.broken(), log), bounds, (BooleanConstant) circuit);
-			}
-		} else {
-			circuit = (BooleanValue)FOL2BoolTranslator.translate(annotated, interpreter, options.interruptible());
-			if (circuit.op()==Operator.CONST) {
-				throw new TrivialFormulaException(formula, bounds, (BooleanConstant)circuit);
-			}
-		}
-		annotated = null; // release structural information
-		
-		// break lex symmetries
-		reporter.breakingSymmetries();
-		circuit = interpreter.factory().and(circuit, breaker.breakLexSymmetries(interpreter));
-		breaker = null; // release the symmetry breaker
-	
-		// flatten
-		if (options.flatten()) {
-			reporter.flattening((BooleanFormula)circuit);
-			circuit = BooleanFormulaFlattener.flatten((BooleanFormula)circuit, interpreter.factory());
-		}
-
-		final Map<Relation, IntSet> varUsage = interpreter.vars();
-		final int numPrimaryVariables = interpreter.factory().numberOfVariables();
-		interpreter = null; // release the interpreter
-		
-		if (circuit.op()==Operator.CONST) {
-			throw new TrivialFormulaException(formula, bounds, (BooleanConstant)circuit);
-		}
-		
-		// translate to cnf and return the translation
-		reporter.translatingToCNF((BooleanFormula)circuit);
-		final SATSolver cnf = Bool2CNFTranslator.translate((BooleanFormula)circuit, options.solver(), numPrimaryVariables);
-		return new Translation(cnf, bounds, varUsage, numPrimaryVariables, log);
-	}
-	
+	/*---------------------- public methods ----------------------*/
 	/**
 	 * Overapproximates the value of the given expression using the provided bounds and options.
 	 * @return a BooleanMatrix whose TRUE entries represent the tuples contained in a sound overapproximation
@@ -164,6 +92,277 @@ public final class Translator {
 		return (Int)
 		 FOL2BoolTranslator.translate(new AnnotatedNode<IntExpression>(intExpr),
 				 LeafInterpreter.exact(instance,options), false);
+	}
+	
+	/**
+	 * Translates the given formula using the specified bounds and options.
+	 * @return a Translation whose solver is a SATSolver instance initalized with the 
+	 * CNF representation of the given formula, with respect to the given bounds.  The CNF
+	 * is generated in such a way that the magnitutude of a literal representing the truth
+	 * value of a given formula is strictly larger than the magnitudes of the literals representing
+	 * the truth values of the formula's descendents.  
+	 * @throws TrivialFormulaException - the given formula is reduced to a constant during translation
+	 * (i.e. the formula is trivially (un)satisfiable).
+	 * @throws NullPointerException - any of the arguments are null
+	 * @throws UnboundLeafException - the formula refers to an undeclared variable or a relation not mapped by the given bounds.
+	 * @throws HigherOrderDeclException - the formula contains a higher order declaration that cannot
+	 * be skolemized, or it can be skolemized but options.skolemize is false.
+	 */
+	public static Translation translate(Formula formula, Bounds bounds, Options options) throws TrivialFormulaException {
+		return (new Translator(formula,bounds,options)).translate();
+	}
+	
+	/*---------------------- private translation state and methods ----------------------*/
+	/**
+	 * @specfield formula: Formula
+	 * @specfield bounds: Bounds
+	 * @specfield options: Options
+	 * @specfield log: TranslationLog
+	 */
+	private final Formula formula;
+	private final Bounds bounds;
+	private final Options options;
+	
+	private TranslationLog log;
+	
+	/**
+	 * Constructs a Translator for the given formula, bounds and options.
+	 * @effects this.formula' = formula and 
+	 * 	this.options' = options and 
+	 * 	this.bounds' = bounds.clone() and
+	 *  no this.log'
+	 */
+	private Translator(Formula formula, Bounds bounds, Options options) {
+		this.formula = formula;
+		this.bounds = bounds.clone();
+		this.options = options;
+		this.log = null;
+	}
+	
+	/**
+	 * Translates this.formula with respet to this.bounds and this.options.
+	 * @return a Translation whose solver is a SATSolver instance initalized with the 
+	 * CNF representation of the given formula, with respect to the given bounds.  The CNF
+	 * is generated in such a way that the magnitutude of a literal representing the truth
+	 * value of a given formula is strictly larger than the magnitudes of the literals representing
+	 * the truth values of the formula's descendents.  
+	 * @throws TrivialFormulaException - this.formula is reduced to a constant during translation
+	 * (i.e. the formula is trivially (un)satisfiable).
+	 * @throws UnboundLeafException - this.formula refers to an undeclared variable or a relation not mapped by this.bounds.
+	 * @throws HigherOrderDeclException - this.formula contains a higher order declaration that cannot
+	 * be skolemized, or it can be skolemized but this.options.skolemDepth < 0
+	 */
+	private Translation translate() throws TrivialFormulaException  {
+		final AnnotatedNode<Formula> annotated = new AnnotatedNode<Formula>(formula);
+		final SymmetryBreaker breaker = optimizeBounds(annotated);
+		return toBoolean(optimizeFormula(annotated, breaker.broken()), breaker);
+	}
+	
+	/**
+	 * Breaks matrix symmetries on this.bounds based on the contents of the given 
+	 * annotated node, and returns the used symmetry breaker.
+	 * @requires annotated.node = this.formula
+	 * @effects this.bounds' has exact bounds on as many relations constrained to be totally ordered by this.formula
+	 * as possible and triangular upper bounds on as many relations constrained to be acyclic by this.formula as possible
+	 * @return { b: SymmetryBreaker | b.bounds = this.bounds' }
+	 */
+	private SymmetryBreaker optimizeBounds(AnnotatedNode<Formula> annotated) {	
+		options.reporter().optimizingBounds();
+		
+		// remove bindings for unused relations/ints
+		bounds.relations().retainAll(annotated.relations());
+		if (!annotated.usesInts()) bounds.ints().clear();
+		
+		// detect and break symmetries on total orders and acyclic relations
+		final SymmetryBreaker breaker = new SymmetryBreaker(bounds);
+		breaker.breakMatrixSymmetries(annotated.predicates());
+		
+		return breaker;
+	}
+	
+	/**
+	 * Optimizes the given formula by replacing the specified true predicates with the constant TRUE
+	 * and skolemizing the result.
+	 * @requires truePreds in annotated.predicates()[RelationnPredicate.NAME]
+	 * @requires truePreds are true with respect to this.bounds
+	 * @return the skolemization, up to depth this.options.skolemDepth, of annotated.node with
+	 * its predicates inlined. 
+	 * @see #inlinePredicates(AnnotatedNode, Set)
+	 * @see #inlineTruePredicates(AnnotatedNode, Set)
+	 */
+	private AnnotatedNode<Formula> optimizeFormula(AnnotatedNode<Formula> annotated, Set<RelationPredicate> truePreds) {	
+		options.reporter().optimizingFormula();
+		if (!options.logTranslation()) {
+			annotated = inlineTruePredicates(annotated, truePreds);
+		} else {
+			annotated = inlinePredicates(annotated, truePreds);
+		}
+		return options.skolemDepth()>=0 ? Skolemizer.skolemize(annotated, bounds, options) : annotated;
+	}
+	
+	/**
+	 * Returns an annotated formula f such that f.node is equivalent to annotated.node
+	 * with its <tt>truePreds</tt> replaced with the constant TRUE.
+	 * @requires this.options.logTranslation = false
+	 * @requires truePreds in annotated.predicates()[RelationnPredicate.NAME]
+	 * @requires truePreds are true with respect to this.bounds
+	 * @return an annotated formula f such that f.node is equivalent to annotated.node
+	 * with its <tt>truePreds</tt> replaced with the constant TRUE.
+	 */
+	private AnnotatedNode<Formula> inlineTruePredicates(final AnnotatedNode<Formula> annotated, final Set<RelationPredicate> truePreds) {
+		final AbstractReplacer inliner = new AbstractReplacer(annotated.sharedNodes()) {
+			public Formula visit(RelationPredicate pred) {
+				Formula ret = lookup(pred);
+				if (ret!=null) return ret;
+				return truePreds.contains(pred) ? cache(pred, Formula.TRUE) : cache(pred, pred);
+			}
+		};
+		return new AnnotatedNode<Formula>(annotated.node().accept(inliner));	
+	}
+	
+	/**
+	 * Returns an annotated formula f such that f.node is equivalent to annotated.node
+	 * with its <tt>truePreds</tt> replaced with the constant TRUE and the remaining
+	 * predicates replaced with equivalent constraints.  The annotated formula f will c
+	 * ontain transitive source information for each of the subformulas of f.node.  
+	 * Specifically, let t be a subformula of f.node, and
+	 * s be a descdendent of annotated.node from which t was derived.  Then, 
+	 * f.source[t] = annotated.source[s]. 
+	 * @requires this.options.logTranslation = true
+	 * @requires truePreds in annotated.predicates()[RelationnPredicate.NAME]
+	 * @requires truePreds are true with respect to this.bounds
+	 * @return an annotated formula f such that f.node is equivalent to annotated.node
+	 * with its <tt>truePreds</tt> replaced with the constant TRUE and the remaining
+	 * predicates replaced with equivalent constraints.
+	 */
+	private AnnotatedNode<Formula> inlinePredicates(final AnnotatedNode<Formula> annotated, final Set<RelationPredicate> truePreds) {
+		final Map<Node,Node> sources = new IdentityHashMap<Node,Node>();
+		final AbstractReplacer inliner = new AbstractReplacer(annotated.sharedNodes()) {
+			private RelationPredicate source =  null;			
+			protected <N extends Node> N cache(N node, N replacement) {
+				if (replacement instanceof Formula) {
+					if (source==null) {
+						final Node nsource = annotated.sourceOf(node);
+						if (replacement!=nsource) 
+							sources.put(replacement, nsource);
+					} else {
+						sources.put(replacement, source);
+					}
+				}
+				return super.cache(node, replacement);
+			}
+			public Formula visit(RelationPredicate pred) {
+				Formula ret = lookup(pred);
+				if (ret!=null) return ret;
+				if (truePreds.contains(pred)) {
+					ret = Formula.TRUE;
+				} else {
+					source = pred;
+					ret = pred.toConstraints().accept(this);
+					source = null;
+				}
+				return cache(pred, ret);
+			}
+		};
+		return new AnnotatedNode<Formula>(annotated.node().accept(inliner), sources);	
+	}
+	
+	/**
+	 * Translates the given annotated formula to a circuit, conjoins the circuit with an 
+	 * SBP generated by the given symmetry breaker, flattens the result if so specified by this.options, 
+	 * and returns its Translation to CNF.
+	 * @requires [[annotated.node]] <=> ([[this.formula]] and [[breaker.broken]])
+	 * @effects this.options.logTranslation => some this.log'
+	 * @return the result of calling  {@link #generateSBP(BooleanFormula, LeafInterpreter, SymmetryBreaker)}
+	 * on the translation of annotated.node with respect to this.bounds
+	 * @throws TrivialFormulaException - the translation of annotated is a constant or can be made into
+	 * a constant by flattening 
+	 */
+	private Translation toBoolean(AnnotatedNode<Formula> annotated, SymmetryBreaker breaker) throws TrivialFormulaException {
+		
+		options.reporter().translatingToBoolean(annotated.node(), bounds);
+		
+		final LeafInterpreter interpreter = LeafInterpreter.exact(bounds, options);
+		final BooleanValue circuit;
+		
+		if (options.logTranslation()) {
+			final TranslationLogger logger = new FileLogger(annotated, bounds);
+			circuit = FOL2BoolTranslator.translate(annotated, interpreter, logger, options.interruptible());
+			log = logger.log();
+			if (circuit.op()==Operator.CONST) {
+				throw new TrivialFormulaException(TrivialFormulaReducer.reduce(annotated.node()==formula ? 
+						annotated : new AnnotatedNode<Formula>(formula), breaker.broken(), log), 
+						bounds, (BooleanConstant) circuit);
+			} 
+		} else {
+			circuit = (BooleanValue)FOL2BoolTranslator.translate(annotated, interpreter, options.interruptible());
+			if (circuit.op()==Operator.CONST) {
+				throw new TrivialFormulaException(formula, bounds, (BooleanConstant)circuit);
+			} 
+		}
+		
+		return generateSBP((BooleanFormula)circuit, interpreter, breaker);
+		
+	}
+	
+	/**
+	 * Conjoins the given circuit with an SBP generated using the given symmetry breaker and interpreter,
+	 * and returns the resulting circuit's translation to CNF.
+	 * @requires circuit is a translation of this.formula with respect to this.bounds
+	 * @requires interpreter is the leaf interpreter used in generating the given circuit
+	 * @requires breaker.bounds = this.bounds
+	 * @return flatten(circuit && breaker.generateSBP(interpreter), interpreter)
+	 * @throws TrivialFormulaException - flattening the circuit and the predicate yields a constant
+	 */
+	private Translation generateSBP(BooleanFormula circuit, LeafInterpreter interpreter, SymmetryBreaker breaker) 
+	throws TrivialFormulaException {
+		options.reporter().generatingSBP();
+		final BooleanFactory factory = interpreter.factory();
+		final BooleanValue sbp = breaker.generateSBP(interpreter, options.symmetryBreaking()); 
+		return flatten((BooleanFormula)factory.and(circuit, sbp), interpreter);
+	}
+
+	/**
+	 * If this.options.flatten is true, flattens the given circuit and returns its translation to CNF.
+	 * Otherwise, simply returns the given circuit's translation to CNF.
+	 * @requires circuit is a translation of this.formula with respect to this.bounds
+	 * @requires interpreter is the leaf interpreter used in generating the given circuit
+	 * @return if this.options.flatten then 
+	 * 	toCNF(flatten(circuit), interpreter.factory().numberOfVariables(), interpreter.vars()) else
+	 *  toCNF(circuit, interpreter.factory().numberOfVariables(), interpreter.vars())
+	 * @throws TrivialFormulaException - flattening the circuit yields a constant
+	 */
+	private Translation flatten(BooleanFormula circuit, LeafInterpreter interpreter) throws TrivialFormulaException {	
+		final BooleanFactory factory = interpreter.factory();
+		if (options.flatten()) {
+			options.reporter().flattening(circuit);
+			final BooleanValue flatCircuit = BooleanFormulaFlattener.flatten(circuit, factory);
+			if (flatCircuit.op()==Operator.CONST) {
+				throw new TrivialFormulaException(formula, bounds, (BooleanConstant)flatCircuit);
+			} else {
+				return toCNF((BooleanFormula)flatCircuit, factory.numberOfVariables(), interpreter.vars());
+			}
+		} else {
+			return toCNF(circuit, factory.numberOfVariables(), interpreter.vars());
+		}
+	}
+	
+	/**
+	 * Translates the given circuit to CNF, adds the clauses to a SATSolver returned
+	 * by options.solver(), and returns a Translation object constructed from the solver
+	 * and the provided arguments.
+	 * @requires circuit is a translation of this.formula with respect to this.bounds
+	 * @requires primaryVars is the number of primary variables generated by translating 
+	 * this.formula and this.bounds into the given circuit
+	 * @requires varUsage maps each non-constant relation in this.bounds to the labels of 
+	 * the primary variables used to represent that relation in the given circuit
+	 * @return Translation constructed from a SAT solver initialized with the CNF translation
+	 * of the given circuit, the provided arguments, this.bounds, and this.log
+	 */
+	private Translation toCNF(BooleanFormula circuit, int primaryVars, Map<Relation,IntSet> varUsage) {	
+		options.reporter().translatingToCNF(circuit);
+		final SATSolver cnf = Bool2CNFTranslator.translate((BooleanFormula)circuit, options.solver(), primaryVars);
+		return new Translation(cnf, bounds, varUsage, primaryVars, log);
 	}
 	
 }

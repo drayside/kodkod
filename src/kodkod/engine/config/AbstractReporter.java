@@ -23,9 +23,9 @@ public abstract class AbstractReporter implements Reporter {
 	protected AbstractReporter() {}
 	
 	/**
-	 * @see kodkod.engine.config.Reporter#breakingSymmetries()
+	 * @see kodkod.engine.config.Reporter#generatingSBP()
 	 */
-	public void breakingSymmetries() {}
+	public void generatingSBP() {}
 
 	/**
 	 * @see kodkod.engine.config.Reporter#flattening(kodkod.engine.bool.BooleanFormula)
@@ -43,14 +43,14 @@ public abstract class AbstractReporter implements Reporter {
 	public void solvingCNF(int primaryVars, int vars, int clauses) {}
 
 	/**
-	 * @see kodkod.engine.config.Reporter#detectingSymmetries()
+	 * @see kodkod.engine.config.Reporter#optimizingFormula()
 	 */
-	public void detectingSymmetries() {}
+	public void optimizingFormula() {}
 
 	/**
-	 * @see kodkod.engine.config.Reporter#collectingStructuralInfo()
+	 * @see kodkod.engine.config.Reporter#optimizingBounds()
 	 */
-	public void collectingStructuralInfo() {}
+	public void optimizingBounds() {}
 
 	/**
 	 * @see kodkod.engine.config.Reporter#translatingToBoolean(kodkod.ast.Formula, kodkod.instance.Bounds)

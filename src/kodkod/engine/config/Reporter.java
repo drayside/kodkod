@@ -11,15 +11,14 @@ import kodkod.engine.bool.BooleanFormula;
 import kodkod.instance.Bounds;
 
 /**
- * Enables the passing of messages between the kodkod engine
+ * Enables passing of messages between the kodkod engine
  * and the client about the following stages of the analysis:
  * <ol>
- * <li>syntactic analysis of the formula</li>
- * <li>symmetry detection</li>
- * <li>skolemization</li>
- * <li>translation to boolean</li>
- * <li>symmetry breaking</li>
- * <li>circuit optimization</li>
+ * <li>bounds optimization (symmetry detection and breaking of predicate symmetries)</li>
+ * <li>formula optimization (predicate inlining and skolemization)</li>
+ * <li>translation to a boolean circuit</li>
+ * <li>symmetry breaking predicate (SBP) generation</li>
+ * <li>circuit flattening</li>
  * <li>translation to cnf</li>
  * <li>running a sat solver on the generated cnf</li>
  * </ol>
@@ -30,43 +29,42 @@ import kodkod.instance.Bounds;
 public interface Reporter {
 
 	/**
-	 * Reports that the detection of syntactically
-	 * shared nodes is in progress (stage 1).
+	 * Reports that bounds optimization is in progress (stage 1).
 	 */
-	public void collectingStructuralInfo();
+	public void optimizingBounds();
 	
 	/**
-	 * Reports that the given the analysis is in stage 2.
+	 * Reports that formula optimization is in progress (stage 2).
 	 */
-	public void detectingSymmetries();
+	public void optimizingFormula();
 	
 	/**
 	 * Reports that the given declaration is being skolemized using the 
-	 * given skolem relation in stage 3.
+	 * given skolem relation.
 	 */
 	public void skolemizing(Decl decl, Relation skolem);
 	
 	/**
 	 * Reports that the analysis of the given (optimized) formula
-	 * and bounds is in stage 4.  The given bounds are not mutated.
+	 * and bounds is in stage 3.  The given bounds are not mutated.
 	 * @effects bounds' = bounds
 	 */
 	public void translatingToBoolean(Formula formula, Bounds bounds);
 	
 	/**
-	 * Reports that the analysis is in stage 5.
+	 * Reports that the analysis is in stage 4.
 	 */
-	public void breakingSymmetries();
+	public void generatingSBP();
 
 	/**
-	 * Reports that the stage 6 of the analysis is
+	 * Reports that the stage 5 of the analysis is
 	 * being performed on the given boolean formula.
 	 */
 	public void flattening(BooleanFormula circuit);
 	
 	/**
 	 * Reports that the given (optimized)
-	 * circuit is being translated to CNF (stage 7 of the analysis).
+	 * circuit is being translated to CNF (stage 6 of the analysis).
 	 */
 	public void translatingToCNF(BooleanFormula circuit);
 	

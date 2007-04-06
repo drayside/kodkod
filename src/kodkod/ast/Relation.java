@@ -18,11 +18,11 @@ import kodkod.ast.visitor.VoidVisitor;
  * variable has a name, which is basically a comment for the purpose of 
  * printing, viewing, etc.  The name has no meaning otherwise.
  * 
- * Four methods for creating commonly used predicates over binary relations
+ * <p>Four methods for creating commonly used predicates over binary relations
  * are provided: {@link #function(Expression, Expression)}, {@link #functional(Expression, Expression)},
  * {@link #acyclic()}, and {@link #totalOrder(Relation, Relation, Relation)}.  Using
  * these methods to generate desired predicates will result in faster constraint solving
- * than creating the same predicates via other API calls. 
+ * than creating the same predicates via other API calls.</p> 
  * 
  * @specfield name: String
  * @specfield arity: int

@@ -20,7 +20,6 @@ import kodkod.engine.bool.BooleanFactory;
 import kodkod.engine.bool.BooleanMatrix;
 import kodkod.engine.bool.BooleanValue;
 import kodkod.engine.bool.Operator;
-import kodkod.engine.config.Options;
 import kodkod.instance.Bounds;
 import kodkod.instance.TupleFactory;
 import kodkod.util.collections.IdentityHashSet;
@@ -35,43 +34,43 @@ import kodkod.util.ints.Ints;
  * via a generic lex-leader predicate.
  * 
  * @specfield bounds: Bounds // problem bounds
- * @specfield options: Options
  * @specfield symmetries: set IntSet 
  * @specfield broken: set RelationPredicate 
  * @author Emina Torlak
  */
 final class SymmetryBreaker {
 	private final Bounds bounds;
-	private final Options options;
 	private final Set<IntSet> symmetries;
-	private final int usize;
 	private final Set<RelationPredicate> broken;
+	private final int usize;
 	
 	/**
-	 * Constructs a  new symmetry breaker for the given bounds and options.
-	 * @effects this.bounds' = bounds && this.options' = options && 
-	 * this.symmetries' = SymmetryDetector.partition(bounds) && no this.broken'
-	 */
-	SymmetryBreaker(Bounds bounds, Options options) {
+	 * Constructs a new symmetry breaker for the given Bounds.
+	 * <b>Note that the constructor does not make a local copy of the given
+	 * bounds, so the caller must ensure that all modifications of the
+	 * given bounds are symmetry preserving.</b>  
+	 * @effects this.bounds' = bounds && this.symmetries' = SymmetryDetector.partition(bounds) &&
+	 * no this.broken'
+	 **/
+	SymmetryBreaker(Bounds bounds) {
 		this.bounds = bounds;
-		this.options = options;
 		this.usize = bounds.universe().size();
-		options.reporter().detectingSymmetries();
 		this.symmetries = SymmetryDetector.partition(bounds);
 		this.broken = new IdentityHashSet<RelationPredicate>();
 	}
 	
 	/**
-	 * Breaks predicate symmetries on this.bounds based on the given map from
+	 * Breaks matrix symmetries on this.bounds using this.symmetries and the given map from
 	 * RelationPredicate.Name to sets of RelationPredicates.
 	 * @requires RelationPredicate.Name.preds.*children & Relation in this.bounds.relations
 	 * @requires all n: preds.RelationPredicate | preds[n].name() = n
-	 * @effects this.bounds is modified, if possible, to have exact bounds for some of the total
-	 * orderings in broken and to have halved upper bounds for some of the acyclic relations in broken
-	 * @effects this.symmetries is modified to no longer contain the partitions on which symmetries have been broken
-	 * @effects this.broken is modified to contain the predicates on which symmetries have been broken
+	 * @effects this.broken' is modified to contain the predicates used to break matrix symmetries on this.bounds'
+	 * @effects this.bounds' has exact bounds for the  total
+	 * orderings in this.broken' and upper triangular bounds for the acyclic relations in this.broken'
+	 * @effects this.symmetries' is modified to no longer contain the partitions that 
+	 * make up the bounds of the relations at the leaves of the predicates in this.broken'
 	 */
-	final void breakPredicateSymmetries(Map<RelationPredicate.Name, Set<RelationPredicate>> preds) {
+	final void breakMatrixSymmetries(Map<RelationPredicate.Name, Set<RelationPredicate>> preds) {
 		final Set<RelationPredicate> totals = preds.get(TOTAL_ORDERING);
 		final Set<RelationPredicate> acyclics = preds.get(ACYCLIC);
 		
@@ -91,18 +90,16 @@ final class SymmetryBreaker {
 	 * @return this.broken
 	 */
 	final Set<RelationPredicate> broken() {
-		return broken;
+		return Collections.unmodifiableSet(broken);
 	}
 	
 	/**
 	 * Generates a lex leader symmetry breaking predicate for this.symmetries 
-	 * (if any), using the specified leaf interpreter and this.options.symmetryBreaking().
+	 * (if any), using the specified leaf interpreter and the specified predicate length.
 	 * @requires interpreter.relations in this.bounds.relations
-	 * @effects no this.symmetries'
 	 * @return a symmetry breaking predicate for this.symmetries
 	 */
-	final BooleanValue breakLexSymmetries(LeafInterpreter interpreter) {
-		final int predLength = options.symmetryBreaking();
+	final BooleanValue generateSBP(LeafInterpreter interpreter, int predLength) {
 		if (symmetries.isEmpty() || predLength==0) return BooleanConstant.TRUE;
 		
 		final List<RelationParts> relParts = relParts();
@@ -142,7 +139,6 @@ final class SymmetryBreaker {
 			}
 		}
 		
-		symmetries.clear();
 		return factory.accumulate(sbp);
 	}
 	
@@ -188,7 +184,7 @@ final class SymmetryBreaker {
 	 * @requires l0.size()==l1.size()
 	 * @return a circuit that compares l0 and l1
 	 */
-	private final BooleanValue leq(BooleanFactory f, List<BooleanValue> l0, List<BooleanValue> l1) {
+	private static final BooleanValue leq(BooleanFactory f, List<BooleanValue> l0, List<BooleanValue> l1) {
 		final BooleanAccumulator cmp = BooleanAccumulator.treeGate(Operator.AND);
 		BooleanValue prevEquals = BooleanConstant.TRUE;
 		for(int i = 0; i < l0.size(); i++) {

@@ -67,7 +67,7 @@ abstract class Skolemizer extends AbstractReplacer {
 		if (options.logTranslation()) {
 			final Map<Node,Node> source = new IdentityHashMap<Node,Node>();
 			final Skolemizer r = new Skolemizer(annotated, bounds, options) {
-				protected Formula logSource(Formula f, Node n) {
+				protected Formula source(Formula f, Node n) {
 					//System.out.println("logging " + f + " <-- " + n);
 					final Node nsource = annotated.sourceOf(n);
 					if (f!=nsource) source.put(f, nsource);
@@ -171,7 +171,7 @@ abstract class Skolemizer extends AbstractReplacer {
 	 * @effects Records that the given node is the source of the 
 	 * specified formula, if this is a tracking skolemizer.  Otherwise does nothing.
 	 */
-	protected Formula logSource(Formula f, Node n) { 
+	protected Formula source(Formula f, Node n) { 
 		return f; 
 	}
 	
@@ -332,13 +332,13 @@ abstract class Skolemizer extends AbstractReplacer {
 	 *         skolemConstraints && skolemExpr in decl.expression && decl.multiplicity skolemExpr
 	 */
 	private Formula addConstraints(Formula skolemConstraints, Decl decl, Expression skolemExpr) {
-		final Formula f0 = logSource(skolemExpr.in(decl.expression()), decl);
+		final Formula f0 = source(skolemExpr.in(decl.expression()), decl);
 		final Multiplicity mult = decl.multiplicity();
 		if (mult==Multiplicity.SET) {
 			return skolemConstraints.and(f0);
 		} else {
-			final Formula f1 = logSource(skolemExpr.apply(mult), decl);
-			return skolemConstraints.and(logSource(f0.and(f1), decl));
+			final Formula f1 = source(skolemExpr.apply(mult), decl);
+			return skolemConstraints.and(source(f0.and(f1), decl));
 		}
 	}
 	
@@ -359,7 +359,7 @@ abstract class Skolemizer extends AbstractReplacer {
 				Decl newDecl = visit(decl);
 				Expression skolemExpr = skolemExpr(newDecl);
 				repEnv = repEnv.extend(decl.variable(), skolemExpr);
-				declConstraints = logSource(addConstraints(declConstraints, newDecl, skolemExpr), decls);
+				declConstraints = source(addConstraints(declConstraints, newDecl, skolemExpr), decls);
 			}
 			ret = declConstraints.compose(negated ? IMPLIES : AND, qf.formula().accept(this));
 		} else { // non-skolemizable formula
@@ -378,7 +378,7 @@ abstract class Skolemizer extends AbstractReplacer {
 			}				
 		}			
 		repEnv = oldRepEnv;
-		return logSource(cache(qf,ret), qf);
+		return source(cache(qf,ret), qf);
 	}
 
 	/** 
@@ -391,7 +391,7 @@ abstract class Skolemizer extends AbstractReplacer {
 		negated = !negated; // flip the negation flag
 		final Formula retChild = not.formula().accept(this);
 		negated = !negated;
-		return retChild==not.formula() ? cache(not,not) : logSource(cache(not, retChild.not()), not);			
+		return retChild==not.formula() ? cache(not,not) : source(cache(not, retChild.not()), not);			
 	}
 
 	/**
@@ -419,7 +419,7 @@ abstract class Skolemizer extends AbstractReplacer {
 		}
 		skolemDepth = oldDepth;
 		ret = (left==bf.left()&&right==bf.right()) ? bf : left.compose(op, right);
-		return logSource(cache(bf,ret),bf);
+		return source(cache(bf,ret),bf);
 	}
 
 
@@ -432,7 +432,7 @@ abstract class Skolemizer extends AbstractReplacer {
 		skolemDepth = -1; // cannot skolemize inside an int comparison formula
 		final Formula ret = super.visit(icf);
 		skolemDepth = oldDepth;
-		return logSource(ret,icf);
+		return source(ret,icf);
 	}
 
 	/** 
@@ -444,7 +444,7 @@ abstract class Skolemizer extends AbstractReplacer {
 		skolemDepth = -1; // cannot skolemize inside a comparison formula
 		final Formula ret = super.visit(cf);
 		skolemDepth = oldDepth;
-		return logSource(ret,cf);
+		return source(ret,cf);
 	}
 
 	/** 
@@ -456,7 +456,7 @@ abstract class Skolemizer extends AbstractReplacer {
 		skolemDepth = -1; // cannot skolemize inside a multiplicity formula
 		final Formula ret = super.visit(mf);
 		skolemDepth = oldDepth;
-		return logSource(ret,mf);
+		return source(ret,mf);
 	}
 
 	/** 
@@ -468,6 +468,6 @@ abstract class Skolemizer extends AbstractReplacer {
 		skolemDepth = -1; // cannot skolemize inside a relation predicate
 		final Formula ret = super.visit(pred);
 		skolemDepth = oldDepth;
-		return logSource(ret,pred);
+		return source(ret,pred);
 	}
 }

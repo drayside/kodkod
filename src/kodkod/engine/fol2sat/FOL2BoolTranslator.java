@@ -122,17 +122,10 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 	static final BooleanValue translate(final AnnotatedNode<Formula> annotated, LeafInterpreter interpreter, final TranslationLogger logger, boolean interruptible) {
 		final FOL2BoolCache cache = interruptible ? FOL2BoolCache.interruptible(annotated) : FOL2BoolCache.basic(annotated);
 		final FOL2BoolTranslator translator = new FOL2BoolTranslator(cache, interpreter) {
-			Formula source = null;
 			BooleanValue cache(Formula formula, BooleanValue translation) {
-				logger.log(source==null ? annotated.sourceOf(formula) : source, translation, super.env);
+				logger.log(formula, translation, super.env);
 				return super.cache(formula, translation);
-			}
-			public final BooleanValue visit(RelationPredicate pred) {
-				source = pred;
-				final BooleanValue ret = super.visit(pred);
-				source = null;
-				return ret;
-			}		
+			}	
 		};
 		final BooleanValue ret;
 		final List<Formula> flat = flatten(annotated);
@@ -668,7 +661,7 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 	 * @return let t = lookup(pred) | some t => t, 
 	 * 	cache(pred, pred.toConstraints().accept(this))
 	 */
-	public BooleanValue visit(RelationPredicate pred) {
+	public final BooleanValue visit(RelationPredicate pred) {
 		BooleanValue ret = lookup(pred);
 		return ret != null ? ret : cache(pred, pred.toConstraints().accept(this));
 	}

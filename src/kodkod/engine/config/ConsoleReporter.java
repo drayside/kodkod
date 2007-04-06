@@ -23,10 +23,10 @@ public final class ConsoleReporter implements Reporter {
 	public ConsoleReporter() {}
 	
 	/**
-	 * @see kodkod.engine.config.Reporter#breakingSymmetries()
+	 * @see kodkod.engine.config.Reporter#generatingSBP()
 	 */
-	public void breakingSymmetries() {
-		System.out.println("breaking symmetries ...");
+	public void generatingSBP() {
+		System.out.println("generating lex-leader symmetry breaking predicate ...");
 	}
 
 	/**
@@ -50,20 +50,22 @@ public final class ConsoleReporter implements Reporter {
 		System.out.println("solving p cnf " + vars + " " + clauses);
 	}
 
+
 	/**
-	 * @see kodkod.engine.config.Reporter#detectingSymmetries()
+	 * @see kodkod.engine.config.Reporter#optimizingBounds()
 	 */
-	public void detectingSymmetries() {
-		System.out.println("detecting symmetries ...");
+	public void optimizingBounds() {
+		System.out.println("optimizing bounds (breaking predicate symmetries) ...");
 	}
 
 	/**
-	 * @see kodkod.engine.config.Reporter#collectingStructuralInfo()
+	 * {@inheritDoc}
+	 * @see kodkod.engine.config.Reporter#optimizingFormula()
 	 */
-	public void collectingStructuralInfo() {
-		System.out.println("analyzing formula structure ...");
+	public void optimizingFormula() {
+		System.out.println("optimizaing formula (inlining predicates and skolemizing) ...");
 	}
-
+	
 	/**
 	 * @see kodkod.engine.config.Reporter#translatingToBoolean(kodkod.ast.Formula, kodkod.instance.Bounds)
 	 */
@@ -84,5 +86,7 @@ public final class ConsoleReporter implements Reporter {
 	public String toString() {
 		return "ConsoleReporter";
 	}
+
+	
 
 }

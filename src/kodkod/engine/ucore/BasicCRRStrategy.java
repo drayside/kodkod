@@ -19,13 +19,13 @@ import kodkod.engine.satlab.ResolutionTrace;
  * @invariant no disj i,j: [0..#nexts) | traces[i] = traces[j] && nexts[i] = nexts[j]
  * @author Emina Torlak
  */
-public final class RandomCRRStrategy extends CRRStrategy {
+public final class BasicCRRStrategy extends CRRStrategy {
 
 	/**
 	 * Constructs a new instance of BasicCRRStrategy.
 	 * @effects no this.traces' && no this.nexts'
 	 */
-	public RandomCRRStrategy() {}
+	public BasicCRRStrategy() {}
 
 	/**
 	 * Returns an iterator that traverses trace.core in random order.
