@@ -47,6 +47,7 @@ public final class TupleSet extends AbstractSet<Tuple> implements Cloneable {
 		if (arity < 1) throw new IllegalArgumentException("arity < 1");
 		this.universe = universe;
 		this.arity = arity;
+		checkCapacity();
 		tuples = Ints.bestSet(capacity());
 	}
 	
@@ -65,8 +66,8 @@ public final class TupleSet extends AbstractSet<Tuple> implements Cloneable {
 	 */
 	TupleSet(Universe universe, int arity, int fromIndex, int toIndex) {
 		this(universe,arity);
-		rangeCheck(toIndex, 0, capacity() - 1);
-		rangeCheck(fromIndex, 0, toIndex);
+		checkRange(toIndex, 0, capacity() - 1);
+		checkRange(fromIndex, 0, toIndex);
 		for(int i = fromIndex; i <= toIndex; i++) {
 			tuples.add(i);
 		}
@@ -89,6 +90,7 @@ public final class TupleSet extends AbstractSet<Tuple> implements Cloneable {
 		if (arity < 1) throw new IllegalArgumentException("arity < 1");
 		this.universe = universe;
 		this.arity = arity;
+		checkCapacity();
 		if (!tupleIndeces.isEmpty()) {
 			if (tupleIndeces.min()<0 || tupleIndeces.max() >= capacity())
 				throw new IllegalArgumentException(tupleIndeces.min() + "<0 || " + tupleIndeces.max()+">="+universe.size()+"^"+arity);
@@ -112,9 +114,18 @@ public final class TupleSet extends AbstractSet<Tuple> implements Cloneable {
 	}
 	
 	/**
+	 * @throws IllegalArgumentException - this.capacity() < 0
+	 */
+	private final void checkCapacity() {
+		if (capacity() < 0) {
+			throw new IllegalArgumentException("arity too large (" + arity + ") for universe of size " + universe.size());
+		}
+	}
+	
+	/**
 	 * Throws an IndexOutOfBoundsException if index is not in [min..max]
 	 */
-	private final void rangeCheck(int index, int min, int max) {
+	private final void checkRange(int index, int min, int max) {
 		if (index < min || index > max)
 			throw new IndexOutOfBoundsException(index + " !in " + "[" + min + ".." + max + "]");
 	}
