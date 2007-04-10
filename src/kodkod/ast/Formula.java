@@ -1,13 +1,30 @@
-/*
- * Formula.java
- * Created on May 11, 2005
+/* 
+ * Kodkod -- Copyright (c) 2005-2007, Emina Torlak
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
  */
 package kodkod.ast;
 
 import kodkod.ast.visitor.ReturnVisitor;
 
 /**
- * Represents a first-order formula.  Unless otherwise noted,
+ * A first-order formula.  Unless otherwise noted,
  * all methods in this class throw a NullPointerException when given
  * null arguments.
  *
@@ -15,7 +32,7 @@ import kodkod.ast.visitor.ReturnVisitor;
  */
 public abstract class Formula implements Node {
 	
-	/** constant formula true */
+	/** Constant formula true */
 	public static final Formula TRUE = new ConstantFormula(true) {
 		@Override
 		public Formula not() {
@@ -32,7 +49,7 @@ public abstract class Formula implements Node {
 	    }
 	};
 	
-	/** constant formula false */
+	/** Constant formula false */
 	public static final Formula FALSE = new ConstantFormula(false) {
 		@Override
 		public Formula not() {

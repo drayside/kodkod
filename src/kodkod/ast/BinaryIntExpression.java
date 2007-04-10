@@ -1,5 +1,23 @@
-/**
- * 
+/* 
+ * Kodkod -- Copyright (c) 2005-2007, Emina Torlak
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
  */
 package kodkod.ast;
 
@@ -8,7 +26,7 @@ import kodkod.ast.visitor.ReturnVisitor;
 import kodkod.ast.visitor.VoidVisitor;
 
 /**
- * Represents a binary integer expression, e.g. x + y.
+ * A binary integer expression, e.g. x + y.
  * @specfield left: IntExpression
  * @specfield right: IntExpression
  * @specfield op: Operator
@@ -104,37 +122,37 @@ public final class BinaryIntExpression extends IntExpression {
 				return "/";
 			}
 		}, 
-		/** bitwise AND operator */
+		/** Bitwise AND operator */
 		AND {
 			public String toString() {
 				return "&";
 			}
 		},
-		/** bitwise OR operator */
+		/** Bitwise OR operator */
 		OR {
 			public String toString() {
 				return "|";
 			}
 		}, 
-		/** bitwise XOR operator */
+		/** Bitwise XOR operator */
 		XOR {
 			public String toString() {
 				return "^";
 			}
 		}, 
-		/** left shift operator */
+		/** Left shift operator */
 		SHL {
 			public String toString() {
 				return "<<";
 			}
 		}, 
-		/** right shift operator with zero extension */
+		/** Right shift operator with zero extension */
 		SHR {
 			public String toString() {
 				return ">>>";
 			}
 		}, 
-		/** right shift operator with sign extension */
+		/** Right shift operator with sign extension */
 		SHA {
 			public String toString() {
 				return ">>";
