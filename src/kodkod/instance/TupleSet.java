@@ -117,7 +117,7 @@ public final class TupleSet extends AbstractSet<Tuple> implements Cloneable {
 	 * @throws IllegalArgumentException - this.capacity() < 0
 	 */
 	private final void checkCapacity() {
-		if (capacity() < 0) {
+		if (StrictMath.pow(universe.size(),arity) > Integer.MAX_VALUE) {
 			throw new IllegalArgumentException("arity too large (" + arity + ") for universe of size " + universe.size());
 		}
 	}
@@ -131,7 +131,7 @@ public final class TupleSet extends AbstractSet<Tuple> implements Cloneable {
 	}
 	
 	/**
-	 * Returns the capacity of this set --- the maximum number of tuples
+	 * Returns the capacity of this set -- the maximum number of tuples
 	 * that it can hold, given its universe and arity.  
 	 * @return this.universe.size() ^ this.arity
 	 */
