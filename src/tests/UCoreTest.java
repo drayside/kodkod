@@ -19,7 +19,7 @@ import kodkod.ast.Variable;
 import kodkod.engine.Proof;
 import kodkod.engine.Solution;
 import kodkod.engine.Solver;
-import kodkod.engine.fol2sat.TranslationLog;
+import kodkod.engine.fol2sat.TranslationRecord;
 import kodkod.engine.satlab.SATFactory;
 import kodkod.instance.Bounds;
 import kodkod.instance.TupleSet;
@@ -230,8 +230,8 @@ public final class UCoreTest {
 				System.out.println("hardness after refinement: "+proof.relativeHardness());
 				System.out.println("time: " + (end-start) + " ms");
 				final Map<Node, Set<Map<Variable,TupleSet>>> nodes = new IdentityHashMap<Node,Set<Map<Variable,TupleSet>>>();
-				for(Iterator<TranslationLog.Record> itr = proof.core(); itr.hasNext();) {
-					TranslationLog.Record rec = itr.next();
+				for(Iterator<TranslationRecord> itr = proof.core(); itr.hasNext();) {
+					TranslationRecord rec = itr.next();
 					
 					Set<Map<Variable,TupleSet>> recVal = nodes.get(rec.node());
 					if (recVal==null) {

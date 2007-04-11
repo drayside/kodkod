@@ -23,6 +23,7 @@ package kodkod.engine;
 
 import java.util.Iterator;
 
+import kodkod.engine.fol2sat.TranslationRecord;
 import kodkod.engine.fol2sat.TranslationLog;
 import kodkod.engine.satlab.Clause;
 import kodkod.engine.satlab.SATFactory;
@@ -94,14 +95,11 @@ public final class Proof {
 	/**
 	 * Refines the proof of this.formula's unsatisfiability
 	 * until a fixed point is reached, using the Empty-Clause Cone
-	 * algorithm (L. Zhang and S. Malik. <i>Extracting small unsatisfiable cores from unsatisfiable
-	 * Boolean formula.</i>  In Proceedings of Sixth International Conference on Theory and Applications of 
-	 * Satisfiability Testing (SAT '03). 2003.).  The resulting proof is 
-	 * not guaranteed to be minimal. 
+	 * algorithm.  The resulting proof is  not guaranteed to be minimal. 
 	 * @effects refines this proof until a fixed point is reached.
-	 * @see L. Zhang and S. Malik. <i>Extracting small unsatisfiable cores from unsatisfiable
+	 * @see <a href="http://research.microsoft.com/users/lintaoz/papers/SAT_2003_core.pdf">L. Zhang and S. Malik. <i>Extracting small unsatisfiable cores from unsatisfiable
 	 * Boolean formula.</i>  In Proceedings of Sixth International Conference on Theory and Applications of 
-	 * Satisfiability Testing (SAT '03). 2003.
+	 * Satisfiability Testing (SAT '03). 2003.</a>
 	 */
 	public void refine() {
 		solver.proof(new EmptyClauseConeStrategy());
@@ -121,17 +119,14 @@ public final class Proof {
 
 	/**
 	 * Minimizes the proof of this.formula's unsatisfiability
-	 * using a variant of the Complete Resolution Refutation algorithm 
-	 * (N. Dershowitz, Z. Hanna, and A. Nadel.  <i>A scalable algorithm for minimal unsatisfiable core
-	 * extraction.</i>  In Proceedings of Ninth International Conference on Theory and Applications of 
-	 * Satisfiability Testing (SAT '06). 2006.).  The speed of minimization
+	 * using a variant of the Complete Resolution Refutation algorithm.  The speed of minimization
 	 * corresponds, roughly, to the {@link #relativeHardness() relative hardness} of the proof.  In other words,
 	 * the higher the relative hardness, the longer the minimization process.
 	 * @effects minimizes the proof of this.formula's unsatisfiability
 	 * using a variant of the Complete Resolution Refutation algorithm
-	 * @see N. Dershowitz, Z. Hanna, and A. Nadel.  <i>A scalable algorithm for minimal unsatisfiable core
+	 * @see <a href="http://www.cs.tau.ac.il/~ale1/muc_sat06_short_8.pdf">N. Dershowitz, Z. Hanna, and A. Nadel.  <i>A scalable algorithm for minimal unsatisfiable core
 	 * extraction.</i>  In Proceedings of Ninth International Conference on Theory and Applications of 
-	 * Satisfiability Testing (SAT '06). 2006.
+	 * Satisfiability Testing (SAT '06). 2006.</a>
 	 */
 	public void minimize() {
 //		solver.proof(new DistExtremumCRRStrategy(false));
@@ -157,15 +152,15 @@ public final class Proof {
 	}
 	
 	/**
-	 * Returns an iterator over the {@link TranslationLog.Record log records} for the formulas
+	 * Returns an iterator over the {@link TranslationRecord log records} for the formulas
 	 * that are in the unsatisfiable core of this.formula.   The record objects returned by the iterator are not 
 	 * guaranteed to be immutable.  In particular, the state of a record object
 	 * returned by <tt>next()</tt> is guaranteed to remain the same only until the
 	 * subsequent call to <tt>next()</tt>.
-	 * @return  an iterator over the {@link TranslationLog.Record log records} for the formulas
+	 * @return  an iterator over the {@link TranslationRecord log records} for the formulas
 	 * that are in the unsatisfiable core of this.formula.
 	 */
-	public Iterator<TranslationLog.Record> core() { 
+	public Iterator<TranslationRecord> core() { 
 		return log.replay(coreLiterals());
 	}
 	

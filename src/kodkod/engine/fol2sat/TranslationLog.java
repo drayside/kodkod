@@ -1,15 +1,29 @@
-/**
- * 
+/* 
+ * Kodkod -- Copyright (c) 2005-2007, Emina Torlak
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
  */
 package kodkod.engine.fol2sat;
 
 import java.util.Iterator;
-import java.util.Map;
 
-import kodkod.ast.Node;
-import kodkod.ast.Variable;
 import kodkod.engine.bool.BooleanConstant;
-import kodkod.instance.TupleSet;
 import kodkod.util.ints.IntSet;
 import kodkod.util.ints.Ints;
 
@@ -18,7 +32,7 @@ import kodkod.util.ints.Ints;
  * are either formulas or that desugar to formulas.
  * @specfield formula: Formula 
  * @specfield bounds: Bounds
- * @specfield records: set Record
+ * @specfield records: set TranslationRecord
  * @invariant all r: records | r.node in formula.*children
  * @author Emina Torlak
  */
@@ -37,7 +51,7 @@ public abstract class TranslationLog {
 	 * @return an iterator over the translation records in this log that contain the
 	 * given literals
 	 */
-	public abstract Iterator<Record> replay(IntSet literals);
+	public abstract Iterator<TranslationRecord> replay(IntSet literals);
 	
 	/**
 	 * Returns an iterator over all translation records in this log.  The effect
@@ -52,51 +66,7 @@ public abstract class TranslationLog {
 	 * @return an iterator over all translation records in this.log.
 	 * @see kodkod.engine.fol2sat.TranslationLog#replay(IntSet)
 	 */
-	public final Iterator<Record> replay() {
+	public final Iterator<TranslationRecord> replay() {
 		return replay(Ints.rangeSet(Ints.range(BooleanConstant.FALSE.label(), BooleanConstant.TRUE.label())));
-	}
-		
-	/**
-	 * A record of a translation event.
-	 * @specfield node: Node // formula (or a node desugared to a formula) that was translated
-	 * @specfield literal: int // cnf literal representing the meaning of this.node in this.env
-	 * @specfield env: Variable ->one TupleSet // bindings for free, non-skolemized variables 
-	 *                                         // for which this.node (or its desugared form) evaluates to this.literal   
-	 * @author Emina Torlak
-	 */
-	public static abstract class Record {
-				
-		/**
-		 * Returns this.node.
-		 * @return this.node.
-		 */
-		public abstract Node node();
-		
-		/**
-		 * Returns this.literal.
-		 * @return this.literal
-		 */
-		public abstract int literal();
-		
-		/**
-		 * Returns a map view of this.env.
-		 * @return this.env
-		 */
-		public abstract Map<Variable,TupleSet> env();
-		
-		/**
-		 * @see java.lang.Object#toString()
-		 */
-		public String toString() {
-			final StringBuilder ret = new StringBuilder();
-			ret.append("< node: ");
-			ret.append(node());
-			ret.append(", literal: ");
-			ret.append(literal());
-			ret.append(", env: ");
-			ret.append(env());
-			ret.append(">");
-			return ret.toString();
-		}		
 	}
 }

@@ -1,6 +1,23 @@
-/*
- * Universe.java
- * Created on May 18, 2005
+/* 
+ * Kodkod -- Copyright (c) 2005-2007, Emina Torlak
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
  */
 package kodkod.instance;
 
@@ -17,12 +34,13 @@ import java.util.Map;
  * implement {@link java.lang.Object#equals equals} and {@link java.lang.Object#hashCode hashCode}
  * methods.  The behavior of a universe is not specified if the value of an object is changed in a 
  * manner that affects equals comparisons while the object is an atom in the universe.</p>
+ * 
  * <p>Each universe provides a {@link kodkod.instance.TupleFactory tuple factory}
  * to facilitate creation of {@link kodkod.instance.Tuple tuples} and 
  * {@link kodkod.instance.TupleSet sets of tuples} based on the atoms in the universe.</p>
  * 
  * <p><b>Implementation Note:</b> although the atoms in a universe are not interpreted in any
- * way by the code that uses the universe, it is <b>strongly recommended</b> that the atoms
+ * way by the Kodkod engine, it is <b>strongly recommended</b> that the atoms
  * of the same 'type' be grouped together.  For instance, suppose that a client model is specified in
  * terms of disjoint types Person = {Person0, Person1, Person2} and Dog = {Dog0, Dog1}.  Then, 
  * the client may observe an improvement in performance if he constructs the universe over the
@@ -120,6 +138,10 @@ public final class Universe implements Iterable<Object> {
 		return Collections.unmodifiableList(atoms).iterator();
 	}
 	
+	/**
+	 * Returns a string representation of this universe.
+	 * @return string representation of this universe.
+	 */
 	public String toString() {
 		return atoms.toString();
 	}

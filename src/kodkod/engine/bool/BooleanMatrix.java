@@ -1,3 +1,24 @@
+/* 
+ * Kodkod -- Copyright (c) 2005-2007, Emina Torlak
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
 package kodkod.engine.bool;
 
 import static kodkod.engine.bool.BooleanConstant.FALSE;
@@ -18,7 +39,7 @@ import kodkod.util.ints.TreeSequence;
 
 
 /** 
- * <p>Represents an n-dimensional matrix of {@link kodkod.engine.bool.BooleanValue boolean values}.  
+ * <p>An n-dimensional matrix of {@link kodkod.engine.bool.BooleanValue boolean values}.  
  * Boolean matrices are indexed using flat integer indeces.  For example,
  * let m be a the 2 x 3 matrix of boolean variables identifed by labels [0 4 1; 5 10 2].  
  * Then, m[0] = 0, m[3] = 5, m[5] = 2, etc. </p> 
@@ -29,7 +50,7 @@ import kodkod.util.ints.TreeSequence;
  * to the same factory as the values in the receiver matrix. </p>
  * 
  * <p>Some instances can store only constant values, or can only store
- * values at particular indices ({@see kodkod.engine.bool.BooleanFactory#matrix(Dimensions, IntSet, IntSet)}).  
+ * values at particular indices (see {@link kodkod.engine.bool.BooleanFactory#matrix(Dimensions, IntSet, IntSet)}).  
  * If this is the case, an attempt to call {@link #set(int, BooleanValue) }
  * with invalid parameters will cause an IllegalArgumentException or an IndexOutOfBoundsException. </p>
  * 

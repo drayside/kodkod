@@ -1,12 +1,30 @@
-/**
- * 
+/* 
+ * Kodkod -- Copyright (c) 2005-2007, Emina Torlak
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
  */
 package kodkod.util.ints;
 
 import java.util.Iterator;
 
 /**
- * An implementation of a sparse sequence based on an {@link kodkod.util.ints.IntSet IntSet}.
+ * A sparse sequence implementation based on an {@link kodkod.util.ints.IntSet IntSet}.
  * This implementation can be used only when all entries in the sequence map to the same value.  
  * 
  * <p><b>Important Implementation Note</b>: As this implementation does not actually store any 
@@ -165,7 +183,7 @@ public final class HomogenousSequence<V> extends AbstractSparseSequence<V> {
 	 * @effects this.indices' = this.indices + index
 	 * @return this.entries[index]
 	 * @throws IllegalArgumentException - this.value != value
-	 * @see kodkod.util.ints.SparseSequence#put(int, V)
+	 * @see kodkod.util.ints.SparseSequence#put(int, Object)
 	 */
 	public V put(int index, V value) {
 		if (!equal(this.value, value))

@@ -1,5 +1,23 @@
-/**
- * 
+/* 
+ * Kodkod -- Copyright (c) 2005-2007, Emina Torlak
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
  */
 package kodkod.engine.ucore;
 
@@ -27,9 +45,9 @@ import kodkod.util.ints.Ints;
  * @invariant all i: [0..#nexts) | nexts[i] in traces[i].conflict.^antecedents
  * @invariant no disj i,j: [0..#nexts) | traces[i] = traces[j] && nexts[i] = nexts[j]
  * @author Emina Torlak
- * @see N. Dershowitz, Z. Hanna, and A. Nadel.  <i>A scalable algorithm for minimal unsatisfiable core
+ * @see <a href="http://www.cs.tau.ac.il/~ale1/muc_sat06_short_8.pdf">N. Dershowitz, Z. Hanna, and A. Nadel.  <i>A scalable algorithm for minimal unsatisfiable core
  * extraction.</i>  In Proceedings of Ninth International Conference on Theory and Applications of 
- * Satisfiability Testing (SAT '06). 2006.
+ * Satisfiability Testing (SAT '06). 2006.</a>
  */
 public abstract class CRRStrategy implements ReductionStrategy {
 	private IntSet excluded;

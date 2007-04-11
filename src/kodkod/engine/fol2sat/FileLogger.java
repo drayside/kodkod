@@ -1,3 +1,24 @@
+/* 
+ * Kodkod -- Copyright (c) 2005-2007, Emina Torlak
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
 package kodkod.engine.fol2sat;
 
 import java.io.BufferedInputStream;
@@ -20,7 +41,6 @@ import kodkod.ast.Node;
 import kodkod.ast.Variable;
 import kodkod.engine.bool.BooleanMatrix;
 import kodkod.engine.bool.BooleanValue;
-import kodkod.engine.fol2sat.TranslationLog.Record;
 import kodkod.instance.Bounds;
 import kodkod.instance.TupleFactory;
 import kodkod.instance.TupleSet;
@@ -214,7 +234,7 @@ final class FileLogger extends TranslationLogger {
 	 * A mutable translation record.
 	 * @author Emina Torlak
 	 */
-	private static final class MutableRecord extends Record {
+	private static final class MutableRecord extends TranslationRecord {
 		Node n = null; 
 		int literal = 0;
 		Map<Variable,TupleSet> env = null;
@@ -227,7 +247,7 @@ final class FileLogger extends TranslationLogger {
 			this.literal = literal;
 			this.env = env;
 		}
-		Record setAll(MutableRecord other) {
+		TranslationRecord setAll(MutableRecord other) {
 			setAll(other.n, other.literal, other.env);
 			other.setAll(null,0,null);
 			return this;
@@ -272,9 +292,9 @@ final class FileLogger extends TranslationLogger {
 	     * {@inheritDoc}
 	     * @see kodkod.engine.fol2sat.TranslationLog#replay(kodkod.util.ints.IntSet)
 	     */
-		public Iterator<Record> replay(final IntSet literals) {
+		public Iterator<TranslationRecord> replay(final IntSet literals) {
 			try {	
-				return new Iterator<Record>() {
+				return new Iterator<TranslationRecord>() {
 					final DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(file)));
 					final MutableRecord current = new MutableRecord(), next = new MutableRecord();
 					long remaining = file.length();
@@ -307,7 +327,7 @@ final class FileLogger extends TranslationLogger {
 						return next.n != null;
 					}
 
-					public Record next() {
+					public TranslationRecord next() {
 						if (!hasNext()) throw new NoSuchElementException();
 						return current.setAll(next);
 					}

@@ -1,6 +1,23 @@
-/**
- * TupleSet.java
- * Created on 6:11:31 PM
+/* 
+ * Kodkod -- Copyright (c) 2005-2007, Emina Torlak
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
  */
 package kodkod.instance;
 
@@ -15,7 +32,7 @@ import kodkod.util.ints.Ints;
 
 /**
  * Represents a set of {@link kodkod.instance.Tuple tuples}
- * of a given arity, constructed over the same {@link kodkod.instance.Universe universe}.
+ * of a given arity, constructed over a given {@link kodkod.instance.Universe universe}.
  * All polymorphic methods throw a ClassCastException when passed
  * an element that is not a Tuple.  All methods throw a NullPointerException
  * when passed null.  The iterator of a TupleSet returns tuples in the order of their

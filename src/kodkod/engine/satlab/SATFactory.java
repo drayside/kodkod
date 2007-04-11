@@ -1,11 +1,34 @@
+/* 
+ * Kodkod -- Copyright (c) 2005-2007, Emina Torlak
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
 package kodkod.engine.satlab;
 
 import org.sat4j.minisat.SolverFactory;
 
 /**
- * An enumeration of available SAT solvers whose members
- * are factories for SATSolver instances of a given type.
- * 
+ * A factory for generating SATSolver instances of a given type.
+ * Built-in support is provided for <a href="http://www.sat4j.org/">SAT4J solvers</a>, 
+ * the <a href="http://www.princeton.edu/~chaff/zchaff.html">zchaff</a> solver from Princeton, 
+ * and the <a href="http://www.cs.chalmers.se/Cs/Research/FormalMethods/MiniSat/">MiniSat</a> solver by 
+ * Niklas E&eacute;n and Niklas S&ouml;rensson.
  * @author Emina Torlak
  */
 public abstract class SATFactory {
@@ -84,7 +107,7 @@ public abstract class SATFactory {
 	};
 	
 	/**
-	 * The factory that produces instances of Niklas EŽn and Niklas Sšrensson's
+	 * The factory that produces instances of Niklas E&eacute;n and Niklas S&ouml;rensson's
 	 * MiniSat solver.
 	 */
 	public static final SATFactory MiniSat = new SATFactory() {

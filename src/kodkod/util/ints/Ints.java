@@ -1,3 +1,24 @@
+/* 
+ * Kodkod -- Copyright (c) 2005-2007, Emina Torlak
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
 package kodkod.util.ints;
 
 import java.util.Iterator;
@@ -8,12 +29,12 @@ import kodkod.util.ints.IntRange.TwoPointRange;
 
 
 /**
- * This class contains various utility methods for working with
- * integers, {@link kodkod.util.ints.IntRange IntRanges}, and 
- * {@link kodkod.util.ints.IntSet IntSets}.
+ * Contains various utility methods for working with
+ * integers, {@link kodkod.util.ints.IntRange IntRanges},  
+ * {@link kodkod.util.ints.IntSet IntSets}, and {@link kodkod.util.ints.SparseSequence SparseSequences}.
  * 
- * The methods in this class all throw a NullPointerException if 
- * given a null reference unless otherwise specified.
+ * <p>The methods in this class all throw a NullPointerException if 
+ * given a null reference unless otherwise specified.</p>
  * 
  * @author Emina Torlak
  */
@@ -37,8 +58,6 @@ public final class Ints {
 			public int ceil(int i) { throw new NoSuchElementException(); }
 			public IntSet clone() { return EMPTY_SET;}
 	};
-	
-	private static final int SHORT = 0x0000ffff;
 	
 	private Ints() {}
 
@@ -183,6 +202,22 @@ public final class Ints {
 	/*-----------INTEGER MANIPULATION-----------*/
 	
 	/**
+	 * Returns an integer whose value is the 16 low order bits of the given key.
+	 * @return key & 0x0000ffff
+	 */
+	private static int low16(int key) {
+		return key & 0x0000ffff;
+	}
+	
+	/**
+	 * Returns an integer whose value is the 16 high order bits of the given key.
+	 * @return (key >>> 16) & 0x0000ffff
+	 */
+	private static int high16(int key) {
+		return low16(key>>>16);
+	}
+	
+	/**
 	 * An implementation of Paul Hsieh's hashing function, 
 	 * described at http://www.azillionmonkeys.com/qed/hash.html.
 	 * The method returns a 32 bit hash of the given integer.
@@ -194,8 +229,8 @@ public final class Ints {
 	public static int superFastHash(int key) {
 		int hash = 4; // the key has four bytes
 
-		hash += key >>> 16;
-		int tmp = ((key & SHORT) << 11) ^ hash;
+		hash += low16(key);
+		int tmp = (high16(key) << 11) ^ hash;
 		hash = (hash << 16) ^ tmp;
 		hash += hash >> 11;
 		
@@ -221,8 +256,8 @@ public final class Ints {
 		int hash = key.length << 2;
 
 		for(int word : key) {
-			hash += word >>> 16;
-			int tmp = ((word & SHORT) << 11) ^ hash;
+			hash += low16(word);
+			int tmp = (high16(word) << 11) ^ hash;
 			hash = (hash << 16) ^ tmp;
 			hash += hash >> 11;
 		}
@@ -250,8 +285,8 @@ public final class Ints {
 
 		for(Object o : key) {
 			int word = (o == null ? 0 : o.hashCode());
-			hash += word >>> 16;
-			int tmp = ((word & SHORT) << 11) ^ hash;
+			hash += low16(word);
+			int tmp = (high16(word) << 11) ^ hash;
 			hash = (hash << 16) ^ tmp;
 			hash += hash >> 11;
 		}
