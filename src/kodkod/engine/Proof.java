@@ -119,14 +119,17 @@ public final class Proof {
 
 	/**
 	 * Minimizes the proof of this.formula's unsatisfiability
-	 * using a variant of the Complete Resolution Refutation algorithm.  The speed of minimization
+	 * using a variant of the Complete Resolution Refutation algorithm 
+	 * (N. Dershowitz, Z. Hanna, and A. Nadel.  <i>A scalable algorithm for minimal unsatisfiable core
+	 * extraction.</i>  In Proceedings of Ninth International Conference on Theory and Applications of 
+	 * Satisfiability Testing (SAT '06). 2006.).  The speed of minimization
 	 * corresponds, roughly, to the {@link #relativeHardness() relative hardness} of the proof.  In other words,
 	 * the higher the relative hardness, the longer the minimization process.
 	 * @effects minimizes the proof of this.formula's unsatisfiability
 	 * using a variant of the Complete Resolution Refutation algorithm
-	 * @see <a href="http://www.cs.tau.ac.il/~ale1/muc_sat06_short_8.pdf">N. Dershowitz, Z. Hanna, and A. Nadel.  <i>A scalable algorithm for minimal unsatisfiable core
+	 * @see N. Dershowitz, Z. Hanna, and A. Nadel.  <i>A scalable algorithm for minimal unsatisfiable core
 	 * extraction.</i>  In Proceedings of Ninth International Conference on Theory and Applications of 
-	 * Satisfiability Testing (SAT '06). 2006.</a>
+	 * Satisfiability Testing (SAT '06). 2006.
 	 */
 	public void minimize() {
 //		solver.proof(new DistExtremumCRRStrategy(false));

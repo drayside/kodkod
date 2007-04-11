@@ -45,9 +45,9 @@ import kodkod.util.ints.Ints;
  * @invariant all i: [0..#nexts) | nexts[i] in traces[i].conflict.^antecedents
  * @invariant no disj i,j: [0..#nexts) | traces[i] = traces[j] && nexts[i] = nexts[j]
  * @author Emina Torlak
- * @see <a href="http://www.cs.tau.ac.il/~ale1/muc_sat06_short_8.pdf">N. Dershowitz, Z. Hanna, and A. Nadel.  <i>A scalable algorithm for minimal unsatisfiable core
+ * @see N. Dershowitz, Z. Hanna, and A. Nadel.  <i>A scalable algorithm for minimal unsatisfiable core
  * extraction.</i>  In Proceedings of Ninth International Conference on Theory and Applications of 
- * Satisfiability Testing (SAT '06). 2006.</a>
+ * Satisfiability Testing (SAT '06). 2006.
  */
 public abstract class CRRStrategy implements ReductionStrategy {
 	private IntSet excluded;
