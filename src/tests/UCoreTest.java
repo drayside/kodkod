@@ -21,6 +21,7 @@ import kodkod.engine.Solution;
 import kodkod.engine.Solver;
 import kodkod.engine.fol2sat.TranslationRecord;
 import kodkod.engine.satlab.SATFactory;
+import kodkod.engine.ucore.HybridStrategy;
 import kodkod.instance.Bounds;
 import kodkod.instance.TupleSet;
 import examples.CeilingsAndFloors;
@@ -223,9 +224,8 @@ public final class UCoreTest {
 			if (sol.outcome()==Solution.Outcome.UNSATISFIABLE) {
 				final Proof proof = sol.proof();
 				System.out.println("hardness: "+proof.relativeHardness());
-//				proof.refine();
 				final long start = System.currentTimeMillis();
-				proof.minimize();
+				proof.minimize(new HybridStrategy(proof.log()));
 				final long end = System.currentTimeMillis();
 				System.out.println("hardness after refinement: "+proof.relativeHardness());
 				System.out.println("time: " + (end-start) + " ms");

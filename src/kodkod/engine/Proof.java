@@ -23,13 +23,13 @@ package kodkod.engine;
 
 import java.util.Iterator;
 
-import kodkod.engine.fol2sat.TranslationRecord;
 import kodkod.engine.fol2sat.TranslationLog;
+import kodkod.engine.fol2sat.TranslationRecord;
 import kodkod.engine.satlab.Clause;
+import kodkod.engine.satlab.ReductionStrategy;
 import kodkod.engine.satlab.SATFactory;
 import kodkod.engine.satlab.SATProver;
 import kodkod.engine.ucore.EmptyClauseConeStrategy;
-import kodkod.engine.ucore.HybridStrategy;
 import kodkod.util.ints.IntSet;
 import kodkod.util.ints.IntTreeSet;
 
@@ -112,30 +112,19 @@ public final class Proof {
 	 * @return the relative hardness of the proof of this.formula's unsatisfiability.
 	 */
 	public double relativeHardness() {
-		System.out.println("coresize: " + solver.proof().core().size());
 		return solver.proof().relativeHardness();
 	}
 
 
 	/**
 	 * Minimizes the proof of this.formula's unsatisfiability
-	 * using a variant of the Complete Resolution Refutation algorithm 
-	 * (N. Dershowitz, Z. Hanna, and A. Nadel.  <i>A scalable algorithm for minimal unsatisfiable core
-	 * extraction.</i>  In Proceedings of Ninth International Conference on Theory and Applications of 
-	 * Satisfiability Testing (SAT '06). 2006.).  The speed of minimization
-	 * corresponds, roughly, to the {@link #relativeHardness() relative hardness} of the proof.  In other words,
-	 * the higher the relative hardness, the longer the minimization process.
+	 * using the specified proof reduction strategy.  
 	 * @effects minimizes the proof of this.formula's unsatisfiability
-	 * using a variant of the Complete Resolution Refutation algorithm
-	 * @see N. Dershowitz, Z. Hanna, and A. Nadel.  <i>A scalable algorithm for minimal unsatisfiable core
-	 * extraction.</i>  In Proceedings of Ninth International Conference on Theory and Applications of 
-	 * Satisfiability Testing (SAT '06). 2006.
+	 * using the specified proof reduction strategy. 
+	 * @see kodkod.engine.satlab.ReductionStrategy
 	 */
-	public void minimize() {
-//		solver.proof(new DistExtremumCRRStrategy(false));
-		solver.proof(new HybridStrategy(log));
-//		solver.proof(new NaiveStrategy());
-//		solver.proof(new FreqExtremumCRRStrategy(true));
+	public void minimize(ReductionStrategy strategy) {
+		solver.proof(strategy);
 //		System.out.println("testing minimality ...");
 //		ResolutionTrace trace = solver.proof();
 //		List<int[]> core = new ArrayList<int[]>(trace.core().size());
@@ -167,4 +156,12 @@ public final class Proof {
 		return log.replay(coreLiterals());
 	}
 	
+	/**
+	 * Returns the log of the translation that resulted
+	 * in this proof.
+	 * @return log of the translation that resulted in this proof
+	 */
+	public TranslationLog log() {
+		return log;
+	}
 }
