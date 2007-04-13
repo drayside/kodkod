@@ -51,7 +51,7 @@ package kodkod.util.ints;
 public final class ArrayIntVector extends AbstractIntVector {
 
 	private int[] elements;
-	private int length;
+	private int size;
 
 	/**
 	 * Constructs an empty <tt>MutableIntVector</tt> with the specified initial capacity.
@@ -81,11 +81,11 @@ public final class ArrayIntVector extends AbstractIntVector {
 	 * @throws NullPointerException if the specified array is null.
 	 */
 	public ArrayIntVector(int[] array) {
-		length = array.length;
+		size = array.length;
 		// Allow 10% room for growth
-		int capacity = (int) Math.min((length*110L)/100, Integer.MAX_VALUE);
+		int capacity = (int) Math.min((size*110L)/100, Integer.MAX_VALUE);
 		elements = new int[capacity];
-		System.arraycopy(array, 0, elements, 0, length);
+		System.arraycopy(array, 0, elements, 0, size);
 	}
 
 	/**
@@ -96,10 +96,10 @@ public final class ArrayIntVector extends AbstractIntVector {
 	public void trimToSize() {
 
 		int oldCapacity = elements.length;
-		if (length < oldCapacity) {
+		if (size < oldCapacity) {
 			int[] oldData = elements;
-			elements = new int[length];
-			System.arraycopy(oldData, 0, elements, 0, length);
+			elements = new int[size];
+			System.arraycopy(oldData, 0, elements, 0, size);
 		}
 	}
 
@@ -117,25 +117,25 @@ public final class ArrayIntVector extends AbstractIntVector {
 			if (newCapacity < minCapacity)
 				newCapacity = minCapacity;
 			elements = new int[newCapacity];
-			System.arraycopy(oldData, 0, elements, 0, length);
+			System.arraycopy(oldData, 0, elements, 0, size);
 		}
 	}
 	
-	/**
-	 * {@inheritDoc}
-	 * @see kodkod.util.ints.IntVector#copyInto(int[])
-	 */
-	public void copyInto(int[] array) {
-		System.arraycopy(elements, 0, array, 0, length);
-	}
+	
 
+	/**
+	 * @throws IndexOutOfBoundsException - index < 0 or index >= size
+	 */
 	private void checkExcludeLength(int index) {
-		if (index < 0 || index >= length)
+		if (index < 0 || index >= size)
 			throw new IndexOutOfBoundsException();
 	}
 	
+	/**
+	 * @throws IndexOutOfBoundsException - index < 0 or index > size
+	 */
 	private void checkIncludeLength(int index) {
-		if (index < 0 || index > length)
+		if (index < 0 || index > size)
 			throw new IndexOutOfBoundsException();
 	}
 	
@@ -150,59 +150,17 @@ public final class ArrayIntVector extends AbstractIntVector {
 
 	/**
 	 * {@inheritDoc}
-	 * @see kodkod.util.ints.IntVector#insert(int, int)
+	 * @see kodkod.util.ints.IntVector#size()
 	 */
-	public void insert(int index, int element) {
-		checkIncludeLength(index);
-
-		ensureCapacity(length+1); 
-		System.arraycopy(elements, index, elements, index + 1,length - index);
-		elements[index] = element;
-		length++;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 * @see kodkod.util.ints.IntVector#insert(int, kodkod.util.ints.IntVector)
-	 */
-	public void insert(int index, IntVector array) {
-		checkIncludeLength(index);
-
-		ensureCapacity(length+array.length()); 
-		for(int i = 0, alength = array.length(); i < alength; i++) {
-			elements[length+i] = array.get(i);
-		}
-		
-		length+=array.length();
-	}
-	
-	/**
-	 * {@inheritDoc}
-	 * @see kodkod.util.ints.IntVector#length()
-	 */
-	public int length() {
-		return length;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 * @see kodkod.util.ints.IntVector#remove(int, int)
-	 */
-	public void remove(int fromIndex, int toIndex) {
-		checkExcludeLength(fromIndex);
-		if (toIndex < fromIndex || toIndex > length)
-			throw new IndexOutOfBoundsException("toIndex: " + toIndex);
-		final int numMoved = length - toIndex;
-		if (numMoved > 0) {
-			System.arraycopy(elements, toIndex, elements, fromIndex, numMoved);
-		}
-		length -= (toIndex - fromIndex);
+	public int size() {
+		return size;
 	}
 
 	/**
 	 * {@inheritDoc}
 	 * @see kodkod.util.ints.IntVector#set(int, int)
 	 */
+	@Override
 	public int set(int index, int element) {
 		final int oldValue = get(index);
 		elements[index] = element;
@@ -211,10 +169,73 @@ public final class ArrayIntVector extends AbstractIntVector {
 
 	/**
 	 * {@inheritDoc}
-	 * @see kodkod.util.ints.IntVector#sort()
+	 * @see kodkod.util.ints.IntVector#add(int)
 	 */
-	public void sort() {
-		java.util.Arrays.sort(elements, 0, length);
+	@Override
+	public boolean add(int element) {
+		ensureCapacity(size+1);
+		elements[size++] = element;
+		return true;
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.util.ints.IntVector#add(int, int)
+	 */
+	@Override
+	public void add(int index, int element) {
+		checkIncludeLength(index);
+
+		ensureCapacity(size+1); 
+		System.arraycopy(elements, index, elements, index + 1, size - index);
+		elements[index] = element;
+		size++;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.util.ints.IntVector#addAll(int, kodkod.util.ints.IntCollection)
+	 */
+	@Override
+	public boolean addAll(int index, IntCollection c) {
+		checkIncludeLength(index);
+		
+		final int csize = c.size();
+		if (csize==0) return false;
+		
+		ensureCapacity(size+csize); 
+		System.arraycopy(elements, index, elements, index + csize, size - index);
+		
+		for(IntIterator iter = c.iterator(); iter.hasNext(); ) {
+			elements[index++] = iter.next();
+		}
+		
+		return true;
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.util.ints.AbstractIntVector#removeAt(int)
+	 */
+	@Override
+	public int removeAt(int index) { 
+		checkExcludeLength(index);
+		final int old = elements[index];
+		System.arraycopy(elements, index+1, elements, index, size - index - 1);
+		size--;
+	   	return old;
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.util.ints.AbstractIntCollection#toArray(int[])
+	 */
+	@Override
+	public int[] toArray(int[] array) {
+		if (array.length < size) {
+			array = new int[size];
+		}
+		System.arraycopy(elements, 0, array, 0, size);
+		return array;
+	}
 }

@@ -1765,7 +1765,7 @@ factory.tuple(list2));
 			assertTrue(s.iterator(i*8, (i+1)*8-1).hasNext());
 			int count = 0;
 			for(IntIterator iter = s.iterator(i*8, (i+1)*8-1); iter.hasNext(); ) {
-				count += iter.nextInt() % 8;
+				count += iter.next() % 8;
 			}
 			assertEquals(count, 6);
 		}
@@ -1773,7 +1773,7 @@ factory.tuple(list2));
 			assertTrue(s.iterator((i+1)*8-1, i*8).hasNext());
 			int count = 0;
 			for(IntIterator iter = s.iterator((i+1)*8-1, i*8); iter.hasNext(); ) {
-				count += iter.nextInt() % 8;
+				count += iter.next() % 8;
 			}
 			assertEquals(count, 6);
 		}

@@ -81,9 +81,13 @@ public final class IntBitSet extends AbstractIntSet implements Cloneable {
 	}
 	
 	/**
-	 * {@inheritDoc}
+	 * Returns the smallest element in this set.
+	 * Throws a NoSuchElementException if this set is empty.
+	 * @return min(this.ints)
+	 * @throws java.util.NoSuchElementException - no this.ints
 	 * @see kodkod.util.ints.IntSet#min()
 	 */
+	@Override
 	public int min() {
 		checkNonEmpty();
 		int minWordIndex = 0;
@@ -92,9 +96,13 @@ public final class IntBitSet extends AbstractIntSet implements Cloneable {
 	}
 
 	/**
-	 * {@inheritDoc}
+	 * Returns the largest element in this set.
+	 * Throws a NoSuchElementException if this set is empty.
+	 * @return max(this.ints)
+	 * @throws java.util.NoSuchElementException - no this.ints
 	 * @see kodkod.util.ints.IntSet#max()
 	 */
+	@Override
 	public int max() {
 		checkNonEmpty();
 		int maxWordIndex = elements.length-1;
@@ -157,12 +165,7 @@ public final class IntBitSet extends AbstractIntSet implements Cloneable {
 	}
 	
 	/**
-	 * Returns an iterator over the elements of this set that
-	 * are in the closed range [from..to].  If from < to, 
-	 * the elements are returned in the ascending order.  
-	 * Otherwise, they are returned in the descending order.
-	 * @return an iterator over the elements in this sequence
-	 * that are in the closed range [from..to]. 
+	 * {@inheritDoc}
 	 * @see kodkod.util.ints.IntSet#iterator(int, int)
 	 */
 	public IntIterator iterator(int from, int to) {
@@ -178,7 +181,8 @@ public final class IntBitSet extends AbstractIntSet implements Cloneable {
 	}
 	
 	/**
-	 * @see kodkod.util.ints.IntBitSet#capacity()
+	 * Returns the capacity of this int bit set
+	 * @return this.capacity
 	 */
 	public int capacity() { return capacity; }
 		
@@ -218,7 +222,8 @@ public final class IntBitSet extends AbstractIntSet implements Cloneable {
 	}
 	
 	/**
-	 * {@inheritDoc}
+	 * Returns true if i is in this set.
+	 * @return i in this.ints
 	 * @see kodkod.util.ints.IntSet#contains(int)
 	 */
 	@Override
@@ -227,7 +232,11 @@ public final class IntBitSet extends AbstractIntSet implements Cloneable {
 	}
 
 	/**
-	 * {@inheritDoc}
+	 * Adds the given integer to this set if not already present
+	 * and returns true.  Otherwise does nothing and returns false.
+	 * @effects this.ints' = this.ints + i
+	 * @return i in this.ints'
+	 * @throws IllegalArgumentException - i !in [0..this.capacity)
 	 * @see kodkod.util.ints.IntSet#add(int)
 	 */
 	@Override
@@ -245,7 +254,10 @@ public final class IntBitSet extends AbstractIntSet implements Cloneable {
 	}
 
 	/**
-	 * {@inheritDoc}
+	 * Removes the given integer from this set if already present and
+	 * returns true.  Otherwise does nothing and returns false.
+	 * @effects this.ints' = this.ints - i
+	 * @return i !in this.ints'
 	 * @see kodkod.util.ints.IntSet#remove(int)
 	 */
 	@Override
@@ -265,17 +277,19 @@ public final class IntBitSet extends AbstractIntSet implements Cloneable {
 
 	/**
 	 * {@inheritDoc}
-	 * @see java.util.Collection#isEmpty()
+	 * @see kodkod.util.ints.IntCollection#isEmpty()
 	 */
+	@Override
 	public boolean isEmpty() {
 		return size==0;
 	}
 	
 	/**
 	 * {@inheritDoc}
-	 * @see kodkod.util.ints.IntSet#containsAll(kodkod.util.ints.IntSet)
+	 * @see kodkod.util.ints.IntSet#containsAll(kodkod.util.ints.IntCollection)
 	 */
-	public boolean containsAll(IntSet other) {
+	@Override
+	public boolean containsAll(IntCollection other) {
 		if (other instanceof IntBitSet) {
 			final IntBitSet s = (IntBitSet) other;
 			if (isEmpty() || s.isEmpty()) return isEmpty() ? s.isEmpty():true;
@@ -304,9 +318,10 @@ public final class IntBitSet extends AbstractIntSet implements Cloneable {
     
    /**
     * {@inheritDoc}
-    * @see kodkod.util.ints.IntSet#addAll(kodkod.util.ints.IntSet)
+    * @see kodkod.util.ints.IntSet#addAll(kodkod.util.ints.IntCollection)
     */
-	public boolean addAll(IntSet other) {
+    @Override
+	public boolean addAll(IntCollection other) {
 		if (other instanceof IntBitSet) {
 			final IntBitSet s = (IntBitSet) other;
 			if (s.isEmpty()) return false;
@@ -323,9 +338,10 @@ public final class IntBitSet extends AbstractIntSet implements Cloneable {
 
 	/**
 	 * {@inheritDoc}
-	 * @see kodkod.util.ints.IntSet#retainAll(kodkod.util.ints.IntSet)
+	 * @see kodkod.util.ints.IntSet#retainAll(kodkod.util.ints.IntCollection)
 	 */
-	public boolean retainAll(IntSet other) {
+	@Override
+	public boolean retainAll(IntCollection other) {
 		if (other instanceof IntBitSet) {
 			final IntBitSet s = (IntBitSet) other;
 			final int minLength = StrictMath.min(elements.length, s.elements.length);
@@ -343,9 +359,10 @@ public final class IntBitSet extends AbstractIntSet implements Cloneable {
 
 	/**
 	 * {@inheritDoc}
-	 * @see kodkod.util.ints.AbstractIntSet#removeAll(kodkod.util.ints.IntSet)
+	 * @see kodkod.util.ints.IntSet#removeAll(kodkod.util.ints.IntCollection)
 	 */
-	public boolean removeAll(IntSet other) {
+	@Override
+	public boolean removeAll(IntCollection other) {
 		if (other instanceof IntBitSet) {
 			final IntBitSet s = (IntBitSet) other;
 			final int minLength = StrictMath.min(elements.length, s.elements.length);
@@ -358,29 +375,23 @@ public final class IntBitSet extends AbstractIntSet implements Cloneable {
 	}
 
 	/**
-	 * {@inheritDoc}
-	 * @see java.util.Collection#clear()
+	 * Removes all elements from this set. 
+	 * @effects no this.ints'
+	 * @see kodkod.util.ints.IntCollection#clear()
 	 */
+	@Override
 	public void clear() {
 		Arrays.fill(elements, 0);
         size = 0;
 	}
 
 	/**
-	 * {@inheritDoc}
-	 * @see java.lang.Object#equals(java.lang.Object)
+	 * Returns a copy of this int bit set.  The copy is independent of this 
+	 * IntSet.
+	 * @return a copy of this IntSet.
+	 * @see kodkod.util.ints.IntSet#clone()
 	 */
-	public boolean equals(Object o) {
-		return (o instanceof IntBitSet) ? 
-			   Arrays.equals(elements, ((IntBitSet)o).elements) :
-			   super.equals(o);
-		
-	}
-	
-	/**
-	 * {@inheritDoc}
-	 * @see java.lang.Object#clone()
-	 */
+	@Override
 	public IntBitSet clone() {
 		try {
 			final IntBitSet ret = (IntBitSet) super.clone();
@@ -399,10 +410,6 @@ public final class IntBitSet extends AbstractIntSet implements Cloneable {
 		long unseen;
         int unseenIndex, lastReturned;
         
-        public Integer next() {
-			return nextInt();
-		}
-
 		public void remove() {
 			if (lastReturned < 0)
                 throw new IllegalStateException();
@@ -455,7 +462,7 @@ public final class IntBitSet extends AbstractIntSet implements Cloneable {
                    (unseenIndex == maxIndex && (unseen & maxMask) != 0);
         }
 
-		public int nextInt() {
+		public int next() {
 			if (!hasNext()) throw new NoSuchElementException();
 			final long lastReturnedMask = Long.lowestOneBit(unseen);
             	unseen -= lastReturnedMask;
@@ -508,7 +515,7 @@ public final class IntBitSet extends AbstractIntSet implements Cloneable {
                    (unseenIndex == minIndex && (unseen & minMask) != 0);
         }
 
-		public int nextInt() {
+		public int next() {
 			if (!hasNext()) throw new NoSuchElementException();
 			final long lastReturnedMask = Long.highestOneBit(unseen);
             	unseen -= lastReturnedMask;

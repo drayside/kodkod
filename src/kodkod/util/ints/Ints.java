@@ -48,8 +48,7 @@ public final class Ints {
 			public IntIterator iterator(int from, int to) {	
 				return new IntIterator() {
 					public boolean hasNext() { return false; }
-					public int nextInt() { throw new NoSuchElementException(); }
-					public Integer next() { throw new NoSuchElementException();	}
+					public int next() { throw new NoSuchElementException(); }
 					public void remove() { throw new UnsupportedOperationException(); }
 				};
 			}
@@ -137,8 +136,8 @@ public final class Ints {
 	 * elements in [0..max).
 	 */
 	public static IntSet bestSet(int max) {
-		// cut-off for using a bit map is 256
-		return max > 256 ? new IntTreeSet() : new IntBitSet(max);
+		// cut-off for using a bit map is 512
+		return max > 512 ? new IntTreeSet() : new IntBitSet(max);
 	}
 
 	/**
@@ -175,8 +174,14 @@ public final class Ints {
 	public static IntVector asIntVector(final int[] ints) {
 		return new AbstractIntVector() {
 			public int get(int index) { return ints[index]; }
-			public int length() { return ints.length; }
-			public void copyInto(int[] array) { System.arraycopy(ints, 0, array, 0, ints.length); }
+			public int size() { return ints.length; }
+			public int[] toArray(int[] array) { 
+				if (array.length < ints.length) {
+					array = new int[ints.length];
+				}
+				System.arraycopy(ints, 0, array, 0, ints.length); 
+				return array;
+			}
 		};
 	}
 	
@@ -218,6 +223,41 @@ public final class Ints {
 	}
 	
 	/**
+	 * Performs the bit avalanching step of Paul Hsieh's
+	 * hashing function (http://www.azillionmonkeys.com/qed/hash.html)
+	 * @return the bit avalanched version of the given hash value
+	 */ 
+	static int superFastHashAvalanche(int hash) {
+		hash ^= hash << 3;
+		hash += hash >> 5;
+		hash ^= hash << 4;
+		hash += hash >> 17;
+		hash ^= hash << 25;
+		hash += hash >> 6;
+		return hash;
+	}
+	
+	/**
+	 * Performs the hashing step of Paul Hsieh's hashing function, 
+	 * described at http://www.azillionmonkeys.com/qed/hash.html.
+	 * The method returns a 32 bit hash of the given integer, starting
+	 * with the given initial hash.  <b>This method does not perform 
+	 * bit avalanching.</b>  To get the full hash, call {@linkplain #superFastHashAvalanche(int)}
+	 * on the value returned by this method.
+	 * @return a 32 bit hash of the given integer, based on the given hash
+	 */
+	static int superFastHashIncremental(int key, int hash) {
+
+		hash += low16(key);
+		final int tmp = (high16(key) << 11) ^ hash;
+		hash = (hash << 16) ^ tmp;
+		hash += hash >> 11;
+		
+		// no end cases since the key has exactly 4 bytes
+		return hash;
+	}
+	
+	/**
 	 * An implementation of Paul Hsieh's hashing function, 
 	 * described at http://www.azillionmonkeys.com/qed/hash.html.
 	 * The method returns a 32 bit hash of the given integer.
@@ -227,21 +267,7 @@ public final class Ints {
 	 * @return a 32 bit hash of the given integer
 	 */
 	public static int superFastHash(int key) {
-		int hash = 4; // the key has four bytes
-
-		hash += low16(key);
-		int tmp = (high16(key) << 11) ^ hash;
-		hash = (hash << 16) ^ tmp;
-		hash += hash >> 11;
-		
-		// no end cases since we have exactly 4 bytes
-		 hash ^= hash << 3;
-		 hash += hash >> 5;
-		 hash ^= hash << 2;
-		 hash += hash >> 15;
-		 hash ^= hash << 10;
-		
-		return hash;
+		return superFastHashAvalanche(superFastHashIncremental(key, 11));
 	}
 	
 	/**
@@ -253,22 +279,13 @@ public final class Ints {
 	 */
 	public static int superFastHash(int... key) {
 		if (key.length==0) return 0;
-		int hash = key.length << 2;
+		int hash = key.length;
 
 		for(int word : key) {
-			hash += low16(word);
-			int tmp = (high16(word) << 11) ^ hash;
-			hash = (hash << 16) ^ tmp;
-			hash += hash >> 11;
+			hash = superFastHashIncremental(word, hash);
 		}
-		// no end cases as we are dealing with ints
-		 hash ^= hash << 3;
-		 hash += hash >> 5;
-		 hash ^= hash << 2;
-		 hash += hash >> 15;
-		 hash ^= hash << 10;
-		
-		return hash;
+		// no end cases since key parts are ints
+		return superFastHashAvalanche(hash);
 	}
 	
 	/**
@@ -281,23 +298,13 @@ public final class Ints {
 	 */
 	public static int superFastHash(Object... key) {
 		if (key.length==0) return 0;
-		int hash = key.length << 2; 
+		int hash = key.length; 
 
 		for(Object o : key) {
-			int word = (o == null ? 0 : o.hashCode());
-			hash += low16(word);
-			int tmp = (high16(word) << 11) ^ hash;
-			hash = (hash << 16) ^ tmp;
-			hash += hash >> 11;
+			hash = superFastHashIncremental(o == null ? 0 : o.hashCode(), hash);
 		}
-		// no end cases as we are dealing with ints
-		 hash ^= hash << 3;
-		 hash += hash >> 5;
-		 hash ^= hash << 2;
-		 hash += hash >> 15;
-		 hash ^= hash << 10;
-		
-		return hash;
+		//	no end cases since the hashcodes of key parts are ints
+		return superFastHashAvalanche(hash);
 	}
 	
 	/**
@@ -322,11 +329,10 @@ public final class Ints {
 				public boolean hasNext() {
 					return ascending && cursor<=end || !ascending && cursor >= end;
 				}
-				public int nextInt() {
+				public int next() {
 					if (!hasNext()) throw new NoSuchElementException();
 					return ascending ? cursor++ : cursor--;
 				}
-				public Integer next() { return nextInt(); }
 				public void remove() { throw new UnsupportedOperationException(); }
 				
 			};
@@ -364,12 +370,11 @@ public final class Ints {
 			return new IntIterator() {
 				boolean cursor = (from<=i && i<=to) || (to<=i && i<=from);
 				public boolean hasNext() { return cursor; }
-				public int nextInt() { 
+				public int next() { 
 					if (!hasNext()) throw new NoSuchElementException(); 
 					cursor = false;
 					return i;
 				}
-				public Integer next() { return nextInt();	}
 				public void remove() { throw new UnsupportedOperationException(); }
 			};
 		}
@@ -418,8 +423,7 @@ public final class Ints {
 			return new IntIterator() {
 				IntIterator iter = s.iterator(from,to);
 				public boolean hasNext() { return iter.hasNext(); }
-				public int nextInt() { return iter.nextInt(); }
-				public Integer next() { return iter.next(); }
+				public int next() { return iter.next(); }
 				public void remove() {
 					throw new UnsupportedOperationException();
 				}	
@@ -441,7 +445,6 @@ public final class Ints {
 			this.s = s;
 		}
 		
-		@Override
 		public Iterator<IndexedEntry<V>> iterator(final int from, final int to) {
 			return new Iterator<IndexedEntry<V>>() {
 				Iterator<IndexedEntry<V>> iter = s.iterator(from, to);

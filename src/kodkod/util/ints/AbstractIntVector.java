@@ -33,20 +33,20 @@ import java.util.NoSuchElementException;
  * 
  * @author Emina Torlak
  */
-public abstract class AbstractIntVector implements IntVector {
+public abstract class AbstractIntVector extends AbstractIntCollection implements IntVector {
 	
-    /**
-     * {@inheritDoc}
-     * @see kodkod.util.ints.IntVector#isEmpty()
-     */
-    public boolean isEmpty() { return length()==0; }
+	/**
+	 * Constructs an empty int vector.
+	 * @effects no this.elements'
+	 */
+	protected AbstractIntVector() {}
 
     /**
      * {@inheritDoc}
      * @see kodkod.util.ints.IntVector#contains(int)
      */
     public boolean contains(int element) {
-    	for(int i = 0, max = length(); i < max; i++) {
+    	for(int i = 0, max = size(); i < max; i++) {
     		if (get(i)==element) return true;
     	}
     	return false;
@@ -60,19 +60,12 @@ public abstract class AbstractIntVector implements IntVector {
     	throw new UnsupportedOperationException();
     }
     
-   /**
-    * Calls this.remove(0, length()).
-    * @see kodkod.util.ints.IntVector#clear()
-    * @see kodkod.util.ints.IntVector#remove(int, int)
-    */
-    public void clear() { remove(0, length()); }
-    
     /**
      * {@inheritDoc}
      * @see kodkod.util.ints.IntVector#indexOf(int)
      */
     public int indexOf(int element) {
-    	for(int i = 0, length=length(); i < length; i++) {
+    	for(int i = 0, length=size(); i < length; i++) {
 			if (get(i)==element) return i;
 		}
 		return -1;
@@ -83,125 +76,59 @@ public abstract class AbstractIntVector implements IntVector {
     * @see kodkod.util.ints.IntVector#lastIndexOf(int)
     */
     public int lastIndexOf(int element) {
-    	for(int i = length()-1; i >= 0; i--) {
+    	for(int i = size()-1; i >= 0; i--) {
 			if (get(i)==element) return i;
 		}
 		return -1;
     }
     
     /**
-     * {@inheritDoc}
-     * @see kodkod.util.ints.IntVector#min()
+     * Calls this.add(this.size(), element)
+     * @see kodkod.util.ints.IntVector#add(int)
+     * @see kodkod.util.ints.IntVector#add(int,int)
      */
-    public int min() {
-    	final int length = length();
-    	if (length==0) throw new NoSuchElementException();
-		int min = Integer.MAX_VALUE;
-		for(int i = 0; i < length; i++) {
-			int element = get(i);
-			if (element < min) { 
-				min = element;
-			}
-		}
-		return min;
+    public boolean add(int element) { 
+    	final int length = size();
+    	add(length,element);
+    	return length != size();
     }
-    
-    /**
-     * {@inheritDoc}
-     * @see kodkod.util.ints.IntVector#max()
-     */
-    public int max() {
-    	final int length = length();
-    	if (length==0) throw new NoSuchElementException();
-		int max = Integer.MIN_VALUE;
-		for(int i = 0; i < length; i++) {
-			int element = get(i);
-			if (element > max) { 
-				max = element;
-			}
-		}
-		return max;
-    }
-
-    /**
-     * Throws {@link UnsupportedOperationException}
-     * @see kodkod.util.ints.IntVector#sort()
-     */
-    public void sort() { throw new UnsupportedOperationException(); }
-    
-   /**
-    * {@inheritDoc}
-    * @see kodkod.util.ints.IntVector#binarySearch(int)
-    */
-    public int binarySearch(int element) {
-    	int low = 0;
-		int high = length()-1;
-
-		while (low <= high) {
-			int mid = (low + high) >>> 1;
-			int midVal = get(mid);		
-			if (midVal < element)
-				low = mid + 1;
-			else if (midVal > element)
-				high = mid - 1;
-			else { 
-				return mid;
-			}
-		}
-
-		return -(low + 1);  // key not found.
-    }
-    
-    /**
-     * Calls this.insert(this.length(), element)
-     * @see kodkod.util.ints.IntVector#append(int)
-     * @see kodkod.util.ints.IntVector#insert(int,int)
-     */
-    public void append(int element) { insert(length(),element); }
-    
-    /**
-     * Calls this.insert(this.length(), array)
-     * @see kodkod.util.ints.IntVector#append(kodkod.util.ints.IntVector)
-     * @see kodkod.util.ints.IntVector#insert(int, kodkod.util.ints.IntVector)
-     */
-    public void append(IntVector array) { insert(length(), array); }
-    
+        
    /**
     * Throws {@link UnsupportedOperationException}
-    * @see kodkod.util.ints.IntVector#insert(int, int)
+    * @see kodkod.util.ints.IntVector#add(int, int)
     */
-    public void insert(int index, int element) { throw new UnsupportedOperationException(); }
+    public void add(int index, int element) { throw new UnsupportedOperationException(); }
     
     /**
-     * Throws {@link UnsupportedOperationException}
-     * @see kodkod.util.ints.IntVector#insert(int, kodkod.util.ints.IntVector)
+     * Returns the result of calling {@linkplain #addAll(int, IntCollection) this.addAll(size(), c)}.
+     * @return this.addAll(size(), c)
+     * @see kodkod.util.ints.AbstractIntCollection#addAll(kodkod.util.ints.IntCollection)
      */
-    public void insert(int index, IntVector array) { throw new UnsupportedOperationException(); }
-    
-    /**
-     * Stores this.elements[index] in a temporary variables.  Calls this.remove(index, index+1),
-     * and returns the value of the temporary variable.
-     * @see kodkod.util.ints.IntVector#remove(int)
-     */
-    public int remove(int index) { 
-    	final int oldValue = get(index);
-    	remove(index, index+1);
-    	return oldValue;
+    public boolean addAll(IntCollection c) {
+    	return addAll(size(), c);
     }
     
     /**
-     * Throws {@link UnsupportedOperationException}.
-     * @see kodkod.util.ints.IntVector#remove(int, int)
+     * Throws an UnsupportedOperationException.
+     * @see kodkod.util.ints.IntVector#addAll(int, kodkod.util.ints.IntCollection)
      */
-    public void remove(int offset, int length) { throw new UnsupportedOperationException(); }
+    public boolean addAll(int index, IntCollection c) { throw new UnsupportedOperationException(); }
     
+    /**
+     * Throws an UnsupportedOperationException.
+     * @see kodkod.util.ints.IntVector#removeAt(int)
+     */
+    public int removeAt(int index) { 
+    	throw new UnsupportedOperationException();
+    }
+       
     /**
      * Calls this.iterator(0, length())
      * @see kodkod.util.ints.IntVector#iterator()
      * @see kodkod.util.ints.IntVector#iterator(int,int)
      */
     public IntIterator iterator() {
-    	return iterator(0, length());
+    	return iterator(0, size());
     }
     
     /**
@@ -212,51 +139,38 @@ public abstract class AbstractIntVector implements IntVector {
     	return fromIndex<=toIndex ? new AscendingIntVectorIterator(fromIndex,toIndex) : 
 			new DescendingIntVectorIterator(fromIndex,toIndex);
     }
-    
+       
     /**
-     * Creates a temporary array <tt>t<\tt> of length this.length,
-     * calls this.copyInto(t), and returns <tt>t<\tt>.
-     * @see kodkod.util.ints.IntVector#toArray()
-     * @see kodkod.util.ints.IntVector#copyInto(int[])
+     * Returns the hash code value for this vector.  
+     *
+     * @return the hash code value for this vector.
+     * @see Object#hashCode()
+     * @see Object#equals(Object)
+     * @see #equals(Object)
      */
-    public int[] toArray() {
-    	final int[] ret = new int[length()];
-    	copyInto(ret);
-    	return ret;
-    }
-    
-    /**
-     * {@inheritDoc}
-     * @see kodkod.util.ints.IntVector#copyInto(int[])
-     */
-    public void copyInto(int[] array) {
-    	for(int i = 0, length = length(); i < length; i++) {
-    		array[i] = get(i);
-    	}
-    }
-    
-    /**
-	 * {@inheritDoc}
-	 * @see java.lang.Object#hashCode()
-	 */
 	public int hashCode() {
-		int hashCode = 1;
-		for(int i = 0, length = length(); i < length; i++) {
-			hashCode = 31*hashCode + get(i);
+		final int length = size();
+		int hash = length;
+		for(int i = 0; i < length; i++) {
+			hash = Ints.superFastHashIncremental(get(i), hash);
 		}
-		return hashCode;
-	}
+		return Ints.superFastHashAvalanche(hash);
+ 	}
 
 	/**
-	 * {@inheritDoc}
-	 * @see java.lang.Object#equals(java.lang.Object)
-	 */
+     * Compares the specified object with this vector for equality.  Returns
+     * <tt>true</tt> if and only if the specified object is also an int vector, both
+     * vectors have the same size, and all corresponding pairs of elements in
+     * the two vectors are <i>equal</i>.  
+     * 
+     * @return <tt>true</tt> if the specified object is equal to this vector.
+     */
 	public boolean equals(Object o) {
 		if (o==this) return true;
 		if (o instanceof IntVector) {
 			final IntVector l = (IntVector) o;
-			final int length = length();
-			if (l.length()==length) {
+			final int length = size();
+			if (l.size()==length) {
 				for (int i = 0; i < length; i++) {
 					if (get(i) != l.get(i)) return false;
 				}
@@ -274,10 +188,10 @@ public abstract class AbstractIntVector implements IntVector {
 		final StringBuilder buf = new StringBuilder();
 		buf.append("[");
 		IntIterator itr = iterator();
-		if (itr.hasNext()) buf.append(itr.nextInt());
+		if (itr.hasNext()) buf.append(itr.next());
 		while(itr.hasNext()) {
 			buf.append(", ");
-			buf.append(itr.nextInt());
+			buf.append(itr.next());
 		}
 		buf.append("]");
 		return buf.toString();
@@ -291,10 +205,9 @@ public abstract class AbstractIntVector implements IntVector {
 			end = toIndex;
 			last = -1;
 		}
-		public final Integer next() { return nextInt(); }
 		public final void remove() {
 			if (last < 0) throw new IllegalStateException();
-			AbstractIntVector.this.remove(last);
+			AbstractIntVector.this.removeAt(last);
 			next = last;
 			last = -1;
 		}
@@ -308,8 +221,8 @@ public abstract class AbstractIntVector implements IntVector {
 		AscendingIntVectorIterator(int fromIndex, int toIndex) {
 			super(fromIndex, toIndex);
 		}
-		public boolean hasNext() { return next < end; }
-		public int nextInt() {
+		public boolean hasNext() { return last<Integer.MAX_VALUE && next < end; }
+		public int next() {
 			if (!hasNext()) throw new NoSuchElementException();
 			last = next++;
 			return get(last);
@@ -325,7 +238,7 @@ public abstract class AbstractIntVector implements IntVector {
 			super(fromIndex, toIndex);
 		}
 		public boolean hasNext() { return next > end; }
-		public int nextInt() {
+		public int next() {
 			if (!hasNext()) throw new NoSuchElementException();
 			last = next--;
 			return get(last);

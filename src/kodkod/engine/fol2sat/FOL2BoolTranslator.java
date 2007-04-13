@@ -702,7 +702,7 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 		final BooleanFactory factory =  interpreter.factory();
 		ret = factory.matrix(Dimensions.square(interpreter.universe().size(), 1));
 		for(IntIterator iter = interpreter.ints().iterator(); iter.hasNext(); ) {
-			int i = iter.nextInt();
+			int i = iter.next();
 			int atomIndex = interpreter.interpret(i);
 			ret.set(atomIndex, factory.or(ret.get(atomIndex), child.eq(factory.integer(i))));
 		}
@@ -750,7 +750,7 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 		if (low > high)
 			return interpreter.factory().integer(0);
 		else if (low==high) {
-			int i = iter.nextInt();
+			int i = iter.next();
 			return interpreter.factory().integer(i, m.get(interpreter.interpret(i)));
 		} else {
 			final int mid = (low + high) / 2;

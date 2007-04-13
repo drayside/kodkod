@@ -60,9 +60,8 @@ public final class TreeSequence<V> extends AbstractSparseSequence<V>
 	
 	/**
 	 * {@inheritDoc}
-	 * @see kodkod.util.ints.AbstractSparseSequence#iterator(int, int)
+	 * @see kodkod.util.ints.SparseSequence#iterator(int, int)
 	 */
-	@Override
 	public Iterator<IndexedEntry<V>> iterator(int from, int to) {
 		return from <= to ? new AscendingIterator(from, to) : new DescendingIterator(from, to);
 	}
@@ -76,7 +75,8 @@ public final class TreeSequence<V> extends AbstractSparseSequence<V>
 	}
 
 	/**
-	 * {@inheritDoc}
+	 * Removes all entries from this sequences.
+	 * @effects no this.entries'
 	 * @see kodkod.util.ints.SparseSequence#clear()
 	 */
 	public void clear() {
@@ -109,7 +109,11 @@ public final class TreeSequence<V> extends AbstractSparseSequence<V>
 	}
 
 	/**
-	 * {@inheritDoc}
+	 * Removes the entry with the given index, if it exists, and
+	 * returns the value previously stored at the index.  If the
+	 * sequence had no previous mapping for the index, null is returned.
+	 * @effects this.entries' = this.entries - index->E
+	 * @return this.entries[index]
 	 * @see kodkod.util.ints.SparseSequence#remove(int)
 	 */
 	public V remove(int index) {
@@ -164,8 +168,10 @@ public final class TreeSequence<V> extends AbstractSparseSequence<V>
 	}
 	
 	/**
-	 * {@inheritDoc}
-	 * @see java.lang.Object#clone()
+	 * Returns a copy of this sparse sequence.  The copy is independent of this 
+	 * sequence.
+	 * @return a copy of this sparse sequence.
+	 * @see kodkod.util.ints.SparseSequence#clone()
 	 */
 	@SuppressWarnings("unchecked")
 	public TreeSequence<V> clone() {

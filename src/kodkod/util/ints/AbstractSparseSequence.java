@@ -63,25 +63,11 @@ public abstract class AbstractSparseSequence<V> implements SparseSequence<V> {
 	public Iterator<IndexedEntry<V>> iterator() {
 		return iterator(Integer.MIN_VALUE, Integer.MAX_VALUE);
 	}
-	
-	/**
-	 * Returns an iterator over the entries in this sequence,
-	 * whose indeces are between from and to.  If from < to, 
-	 * the entries are returned in the ascending order of 
-	 * indeces.  Otherwise, they are returned in the descending
-	 * order of indeces.
-	 * @return an iterator over the entries in this sequence
-	 * whose indeces are between from and to.  Formally, if 
-	 * from < to, then the first and last entries returned
-	 * by the iterator are this.ceil(from) and this.floor(to).
-	 * Otherwise, they are this.floor(from) and this.ceil(to).
-	 */
-	public abstract Iterator<IndexedEntry<V>> iterator(int from, int to);
 
 	/**
 	 * Returns the set of all indices mapped by this sparse sequence.
 	 * The returned set supports removal iff this is not an unmodifiable
-	 * sparse sequence.  The returned set is not cloneable.
+	 * sparse sequence.  
 	 * @return {s: IntSet | s.ints = this.entries.V}
 	 */
 	public IntSet indices() {
@@ -92,11 +78,8 @@ public abstract class AbstractSparseSequence<V> implements SparseSequence<V> {
 					public boolean hasNext() {
 						return iter.hasNext();
 					}
-					public int nextInt() {
+					public int next() {
 						return iter.next().index();
-					}
-					public Integer next() {
-						return nextInt();
 					}
 					public void remove() {
 						iter.remove();

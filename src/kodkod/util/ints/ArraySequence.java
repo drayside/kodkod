@@ -55,7 +55,7 @@ public final class ArraySequence<V> extends AbstractSparseSequence<V> implements
 		this.size = indices.size();
 		final IntIterator indexIter = indices.iterator();
 		for(int i = 0; indexIter.hasNext(); i++) {
-			entries[i] = new EntryView<V>(indexIter.nextInt(), null);
+			entries[i] = new EntryView<V>(indexIter.next(), null);
 		}
 	}
 	
@@ -179,7 +179,11 @@ public final class ArraySequence<V> extends AbstractSparseSequence<V> implements
 	}
 	
 	/**
-	 * {@inheritDoc}
+	 * Removes the entry with the given index, if it exists, and
+	 * returns the value previously stored at the index.  If the
+	 * sequence had no previous mapping for the index, null is returned.
+	 * @effects this.entries' = this.entries - index->E
+	 * @return this.entries[index]
 	 * @see kodkod.util.ints.SparseSequence#remove(int)
 	 */
 	public V remove(int index) {
@@ -289,8 +293,10 @@ public final class ArraySequence<V> extends AbstractSparseSequence<V> implements
 	}
 	
 	/**
-	 * {@inheritDoc}
-	 * @see java.lang.Object#clone()
+	 * Returns a copy of this sparse sequence.  The copy is independent of this 
+	 * sequence.
+	 * @return a copy of this sparse sequence.
+	 * @see kodkod.util.ints.SparseSequence#clone()
 	 */
 	public ArraySequence<V> clone() { 
 		return new ArraySequence<V>(this);

@@ -105,7 +105,7 @@ public final class Solver {
 			}
 		}
 		for (IntIterator iter = bounds.ints().iterator(); iter.hasNext();) {
-			int i = iter.nextInt();
+			int i = iter.next();
 			instance.add(i, bounds.exactBound(i));
 		}
 		return instance;
@@ -122,7 +122,7 @@ public final class Solver {
 			instance.add(r, bounds.lowerBound(r));
 		}
 		for (IntIterator iter = bounds.ints().iterator(); iter.hasNext();) {
-			int i = iter.nextInt();
+			int i = iter.next();
 			instance.add(i, bounds.exactBound(i));
 		}
 		return instance;
@@ -224,7 +224,7 @@ public final class Solver {
 				if (vars != null) {
 					int rcost = cost.edgeCost(r);
 					for(IntIterator iter = vars.iterator();  iter.hasNext(); ) {
-						cnf.setCost(iter.nextInt(), rcost);
+						cnf.setCost(iter.next(), rcost);
 					}
 				}
 			}

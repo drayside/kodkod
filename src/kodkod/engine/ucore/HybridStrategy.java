@@ -141,7 +141,7 @@ public final class HybridStrategy implements ReductionStrategy {
 	 */
 	private static void addAbsolute(IntSet s, Clause c) {
 		for(IntIterator itr = c.literals().iterator(); itr.hasNext();) {
-			s.add(Math.abs(itr.nextInt()));
+			s.add(Math.abs(itr.next()));
 		}
 	}
 	
@@ -186,7 +186,7 @@ public final class HybridStrategy implements ReductionStrategy {
 		final Clause[] clauses = new Clause[excluded.size()];
 		final IntIterator itr = excluded.iterator();
 		for(int i = 0; itr.hasNext(); i++ ) {
-			clauses[i] = core[itr.nextInt()];
+			clauses[i] = core[itr.next()];
 		}
 		
 		return Containers.asIdentitySet(Containers.identitySort(clauses));

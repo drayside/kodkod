@@ -21,14 +21,13 @@
  */
 package kodkod.util.ints;
 
-import java.util.Iterator;
 
 /**
  * An iterator over integer primitives. 
  * 
  * @author Emina Torlak
  */
-public interface IntIterator extends Iterator<Integer> {
+public interface IntIterator  {
 
 	/**
 	 * Returns true if this iteration has more elements.
@@ -42,15 +41,7 @@ public interface IntIterator extends Iterator<Integer> {
 	 * @return the next element in the iteration
 	 * @throws java.util.NoSuchElementException - the iteration is empty. 
 	 */
-	public abstract int nextInt();
-	
-	/**
-	 * Returns the next integer in the iteration, if any.
-	 * Otherwise throws a NoSuchElementException.
-	 * @return the next element in the iteration
-	 * @throws java.util.NoSuchElementException - the iteration is empty. 
-	 */
-	public abstract Integer next();
+	public abstract int next();
 	
 	/**
 	 * Removes the last returned element from the underlying collection.

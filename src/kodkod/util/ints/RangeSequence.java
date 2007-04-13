@@ -93,9 +93,8 @@ public final class RangeSequence<V> extends AbstractSparseSequence<V> implements
 	
 	/**
 	 * {@inheritDoc}
-	 * @see kodkod.util.ints.AbstractSparseSequence#iterator(int, int)
+	 * @see kodkod.util.ints.SparseSequence#iterator(int, int)
 	 */
-	@Override
 	public Iterator<IndexedEntry<V>> iterator(int from, int to) {
 		return from <= to ? new AscendingIterator(from, to) : new DescendingIterator(from, to);
 	}
@@ -109,7 +108,8 @@ public final class RangeSequence<V> extends AbstractSparseSequence<V> implements
 	}
 
 	/**
-	 * {@inheritDoc}
+	 * Removes all entries from this sequences.
+	 * @effects no this.entries'
 	 * @see kodkod.util.ints.SparseSequence#clear()
 	 */
 	public void clear() {
@@ -266,7 +266,11 @@ public final class RangeSequence<V> extends AbstractSparseSequence<V> implements
 	}
 	
 	/**
-	 * {@inheritDoc}
+	 * Removes the entry with the given index, if it exists, and
+	 * returns the value previously stored at the index.  If the
+	 * sequence had no previous mapping for the index, null is returned.
+	 * @effects this.entries' = this.entries - index->E
+	 * @return this.entries[index]
 	 * @see kodkod.util.ints.SparseSequence#remove(int)
 	 */
 	public V remove(int index) {
@@ -326,8 +330,10 @@ public final class RangeSequence<V> extends AbstractSparseSequence<V> implements
 	}
 	
 	/**
-	 * {@inheritDoc}
-	 * @see java.lang.Object#clone()
+	 * Returns a copy of this sparse sequence.  The copy is independent of this 
+	 * sequence.
+	 * @return a copy of this sparse sequence.
+	 * @see kodkod.util.ints.SparseSequence#clone()
 	 */
 	@SuppressWarnings("unchecked")
 	public RangeSequence<V> clone() {
@@ -452,26 +458,21 @@ public final class RangeSequence<V> extends AbstractSparseSequence<V> implements
 	 */
 	private abstract class EntryIterator implements Iterator<IndexedEntry<V>>, IndexedEntry<V> {
 		final int endIndex;
+		int endpoint, cursor, index;
+		boolean canRemove;
 		Entry<V> next;
-		int endpoint;
-		long cursor, index;
 		V value;
 		
 		/**
-		 * @effects this.endIndex' = endIndex && this.index = Long.MIN_VALUE
+		 * @effects this.endIndex' = endIndex && canRemove = false;
 		 */
 		EntryIterator(int endIndex) {
 			this.endIndex = endIndex;
-			this.index = Long.MIN_VALUE;
+			this.canRemove = false;
 		}
 		
-		public final int index() {
-			return (int) index;
-		}
-		
-		public final V value() {
-			return value;
-		}
+		public final int index() 	{	return index; }
+		public final V value() 		{ 	return value; }
 		
 		public final boolean equals(Object o) {
 			if (o==this) return true;
@@ -504,7 +505,8 @@ public final class RangeSequence<V> extends AbstractSparseSequence<V> implements
 		@SuppressWarnings("unchecked") 
 		AscendingIterator(int from, int to) {
 			super(to);
-			this.next = tree.searchGTE(from);
+			next = tree.searchGTE(from);
+			index = Integer.MIN_VALUE;
 			if (next==null) {
 				cursor = 0;
 				endpoint = -1;
@@ -525,22 +527,23 @@ public final class RangeSequence<V> extends AbstractSparseSequence<V> implements
 				this.value = next.value;
 				next = tree.successor(next);
 			}
-			return cursor <= endIndex;
+			return index<Integer.MAX_VALUE && cursor <= endIndex;
 		}
 
 		public IndexedEntry<V> next() {
 			if (!hasNext())
 				throw new NoSuchElementException();
 			index = cursor++;
+			canRemove = true;
 			return this;
 		}
 
 		public void remove() {
-			if ((index&Long.MIN_VALUE)<0)
+			if (!canRemove)
 				throw new IllegalStateException();
-			RangeSequence.this.remove((int) index);
-			next = tree.searchGTE((int)cursor);
-			index = (index | Long.MIN_VALUE);
+			RangeSequence.this.remove(index);
+			next = tree.searchGTE(cursor);
+			canRemove = false;
 		}
 	}
 	
@@ -559,7 +562,8 @@ public final class RangeSequence<V> extends AbstractSparseSequence<V> implements
 		 */
 		DescendingIterator(int from, int to) {
 			super(to);
-			next = tree.searchGTE(from);			
+			next = tree.searchGTE(from);
+			index = Integer.MAX_VALUE;
 			if (next==null || next.min() > from) {
 				next = tree.searchLTE(from);
 				if (next==null) { 
@@ -587,20 +591,21 @@ public final class RangeSequence<V> extends AbstractSparseSequence<V> implements
 				this.value = next.value;
 				next = tree.predecessor(next);
 			}
-			return cursor >= endIndex;
+			return index>Integer.MIN_VALUE && cursor >= endIndex;
 		}
 		public IndexedEntry<V> next() {
 			if (!hasNext())
 				throw new NoSuchElementException();
 			index = cursor--;
+			canRemove = true;
 			return this;
 		}
 		public void remove() {
-			if ((index&Long.MIN_VALUE)<0)
+			if (!canRemove)
 				throw new IllegalStateException();
 			RangeSequence.this.remove((int) index);
 			next = tree.searchLTE((int)cursor);
-			index = (index | Long.MIN_VALUE);
+			canRemove = false;
 		}
 	}
 }

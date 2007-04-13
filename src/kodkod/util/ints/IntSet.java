@@ -29,7 +29,7 @@ import java.util.NoSuchElementException;
  * @specfield ints: set int
  * @author Emina Torlak
  */
-public interface IntSet extends Cloneable, Iterable<Integer> {
+public interface IntSet extends IntCollection, Cloneable {
 	
 	/**
 	 * Returns the cardinality of this set.
@@ -120,43 +120,43 @@ public interface IntSet extends Cloneable, Iterable<Integer> {
 	public abstract boolean remove(int i);
 	
 	/**
-	 * Returns true if s is a subset of this set.
-	 * @return s.ints in this.ints
-	 * @throws NullPointerException - s = null
+	 * Returns true if the elements of c are a subset of this set.
+	 * @return { i: int | c.contains(i) } in this.ints
+	 * @throws NullPointerException - c = null
 	 */
-	public abstract boolean containsAll(IntSet s);
+	public abstract boolean containsAll(IntCollection c);
 	
 	/**
-	 * Adds all of the elements in the specified set to this set 
-	 * if they're not already present. The addAll operation effectively modifies 
-	 * this set so that its value is the union of the two sets.
-	 * @effects this.ints' = this.ints + s.ints
+	 * Adds all of the elements in the specified collection to this set 
+	 * if they're not already present. 
+	 * @effects this.ints' = this.ints + { i: int | c.contains(i) }
 	 * @return this.ints' != this.ints
-	 * @throws NullPointerException - s = null
-	 * @throws IllegalArgumentException - if this is a bounded set and
-	 * s contains an element that is out of bounds
+	 * @throws NullPointerException - c = null
+	 * @throws UnsupportedOperationException - this is an unmodifiable set
+	 * @throws IllegalArgumentException - some aspect of an element of the specified 
+	 * collection prevents it from being added to this collection.
 	 */
-	public abstract boolean addAll(IntSet s);
+	public abstract boolean addAll(IntCollection c);
 	
 	/**
 	 * Removes from this set all of its elements that are contained in the 
-	 * specified set. This operation effectively modifies this set so that 
-	 * its value is the asymmetric set difference of the two sets.
-	 * @effects this.ints' = this.ints - s.ints
+	 * specified set. 
+	 * @effects this.ints' = this.ints - { i: int | c.contains(i) }
 	 * @return this.ints' != this.ints
 	 * @throws NullPointerException - s = null
+	 * @throws UnsupportedOperationException - this is an unmodifiable set
 	 */
-	public abstract boolean removeAll(IntSet s);
+	public abstract boolean removeAll(IntCollection c);
 	
 	/**
 	 * Retains only the elements in this set that are contained in the 
-	 * specified set. This operation effectively modifies this set so that 
-	 * its value is the intersection of the two sets.
-	 * @effects this.ints' = this.ints & s.ints
+	 * specified set. 
+	 * @effects this.ints' = this.ints & { i: int | c.contains(i) }
 	 * @return this.ints' != this.ints
 	 * @throws NullPointerException - s = null
+	 * @throws UnsupportedOperationException - this is an unmodifiable set
 	 */
-	public abstract boolean retainAll(IntSet s);
+	public abstract boolean retainAll(IntCollection c);
 	
 	/**
 	 * Removes all elements from this set. 
@@ -174,7 +174,7 @@ public interface IntSet extends Cloneable, Iterable<Integer> {
 	 */
 	public abstract IntSet clone() throws CloneNotSupportedException;
 	
-	 /**
+	/**
      * Returns an array containing all of the elements in this set in the
      * ascending order.
      *
@@ -185,12 +185,13 @@ public interface IntSet extends Cloneable, Iterable<Integer> {
 	
 	/**
      * Copies the elements of this set into the specified array, in the ascending
-     * order. The array must be big enough 
-     * to hold all the elements in this set, else an IndexOutOfBoundsException is thrown.
-     * @effects all i: [0..this.size()) | array[i] in this.ints and #{e: this.ints | e < array[i]} = i
-     * @throws IndexOutOfBoundsException - array.length < this.size()
+     * order, provided that the array is large enough. If the array is not large enough,
+     * the effect of this method is the same as calling {@linkplain #toArray()}.
+     * @effects array.length>=this.size() => all i: [0..this.size()) | array'[i] in this.ints and #{e: this.ints | e < array'[i]} = i
+     * @return array.length>=this.size() => array' else this.toArray()
+     * @throws NullPointerException - array = null
      */
-    public abstract void copyInto(int[] array);
+    public abstract int[] toArray(int[] array);
     
     /**
      * Compares the specified object with this set for equality. 

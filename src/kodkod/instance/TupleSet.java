@@ -212,9 +212,9 @@ public final class TupleSet extends AbstractSet<Tuple> implements Cloneable {
 		if (!s.isEmpty()) {
 			final int mCapacity = (int) StrictMath.pow(universe.size(), s.arity);
 			for(IntIterator indeces0 = tuples.iterator(); indeces0.hasNext(); ) {
-				int i0 = mCapacity * indeces0.nextInt();
+				int i0 = mCapacity * indeces0.next();
 				for(IntIterator indeces1 = s.tuples.iterator(); indeces1.hasNext(); ) {
-					ret.tuples.add(i0 + indeces1.nextInt());
+					ret.tuples.add(i0 + indeces1.next());
 				}
 			}
 		}
@@ -234,7 +234,7 @@ public final class TupleSet extends AbstractSet<Tuple> implements Cloneable {
 		final IntSet projection = Ints.bestSet(universe.size());
 		final TupleFactory factory = universe.factory();
 		for(IntIterator indexIter = tuples.iterator(); indexIter.hasNext();) {
-			projection.add(factory.project(indexIter.nextInt(), arity, dimension));
+			projection.add(factory.project(indexIter.next(), arity, dimension));
 		}
 		return new TupleSet(universe,1,projection);
 	}
@@ -261,7 +261,7 @@ public final class TupleSet extends AbstractSet<Tuple> implements Cloneable {
 			}
 
 			public Tuple next() {
-				return universe.factory().tuple(arity, indexIter.nextInt());
+				return universe.factory().tuple(arity, indexIter.next());
 			}
 
 			public void remove() {

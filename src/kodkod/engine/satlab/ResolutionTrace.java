@@ -71,7 +71,7 @@ public final class ResolutionTrace implements Iterable<Clause>{
 		final IntSet reachable = reachable(trace, resolvents);
 		int index = 0, core = 0;
 		for(IntIterator itr = reachable.iterator(); itr.hasNext(); ) {
-			int idx = itr.nextInt();
+			int idx = itr.next();
 			if (resolvents.contains(idx)) {
 				trace[idx] = Clause.learned(index++, antecedents(trace, idx));
 			} else {
@@ -103,7 +103,7 @@ public final class ResolutionTrace implements Iterable<Clause>{
 		
 		final BitSet indices = new BitSet(StrictMath.max(original.maxIndex, reachable.size()-1)+1);
 		for(IntIterator itr = reachable.iterator(); itr.hasNext(); ) {
-			setAll(indices, (Clause)trace[itr.nextInt()]);
+			setAll(indices, (Clause)trace[itr.next()]);
 		}
 		int core = 0;
 		for(Clause clause : original) {
@@ -112,7 +112,7 @@ public final class ResolutionTrace implements Iterable<Clause>{
 		}
 		int index = 0;
 		for(IntIterator itr = resolvents.iterator(); itr.hasNext(); ) {
-			int idx = itr.nextInt();
+			int idx = itr.next();
 			index = indices.nextClearBit(index);
 			trace[idx] = Clause.learned(index, antecedents(trace, idx));
 			indices.set(index);	
@@ -156,13 +156,13 @@ public final class ResolutionTrace implements Iterable<Clause>{
 		final IntSet reachable = new IntBitSet(conflict + 1);
 		final IntVector vec = new ArrayIntVector();
 		
-		vec.append(conflict);
+		vec.add(conflict);
 		while(!vec.isEmpty()) {
-			int back = vec.remove(vec.length()-1);
+			int back = vec.removeAt(vec.size()-1);
 			if (resolvents.contains(back)) { // learned clause
 				for(int ante : (int[])trace[back]) { 
 					if (reachable.add(ante)) { // unseen clause
-						vec.append(ante);
+						vec.add(ante);
 					}
 				}
 			} else { // unseen core clause

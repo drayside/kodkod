@@ -143,7 +143,7 @@ public abstract class Clause {
 				final IntSet litset = new IntTreeSet();
 				for(Clause a : antecedents) {
 					for(IntIterator itr = a.literals().iterator(); itr.hasNext(); ) {
-						int lit = itr.nextInt();
+						int lit = itr.next();
 						if (!litset.remove(-lit))
 							litset.add(lit);
 					}

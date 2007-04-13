@@ -103,7 +103,7 @@ public final class Translation {
 			if (vars!=null) {
 				int lit = vars.min();
 				for(IntIterator iter = bounds.upperBound(r).indexView().iterator(); iter.hasNext();) {
-					final int index = iter.nextInt();
+					final int index = iter.next();
 					if (!indeces.contains(index) && solver.valueOf(lit++))
 						indeces.add(index);
 				}

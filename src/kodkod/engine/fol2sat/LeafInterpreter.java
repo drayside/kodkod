@@ -197,7 +197,7 @@ final class LeafInterpreter {
 		if (upperBound.size() > lowerBound.size()) {
 			int varId = vars.get(r).min();
 			for (IntIterator indeces = upperBound.iterator(); indeces.hasNext();) {
-				int tupleIndex = indeces.nextInt();
+				int tupleIndex = indeces.next();
 				if (!lowerBound.contains(tupleIndex))  
 					m.set(tupleIndex, factory.variable(varId++));
 			}
@@ -232,7 +232,7 @@ final class LeafInterpreter {
 		} else if (c==Expression.INTS) {
 			final IntSet ints = Ints.bestSet(univSize);
 			for(IntIterator iter = ints().iterator(); iter.hasNext(); ) {
-				ints.add(interpret(iter.nextInt()));
+				ints.add(interpret(iter.next()));
 			}
 			return factory().matrix(Dimensions.square(univSize, 1), ints, ints);
 		} else {

@@ -83,9 +83,8 @@ public final class IntTreeSet extends AbstractIntSet implements Cloneable {
 	
 	/**
 	 * {@inheritDoc}
-	 * @see kodkod.util.ints.AbstractIntSet#iterator(int, int)
+	 * @see kodkod.util.ints.IntSet#iterator(int,int)
 	 */
-	@Override
 	public IntIterator iterator(int from, int to) {
 		return from <= to ? new AscendingIterator(from, to) : new DescendingIterator(from, to);
 	}
@@ -99,7 +98,8 @@ public final class IntTreeSet extends AbstractIntSet implements Cloneable {
 	}
 		
 	/**
-	 * {@inheritDoc}
+	 * Returns true if i is in this set.
+	 * @return i in this.ints
 	 * @see kodkod.util.ints.IntSet#contains(int)
 	 */
 	@Override
@@ -109,7 +109,10 @@ public final class IntTreeSet extends AbstractIntSet implements Cloneable {
 	}
 
 	/**
-	 * {@inheritDoc}
+	 * Returns the smallest element in this set.
+	 * Throws a NoSuchElementException if this set is empty.
+	 * @return min(this.ints)
+	 * @throws java.util.NoSuchElementException - no this.ints
 	 * @see kodkod.util.ints.IntSet#min()
 	 */
 	@Override
@@ -119,7 +122,10 @@ public final class IntTreeSet extends AbstractIntSet implements Cloneable {
 	}
 	
 	/**
-	 * {@inheritDoc}
+	 * Returns the largest element in this set.
+	 * Throws a NoSuchElementException if this set is empty.
+	 * @return max(this.ints)
+	 * @throws java.util.NoSuchElementException - no this.ints
 	 * @see kodkod.util.ints.IntSet#max()
 	 */
 	@Override
@@ -153,7 +159,10 @@ public final class IntTreeSet extends AbstractIntSet implements Cloneable {
 	}
 	
 	/**
-	 * {@inheritDoc}
+	 * Adds the given integer to this set if not already present
+	 * and returns true.  Otherwise does nothing and returns false.
+	 * @effects this.ints' = this.ints + i
+	 * @return i in this.ints'
 	 * @see kodkod.util.ints.IntSet#add(int)
 	 */
 	@Override
@@ -184,7 +193,10 @@ public final class IntTreeSet extends AbstractIntSet implements Cloneable {
 	}
 	
 	/**
-	 * {@inheritDoc}
+	 * Removes the given integer from this set if already present and
+	 * returns true.  Otherwise does nothing and returns false.
+	 * @effects this.ints' = this.ints - i
+	 * @return i !in this.ints'
 	 * @see kodkod.util.ints.IntSet#remove(int)
 	 */
 	@Override
@@ -212,9 +224,10 @@ public final class IntTreeSet extends AbstractIntSet implements Cloneable {
 	
 	/**
 	 * {@inheritDoc}
-	 * @see kodkod.util.ints.IntSet#containsAll(kodkod.util.ints.IntSet)
+	 * @see kodkod.util.ints.IntSet#containsAll(kodkod.util.ints.IntCollection)
 	 */
-	public boolean containsAll(IntSet other) {
+	@Override
+	public boolean containsAll(IntCollection other) {
 		if (other instanceof IntTreeSet) {
 			IntTreeSet s = (IntTreeSet) other;
 			if (size>=s.size) {
@@ -231,19 +244,24 @@ public final class IntTreeSet extends AbstractIntSet implements Cloneable {
 	}
 	
 	/**
-	 * {@inheritDoc}
-	 * @see java.util.Collection#clear()
+	 * Removes all elements from this set. 
+	 * @effects no this.ints'
+	 * @see kodkod.util.ints.IntCollection#clear()
 	 */
+	@Override
 	public void clear() {
 		tree.clear();
 		size = 0;
 	}
 	
 	/**
-	 * {@inheritDoc}
-	 * @see java.lang.Object#clone()
+	 * Returns a copy of this int tree set.  The copy is independent of this 
+	 * IntSet.
+	 * @return a copy of this IntSet.
+	 * @see kodkod.util.ints.IntSet#clone()
 	 */
 	@SuppressWarnings("unchecked")
+	@Override
 	public IntTreeSet clone() {
 		// ok to use copy constructor to clone a final class
 		return new IntTreeSet(this);
@@ -277,17 +295,18 @@ public final class IntTreeSet extends AbstractIntSet implements Cloneable {
 	 * @author Emina Torlak
 	 */
 	private final class AscendingIterator implements IntIterator {
-		Range next;
-		final int endpoint;
-		int currentMax;
-		long cursor, lastReturned;
+		private Range next;
+		private final int endpoint;
+		private int currentMax, cursor, lastReturned;
+		private boolean canRemove;
 		
 		/**
 		 * @requires from <= to
 		 */
 		AscendingIterator(int from, int to) {
 			endpoint = to;
-			lastReturned = Long.MIN_VALUE;
+			lastReturned = Integer.MIN_VALUE;
+			canRemove = false;
 			next = tree.searchGTE(from);
 			if (next==null) {
 				cursor = 0;
@@ -306,26 +325,22 @@ public final class IntTreeSet extends AbstractIntSet implements Cloneable {
 				this.currentMax = next.key; 
 				next = tree.successor(next);
 			}
-			return cursor <= endpoint;
+			return lastReturned<Integer.MAX_VALUE && cursor <= endpoint;
 		}
 
-		public int nextInt() {
+		public int next() {
 			if (!hasNext())
 				throw new NoSuchElementException();
-			lastReturned = cursor++;
-			return (int)lastReturned;
-		}
-
-		public Integer next() {
-			return nextInt();
+			canRemove = true;
+			return lastReturned = cursor++;
 		}
 
 		public void remove() {
-			if ((lastReturned & Long.MIN_VALUE) > 0) 
+			if (!canRemove) 
 				throw new IllegalStateException();
 			IntTreeSet.this.remove((int)lastReturned);
 			next = tree.searchGTE((int)cursor);
-			lastReturned |= Long.MIN_VALUE;
+			canRemove = false;
 		}
 		
 	}
@@ -336,17 +351,18 @@ public final class IntTreeSet extends AbstractIntSet implements Cloneable {
 	 * @author Emina Torlak
 	 */
 	private final class DescendingIterator implements IntIterator {
-		Range next;
-		final int endpoint;
-		int currentMin;
-		long cursor, lastReturned;
+		private Range next;
+		private final int endpoint;
+		private int currentMin, cursor, lastReturned;
+		private boolean canRemove;
 		
 		/**
 		 * @requires from >= to
 		 */
 		DescendingIterator(int from, int to) {
 			endpoint = to;
-			lastReturned = Long.MIN_VALUE;
+			lastReturned = Integer.MAX_VALUE;
+			canRemove = false;
 			next = tree.searchGTE(from);
 			if (next==null || next.min > from) {
 				next = tree.searchLTE(from);
@@ -370,26 +386,22 @@ public final class IntTreeSet extends AbstractIntSet implements Cloneable {
 				this.currentMin = next.min;
 				next = tree.predecessor(next);
 			}
-			return cursor >= endpoint;
+			return lastReturned>Integer.MIN_VALUE && cursor >= endpoint;
 		}
 
-		public int nextInt() {
+		public int next() {
 			if (!hasNext()) 
 				throw new NoSuchElementException();
-			lastReturned = cursor--;
-			return (int)lastReturned;
-		}
-
-		public Integer next() {
-			return nextInt();
+			canRemove = true;
+			return lastReturned = cursor--;
 		}
 
 		public void remove() {
-			if ((lastReturned & Long.MIN_VALUE) > 0) 
+			if (!canRemove) 
 				throw new IllegalStateException();
-			IntTreeSet.this.remove((int)lastReturned);
-			next = tree.searchLTE((int)cursor);
-			lastReturned |= Long.MIN_VALUE;
+			IntTreeSet.this.remove(lastReturned);
+			next = tree.searchLTE(cursor);
+			canRemove = false;
 		}
 		
 	}

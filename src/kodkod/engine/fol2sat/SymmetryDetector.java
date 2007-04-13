@@ -106,7 +106,7 @@ final class SymmetryDetector {
 		
 		// refine the partitions based on the bounds for each integer
 		for(IntIterator iter = bounds.ints().iterator(); iter.hasNext();) {
-			TupleSet exact = bounds.exactBound(iter.nextInt());
+			TupleSet exact = bounds.exactBound(iter.next());
 			refinePartitions(exact.indexView(), 1, range2domain);
 		}
 	}
@@ -138,7 +138,7 @@ final class SymmetryDetector {
 		int firstColFactor = (int) StrictMath.pow(usize, arity-1);
 		IntSet firstCol = Ints.bestSet(usize);
 		for(IntIterator rbIter = set.iterator(); rbIter.hasNext(); ) {
-			firstCol.add(rbIter.nextInt() / firstColFactor);
+			firstCol.add(rbIter.next() / firstColFactor);
 		}
 		refinePartitions(firstCol);
 		
@@ -148,11 +148,11 @@ final class SymmetryDetector {
 			if (firstCol.contains(part.min())) { // contains one, contains them all
 				range2domain.clear();
 				for(IntIterator atoms = part.iterator(); atoms.hasNext(); ) {
-					int atom = atoms.nextInt();
+					int atom = atoms.next();
 					IntSet atomRange = Ints.bestSet(firstColFactor);
 					for(IntIterator rbIter = set.iterator(atom*firstColFactor, (atom+1)*firstColFactor - 1); 
 					rbIter.hasNext(); ) {
-						atomRange.add(rbIter.nextInt() % firstColFactor);
+						atomRange.add(rbIter.next() % firstColFactor);
 					}
 					IntSet atomDomain = range2domain.get(atomRange);
 					if (atomDomain != null) atomDomain.add(atom);

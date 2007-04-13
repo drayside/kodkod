@@ -21,7 +21,6 @@
  */
 package kodkod.util.ints;
 
-import java.util.NoSuchElementException;
 
 /**
  * A resizable array of integers.
@@ -31,12 +30,12 @@ import java.util.NoSuchElementException;
  * 
  * @author Emina Torlak
  */
-public interface IntVector extends Iterable<Integer>{
+public interface IntVector extends IntCollection {
 	/**
      * Returns the number of elements in this vector.       
      * @return this.length
      */
-    public int length();
+    public int size();
 
     /**
      * Returns <tt>true</tt> if this vector contains no elements.
@@ -122,59 +121,20 @@ public interface IntVector extends Iterable<Integer>{
     public int lastIndexOf(int element);
     
     /**
-     * Returns the smallest element in this vector.  Throws NoSuchElementException if 
-     * this is empty
-     * @return min(this.elements[int])
-     * @throws NoSuchElementException - no this.elements
-     */
-    public int min();
-    
-    /**
-     * Returns the largest element in this vector.  Throws NoSuchElementException if 
-     * this is empty
-     * @return max(this.elements[int])
-     * @throws NoSuchElementException - no this.elements
-     */
-    public int max();
-    
-    /**
-     * Sorts the elements in this vector in the ascending order (optional operation).
-     * @effects all i, j: [0..this.length) | i < j => this.elements'[i] <= this.elements'[j]
-     * @throws UnsupportedOperationException - if the <tt>sort<\tt> method is not supported by this vector
-     */
-    public void sort();
-    
-    /**
-     * Searches this.elements for the specified value using the binary search algorithm. 
-     * This vector must be sorted (as by the {@link #sort()}}) prior to making this call. 
-     * If it is not sorted, the results are undefined. 
-     * If the vector contains multiple elements with the specified value, there is no 
-     * guarantee which one will be found.
-     * @return index of the search key, if it is contained in the vector; 
-     * otherwise, (-(insertion point) - 1). The insertion point is defined as the point 
-     * at which the key would be inserted into the vector: 
-     * the index of the first element greater than the key, or this.length(), 
-     * if all elements in the vector are less than the specified key. Note that this 
-     * guarantees that the return value will be >= 0 if and only if the key is found.
-     */
-    public int binarySearch(int element);
-    
-    
-    /**
-     * Appends the specified element to the end of this vector (optional
-     * operation). 
+     * Adds the specified element to the end of this vector (optional
+     * operation), and returns true if this vector has changed as a result
+     * of the call.
      * @effects this.length' = this.length + 1 && this.elements' = this.elements + this.length -> element
-     * 
-     * @throws UnsupportedOperationException if the <tt>add</tt> method is not
-     * 		  supported by this vector.
-     * @throws IllegalArgumentException if some aspect of this element
-     *            prevents it from being added to this vector.
+     * @return this.elements != this.elements'
+     * @throws UnsupportedOperationException if the <tt>add</tt> method is not supported by this vector.
+     * @throws IllegalArgumentException if some aspect of this element  prevents it from being added to this vector.
      */
-    public void append(int element);
+    public boolean add(int element);
     
     /**
      * Inserts the specified element at the specified position in this vector
-     * (optional operation).  Shifts the element currently at that position
+     * (optional operation), and returns true if this vector has changed as a result of the call.  
+     * Shifts the element currently at that position
      * (if any) and any subsequent elements to the right (adds one to their
      * indices).
      *
@@ -188,39 +148,46 @@ public interface IntVector extends Iterable<Integer>{
      * @throws    IndexOutOfBoundsException if the index is out of range
      *		  (index &lt; 0 || index &gt; length()).
      */
-    public void insert(int index, int element);
+    public void add(int index, int element);
     
     /**
      * Appends the specified elements to the end of this vector (optional
-     * operation). 
-     * @effects this.length' = this.length + vector.length && 
-     *  this.elements' = this.elements + { i: [this.length..this.length+vector.length), e: int | e = vector.elements[i-this.length] }
-     * 
+     * operation), and returns true if this vector has changed as a result of the call.
+     * @effects appends the specified elements to the end of this vector
+     * @return this.elements != this.elements'
      * @throws UnsupportedOperationException if the <tt>add</tt> method is not
      * 		  supported by this vector.
      * @throws IllegalArgumentException if some aspect of an element in the given vector
      *            prevents it from being added to this vector.
      */
-    public void append(IntVector vector);
+    public boolean addAll(IntCollection c);
     
     /**
      * Inserts the specified elements at the specified position in this vector
-     * (optional operation).  Shifts the element currently at that position
+     * (optional operation), and returns true if this vector has changed as a result of the call.  
+     * Shifts the element currently at that position
      * (if any) and any subsequent elements to the right.
      *
-     * @effects this.length' = this.length + vector.length && 
-     *  this.elements' = [0..index)<:this.elements + 
-     *   { i: [index..index+vector.length), e: int | e = vector.elements[i-index] } + 
-     *   { i: [index+vector.length, this.length'), e: int | e = this.elements[i-index-vector.length] } 
+     * @effects inserts the specified elements at the specified position in this vector
+     * @return this.elements != this.elements
      * @throws UnsupportedOperationException if the <tt>add</tt> method is not
      *		  supported by this vector.
      * @throws    IllegalArgumentException if some aspect of an element in the specified
-     *		  vector prevents it from being added to this vector.
+     *		  collection prevents it from being added to this vector.
      * @throws    IndexOutOfBoundsException if the index is out of range
      *		  (index &lt; 0 || index &gt; length()).
      */
-    public void insert(int index, IntVector vector);
+    public boolean addAll(int index, IntCollection c);
     
+    /**
+	 * Removes the first occurrence of the given integer from this vector,
+	 * and returns true if this vector has changed as a result of the call.
+	 * @effects removes the first occurrence of the given integer from this vector
+	 * @return this.elements != this.elements'
+	 * @throws UnsupportedOperationException - this is an unmodifiable collection
+	 */
+	public abstract boolean remove(int i);
+	
     /**
      * Removes the element at the specified position in this vector (optional
      * operation).  Shifts any subsequent elements to the left (subtracts one
@@ -235,20 +202,32 @@ public interface IntVector extends Iterable<Integer>{
      * @throws IndexOutOfBoundsException if the index is out of range (index
      *            &lt; 0 || index &gt;= length()).
      */
-    public int remove(int index);
+    public int removeAt(int index);
     
     /**
-     * Removes the elements between <tt>fromIndex</tt>, inclusive, 
-     * and <tt>toIndex</tt>, exclusive.
-     * @effects this.length' = this.length - (toIndex - fromIndex) &&
-     * this.elements' = [0..fromIndex)<:this.elements + 
-     *  { i: [toIndex..this.length), e: int | this.elements[i] }
-     * @throws IndexOutOfBoundsException if fromIndex is out of range (fromIndex
-     *            &lt; 0 || fromIndex &gt;= length()) or toIndex is out of range
-     *            (toIndex &lt; fromIndex || to &gt; length())
-     */
-    public void remove(int fromIndex, int toIndex);
-    
+	 * Removes all of this vector's elements that are also contained in the specified 
+	 * collection. After this call returns, this collection will contain no elements in 
+	 * common with the specified collection. Returns true if this collection has changed as a result of the call. 
+	 * @effects removes all of this vector's elements that are also contained in the specified 
+	 * collection
+	 * @return this.elements != this.elements'
+	 * @throws NullPointerException - c = null
+	 * @throws UnsupportedOperationException - this is an unmodifiable collection
+	 */
+	public abstract boolean removeAll(IntCollection c);
+	
+	/**
+	 * Retains only the elements in this vector that are contained in the specified 
+	 * collection. In other words, removes from this collection all of its elements that 
+	 * are not contained in the specified collection.  Returns true if this collection has changed as a result of the call. 
+	 * @effects retains only the elements in this vector that are contained in the specified 
+	 * collection
+	 * @return this.elements != this.elements'
+	 * @throws NullPointerException - c = null
+	 * @throws UnsupportedOperationException - this is an unmodifiable collection
+	 */
+	public abstract boolean retainAll(IntCollection c);
+	
     /**
      * Compares the specified object with this vector for equality.  Returns
      * <tt>true</tt> if and only if the specified object is also an int vector, both
@@ -260,12 +239,12 @@ public interface IntVector extends Iterable<Integer>{
     public boolean equals(Object o);
 
     /**
-     * Returns the hash code value for this vector.  
-     *
-     * @return the hash code value for this vector.
-     * @see Object#hashCode()
-     * @see Object#equals(Object)
-     * @see #equals(Object)
+     * Returns the hash code value for this vector. The hash code of an int vector is 
+     * defined to be the {@link Ints#superFastHash(int[])} of the elements in the vector, 
+     * taken in the ascending order of indices.  
+     * This ensures that v1.equals(v2) implies that v1.hashCode()==v2.hashCode() 
+     * for any two IntVectors v1 and v2, as required by the general contract of the Object.hashCode method.
+     * @return Ints.superFastHash(this.toArray())
      */
     public int hashCode();
     
@@ -279,11 +258,14 @@ public interface IntVector extends Iterable<Integer>{
     public int[] toArray();
     
     /**
-     * Copies the components of this vector into the specified array. The item at index 
-     * k in this vector is copied into component k of the given array. The array must be big enough 
-     * to hold all the objects in this vector, else an IndexOutOfBoundsException is thrown.
-     * @effects all i: [0..this.length) | array[i] = this.elements[i]
-     * @throws IndexOutOfBoundsException - array.length < this.length
+     * Copies the components of this vector into the specified array, provided that
+     * it is large enough, and returns it. The item at index 
+     * k in this vector is copied into component k of the given array. If the 
+     * given array is not large enough, the effect of this method is the same as
+     * calling {@linkplain #toArray()}.
+     * @effects array.length>=this.length => all i: [0..this.length) | array'[i] = this.elements[i]
+     * @return array.length>=this.length => array' else this.toArray()
+     * @throws NullPointerException - array = null
      */
-    public void copyInto(int[] array);
+    public int[] toArray(int[] array);
 }

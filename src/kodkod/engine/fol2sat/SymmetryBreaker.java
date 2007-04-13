@@ -132,8 +132,8 @@ final class SymmetryBreaker {
 		for(IntSet sym : symmetries) {
 		
 			IntIterator indeces = sym.iterator();
-			for(int prevIndex = indeces.nextInt(); indeces.hasNext(); ) {
-				int curIndex = indeces.nextInt();
+			for(int prevIndex = indeces.next(); indeces.hasNext(); ) {
+				int curIndex = indeces.next();
 				for(Iterator<RelationParts> rIter = relParts.iterator(); rIter.hasNext() && original.size() < predLength;) {
 					
 					RelationParts rparts = rIter.next();
@@ -177,7 +177,7 @@ final class SymmetryBreaker {
 			if (upper.size()==bounds.lowerBound(r).size()) continue; // skip constant relation
 			IntSet reps = Ints.bestSet(usize);
 			for(IntIterator tuples = upper.iterator(); tuples.hasNext(); ) {
-				for(int tIndex = tuples.nextInt(), i = r.arity(); i > 0; i--, tIndex /= usize) {
+				for(int tIndex = tuples.next(), i = r.arity(); i > 0; i--, tIndex /= usize) {
 					for(IntSet symm : symmetries) {
 						if (symm.contains(tIndex%usize)) {
 							reps.add(symm.min());
@@ -286,7 +286,7 @@ final class SymmetryBreaker {
 			final IntSet upper = bounds.upperBound(acyclic.relation()).indexView();
 			final IntSet reduced = Ints.bestSet(usize*usize);
 			for(IntIterator tuples = upper.iterator(); tuples.hasNext(); ) {
-				int tuple = tuples.nextInt();
+				int tuple = tuples.next();
 				int mirror = (tuple / usize) + (tuple % usize)*usize;
 				if (tuple != mirror) {
 					if (!upper.contains(mirror)) return false;
@@ -333,7 +333,7 @@ final class SymmetryBreaker {
 			final IntSet ordering = Ints.bestSet(usize*usize);
 			int prev = ordered.min();
 			for(IntIterator atoms = ordered.iterator(prev+1, usize); atoms.hasNext(); ) {
-				int next = atoms.nextInt();
+				int next = atoms.next();
 				ordering.add(prev*usize + next);
 				prev = next;
 			}
@@ -384,7 +384,7 @@ final class SymmetryBreaker {
 				return null;
 		}
 		for(IntIterator tuples = upper.iterator(); tuples.hasNext(); ) {
-			for(int i = r.arity()-1, tuple = tuples.nextInt(); i >= 0; i--, tuple /= usize) {
+			for(int i = r.arity()-1, tuple = tuples.next(); i >= 0; i--, tuple /= usize) {
 				if (!colParts[i].contains(tuple%usize))
 					return null;
 			}		

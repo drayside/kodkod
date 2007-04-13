@@ -140,7 +140,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 		else {
 			this.cells = new  RangeSequence<BooleanValue>();
 			for(IntIterator iter = trueIndices.iterator(); iter.hasNext(); ) {
-				cells.put(iter.nextInt(), TRUE);
+				cells.put(iter.next(), TRUE);
 			}
 		}
 	}

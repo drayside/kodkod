@@ -151,7 +151,6 @@ public final class HomogenousSequence<V> extends AbstractSparseSequence<V> {
 	 * Otherwise, they are this.floor(from) and this.ceil(to).
 	 * @see kodkod.util.ints.AbstractSparseSequence#iterator(int, int)
 	 */
-	@Override
 	public Iterator<IndexedEntry<V>> iterator(int from, int to) {
 		return new HomogenousIterator<V>(indices.iterator(from, to), value);
 	}
@@ -286,8 +285,10 @@ public final class HomogenousSequence<V> extends AbstractSparseSequence<V> {
 	}
 
 	/**
-	 * {@inheritDoc}
-	 * @see java.lang.Object#clone()
+	 * Returns a copy of this sparse sequence.  The copy is independent of this 
+	 * sequence.
+	 * @return a copy of this sparse sequence.
+	 * @see kodkod.util.ints.SparseSequence#clone()
 	 */
 	public HomogenousSequence<V> clone() {
 		// ok to clone a final class using a copy constructor
@@ -314,7 +315,7 @@ public final class HomogenousSequence<V> extends AbstractSparseSequence<V> {
 		}
 
 		public IndexedEntry<V> next() {
-			return setIndexView(iter.nextInt());
+			return setIndexView(iter.next());
 		}
 
 		public void remove() {
