@@ -21,11 +21,6 @@
  */
 package kodkod.engine;
 
-import static kodkod.engine.Solution.Outcome.SATISFIABLE;
-import static kodkod.engine.Solution.Outcome.TRIVIALLY_SATISFIABLE;
-import static kodkod.engine.Solution.Outcome.TRIVIALLY_UNSATISFIABLE;
-import static kodkod.engine.Solution.Outcome.UNSATISFIABLE;
-
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -36,6 +31,7 @@ import kodkod.engine.config.Options;
 import kodkod.engine.fol2sat.HigherOrderDeclException;
 import kodkod.engine.fol2sat.Translation;
 import kodkod.engine.fol2sat.TranslationAbortedException;
+import kodkod.engine.fol2sat.TranslationLog;
 import kodkod.engine.fol2sat.Translator;
 import kodkod.engine.fol2sat.TrivialFormulaException;
 import kodkod.engine.fol2sat.UnboundLeafException;
@@ -137,10 +133,10 @@ public final class Solver {
 	 */
 	private static Solution trivial(Bounds bounds, TrivialFormulaException desc, long translTime) {
 		final Statistics stats = new Statistics(0, 0, 0, translTime, 0);
-		if (desc.formulaValue().booleanValue()) {
-			return new Solution(TRIVIALLY_SATISFIABLE, stats, padInstance(toInstance(desc.bounds()), bounds), desc.reduction(), null);
+		if (desc.value().booleanValue()) {
+			return Solution.triviallySatisfiable(stats, padInstance(toInstance(desc.bounds()), bounds));
 		} else {
-			return new Solution(TRIVIALLY_UNSATISFIABLE, stats, null, desc.reduction(), null);
+			return Solution.triviallyUnsatisfiable(stats, trivialProof(desc.log()));
 		}
 	}
 
@@ -161,11 +157,33 @@ public final class Solver {
 	 * @return the result of solving a sat formula.
 	 */
 	private static Solution sat(Bounds originalBounds, Translation translation, Statistics stats) {
-		final Solution sol = new Solution(SATISFIABLE, stats, padInstance(translation.interpret(), originalBounds), null, null);
+		final Solution sol = Solution.satisfiable(stats, padInstance(translation.interpret(), originalBounds));
 		translation.cnf().free();
 		return sol;
 	}
 
+	/**
+	 * Returns a proof for the trivially unsatisfiable log.formula,
+	 * provided that log is non-null.  Otherwise returns null.
+	 * @requires log != null => log.formula is trivially unsatisfiable
+	 * @return a proof for the trivially unsatisfiable log.formula,
+	 * provided that log is non-null.  Otherwise returns null.
+	 */
+	private static Proof trivialProof(TranslationLog log) {
+		return log==null ? null : new TrivialProof(log);
+	}
+	
+	/**
+	 * Returns a resolution-based proof for the unsatisfiable log.formula,
+	 * provided that log is non-null.  Otherwise returns null.
+	 * @requires log != null => translate(log.formula) = solver.clauses and !solver.solve()
+	 * @return a proof for the unsatisfiable log.formula,
+	 * provided that log is non-null.  Otherwise returns null.
+	 */
+	private static Proof resolutionBasedProof(SATProver prover, TranslationLog log) {
+		return log==null ? null : new ResolutionBasedProof(prover, log);
+	}
+	
 	/**
 	 * Returns the result of solving an unsat formula.
 	 * @param translation the translation 
@@ -175,9 +193,9 @@ public final class Solver {
 	private static Solution unsat(Options options, Translation translation, Statistics stats) {
 		final SATSolver cnf = translation.cnf();
 		if (cnf instanceof SATProver) {
-			return new Solution(UNSATISFIABLE, stats, null, null, new Proof(options.solver(), (SATProver) cnf, translation.log()));
+			return Solution.unsatisfiable(stats, resolutionBasedProof((SATProver) cnf, translation.log()));
 		} else { // can free memory
-			final Solution sol = new Solution(UNSATISFIABLE, stats,  null, null, null);
+			final Solution sol = Solution.unsatisfiable(stats, null);
 			cnf.free();
 			return sol;
 		}
@@ -389,8 +407,8 @@ public final class Solver {
 
 				final Statistics stats = stats(translation, translTime, endSolve - startSolve);
 				if (isSat) {
-					// extract the current solution
-					final Solution sol = new Solution(SATISFIABLE, stats,	padInstance(translation.interpret(), bounds), null, null);
+					// extract the current solution; can't use the sat(..) method because it frees the sat solver
+					final Solution sol = Solution.satisfiable(stats, padInstance(translation.interpret(), bounds));
 					// add the negation of the current model to the solver
 					final int primary = translation.numPrimaryVariables();
 					final int[] notModel = new int[primary];
@@ -420,10 +438,10 @@ public final class Solver {
 		 */
 		private Solution trivialSolution(TrivialFormulaException tfe) {
 			final Statistics stats = new Statistics(0, 0, 0, translTime, 0);
-			if (tfe.formulaValue().booleanValue()) {
+			if (tfe.value().booleanValue()) {
 				trivial++;
 				final Instance raw = toInstance(tfe.bounds());
-				final Solution sol = new Solution(TRIVIALLY_SATISFIABLE, stats, padInstance(raw, bounds), tfe.reduction(), null);
+				final Solution sol = Solution.triviallySatisfiable(stats, padInstance(raw, bounds));
 				bounds = bounds.clone();
 				Formula notModel = Formula.FALSE;
 				for(Map.Entry<Relation, TupleSet> entry: raw.relationTuples().entrySet()) {
@@ -436,7 +454,7 @@ public final class Solver {
 				return sol;
 			} else {
 				formula = null; bounds = null;
-				return new Solution(TRIVIALLY_UNSATISFIABLE, stats,  null, tfe.reduction(), null);
+				return Solution.triviallyUnsatisfiable(stats, trivialProof(tfe.log()));
 			}
 		}
 		/**

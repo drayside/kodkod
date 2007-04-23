@@ -22,10 +22,7 @@
 package kodkod.engine.fol2sat;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.ListIterator;
-import java.util.Set;
 
 import kodkod.ast.BinaryExpression;
 import kodkod.ast.BinaryFormula;
@@ -98,39 +95,6 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 	}
 
 	/**
-	 * Flattens the top level conjunction or disjunction.
-	 * @return a list containing the flattened children of the top level conjunction or disjunction
-	 */
-	private static final List<Formula> flatten(AnnotatedNode<Formula> annotated) {
-		final List<Formula> ret = new LinkedList<Formula>();
-		ret.add(annotated.node());
-		if (annotated.node() instanceof BinaryFormula) {
-			final BinaryFormula top = (BinaryFormula) annotated.node();
-			final BinaryFormula.Operator op = top.op();
-			if (op==BinaryFormula.Operator.AND || op==BinaryFormula.Operator.OR) {
-				final Set<Node> shared = annotated.sharedNodes();
-				int size;
-				do {
-					size = ret.size();
-					ListIterator<Formula> itr = ret.listIterator();
-					while(itr.hasNext()) {
-						Formula f = itr.next();
-						if (!shared.contains(f) && f instanceof BinaryFormula) {
-							BinaryFormula bin = (BinaryFormula) f;
-							if (bin.op()==op) {
-								itr.remove();
-								itr.add(bin.left());
-								itr.add(bin.right());
-							}
-						}
-					}
-				} while (ret.size() > size);
-			}
-		}
-		return ret;
-	}
-	
-	/**
 	 * Translates the given annotated formula into a boolean
 	 * formula with respect to the given interpreter and logs the translation events to the given logger.  
 	 * The translation will respond to thread interruption if the interruptible flag is set.
@@ -148,18 +112,7 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 				return super.cache(formula, translation);
 			}	
 		};
-		final BooleanValue ret;
-		final List<Formula> flat = flatten(annotated);
-		if (flat.size()==1) {
-			ret = annotated.node().accept(translator);
-		} else {
-			final Operator.Nary op = ((BinaryFormula)annotated.node()).op()==BinaryFormula.Operator.AND ? Operator.AND : Operator.OR;
-			final BooleanAccumulator acc = BooleanAccumulator.treeGate(op);
-			for(Formula f : flat) {
-				acc.add(f.accept(translator));
-			}
-			ret = interpreter.factory().accumulate(acc);
-		}
+		final BooleanValue ret = annotated.node().accept(translator);
 		logger.close();
 		return ret;
 	}

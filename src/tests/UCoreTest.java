@@ -6,24 +6,16 @@ package tests;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
-import java.util.IdentityHashMap;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import kodkod.ast.Formula;
-import kodkod.ast.Node;
-import kodkod.ast.Variable;
 import kodkod.engine.Proof;
 import kodkod.engine.Solution;
 import kodkod.engine.Solver;
-import kodkod.engine.fol2sat.TranslationRecord;
 import kodkod.engine.satlab.SATFactory;
 import kodkod.engine.ucore.HybridStrategy;
 import kodkod.instance.Bounds;
-import kodkod.instance.TupleSet;
 import examples.CeilingsAndFloors;
 import examples.Dijkstra;
 import examples.Pigeonhole;
@@ -139,60 +131,6 @@ public final class UCoreTest {
 			final Formula f = model.axioms().and(model.someCurve());
 			final Bounds b = model.bounds(n,n);
 			
-			//solver.options().setSymmetryBreaking(0);
-//			final Solution sol = solver.solve(f, b);
-//			
-//			if (sol.outcome()==Solution.Outcome.UNSATISFIABLE) {
-//				final Proof proof = sol.proof();
-//				System.out.println("hardness: "+proof.relativeHardness());
-////				proof.refine();
-//				final long start = System.currentTimeMillis();
-//				proof.minimize();
-//				final long end = System.currentTimeMillis();
-//				System.out.println("hardness after refinement: "+proof.relativeHardness());
-//				System.out.println("time: " + (end-start) + " ms");
-//				final Map<Node, Set<Map<Variable,TupleSet>>> nodes = new IdentityHashMap<Node,Set<Map<Variable,TupleSet>>>();
-//				for(Iterator<TranslationLog.Record> itr = proof.core(); itr.hasNext();) {
-//					TranslationLog.Record rec = itr.next();
-//					Set<Map<Variable,TupleSet>> recVal = nodes.get(rec.node());
-//					if (recVal==null) {
-//						recVal = new LinkedHashSet<Map<Variable,TupleSet>>();
-//					}
-//					recVal.add(rec.env());
-//					nodes.put(rec.node(), recVal);
-//				}
-//				List<Formula> formulas = new ArrayList<Formula>();
-//				for(Map.Entry<Node, Set<Map<Variable,TupleSet>>> e : nodes.entrySet()) {
-//					Set<Map<Variable,TupleSet>> envs = e.getValue();
-//					if (envs.size()==1 && envs.iterator().next().isEmpty()) {
-//						System.out.println(e);
-//						if (e.getKey() instanceof Formula)
-//							formulas.add((Formula)e.getKey());
-//					}
-//				}
-//				System.out.println("highlevel formulas: " + formulas.size());
-//				System.out.println("trying to get a smaller core ...");
-//				List<Formula> needed = new ArrayList<Formula>(formulas.size());
-//				Formula top = Formula.TRUE;
-//				for(int i = 0, max = formulas.size(); i < max; i++) {
-//					top = top.and(formulas.get(i));
-//					needed.add(formulas.get(i));
-//					Solution s = solver.solve(top, b);
-//					if (s.instance()==null)
-//						break;
-//				}
-//				System.out.println("needed: " + needed.size());
-//				for(Formula formula : needed)
-//					System.out.println(formula);
-//				Formula check = Formula.TRUE;
-//				for(Formula formula : needed)
-//					check = check.and(formula);
-//				System.out.println(solver.solve(check,b));
-//			}
-//			
-//			System.exit(1);
-			
-			
 			return solver.solve(f,b);
 		} catch (NumberFormatException nfe) {
 			usage();
@@ -223,34 +161,20 @@ public final class UCoreTest {
 			System.out.println(sol);
 			if (sol.outcome()==Solution.Outcome.UNSATISFIABLE) {
 				final Proof proof = sol.proof();
-				System.out.println("hardness: "+proof.relativeHardness());
+				System.out.println("top-level formulas before min: " + proof.highLevelCore().size());
 				final long start = System.currentTimeMillis();
 				proof.minimize(new HybridStrategy(proof.log()));
+//				proof.minimize(new BasicCRRStrategy());
+//				proof.minimize(new EmptyClauseConeStrategy());
+//				proof.minimize(new NaiveStrategy());
 				final long end = System.currentTimeMillis();
-				System.out.println("hardness after refinement: "+proof.relativeHardness());
 				System.out.println("time: " + (end-start) + " ms");
-				final Map<Node, Set<Map<Variable,TupleSet>>> nodes = new IdentityHashMap<Node,Set<Map<Variable,TupleSet>>>();
-				for(Iterator<TranslationRecord> itr = proof.core(); itr.hasNext();) {
-					TranslationRecord rec = itr.next();
-					
-					Set<Map<Variable,TupleSet>> recVal = nodes.get(rec.node());
-					if (recVal==null) {
-						recVal = new LinkedHashSet<Map<Variable,TupleSet>>();
-					}
-					recVal.add(rec.env());
-					nodes.put(rec.node(), recVal);
+				final Set<Formula> topCore = proof.highLevelCore();
+				System.out.println("top-level formulas: " + topCore.size());
+				for(Formula f : topCore) {
+					System.out.println(f);
 				}
-				int highlevel = 0;
-				for(Map.Entry<Node, Set<Map<Variable,TupleSet>>> e : nodes.entrySet()) {
-					Set<Map<Variable,TupleSet>> envs = e.getValue();
-					for(Map<Variable,TupleSet> env: envs) {
-						if (env.isEmpty()) {
-							highlevel++;
-							System.out.println(e.getKey());
-						}
-					}
-				}
-				System.out.println("highlevel formulas: " + highlevel);
+				
 			}
 		} catch (SecurityException e) {
 			e.printStackTrace();

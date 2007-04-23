@@ -23,12 +23,10 @@ package kodkod.engine.fol2sat;
 
 import java.util.Iterator;
 
-import kodkod.engine.bool.BooleanConstant;
-import kodkod.util.ints.IntSet;
-import kodkod.util.ints.Ints;
+import kodkod.ast.Formula;
 
 /**
- * A log of the translations of all descendants of a given formula that 
+ * A log of the translations of the descendants of a given formula that 
  * are either formulas or that desugar to formulas.
  * @specfield formula: Formula 
  * @specfield bounds: Bounds
@@ -39,8 +37,14 @@ import kodkod.util.ints.Ints;
 public abstract class TranslationLog {
 	
 	/**
-	 * Returns an iterator over the translation records in this log that contain
-	 * the given literals.  The iterator returns the records in the order in which
+	 * Returns this.formula.
+	 * @return this.formula
+	 */
+	public abstract Formula formula();
+	
+	/**
+	 * Returns an iterator over the translation records in this log that are accepted
+	 * by the given filter.  The iterator returns the records in the order in which
 	 * they were generated.  This guarantees that records for the descendents of a 
 	 * node are always returned before the record for the node itself.  
 	 * 
@@ -51,22 +55,30 @@ public abstract class TranslationLog {
 	 * @return an iterator over the translation records in this log that contain the
 	 * given literals
 	 */
-	public abstract Iterator<TranslationRecord> replay(IntSet literals);
+	public abstract Iterator<TranslationRecord> replay(RecordFilter filter);
 	
 	/**
-	 * Returns an iterator over all translation records in this log.  The effect
-	 * of this method is equivalent to calling {@link #replay(IntSet)} with an
-	 * IntSet containing all integers in the range [{@link BooleanConstant#FALSE}.label, 
-	 * {@link BooleanConstant#TRUE}.label].  
+	 * Returns an iterator over all translation records in this log.  The iterator returns 
+	 * the records in the order in which they were generated.  This guarantees that records for 
+	 * the descendents of a  node are always returned before the record for the node itself.  
+	 * The effect of this method is the same as calling {@linkplain #replay(RecordFilter) replay(RecordFilter.ALL)}.
 	 * 
 	 * <p><b>Note:</b>The record objects returned by the iterator are not 
 	 * required to be immutable.  In particular, the state of a record object
 	 * returned by <tt>next()</tt> is guaranteed to remain the same only until the
 	 * subsequent call to <tt>next()</tt>.</p>
 	 * @return an iterator over all translation records in this.log.
-	 * @see kodkod.engine.fol2sat.TranslationLog#replay(IntSet)
+	 * @see #replay(RecordFilter)
 	 */
 	public final Iterator<TranslationRecord> replay() {
-		return replay(Ints.rangeSet(Ints.range(BooleanConstant.FALSE.label(), BooleanConstant.TRUE.label())));
+		return replay(RecordFilter.ALL);
 	}
+	
+//	/**
+//	 * Compresses this translation log (optional operation) by eliminating
+//	 * redundant records.
+//	 * @effects all r: this.records | one r': this.records' | r.node = r'.node && r.literal = r'.literal && r.env.equals(r'.env)
+//	 * @throws UnsupportedOperationException - this log does not support compression
+//	 */
+//	public abstract void compress();
 }

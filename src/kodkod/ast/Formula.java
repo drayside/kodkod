@@ -27,7 +27,11 @@ import kodkod.ast.visitor.ReturnVisitor;
  * A first-order formula.  Unless otherwise noted,
  * all methods in this class throw a NullPointerException when given
  * null arguments.
- *
+ * 
+ * <p><b>Implementation Note</b>: The {@linkplain #compose(kodkod.ast.BinaryFormula.Operator, Formula) compose} method
+ * performs constant folding, so that, for example, calling f.and(Formula.TRUE) returns f.  If it is necessary to 
+ * have a new Formula returned in such cases, then f.and(<i>triviallyTrue</i>) should be called instead, 
+ * where <i>triviallyTrue</i> is a trivially true formula such as Expression.NONE.no(). </p>
  * @author Emina Torlak 
  */
 public abstract class Formula implements Node {

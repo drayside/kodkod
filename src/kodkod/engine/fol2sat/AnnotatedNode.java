@@ -81,7 +81,7 @@ final class AnnotatedNode<N extends Node> {
 	 * Constructs a new annotator for the given node.
 	 * @effects this.node' = node && this.source' = ((node.*children -> node.*children) & iden)
 	 */
-	AnnotatedNode(N node) {
+	public AnnotatedNode(N node) {
 		this.node = node;
 		final SharingDetector detector = new SharingDetector();
 		node.accept(detector);
@@ -94,7 +94,7 @@ final class AnnotatedNode<N extends Node> {
 	 * Constructs a new annotator for the given node and source map.
 	 * @effects this.node' = node && this.source' = ((node.*children -> node.*children) & iden) ++ source
 	 */
-	AnnotatedNode(N node, Map<Node,Node> source) {
+	public AnnotatedNode(N node, Map<Node,Node> source) {
 		this.node = node;
 		final SharingDetector detector = new SharingDetector();
 		node.accept(detector);
@@ -106,7 +106,7 @@ final class AnnotatedNode<N extends Node> {
 	 * Returns this.node.
 	 * @return this.node
 	 */
-	final N node() {
+	public final N node() {
 		return node;
 	}
 	
@@ -116,7 +116,7 @@ final class AnnotatedNode<N extends Node> {
 	 * @requires n in this.node.*children
 	 * @return this.source[n]
 	 */
-	final Node sourceOf(Node n) {
+	public final Node sourceOf(Node n) {
 		final Node d = source.get(n);
 		return d==null ? n : d;
 	}
@@ -126,7 +126,7 @@ final class AnnotatedNode<N extends Node> {
 	 * of this.node that have more than one parent.
 	 * @return {n: Node | some n.children && #(n.~children & this.node.*children) > 1 }
 	 */
-	final Set<Node> sharedNodes() { 
+	public final Set<Node> sharedNodes() { 
 		return sharedNodes;
 	}
 	
@@ -134,7 +134,7 @@ final class AnnotatedNode<N extends Node> {
 	 * Returns the set of all relations at the leaves of this annotated node.
 	 * @return Relation & this.node.*children
 	 */
-	final Set<Relation> relations() {
+	public final Set<Relation> relations() {
 		final Set<Relation> relations = new IdentityHashSet<Relation>();
 		final AbstractVoidVisitor visitor = new AbstractVoidVisitor() {
 			private final Set<Node> visited = new IdentityHashSet<Node>(sharedNodes.size());
@@ -155,7 +155,7 @@ final class AnnotatedNode<N extends Node> {
 	 * @return true if this.node contains a child whose meaning depends on 
 	 * integer bounds (i.e. an ExprToIntCast node with SUM operator or an IntToExprCast node or Expression.INTS constant).
 	 */
-	final boolean usesInts() {
+	public final boolean usesInts() {
 		final AbstractDetector detector = new AbstractDetector(sharedNodes) {
 			public Boolean visit(IntToExprCast expr) {
 				return cache(expr, Boolean.TRUE);
@@ -179,7 +179,7 @@ final class AnnotatedNode<N extends Node> {
 	 * the corresponding names in this.node.  A predicate is considered 'top-level'  
 	 * if it is a component of the top-level conjunction, if any, of this.node.  
 	 */
-	final Map<RelationPredicate.Name, Set<RelationPredicate>> predicates() {
+	public final Map<RelationPredicate.Name, Set<RelationPredicate>> predicates() {
 		final PredicateCollector collector = new PredicateCollector(sharedNodes);
 		node.accept(collector);
 		return collector.preds;
@@ -191,7 +191,7 @@ final class AnnotatedNode<N extends Node> {
 	 * @return a Detector that will return TRUE when applied to a descendent
 	 * of this.node iff the descendent contains a quantified formula.
 	 */
-	final AbstractDetector quantifiedFormulaDetector() {
+	public final AbstractDetector quantifiedFormulaDetector() {
 		return new AbstractDetector(sharedNodes) {
 			public Boolean visit(QuantifiedFormula quantFormula) {
 				return cache(quantFormula, true);
@@ -205,12 +205,13 @@ final class AnnotatedNode<N extends Node> {
 	 * @return a Detector that will return TRUE when applied to a descendent
 	 * of this.node iff the descendent contains a free variable.
 	 */
-	final AbstractDetector freeVariableDetector() {
+	public final AbstractDetector freeVariableDetector() {
 		return new FreeVariableDetector(sharedNodes);
 	}
 	
 	/**
-	 * @see java.lang.Object#toString()
+	 * Returns a string representation of this annotated node.
+	 * @return string representation of this annotated node.
 	 */
 	public String toString() {
 		final StringBuilder ret =  new StringBuilder();
@@ -436,19 +437,18 @@ final class AnnotatedNode<N extends Node> {
 		 * @see kodkod.ast.visitor.AbstractVoidVisitor#visit(kodkod.ast.BinaryFormula)
 		 */
 		public void visit(BinaryFormula binFormula) {
-			if (!visited(binFormula)) {
-				final BinaryFormula.Operator op = binFormula.op();
-			
-				if ((!negated && op==AND) || (negated && op==OR)) { // op==AND || op==OR
-					binFormula.left().accept(this);
-					binFormula.right().accept(this);
-				} else if (negated && op==IMPLIES) { // !(a => b) = !(!a || b) = a && !b
-					negated = !negated;
-					binFormula.left().accept(this);
-					negated = !negated;
-					binFormula.right().accept(this);
-				} 
-			}
+			if (visited(binFormula)) return;
+			final BinaryFormula.Operator op = binFormula.op();
+		
+			if ((!negated && op==AND) || (negated && op==OR)) { // op==AND || op==OR
+				binFormula.left().accept(this);
+				binFormula.right().accept(this);
+			} else if (negated && op==IMPLIES) { // !(a => b) = !(!a || b) = a && !b
+				negated = !negated;
+				binFormula.left().accept(this);
+				negated = !negated;
+				binFormula.right().accept(this);
+			} 
 		}
 		/**
 		 * Visits the children of the child of the child formula, with
@@ -457,12 +457,10 @@ final class AnnotatedNode<N extends Node> {
 		 * with the current value of this.negated; otherwise does nothing.
 		 */
 		public void visit(NotFormula not) {
-			if (!visited(not)) {
-				negated = !negated;
-				not.formula().accept(this);
-				negated = !negated;
-			}
-			
+			if (visited(not)) return;
+			negated = !negated;
+			not.formula().accept(this);
+			negated = !negated;
 		}
 		/**
 		 * Calls visited(compFormula); compFormula's children are not top-level formulas
@@ -482,10 +480,9 @@ final class AnnotatedNode<N extends Node> {
 		 * Records the visit to this predicate if it is not negated.
 		 */
 		public void visit(RelationPredicate pred) {
-			if (!visited(pred)) {
-				if (!negated) {
-					preds.get(pred.name()).add(pred);
-				}
+			if (visited(pred)) return;
+			if (!negated) {
+				preds.get(pred.name()).add(pred);
 			}
 		}
 	}

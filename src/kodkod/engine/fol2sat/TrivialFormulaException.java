@@ -21,7 +21,6 @@
  */
 package kodkod.engine.fol2sat;
 
-import kodkod.ast.Formula;
 import kodkod.engine.bool.BooleanConstant;
 import kodkod.instance.Bounds;
 
@@ -30,40 +29,38 @@ import kodkod.instance.Bounds;
  * with respect to given Bounds.
  * 
  * @specfield formula: Formula
- * @specfield reduction: reduction.*children
- * @specfield bounds: Bounds
- * @specfield formulaValue: BooleanConstant // the value to which the reduction simplified
- * @invariant reduction is a subtree of reduction that has caused it to simplify to a constant
+ * @specfield bounds: Bounds // bounds (possibly a subset of the original bounds) with respect to which the formula reduces to a constant 
+ * @specfield log: lone TranslationLog // log is null if translation logging was not enabled
+ * @specfield value: BooleanConstant // the value to which the reduction simplified
  * @author Emina Torlak
  */
 public final class TrivialFormulaException extends Exception {
-	private final BooleanConstant formulaValue;
-	private final Formula reduction;
+	private final BooleanConstant value;
+	private final TranslationLog log;
 	private final Bounds bounds;
 	
 	private static final long serialVersionUID = 6251577831781586067L;
 
 	/**
-	 * Constructs a new TrivialFormulaException caused by the specified reduction.
-	 * That is, the reduction has caused its parent reduction
-	 * to simplify to the given value when translated using the given Bounds.  
-	 * @requires reduction != null && bounds != null && formulaValue != null
-	 * @effects this.reduction' = reduction && this.bounds' = bounds && this.formulaValue' = formulaValue 
+	 * Constructs a new TrivialFormulaException using the given arguments.  
+	 * @requires log != null && bounds != null && value != null
+	 * @effects this.log' = log && this.formula' = log.formula && 
+	 * this.bounds' = bounds && this.value' = value 
 	 */
-	 TrivialFormulaException(Formula reduction, Bounds bounds, BooleanConstant formulaValue) {
+	 TrivialFormulaException(TranslationLog log, Bounds bounds, BooleanConstant formulaValue) {
 		super("Trivially " + ((formulaValue==BooleanConstant.FALSE) ? "un" : "" )  + "satisfiable formula.");
-		assert formulaValue != null && bounds != null && reduction != null;
-		this.reduction = reduction;
+		assert formulaValue != null && bounds != null;
+		this.log = log;
 		this.bounds = bounds;
-		this.formulaValue = formulaValue;
+		this.value = formulaValue;
 	}
 
 	/**
-	 * Returns this.reduction.
-	 * @return this.reduction
+	 * Returns this.log.
+	 * @return this.log
 	 */
-	public Formula reduction() {
-		return reduction;
+	public TranslationLog log() {
+		return log;
 	}
 	
 	/**
@@ -76,10 +73,10 @@ public final class TrivialFormulaException extends Exception {
 	
 	/**
 	 * Returns the value to which this.formula is trivially reducible.
-	 * @return this.formulaValue
+	 * @return this.value
 	 */
-	public BooleanConstant formulaValue() {
-		return formulaValue;
+	public BooleanConstant value() {
+		return value;
 	}
 
 }

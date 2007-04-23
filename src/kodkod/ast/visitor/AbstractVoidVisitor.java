@@ -70,10 +70,9 @@ public abstract class AbstractVoidVisitor implements VoidVisitor {
 	 * @effects all d: declarations.declarations | d.variable.accept(this) && d.expression.accept(this)
 	 */
 	public void visit(Decls decls) {
-		if (!visited(decls)) {
-			for (Decl decl : decls) {
-				decl.accept(this);
-			}
+		if (visited(decls)) return;
+		for (Decl decl : decls) {
+			decl.accept(this);
 		}
 	}
 	
@@ -83,10 +82,9 @@ public abstract class AbstractVoidVisitor implements VoidVisitor {
 	 * @effects decl.variable.accept(this) && decl.expression.accept(this)
 	 */
 	public void visit(Decl decl) {
-		if (!visited(decl)) {
-			decl.variable().accept(this);
-			decl.expression().accept(this);
-		}
+		if (visited(decl)) return; 
+		decl.variable().accept(this);
+		decl.expression().accept(this);		
 	}
 	
 	/**
@@ -110,10 +108,9 @@ public abstract class AbstractVoidVisitor implements VoidVisitor {
 	 * @effects binExpr.left.accept(this) && binExpr.right.accept(this)
 	 */
 	public void visit(BinaryExpression binExpr) {
-		if (!visited(binExpr)) {
-			binExpr.left().accept(this);
-			binExpr.right().accept(this);
-		}
+		if (visited(binExpr)) return;
+		binExpr.left().accept(this);
+		binExpr.right().accept(this);
 	}
 	
 	/**
@@ -122,9 +119,8 @@ public abstract class AbstractVoidVisitor implements VoidVisitor {
 	 * @effects unaryExpr.expression.accept(this)
 	 */
 	public void visit(UnaryExpression unaryExpr) {
-		if (!visited(unaryExpr)) {
-			unaryExpr.expression().accept(this);
-		}
+		if (visited(unaryExpr)) return;
+		unaryExpr.expression().accept(this);
 	}
 	
 	/**
@@ -133,10 +129,9 @@ public abstract class AbstractVoidVisitor implements VoidVisitor {
 	 * @effects comprehension.declarations.accept(this) && comprehension.formula.accept(this)
 	 */
 	public void visit(Comprehension comprehension) {
-		if (!visited(comprehension)) {
-			comprehension.declarations().accept(this);
-			comprehension.formula().accept(this);
-		}
+		if (visited(comprehension)) return;
+		comprehension.declarations().accept(this);
+		comprehension.formula().accept(this);
 	}
 	
 	/**
@@ -146,11 +141,10 @@ public abstract class AbstractVoidVisitor implements VoidVisitor {
 	 *          ifExpr.elseExpr.accept(this)
 	 */
 	public void visit(IfExpression ifExpr) {
-		if (!visited(ifExpr)) {
-			ifExpr.condition().accept(this);
-			ifExpr.thenExpr().accept(this);
-			ifExpr.elseExpr().accept(this);
-		}
+		if (visited(ifExpr)) return;
+		ifExpr.condition().accept(this);
+		ifExpr.thenExpr().accept(this);
+		ifExpr.elseExpr().accept(this);
 	}
 	
 	/**
@@ -159,11 +153,10 @@ public abstract class AbstractVoidVisitor implements VoidVisitor {
 	 * @effects project.expression.accept(this) && all i: project.arity | project.columns[i].accept(this)
 	 */
 	public void visit(ProjectExpression project) {
-		if (!visited(project)) {
-			project.expression().accept(this);
-			for(IntExpression column : project.columns()) {
-				column.accept(this);
-			}
+		if (visited(project)) return;
+		project.expression().accept(this);
+		for(IntExpression column : project.columns()) {
+			column.accept(this);
 		}
 	}
 	
@@ -173,9 +166,8 @@ public abstract class AbstractVoidVisitor implements VoidVisitor {
 	 * @effects castExpr.expression.accept(this)
 	 */
 	public void visit(IntToExprCast castExpr) {
-		if (!visited(castExpr)) {
-			castExpr.intExpr().accept(this);
-		}
+		if (visited(castExpr)) return;
+		castExpr.intExpr().accept(this);
 	}
 
 	/**
@@ -190,11 +182,10 @@ public abstract class AbstractVoidVisitor implements VoidVisitor {
 	 *          intExpr.elseExpr.accept(this)
 	 */
 	public void visit(IfIntExpression intExpr) {
-		if (!visited(intExpr)) {
-			intExpr.condition().accept(this);
-			intExpr.thenExpr().accept(this);
-			intExpr.elseExpr().accept(this);
-		}
+		if (visited(intExpr)) return;
+		intExpr.condition().accept(this);
+		intExpr.thenExpr().accept(this);
+		intExpr.elseExpr().accept(this);
 	}
 	
 	/**
@@ -203,9 +194,8 @@ public abstract class AbstractVoidVisitor implements VoidVisitor {
 	 * @effects intExpr.expression.accept(this)
 	 */
 	public void visit(ExprToIntCast intExpr) {
-		if (!visited(intExpr)) {
-			intExpr.expression().accept(this);
-		}
+		if (visited(intExpr)) return;
+		intExpr.expression().accept(this);
 	}
 	
 	/**
@@ -214,10 +204,9 @@ public abstract class AbstractVoidVisitor implements VoidVisitor {
 	 * @effects intExpr.left.accept(this) && intExpr.right.accept(this)
 	 */
 	public void visit(BinaryIntExpression intExpr) {
-		if (!visited(intExpr)) {
-			intExpr.left().accept(this);
-			intExpr.right().accept(this);
-		}
+		if (visited(intExpr)) return;
+		intExpr.left().accept(this);
+		intExpr.right().accept(this);
 	}
 	
 	/**
@@ -226,10 +215,9 @@ public abstract class AbstractVoidVisitor implements VoidVisitor {
 	 * @effects intExpr.decls.accept(this) && intExpr.intExpr.accept(this)
 	 */
 	public void visit(SumExpression intExpr) {
-		if (!visited(intExpr)) {
-			intExpr.declarations().accept(this);
-			intExpr.intExpr().accept(this);
-		}
+		if (visited(intExpr)) return;
+		intExpr.declarations().accept(this);
+		intExpr.intExpr().accept(this);
 	}
 	
 	/**
@@ -238,10 +226,9 @@ public abstract class AbstractVoidVisitor implements VoidVisitor {
 	 * @effects intComp.left.accept(this) && intComp.right.accept(this)
 	 */
 	public void visit(IntComparisonFormula intComp) {
-		if (!visited(intComp)) {
-			intComp.left().accept(this);
-			intComp.right().accept(this);
-		}
+		if (visited(intComp)) return;
+		intComp.left().accept(this);
+		intComp.right().accept(this);
 	}
 	
 	/**
@@ -250,10 +237,9 @@ public abstract class AbstractVoidVisitor implements VoidVisitor {
 	 * @effects quantFormula.declarations.accept(this) && quantFormula.formula.accept(this)
 	 */
 	public void visit(QuantifiedFormula quantFormula) {
-		if (!visited(quantFormula)) {
-			quantFormula.declarations().accept(this);
-			quantFormula.formula().accept(this);
-		}
+		if (visited(quantFormula)) return;
+		quantFormula.declarations().accept(this);
+		quantFormula.formula().accept(this);
 	}
 	
 	/**
@@ -262,10 +248,9 @@ public abstract class AbstractVoidVisitor implements VoidVisitor {
 	 * @effects binFormula.left.accept(this) && binFormula.right.accept(this)
 	 */
 	public void visit(BinaryFormula binFormula) {
-		if (!visited(binFormula)) {
-			binFormula.left().accept(this);
-			binFormula.right().accept(this);
-		}
+		if (visited(binFormula)) return;
+		binFormula.left().accept(this);
+		binFormula.right().accept(this);
 	}
 	
 	/**
@@ -274,9 +259,8 @@ public abstract class AbstractVoidVisitor implements VoidVisitor {
 	 * @effects not.formula.accept(this)
 	 */
 	public void visit(NotFormula not) {
-		if (!visited(not)) {
-			not.formula().accept(this);
-		}
+		if (visited(not)) return;
+		not.formula().accept(this);
 	}
 	
 	/**
@@ -290,10 +274,9 @@ public abstract class AbstractVoidVisitor implements VoidVisitor {
 	 * @effects compFormula.left.accept(this) && compFormula.right.accept(this)
 	 */
 	public void visit(ComparisonFormula compFormula) {
-		if (!visited(compFormula)) {
-			compFormula.left().accept(this);
-			compFormula.right().accept(this);
-		}
+		if (visited(compFormula)) return;
+		compFormula.left().accept(this);
+		compFormula.right().accept(this);
 	}
 	
 	/**
@@ -302,9 +285,8 @@ public abstract class AbstractVoidVisitor implements VoidVisitor {
 	 * @effects multFormula.expression.accept(this)
 	 */
 	public void visit(MultiplicityFormula multFormula) {
-		if (!visited(multFormula)) {
-			multFormula.expression().accept(this);
-		}
+		if (visited(multFormula)) return;
+		multFormula.expression().accept(this);
 	}
 	
 	/**
@@ -316,18 +298,17 @@ public abstract class AbstractVoidVisitor implements VoidVisitor {
 	 *            pred.ordered.accept(this) && pred.first.accept(this) && pred.last.accept(this) )
 	 */
 	public void visit(RelationPredicate pred) {
-		if (!visited(pred)) {
-			pred.relation().accept(this);
-			if (pred.name()==RelationPredicate.Name.FUNCTION) {
-				final RelationPredicate.Function fp = (RelationPredicate.Function) pred;
-				fp.domain().accept(this);
-				fp.range().accept(this);
-			} else if (pred.name()==RelationPredicate.Name.TOTAL_ORDERING) {
-				final RelationPredicate.TotalOrdering tp = (RelationPredicate.TotalOrdering) pred;
-				tp.ordered().accept(this);
-				tp.first().accept(this);
-				tp.last().accept(this);
-			}
+		if (visited(pred)) return;
+		pred.relation().accept(this);
+		if (pred.name()==RelationPredicate.Name.FUNCTION) {
+			final RelationPredicate.Function fp = (RelationPredicate.Function) pred;
+			fp.domain().accept(this);
+			fp.range().accept(this);
+		} else if (pred.name()==RelationPredicate.Name.TOTAL_ORDERING) {
+			final RelationPredicate.TotalOrdering tp = (RelationPredicate.TotalOrdering) pred;
+			tp.ordered().accept(this);
+			tp.first().accept(this);
+			tp.last().accept(this);
 		}
 	}
 	

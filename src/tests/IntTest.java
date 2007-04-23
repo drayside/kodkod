@@ -63,7 +63,8 @@ public class IntTest extends TestCase {
 	}
 	
 	private Solution solve(Formula formula) {
-		
+//		  System.out.println(formula); 
+//		  System.out.println(bounds);
 			return solver.solve(formula, bounds);
 		
 	}

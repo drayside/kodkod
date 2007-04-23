@@ -30,6 +30,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -46,29 +47,34 @@ import kodkod.instance.TupleFactory;
 import kodkod.instance.TupleSet;
 import kodkod.util.collections.Containers;
 import kodkod.util.collections.FixedMap;
-import kodkod.util.ints.IntSet;
 import kodkod.util.ints.Ints;
 
 /**
  * A file-based translation logger that logs translation events
  * to a temporary file.
+ * @specfield formula: Formula
+ * @specfield transforms: formula.*children lone-> Formula
+ * @specfield bounds: Bounds
+ * @specfield records: (iden ++ transforms).Formula -> BooleanValue -> Environment<BooleanMatrix>
  * @author Emina Torlak
  */
 final class FileLogger extends TranslationLogger {
 	
 	private final FixedMap<Formula, Variable[]> logMap;
 	private final AnnotatedNode<Formula> annotated;
-//	private final Object[] seen;
 	private final File file;
-	private final int[] tempVals;
 	private DataOutputStream out;
 	private final TupleFactory factory;
 	
 	/**
 	 * Constructs a new file logger from the given annotated formula.
-	 * @effects this.formula' = annotated.source[annotated.node] && this.transforms' = ~(annotated.source) &&
-	 * this.bounds' = bounds
+	 * @requires broken in annotated.source[annotated.node].*children
+	 * @effects this.formula' = annotated.source[annotated.node]  
+	 * @effects this.transforms' = ~(annotated.source) 
+	 * @effects this.bounds' = bounds
+	 * @effects no this.records' 
 	 */
+	@SuppressWarnings("unchecked")
 	FileLogger(final AnnotatedNode<Formula> annotated, Bounds bounds) {
 		this.annotated = annotated;
 		this.factory = bounds.universe().factory();
@@ -83,9 +89,8 @@ final class FileLogger extends TranslationLogger {
 		final Variable[] empty = new Variable[0];
 	
 		this.logMap = new FixedMap<Formula, Variable[]>(freeVarMap.keySet());	
-//		this.seen = new Object[freeVarMap.keySet().size()];
 		
-		int index = 0, maxFreeVars = 0; //, usize = bounds.universe().size();
+		int index = 0;
 		for(Map.Entry<Formula, Variable[]> e : logMap.entrySet()) {
 			Set<Variable> vars = freeVarMap.get(e.getKey());
 			int size = vars.size();
@@ -93,22 +98,9 @@ final class FileLogger extends TranslationLogger {
 				e.setValue(empty);
 			} else {
 				e.setValue(Containers.identitySort(vars.toArray(new Variable[size])));
-//				if (size==1) {
-//					seen[index] = new IntBitSet(usize);
-//				} else {
-//					IntSet[] sets = new IntSet[size];
-//					for(int i = 0; i < size; i++) {
-//						sets[i] = new IntBitSet(usize);
-//					}
-//					seen[index] = sets;
-//				}
-				if (size > maxFreeVars)
-					maxFreeVars = size;
 			}
 			index++;
 		}
-				
-		this.tempVals = new int[maxFreeVars];
 	}
 	
 	/**
@@ -117,18 +109,17 @@ final class FileLogger extends TranslationLogger {
 	 */
 	private static Map<Formula,Set<Variable>> freeVars(final AnnotatedNode<Formula> annotated) {
 		final Map<Formula,Set<Variable>> freeVarMap = new IdentityHashMap<Formula,Set<Variable>>();
-		annotated.node().accept(new FreeVariableCollector(annotated.sharedNodes()) {
+		final FreeVariableCollector collector = new FreeVariableCollector(annotated.sharedNodes()) {
 			protected Set<Variable> cache(Node node, Set<Variable> freeVars) {
 				if (node instanceof Formula) {
 					freeVarMap.put((Formula)node, freeVars);
 				}
 				return super.cache(node, freeVars);
 			}
-		});
+		};
+		annotated.node().accept(collector);
 		return freeVarMap;
 	}
-	
-	
 	
 	/**
 	 * @see kodkod.engine.fol2sat.TranslationLogger#close()
@@ -141,43 +132,9 @@ final class FileLogger extends TranslationLogger {
 			/* unused */
 		} finally { out = null; }
 	}
-	
+		
 	/**
-	 * Update the log with the given index, boolean value label, and the
-	 * first numFreeVars values in this.tempVals. 
-	 * @effects out.writeInt(index) && out.writeInt(label) &&
-	 *  all v: [0..numFreeVars) | out.writeInt(this.tempVals[i])
-	 */
-	private void write(int index, int label, int numFreeVars) {
-		try {
-			out.writeInt(index);
-			out.writeInt(label);
-			for(int i = 0 ; i < numFreeVars; i++) {
-				out.writeInt(tempVals[i]);
-			}
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
-	}
-	
-	/**
-	 * Fills the first logMap.get(index).length entries of the tempVals array with the bindings
-	 * for the corresonding variables in the given environment.  
-	 * @requires let vars = logMap.get(index).length | 
-	 *  all int i: [0..vars.length) | one env.lookup(vars[i]).denseIndices()
-	 * @effects let vars = logMap.get(index).length | 
-	 *  all int i: [0..vars.length) | this.tempVals[i] = env.lookup(vars[i]).denseIndices().min()
-	 * @return logMap.get(index).length
-	 */
-	private int lookupVars(int index, Environment<BooleanMatrix> env) {
-		final Variable[] vars = logMap.get(index);
-		for(int i = 0; i < vars.length; i++) {
-			tempVals[i] = env.lookup(vars[i]).denseIndices().min();
-		}
-		return vars.length;
-	}
-	
-	/**
+	 * {@inheritDoc}
 	 * @see kodkod.engine.fol2sat.TranslationLogger#log(kodkod.ast.Formula, kodkod.engine.bool.BooleanValue, kodkod.engine.fol2sat.Environment)
 	 */
 	@Override
@@ -187,32 +144,17 @@ final class FileLogger extends TranslationLogger {
 		final int index = logMap.indexOf(f);
 		if (index < 0) throw new IllegalArgumentException();
 		
-		final int numFreeVars = lookupVars(index, env);
-		write(index, v.label(), numFreeVars);
-//		switch(numFreeVars) {
-//		case 0 : // a node with no free variables
-//			if (seen[index]==null) { // we haven't seen it before ...
-//				seen[index] = Ints.EMPTY_SET;
-//				write(index, v.label(), 0);
-//			}
-//			break;
-//		case 1 : // a node with one free variable
-//			if (((IntSet)seen[index]).add(tempVals[0])) { // unseen binding
-//				write(index, v.label(), 1);
-//			} 
-//			break;
-//		default : // a node with more than one free variable
-//			final IntSet[] seenBindings = (IntSet[]) seen[index];
-//			boolean unseen = false;
-//			for(int i = 0; i < numFreeVars; i++) {
-//				if (seenBindings[i].add(tempVals[i])) { // unseen binding
-//					unseen = true;
-//				}
-//			}
-//			if (unseen)
-//				write(index, v.label(), numFreeVars);
-//		}
+		final Variable[] vars = logMap.get(index);
 		
+		try {
+			out.writeInt(index);
+			out.writeInt(v.label());
+			for(Variable var : vars) {
+				out.writeInt(env.lookup(var).denseIndices().min());
+			}
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	/**
@@ -231,38 +173,16 @@ final class FileLogger extends TranslationLogger {
 	}
 
 	/**
-	 * A mutable translation record.
-	 * @author Emina Torlak
-	 */
-	private static final class MutableRecord extends TranslationRecord {
-		Node n = null; 
-		int literal = 0;
-		Map<Variable,TupleSet> env = null;
-		
-		public Map<Variable, TupleSet> env() { return env;	}
-		public int literal() { return literal;	}
-		public Node node() { return n; }
-		void setAll(Node n, int literal, Map<Variable,TupleSet> env) {
-			this.n = n;
-			this.literal = literal;
-			this.env = env;
-		}
-		TranslationRecord setAll(MutableRecord other) {
-			setAll(other.n, other.literal, other.env);
-			other.setAll(null,0,null);
-			return this;
-		}
-	}
-	
-	/**
 	 * A file-based translation log, written by a FileLogger.
 	 * @author Emina Torlak
 	 */
 	private static final class FileLog extends TranslationLog {
-	    private final Node[] indexedNodes;
+	    private final Formula formula;
+		private final Node[] indexedNodes;
 	    private final Variable[][] indexedVars;
 	    private final File file;
 	    private final TupleFactory factory;
+	   
 	    /**
 	     * Constructs a new file log for the sources of the given annotated formula,
 	     * using the provided fixed map, file, and tuplefactory.
@@ -272,6 +192,7 @@ final class FileLogger extends TranslationLogger {
 	    FileLog(AnnotatedNode<Formula> annotated, FixedMap<Formula, Variable[]> logMap, File file, TupleFactory factory) {
 	    	this.file = file;
 	    	this.factory = factory;
+	    	this.formula = (Formula) annotated.sourceOf(annotated.node());
 	    	
 	    	final int size = logMap.entrySet().size();
 	    	this.indexedNodes = new Node[size];
@@ -284,15 +205,25 @@ final class FileLogger extends TranslationLogger {
 	    	}
 	    }
 	    
+	    /**
+	     * Deletes the log file.
+	     * @see java.lang.Object#finalize()
+	     */
 	    protected final void finalize() {
 	    	file.delete();
 	    }
 	    
 	    /**
 	     * {@inheritDoc}
-	     * @see kodkod.engine.fol2sat.TranslationLog#replay(kodkod.util.ints.IntSet)
+	     * @see kodkod.engine.fol2sat.TranslationLog#formula()
 	     */
-		public Iterator<TranslationRecord> replay(final IntSet literals) {
+	    public Formula formula() { return formula; } 
+	    	
+		/**
+		 * {@inheritDoc}
+		 * @see kodkod.engine.fol2sat.TranslationLog#replay(kodkod.engine.fol2sat.RecordFilter)
+		 */
+		public Iterator<TranslationRecord> replay(final RecordFilter filter) {
 			try {	
 				return new Iterator<TranslationRecord>() {
 					final DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(file)));
@@ -300,31 +231,31 @@ final class FileLogger extends TranslationLogger {
 					long remaining = file.length();
 								
 					public boolean hasNext() {
-						while(remaining > 0 && next.n == null) {
+						while(remaining > 0 && next.node == null) {
 							try {
 								final long indexLiteral = in.readLong();
 								final int literal = (int) (indexLiteral);
 								final int index = (int) (indexLiteral>>>32);
 								final Variable[] freeVars = indexedVars[index];
-								final int varBytes = freeVars.length << 2;
-								if (literals.contains(literal)) {			
-									final Map<Variable,TupleSet> env= new FixedMap<Variable,TupleSet>(freeVars);
-									for(int i = 0; i < freeVars.length; i++) {
-										env.put(freeVars[i], factory.setOf(1,Ints.singleton(in.readInt())));
-									}							
-									next.setAll(indexedNodes[index], literal, env);							
+								final Map<Variable,TupleSet> env;
+								if (freeVars.length==0) {
+									env = Collections.emptyMap();
 								} else {
-									for(int skip = in.skipBytes(varBytes); skip < varBytes; skip++) {
-										in.readByte();
+									env = new FixedMap<Variable,TupleSet>(freeVars);
+									for(int i = 0; i < freeVars.length; i++) {
+										env.put(freeVars[i], factory.setOf(1, Ints.singleton(in.readInt())));
 									}
 								}
-								remaining -= (8 + varBytes);
+								if (filter.accept(indexedNodes[index], literal, env)) {
+									next.setAll(indexedNodes[index], literal, env);
+								}
+								remaining -= (8 + (freeVars.length << 2));
 								
 							} catch (IOException e) {
 								throw new RuntimeException(e);
 							}
 						}
-						return next.n != null;
+						return next.node != null;
 					}
 
 					public TranslationRecord next() {
@@ -343,4 +274,29 @@ final class FileLogger extends TranslationLogger {
 			}	
 		}		
 	}
+	
+	/**
+	 * A mutable translation record.
+	 * @author Emina Torlak
+	 */
+	private static final class MutableRecord extends TranslationRecord {
+		Node node = null; 
+		int literal = 0;
+		Map<Variable,TupleSet> env = null;
+		
+		public Map<Variable, TupleSet> env() { return env;	}
+		public int literal() { return literal;	}
+		public Node node() { return node; }
+		void setAll(Node node, int literal, Map<Variable,TupleSet> env) {
+			this.node = node;
+			this.literal = literal;
+			this.env = env;
+		}
+		TranslationRecord setAll(MutableRecord other) {
+			setAll(other.node, other.literal, other.env);
+			other.setAll(null,0,null);
+			return this;
+		}
+	}
+
 }

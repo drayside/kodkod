@@ -31,7 +31,7 @@ import kodkod.engine.bool.BooleanValue;
  * @specfield formula: Formula
  * @specfield bounds: Bounds
  * @specfield transforms: formula.*children lone-> Formula 
- * @specfield records: (iden ++ transforms).Formula -> BooleanValue -> Variable -> BooleanMatrix
+ * @specfield records: (iden ++ transforms).Formula -> BooleanValue -> Environment<BooleanMatrix>
  * @author Emina Torlak
  */
 abstract class TranslationLogger {
@@ -41,8 +41,7 @@ abstract class TranslationLogger {
 	 * given transformed formula to the given boolean value 
 	 * in the specified environment.
 	 * @requires some this.transforms.f
-	 * @effects this.records' = this.records + 
-	 *  this.transforms.f -> translation -> {v: freeVariables(f), m: BooleanMatrix | m = env.lookup(v) }
+	 * @effects this.records' = this.records + this.transforms.f -> translation -> freeVariables(f)<:env
 	 * @throws IllegalArgumentException - no this.transforms.f
 	 * @throws IllegalStateException - this log has been closed
 	 */

@@ -25,14 +25,24 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
 import java.util.Set;
 
+import kodkod.ast.BinaryFormula;
 import kodkod.ast.Formula;
-import kodkod.engine.fol2sat.TranslationRecord;
+import kodkod.ast.Node;
+import kodkod.ast.Variable;
+import kodkod.engine.fol2sat.RecordFilter;
 import kodkod.engine.fol2sat.TranslationLog;
+import kodkod.engine.fol2sat.TranslationRecord;
 import kodkod.engine.satlab.Clause;
 import kodkod.engine.satlab.ReductionStrategy;
 import kodkod.engine.satlab.ResolutionTrace;
+import kodkod.instance.TupleSet;
 import kodkod.util.collections.Containers;
 import kodkod.util.ints.IntBitSet;
 import kodkod.util.ints.IntIterator;
@@ -58,11 +68,8 @@ public final class HybridStrategy implements ReductionStrategy {
 	 */
 	public HybridStrategy(TranslationLog log) {
 		topLevel = new IntTreeSet();
-		for(Iterator<TranslationRecord> itr = log.replay(); itr.hasNext();) {
-			TranslationRecord r = itr.next();
-			if (r.env().isEmpty() && r.node() instanceof Formula) {
-				topLevel.add(Math.abs(r.literal()));
-			}
+		for(Iterator<TranslationRecord> itr = log.replay(topFilter(log.formula())); itr.hasNext();) {
+			topLevel.add(Math.abs(itr.next().literal()));
 		}
 		cmp = new Comparator<Clause>(){
 			public int compare(Clause arg0, Clause arg1) {
@@ -70,7 +77,55 @@ public final class HybridStrategy implements ReductionStrategy {
 		}};
 	}
 	
+	/**
+	 * Returns a record filter that only accepts the records
+	 * whose node is a member of the top-level conjunction of the given formula.
+	 * @return a record filter that only accepts the records
+	 * whose node is a member of the top-level conjunction of the given formula.
+	 */
+	private static final RecordFilter topFilter(Formula formula) {
+		final Set<Formula> topLevel = flatten(formula);
+		return new RecordFilter() {
+			public boolean accept(Node node, int literal, Map<Variable, TupleSet> env) {
+				return topLevel.contains(node);
+			}
+		};
+	}
 	
+	/**
+	 * Flattens the top level conjunction.  In other words, returns the subformulas
+	 * f0, ..., fk of the given formula such that calling f0.and(f1)...and(fk) produces
+	 * an AST isomorphic to the given formula.  The formulas f0, ..., fk are guaranteed not to be
+	 * conjunctions.
+	 * @return a set containing the flattened children of the top level conjunction
+	 */
+	private static final Set<Formula> flatten(Formula formula) {
+		final List<Formula> formulas = new LinkedList<Formula>();
+		formulas.add(formula);
+		if (formula instanceof BinaryFormula) {
+			final BinaryFormula top = (BinaryFormula) formula;
+			final BinaryFormula.Operator op = top.op();
+			if (op==BinaryFormula.Operator.AND) {
+				int size;
+				do {
+					size = formulas.size();
+					ListIterator<Formula> itr = formulas.listIterator();
+					while(itr.hasNext()) {
+						Formula f = itr.next();
+						if (f instanceof BinaryFormula) {
+							BinaryFormula bin = (BinaryFormula) f;
+							if (bin.op()==op) {
+								itr.remove();
+								itr.add(bin.left());
+								itr.add(bin.right());
+							}
+						}
+					}
+				} while (formulas.size() > size);
+			}
+		}
+		return new LinkedHashSet<Formula>(formulas);
+	}
 	
 	/**
 	 * {@inheritDoc}

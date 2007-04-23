@@ -28,13 +28,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import kodkod.ast.Formula;
 import kodkod.ast.Relation;
 import kodkod.ast.RelationPredicate;
+import kodkod.ast.RelationPredicate.Name;
 import kodkod.engine.bool.BooleanAccumulator;
 import kodkod.engine.bool.BooleanConstant;
 import kodkod.engine.bool.BooleanFactory;
@@ -43,7 +46,6 @@ import kodkod.engine.bool.BooleanValue;
 import kodkod.engine.bool.Operator;
 import kodkod.instance.Bounds;
 import kodkod.instance.TupleFactory;
-import kodkod.util.collections.IdentityHashSet;
 import kodkod.util.ints.IndexedEntry;
 import kodkod.util.ints.IntIterator;
 import kodkod.util.ints.IntSet;
@@ -62,7 +64,6 @@ import kodkod.util.ints.Ints;
 final class SymmetryBreaker {
 	private final Bounds bounds;
 	private final Set<IntSet> symmetries;
-	private final Set<RelationPredicate> broken;
 	private final int usize;
 	
 	/**
@@ -77,43 +78,71 @@ final class SymmetryBreaker {
 		this.bounds = bounds;
 		this.usize = bounds.universe().size();
 		this.symmetries = SymmetryDetector.partition(bounds);
-		this.broken = new IdentityHashSet<RelationPredicate>();
 	}
 	
 	/**
-	 * Breaks matrix symmetries on this.bounds using this.symmetries and the given map from
-	 * RelationPredicate.Name to sets of RelationPredicates.
-	 * @requires RelationPredicate.Name.preds.*children & Relation in this.bounds.relations
-	 * @requires all n: preds.RelationPredicate | preds[n].name() = n
-	 * @effects this.broken' is modified to contain the predicates used to break matrix symmetries on this.bounds'
-	 * @effects this.bounds' has exact bounds for the  total
-	 * orderings in this.broken' and upper triangular bounds for the acyclic relations in this.broken'
-	 * @effects this.symmetries' is modified to no longer contain the partitions that 
-	 * make up the bounds of the relations at the leaves of the predicates in this.broken'
+	 * Breaks matrix symmetries on the relations in this.bounds that are constrained by  
+	 * the total ordering and acyclic predicates, drawn from preds.values(), that make up the 
+	 * keyset of the returned map.  After this method returns, the following constraint holds.
+	 * Let m be the map returned by the method, and m.keySet() be the subset of preds.values() 
+	 * used for symmetry breaking.  Then, if we let [[b]] denote the set of constraints 
+	 * specified by a Bounds object b, the formulas "p and [[this.bounds]]" and "m.get(p) and [[this.bounds']]"
+	 * are equisatisfiable for all p in m.keySet(). 
+	 * 
+	 * <p>The value of the "aggressive" flag determines how the symmetries are broken.  In particular, if
+	 * the aggressive flag is true, then the symmetries are broken efficiently, at the cost of 
+	 * losing the information needed to determine whether a predicate in m.keySet() belongs to an unsatisfiable 
+	 * core or not.  If the aggressive flag is false, then a less efficient algorithm is applied, which preserves
+	 * the information necessary for unsatisfiable core extraction. </p>
+	 *
+	 * <p>The aggressive symmetry breaking algorithm works as follows.  Let t1...tn and c1...ck
+	 * be the total ordering and acyclic predicates in m.keySet().  For each t in {t1...tn}, this.bounds
+	 * is modified so that the bounds for t.first, t.last, t.ordered and t.relation are the following constants: 
+	 * t.first is the first atom in the upper bound of t.ordered, t.last is the last atom in the upper bound of t.ordered, t.ordered's
+	 * lower bound is changed to be equal to its upper bound, and t.relation imposes a total ordering on t.ordered 
+	 * that corresponds to the ordering of the atoms in this.bounds.universe. Then, m is updated with a binding
+	 * from t to the constant formula TRUE.  For each c in {c1...ck},  
+	 * this.bounds is modified so that the upper bound for c.relation is a tupleset whose equivalent matrix 
+	 * has FALSE in the entries on or below the main diagonal.  Then, m is updated with a binding from c to the 
+	 * constant formula TRUE.</p>
+	 * 
+	 * <p>The lossless symmetry breaking algorithm works as follows. Let t1...tn and c1...ck be the total ordering
+	 * and acyclic predicates in m.keySet(). For each t in {t1...tn}, three fresh relations are added to this.bounds--
+	 * t_first, t_last, t_ordered, and t_order--and constrained as follows: t_first is the first atom
+	 * in the upper bound of t.ordered, t_last is the last atom in the upper bound of t.ordered, t_ordered is 
+	 * the upper bound of t.ordered, and t_order imposes a total ordering on t.ordered that corresponds to the
+	 * ordering of the atoms in this.bounds.universe.  Then, m is updated with a binding from t to the formula
+	 * "t.first = t_first and t.last = t_last and t.ordered = t_ordered and t.relation = t.order."  
+	 * For each c in {c1...ck}, a fresh relation c_acyclic is added to this.bounds and constrained to be a constant 
+	 * whose equivalent matrix has no entries on or below the main diagonal. The map m is then 
+	 * updated with a binding from c to the constraint "c in c_acyclic".</p>
+	 * 
+	 * @effects this.bounds' is modified as described above
+	 * @effects this.symmetries' is modified to no longer contain the partitions that made up the bounds of
+	 * the relations on which symmetries have been broken
+	 * @return a map m such that m.keySet() in preds.values(), and for all predicates p in m.keySet(), the formulas
+	 * "p and [[this.bounds]]" and "m.get(p) and [[this.bounds']]" are equisatisfiable
 	 */
-	final void breakMatrixSymmetries(Map<RelationPredicate.Name, Set<RelationPredicate>> preds) {
+	Map<RelationPredicate, Formula> breakMatrixSymmetries(Map<Name, Set<RelationPredicate>> preds, boolean aggressive) {
 		final Set<RelationPredicate> totals = preds.get(TOTAL_ORDERING);
 		final Set<RelationPredicate> acyclics = preds.get(ACYCLIC);
+		final Map<RelationPredicate, Formula> broken = new IdentityHashMap<RelationPredicate, Formula>();
 		
 		for(RelationPredicate.TotalOrdering pred : sort(totals.toArray(new RelationPredicate.TotalOrdering[totals.size()]))) {
-			if (breakTotalOrder(pred))
-				broken.add(pred);
+			Formula replacement = breakTotalOrder(pred,aggressive);
+			if (replacement!=null)
+				broken.put(pred, replacement);
 		}
 		
 		for(RelationPredicate.Acyclic pred : sort(acyclics.toArray(new RelationPredicate.Acyclic[acyclics.size()]))) {
-			if (breakAcyclic(pred))
-				broken.add(pred);
+			Formula replacement = breakAcyclic(pred,aggressive);
+			if (replacement!=null)
+				broken.put(pred, replacement);
 		}
+		
+		return broken;
 	}
-	
-	/**
-	 * Returns the set of all predicates for which symmetries have been broken so far.
-	 * @return this.broken
-	 */
-	final Set<RelationPredicate> broken() {
-		return Collections.unmodifiableSet(broken);
-	}
-	
+		
 	/**
 	 * Generates a lex leader symmetry breaking predicate for this.symmetries 
 	 * (if any), using the specified leaf interpreter and the specified predicate length.
@@ -269,94 +298,142 @@ final class SymmetryBreaker {
 	}	
 	
 	/**
-	 * If possible, reduces the upper bound of acyclic.relation to the elements above
-	 * the diagonal and removes the partitions comprising the upper bound of acyclic.relation 
-	 * from this.symmetries.
-	 * @return true if the bounds for the acyclic.relation were reduced, otherwise returns false
-	 * @effects (some s: this.parts[int] | 
-	 *            this.bounds.upperBound[acyclic.relation].project([0..1]).indexView() = s) =>
-	 *          (this.bounds.upperBound' = this.bounds.upperBound ++ 
-	 *           acyclic.relation -> {t: Tuple | t.arity = 2 && t.atoms[0] < t.atoms[1] }) &&
-	 *          (this.parts'[int] = 
-	 *           this.parts[int] - this.bounds.upperBound[acyclic.relation].project(0).indexView())
+	 * If possible, breaks symmetry on the given acyclic predicate and returns a formula
+	 * f such that the meaning of acyclic with respect to this.bounds is equivalent to the
+	 * meaning of f with respect to this.bounds'. If symmetry cannot be broken on the given predicate, returns null.  
+	 * 
+	 * <p>We break symmetry on the relation constrained by the given predicate iff 
+	 * this.bounds.upperBound[acyclic.relation] is the cross product of some partition in this.symmetries with
+	 * itself. Assuming that this is the case, we then break symmetry on acyclic.relation using one of the methods
+	 * described in {@linkplain #breakMatrixSymmetries(Map, boolean)}; the method used depends
+	 * on the value of the "agressive" flag.
+	 * The partition that formed the upper bound of acylic.relation is removed from this.symmetries.</p>
+	 * 
+	 * @return null if symmetry cannot be broken on acyclic; otherwise returns a formula
+	 * f such that the meaning of acyclic with respect to this.bounds is equivalent to the
+	 * meaning of f with respect to this.bounds' 
+	 * @effects this.symmetries and this.bounds are modified as desribed in {@linkplain #breakMatrixSymmetries(Map, boolean)} iff this.bounds.upperBound[acyclic.relation] is the 
+	 * cross product of some partition in this.symmetries with itself
+	 * 
+	 * @see #breakMatrixSymmetries(Map,boolean)
 	 */
-	private final boolean breakAcyclic(RelationPredicate.Acyclic acyclic) {
+	private final Formula breakAcyclic(RelationPredicate.Acyclic acyclic, boolean aggressive) {
 		final IntSet[] colParts = symmetricColumnPartitions(acyclic.relation());
 		if (colParts!=null) {
-			final IntSet upper = bounds.upperBound(acyclic.relation()).indexView();
+			final Relation relation = acyclic.relation();
+			final IntSet upper = bounds.upperBound(relation).indexView();
 			final IntSet reduced = Ints.bestSet(usize*usize);
 			for(IntIterator tuples = upper.iterator(); tuples.hasNext(); ) {
 				int tuple = tuples.next();
 				int mirror = (tuple / usize) + (tuple % usize)*usize;
 				if (tuple != mirror) {
-					if (!upper.contains(mirror)) return false;
+					if (!upper.contains(mirror)) return null;
 					if (!reduced.contains(mirror))
 						reduced.add(tuple);	
 				}
 			}
-			bounds.bound(acyclic.relation(), bounds.universe().factory().setOf(2, reduced));
-			// remove the column partitions from the set of symmetric partitions
-			for(Iterator<IntSet> symIter = symmetries.iterator(); symIter.hasNext(); ) {
-				IntSet part = symIter.next();
-				if (part.contains(colParts[0].min()) || symmetries.contains(colParts[1].min())) {
-					symIter.remove();
-				}			
+			
+			// remove the partition from the set of symmetric partitions
+			removePartition(colParts[0].min());
+			
+			if (aggressive) {
+				bounds.bound(relation, bounds.universe().factory().setOf(2, reduced));
+				return Formula.TRUE;
+			} else {
+				final Relation acyclicConst = Relation.binary("SYM_BREAK_CONST_"+acyclic.relation().name());
+				bounds.boundExactly(acyclicConst, bounds.universe().factory().setOf(2, reduced));
+				return relation.in(acyclicConst);
 			}
-			return true;
 		}
-		return false;
+		return null;
 	}
 	
 	/**
-	 * If possible, reduces the upper bounds of total.relation, total.ordered, total.first,
-	 * and total.last, to exact bounds and removes the partition comprising the upper bound 
-	 * of total.ordered from this.symmetries.
-	 * @return true if the bounds for total.(relation+ordered+first+last) were reduced, otherwise returns false.
-	 * @effects (some s: this.parts[int] | bounds.upperBound[total.ordered].indexView() = s) =>
-	 *          this.bounds.upperBound' = this.bounds.upperBound ++ 
-	 *           (total.relation -> {t: Tuple | t.arity = 2 && t.atoms[0] < t.atoms[1] 
-	 *                                && t.atoms in this.bounds.upperBound[total.ordered] } + 
-	 *            total.first -> this.bounds.upperBound[total.ordered].indexView().min() + 
-	 *            total.last -> this.bounds.upperBound[total.ordered].indexView().max()) &&
-	 *          (this.bounds.lowerBound' = this.bounds.lowerBound ++ 
-	 *            (total.(relation + ordered + first + last))<:this.bounds.upperBound') && 
-	 *          (this.parts'[int] = 
-	 *           this.parts[int] - this.bounds.upperBound[total.ordered].indexView())
+	 * If possible, breaks symmetry on the given total ordering predicate and returns a formula
+	 * f such that the meaning of total with respect to this.bounds is equivalent to the
+	 * meaning of f with respect to this.bounds'. If symmetry cannot be broken on the given predicate, returns null.  
+	 * 
+	 * <p>We break symmetry on the relation constrained by the given predicate iff 
+	 * total.first, total.last, and total.ordered have the same upper bound, which, when 
+	 * cross-multiplied with itself gives the upper bound of total.relation. Assuming that this is the case, 
+	 * we then break symmetry on total.relation, total.first, total.last, and total.ordered using one of the methods
+	 * described in {@linkplain #breakMatrixSymmetries(Map, boolean)}; the method used depends
+	 * on the value of the "agressive" flag.
+	 * The partition that formed the upper bound of total.ordered is removed from this.symmetries.</p>
+	 * 
+	 * @return null if symmetry cannot be broken on total; otherwise returns a formula
+	 * f such that the meaning of total with respect to this.bounds is equivalent to the
+	 * meaning of f with respect to this.bounds' 
+	 * @effects this.symmetries and this.bounds are modified as desribed in {@linkplain #breakMatrixSymmetries(Map, boolean)} 
+	 * iff total.first, total.last, and total.ordered have the same upper bound, which, when 
+	 * cross-multiplied with itself gives the upper bound of total.relation
+	 * 
+	 * @see #breakMatrixSymmetries(Map,boolean)
 	 */
-	private final boolean breakTotalOrder(RelationPredicate.TotalOrdering total) {
-		final IntSet ordered = bounds.upperBound(total.ordered()).indexView();
-				
-		if (symmetricColumnPartitions(total.ordered())!=null && 
-			bounds.upperBound(total.first()).indexView().contains(ordered.min()) && 
-			bounds.upperBound(total.last()).indexView().contains(ordered.max())) {
+	private final Formula breakTotalOrder(RelationPredicate.TotalOrdering total, boolean aggressive) {
+		final Relation first = total.first(), last = total.last(), ordered = total.ordered(), relation = total.relation();
+		final IntSet domain = bounds.upperBound(ordered).indexView();		
+	
+		if (symmetricColumnPartitions(ordered)!=null && 
+			bounds.upperBound(first).indexView().contains(domain.min()) && 
+			bounds.upperBound(last).indexView().contains(domain.max())) {
+			
 			// construct the natural ordering that corresponds to the ordering of the atoms in the universe
 			final IntSet ordering = Ints.bestSet(usize*usize);
-			int prev = ordered.min();
-			for(IntIterator atoms = ordered.iterator(prev+1, usize); atoms.hasNext(); ) {
+			int prev = domain.min();
+			for(IntIterator atoms = domain.iterator(prev+1, usize); atoms.hasNext(); ) {
 				int next = atoms.next();
 				ordering.add(prev*usize + next);
 				prev = next;
 			}
-			if (ordering.containsAll(bounds.lowerBound(total.relation()).indexView()) &&
-				bounds.upperBound(total.relation()).indexView().containsAll(ordering)) {
-				final TupleFactory f = bounds.universe().factory();
-				bounds.boundExactly(total.relation(), f.setOf(2, ordering));
-				bounds.boundExactly(total.ordered(), bounds.upperBound(total.ordered()));
-				bounds.boundExactly(total.first(), f.setOf(f.tuple(1, ordered.min())));
-				bounds.boundExactly(total.last(), f.setOf(f.tuple(1, ordered.max())));
+			
+			if (ordering.containsAll(bounds.lowerBound(relation).indexView()) &&
+				bounds.upperBound(relation).indexView().containsAll(ordering)) {
+				
 				// remove the ordered partition from the set of symmetric partitions
-				for(Iterator<IntSet> symIter = symmetries.iterator(); symIter.hasNext(); ) {
-					if (symIter.next().contains(ordered.min())) {
-						symIter.remove();
-						break;
-					}			
+				removePartition(domain.min());
+				
+				final TupleFactory f = bounds.universe().factory();
+				
+				if (aggressive) {
+					bounds.boundExactly(first, f.setOf(f.tuple(1, domain.min())));
+					bounds.boundExactly(last, f.setOf(f.tuple(1, domain.max())));
+					bounds.boundExactly(ordered, bounds.upperBound(total.ordered()));
+					bounds.boundExactly(relation, f.setOf(2, ordering));
+					
+					return Formula.TRUE;
+					
+				} else {
+					final Relation firstConst = Relation.unary("SYM_BREAKING_CONST"+first.name());
+					final Relation lastConst = Relation.unary("SYM_BREAKING_CONST"+last.name());
+					final Relation ordConst = Relation.unary("SYM_BREAKING_CONST"+ordered.name());
+					final Relation relConst = Relation.binary("SYM_BREAKING_CONST"+relation.name());
+					bounds.boundExactly(firstConst, f.setOf(f.tuple(1, domain.min())));
+					bounds.boundExactly(lastConst, f.setOf(f.tuple(1, domain.max())));
+					bounds.boundExactly(ordConst, bounds.upperBound(total.ordered()));
+					bounds.boundExactly(relConst, f.setOf(2, ordering));
+					
+					return first.eq(firstConst).and(last.eq(lastConst)).and(ordered.eq(ordConst)).and(relation.eq(relConst));
+
 				}
-//				System.out.println("breaking: " + total + ", " + bounds);				
-				return true;
+
 			}
 		}
 		
-		return false;
+		return null;
+	}
+
+	/**
+	 * Removes from this.symmetries the partition that contains the specified atom.
+	 * @effects this.symmetries' = { s: this.symmetries | !s.contains(atom) }
+	 */
+	private final void removePartition(int atom) {
+		for(Iterator<IntSet> symIter = symmetries.iterator(); symIter.hasNext(); ) {
+			if (symIter.next().contains(atom)) {
+				symIter.remove();
+				break;
+			}			
+		}
 	}
 	
 	/**
