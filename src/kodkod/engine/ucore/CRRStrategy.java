@@ -34,10 +34,11 @@ import kodkod.util.ints.Ints;
 
 
 /**
- * A skeletal implementation of the Complete Resolution Refutation algorithm
+ * A basic implementation of the Complete Resolution Refutation algorithm
  * for for producing locally minimal cores.
  * An unsatisfiable core is locally minimal iff removing any single clause from
- * the core will make the resulting formula satisfiable.
+ * the core will make the resulting formula satisfiable.  No heuristic is used
+ * to pick the clauses to be excluded from the core.
  * @specfield traces: [0..)->ResolutionTrace
  * @specfield nexts: [0..)->Set<Clause>
  * @invariant traces.ResolutionTrace = nexts.Set<Clause>
@@ -45,18 +46,18 @@ import kodkod.util.ints.Ints;
  * @invariant all i: [0..#nexts) | nexts[i] in traces[i].conflict.^antecedents
  * @invariant no disj i,j: [0..#nexts) | traces[i] = traces[j] && nexts[i] = nexts[j]
  * @author Emina Torlak
- * @see N. Dershowitz, Z. Hanna, and A. Nadel.  <i>A scalable algorithm for minimal unsatisfiable core
+ * @see <a href="http://www.cs.tau.ac.il/~ale1/muc_sat06_short_8.pdf">N. Dershowitz, Z. Hanna, and A. Nadel.  <i>A scalable algorithm for minimal unsatisfiable core
  * extraction.</i>  In Proceedings of Ninth International Conference on Theory and Applications of 
- * Satisfiability Testing (SAT '06). 2006.
+ * Satisfiability Testing (SAT '06). 2006.</a>
  */
-public abstract class CRRStrategy implements ReductionStrategy {
+public final class CRRStrategy implements ReductionStrategy {
 	private IntSet excluded;
 	
 	/** 
 	 * Constructs a new instance of CRRStrategy. 
 	 * @effects no this.traces' and no this.nexts'
 	 **/
-	protected CRRStrategy() {
+	public CRRStrategy() {
 		excluded = Ints.EMPTY_SET;
 	}
 	
@@ -86,7 +87,9 @@ public abstract class CRRStrategy implements ReductionStrategy {
 	 * Returns an iterator that imposes some total ordering on trace.core.
 	 * @return an iterator that imposes some total ordering on trace.core.
 	 */
-	protected abstract Iterator<Clause> order(ResolutionTrace trace);
+	private Iterator<Clause> order(ResolutionTrace trace) {
+		return trace.core().iterator();
+	}
 	
 	
 }

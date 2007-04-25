@@ -65,6 +65,7 @@ public abstract class Clause {
 	 */
 	public abstract IntSet literals();
 	
+	
 	/**
 	 * Returns an unmodifiable List view of this.antecedents.
 	 * @return an unmodifiable List view of this.antecedents.
