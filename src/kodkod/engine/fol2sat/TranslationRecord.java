@@ -28,7 +28,7 @@ import kodkod.ast.Variable;
 import kodkod.instance.TupleSet;
 
 /**
- * A record of a translation event.
+ * Record of a translation event.
  * @specfield node: Node // formula (or a node desugared to a formula) that was translated
  * @specfield literal: int // cnf literal representing the meaning of this.node in this.env
  * @specfield env: Variable ->one TupleSet // bindings for free, non-skolemized variables 

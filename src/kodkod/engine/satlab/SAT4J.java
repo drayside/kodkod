@@ -56,8 +56,7 @@ final class SAT4J implements SATSolver {
 	}
 
 	/**
-	 * Returns the size of this solver's vocabulary.
-	 * @return #this.literals
+	 * {@inheritDoc}
 	 * @see kodkod.engine.satlab.SATSolver#numberOfVariables()
 	 */
 	public int numberOfVariables() {
@@ -65,9 +64,7 @@ final class SAT4J implements SATSolver {
 	}
 
 	/**
-	 * Returns the number of clauses added to the 
-	 * solver so far.
-	 * @return #this.clauses
+	 * {@inheritDoc}
 	 * @see kodkod.engine.satlab.SATSolver#numberOfClauses()
 	 */
 	public int numberOfClauses() {
@@ -75,10 +72,8 @@ final class SAT4J implements SATSolver {
 	}
 	
 	/**
-	 * Adds the specified number of new variables
-	 * to the solver's vocabulary.
-	 * @effects this.literals' = [1..#this.literals + numVars]
-	 * @throws IllegalArgumentException - numVars < 0
+	 * {@inheritDoc}
+	 * @see kodkod.engine.satlab.SATSolver#addVariables(int)
 	 */
 	public void addVariables(int numVars) {
 		if (numVars < 0)
@@ -90,15 +85,10 @@ final class SAT4J implements SATSolver {
 	}
 
 	/**
-	 * Adds the specified sequence of literals to this.clauses.
-	 * No reference to the specified array is kept, so it can
-	 * be reused. 
-	 * @effects this.clauses' = this.clauses + lits
-	 * @throws NullPointerException - lits = null
-	 * @throws IllegalArgumentException - some i: [0..lits.length) | |lits[0]| > #this.literals 
+	 * {@inheritDoc}
 	 * @see kodkod.engine.satlab.SATSolver#addClause(int[])
 	 */
-	public void addClause(int[] lits) {
+	public boolean addClause(int[] lits) {
 		try {
 			if (!Boolean.FALSE.equals(sat)) {
 				clauses++;
@@ -107,19 +97,18 @@ final class SAT4J implements SATSolver {
 //					System.out.print(lit + " ");
 //				}
 //				System.out.println(0);
+				return true;
 			}
 			
 		} catch (ContradictionException e) {
 			sat = Boolean.FALSE;
 		}
+		return false;
 	}
 
 	/**
-	 * Returns true if there is a satisfying assignment for this.clauses.
-	 * Otherwise returns false.  If this.clauses are satisfiable, the 
-	 * satisfying assignment can be obtained by calling {@link #variablesThatAre(boolean, int, int)}
-	 * or {@link #valueOf(int) }.
-	 * @return true if this.clauses are satisfiable; otherwise false.
+	 * {@inheritDoc}
+	 * @see kodkod.engine.satlab.SATSolver#solve()
 	 */
 	public boolean solve() {
 		try {
@@ -132,15 +121,8 @@ final class SAT4J implements SATSolver {
 	}
 
 	/**
-	 * Returns the boolean value assigned to the given variable by the
-	 * last successful call to {@link #solve()}. 
-	 * @requires {@link #solve() } has been called and the 
-	 * outcome of the last call was <code>true</code>.  
-	 * @return the boolean value assigned to the given variable by the
-	 * last successful call to {@link #solve()}. 
-	 * @throws IllegalArgumentException - variable !in this.variables
-	 * @throws IllegalStateException - {@link #solve() } has not been called or the 
-	 * outcome of the last call was not <code>true</code>.
+	 * {@inheritDoc}
+	 * @see kodkod.engine.satlab.SATSolver#valueOf(int)
 	 */
 	public final boolean valueOf(int variable) {
 		if (!Boolean.TRUE.equals(sat)) 

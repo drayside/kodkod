@@ -48,7 +48,7 @@ public abstract class Proof {
 	private final TranslationLog log;
 	
 	/**
-	 * Constructs a new Proof of unsatisfiability for log.formula.
+	 * Constructs a new ResolutionRefutation of unsatisfiability for log.formula.
 	 * @requires formula = log.formula
 	 */
 	Proof(TranslationLog log) {

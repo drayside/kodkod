@@ -100,9 +100,10 @@ final class ExternalSolver implements SATSolver {
 	}
 	
 	/**
+	 * {@inheritDoc}
 	 * @see kodkod.engine.satlab.SATSolver#addClause(int[])
 	 */
-	public void addClause(int[] lits) {
+	public boolean addClause(int[] lits) {
 		if (lits.length>0) {
 			clauses++;
 			if (buffer.length()>capacity) flush();
@@ -111,7 +112,9 @@ final class ExternalSolver implements SATSolver {
 				buffer.append(" ");
 			}
 			buffer.append("0\n");
+			return true;
 		}
+		return false;
 	}
 
 	/**

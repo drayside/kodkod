@@ -6,16 +6,23 @@ package tests;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import kodkod.ast.Formula;
+import kodkod.ast.Node;
+import kodkod.ast.Variable;
 import kodkod.engine.Proof;
 import kodkod.engine.Solution;
 import kodkod.engine.Solver;
+import kodkod.engine.fol2sat.RecordFilter;
+import kodkod.engine.fol2sat.TranslationRecord;
 import kodkod.engine.satlab.SATFactory;
 import kodkod.engine.ucore.HybridStrategy;
 import kodkod.instance.Bounds;
+import kodkod.instance.TupleSet;
 import examples.CeilingsAndFloors;
 import examples.Dijkstra;
 import examples.Pigeonhole;
@@ -174,7 +181,12 @@ public final class UCoreTest {
 				for(Formula f : topCore) {
 					System.out.println(f);
 				}
-				
+				final Iterator<TranslationRecord> iter = proof.log().replay(new RecordFilter(){
+
+					public boolean accept(Node node, int literal, Map<Variable, TupleSet> env) {
+						return node == proof.log().formula();
+					}});
+				System.out.println(iter.next());
 			}
 		} catch (SecurityException e) {
 			e.printStackTrace();

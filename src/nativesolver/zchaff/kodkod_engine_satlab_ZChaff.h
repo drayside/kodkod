@@ -34,9 +34,9 @@ JNIEXPORT void JNICALL Java_kodkod_engine_satlab_ZChaff_addVariables
 /*
  * Class:     kodkod_engine_satlab_ZChaff
  * Method:    addClause
- * Signature: (J[I)V
+ * Signature: (J[I)Z
  */
-JNIEXPORT jint JNICALL Java_kodkod_engine_satlab_ZChaff_addClause
+JNIEXPORT jboolean JNICALL Java_kodkod_engine_satlab_ZChaff_addClause
   (JNIEnv *, jobject, jlong, jintArray);
 
 /*

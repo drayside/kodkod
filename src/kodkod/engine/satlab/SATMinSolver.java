@@ -31,9 +31,10 @@ package kodkod.engine.satlab;
  * 
  * @specfield variables: set [1..)
  * @specfield cost: variables -> one [0..)
- * @specfield clauses: set Clause
+ * @specfield clauses: set IntSet
  * @invariant all i: [2..) | i in variables => i-1 in variables
- * @invariant all c: clauses | all lit: c.literals | lit in variables || -lit in variables
+ * @invariant all c: clauses | all lit: c.ints | lit in variables || -lit in variables
+ * @invariant all c: clauses | all disj i,j: c.ints | abs(i) != abs(j)
  * @author Emina Torlak
  */
 public interface SATMinSolver extends SATSolver {
