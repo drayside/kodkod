@@ -21,17 +21,16 @@
  */
 package kodkod.engine.satlab;
 
-
-
 /**
  * Provides an interface to a SAT solver that can generate
  * proofs of unsatisfiability.
  * 
  * @specfield variables: set [1..)
  * @specfield clauses: set IntSet
+ * @specfield resolvents: set IntSet  
  * @invariant all i: [2..) | i in variables => i-1 in variables
- * @invariant all c: clauses | all lit: c.ints | lit in variables || -lit in variables
- * @invariant all c: clauses | all disj i,j: c.ints | abs(i) != abs(j)
+ * @invariant all c: clauses + resolvents | all lit: c.ints | lit in variables || -lit in variables
+ * @invariant all c: clauses + resolvents | all disj i,j: c.ints | abs(i) != abs(j)
  * @author Emina Torlak
  */
 public interface SATProver extends SATSolver {
@@ -39,19 +38,40 @@ public interface SATProver extends SATSolver {
 	/**
 	 * Returns a resolution-based proof of  unsatisfiability of this.clauses.
 	 * @requires {@link SATSolver#solve()} has been called, and it returned false
-	 * @return { p: ResolutionProof | p.core in this.clauses }
+	 * @return { t: ResolutionTrace | t.prover = this }
 	 * @throws IllegalStateException - {@link SATSolver#solve()} has not been called, 
 	 * or the last call to {@link SATSolver#solve()} returned true
 	 */
 	public ResolutionTrace proof();
 
 	/**
-	 * Returns a resolution-based proof of unsatisfiability of this.clauses, minimized
-	 * using the given core reduction strategy. 
+	 * Uses the given reduction strategy to remove irrelevant clauses from 
+	 * the set of unsatisfiable clauses stored in this prover.  
+	 * A clause c is irrelevant iff this.clauses - c is unsatisfiable.
+	 * The removal algorithm works as follows:
+	 * <pre>
+	 * for (IntSet next = strategy.next(this.proof()); !next.isEmpty(); next = strategy.next(this.proof())) {
+	 *  let oldClauses = this.clauses, oldResolvents = this.resolvents
+	 *  clear this.clauses
+	 *  clear this.resolvents
+	 *  for(Clause c : this.proof().elts[next]) {
+	 *    if (no c.antecedents)
+	 *      add c.literals to this.clauses
+	 *    else
+	 *      add c.literals to this.resolvents
+	 *  }
+	 *  if (this.solve()) {
+	 *   this.clauses = oldClauses 
+	 *   this.resolvents = oldResolvents
+	 *  }
+	 * }
+	 * </pre>
 	 * @requires {@link SATSolver#solve()} has been called, and it returned false
-	 * @return { p: ResolutionProof | p.core in this.clauses && strategy.next(p).isEmpty()}
+	 * @effects modifies this.clauses and this.resolvents according to the algorithm described above 
 	 * @throws IllegalStateException - {@link SATSolver#solve()} has not been called, 
 	 * or the last call to {@link SATSolver#solve()} returned true
+	 * @see ReductionStrategy
 	 */
-	public ResolutionTrace proof(ReductionStrategy strategy);
+	public void reduce(ReductionStrategy strategy);
+	
 }

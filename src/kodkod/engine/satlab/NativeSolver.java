@@ -34,8 +34,9 @@ abstract class NativeSolver implements SATSolver {
 	 * The memory address of the native instance wrapped by this wrapper.
 	 */
 	private long peer;
-	private int clauses, vars;
 	private Boolean sat;
+	private int clauses, vars;
+	
 	/**
 	 * Constructs a new wrapper for the given 
 	 * instance of the native solver.
@@ -71,6 +72,18 @@ abstract class NativeSolver implements SATSolver {
 	}
 	
 	/**
+	 * Adjusts the internal clause count so that the next call to {@linkplain #numberOfClauses()}
+	 * will return the given value.      
+	 * @requires clauseCount >= 0 
+	 * @effects adjusts the internal clause so that the next call to {@linkplain #numberOfClauses()}
+	 * will return the given value.
+	 */
+	void adjustClauseCount(int clauseCount) {
+		assert clauseCount >= 0;
+		clauses = clauseCount;
+	}
+		
+	/**
 	 * {@inheritDoc}
 	 * @see kodkod.engine.satlab.SATSolver#addVariables(int)
 	 * @see #addVariables(long, int)
@@ -102,6 +115,7 @@ abstract class NativeSolver implements SATSolver {
 		}
 		return false;
 	}
+	
 	
 	/**
 	 * Returns a pointer to the C++ peer class (the native instance wrapped by this object).

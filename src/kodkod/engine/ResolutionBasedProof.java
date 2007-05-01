@@ -133,7 +133,7 @@ final class ResolutionBasedProof extends Proof {
 	 * @see kodkod.engine.Proof#minimize(kodkod.engine.satlab.ReductionStrategy)
 	 */
 	public void minimize(ReductionStrategy strategy) {
-		solver.proof(strategy);
+		solver.reduce(strategy);
 		coreFilter = null;
 	}
 }

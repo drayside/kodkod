@@ -61,9 +61,9 @@ final class MiniSatProver extends NativeSolver implements SATProver {
 	
 	/**
 	 * {@inheritDoc}
-	 * @see kodkod.engine.satlab.SATProver#proof(kodkod.engine.satlab.ReductionStrategy)
+	 * @see kodkod.engine.satlab.SATProver#reduce(kodkod.engine.satlab.ReductionStrategy)
 	 */
-	public ResolutionTrace proof(ReductionStrategy strategy) {
+	public void reduce(ReductionStrategy strategy) {
 		proof();
 		for(Set<Clause> next = strategy.next(proof); !next.isEmpty(); next = strategy.next(proof)) {
 			List<Clause> core = new ArrayList<Clause>(next.size());
@@ -91,7 +91,6 @@ final class MiniSatProver extends NativeSolver implements SATProver {
 				free(prover);
 			}
 		}
-		return proof;
 	}
 	
 	/**
