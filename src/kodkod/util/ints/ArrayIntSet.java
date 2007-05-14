@@ -38,7 +38,7 @@ public final class ArrayIntSet extends AbstractIntSet {
 	 * its elements must be sorted
 	 * in the ascending order, and its contents
 	 * must not be changed while it is in use by this set
-	 * @requires all i, j: [0..ints.length) | i < j => array[i] <= Sarray[j]
+	 * @requires all i, j: [0..ints.length) | i < j => array[i] <= array[j]
 	 * @effects this.ints' = ints
 	 */
 	public ArrayIntSet(int[] ints) {
@@ -183,7 +183,7 @@ public final class ArrayIntSet extends AbstractIntSet {
 			next = fromIndex >= 0 ? fromIndex : -fromIndex-1;
 			end = toIndex >=0 ? toIndex : -toIndex-2;
 		}
-		public boolean hasNext() { return next <= end; }
+		public boolean hasNext() { return next>=0 && next <= end; }
 		public int next() {
 			if (!hasNext()) throw new NoSuchElementException();
 			return ints[next++];

@@ -21,7 +21,7 @@
  */
 package kodkod.engine.satlab;
 
-import java.util.Set;
+import kodkod.util.ints.IntSet;
 
 
 /**
@@ -60,6 +60,6 @@ public interface ReductionStrategy {
 	 * </pre>
 	 * @return this.nexts'[#this.nexts-1]
 	 */
-	public Set<Clause> next(ResolutionTrace trace);
+	public IntSet next(ResolutionTrace trace);
 	
 }

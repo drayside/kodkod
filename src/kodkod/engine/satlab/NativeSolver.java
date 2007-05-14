@@ -105,10 +105,10 @@ abstract class NativeSolver implements SATSolver {
 	public final boolean addClause(int[] lits) {
 		if (lits.length > 0) {
 			if (addClause(peer, lits)) {
-	//			for(int i : lits) {
-	//				System.out.print(i + " ");
-	//			}
-	//			System.out.println(0);
+//				for(int i : lits) {
+//					System.out.print(i + " ");
+//				}
+//				System.out.println(0);
 				clauses++;
 				return true;
 			}

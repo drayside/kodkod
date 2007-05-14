@@ -1,169 +1,164 @@
-/* 
- * Kodkod -- Copyright (c) 2005-2007, Emina Torlak
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
 package kodkod.engine.satlab;
 
-import java.util.Collections;
-import java.util.List;
+import java.util.Iterator;
 
 import kodkod.util.ints.IntIterator;
-import kodkod.util.ints.IntSet;
-import kodkod.util.ints.IntTreeSet;
 import kodkod.util.ints.Ints;
 
 /**
- * A propositional clause. 
- * @specfield literals: set int \\ clause literals 
- * @specfield antecedents: Clause[] 
+ * A propositional clause.
+ * 
+ * @specfield literals: set int
+ * @specfield antecedents: Clause[]
  * @invariant 0 !in literals 
  * @invariant no lit: literals | -lit in literals
- * @invariant !antecedents.isEmpty() => 
+ * @invariant some antecedents => #antecedents > 1
+ * @invariant some antecedents => 
  *  literals = { lit: antecedents[int].literals | 
- *   no i: int | lit in antecedents[i].literals && -lit in antecedents[i+1].literals }
+ *   no i: [0..#antecedents-1) | lit in antecedents[i].literals && -lit in antecedents[i+1].literals }
+ * @author Emina Torlak
  */
 public abstract class Clause {
-	private final int index;
-	
 	/**
-	 * Constructs a new clause with the given index.
+	 * Constructs a new clause.
 	 */
-	private Clause(int index) {
-		this.index = index;
-	}
-	
-	/**
-	 * A non-negative integer index that uniquely identifies this
-	 * clause in all {@link ResolutionTrace resolution traces} that contain it.
-	 * In other words, a resolution trace never contains two clauses with
-	 * the same index.  Indices are kept as small as possible.
-	 * @return a non-negative integer index that uniquely identifies this
-	 * clause in all {@link ResolutionTrace resolution traces} that contain it.
-	 */
-	public final int index() { return index; }
-	
-	/**
-	 * Returns an unmodifiable IntSet view of this.literals.
-	 * @return an unmodifiable IntSet view of this.literals
-	 */
-	public abstract IntSet literals();
-	
-	
-	/**
-	 * Returns an unmodifiable List view of this.antecedents.
-	 * @return an unmodifiable List view of this.antecedents.
-	 */
-	public abstract List<Clause> antecedents();
-	
-	/**
-	 * Returns true if this clause was learned during solving.
-	 * @return some this.antecedents
-	 */
-	public abstract boolean learned();
-	
-	/**
-	 * Returns a new core clause with the given index and literals.
-	 * @return {c : Clause | c.literals = literals and no c.antecedents } 
-	 */
-	static Clause core(int index, IntSet literals) {
-		return new Core(index, literals);
-	}
-	
-	/**
-	 * Returns a new learned clause with the given index and antecedents.
-	 * @invariant no index & antecdents.*antecedents.index()
-	 * @return {c: Clause | c.index() = index && c.antecedents = antecedents } 
-	 */
-	static Clause learned(int index, List<Clause> antecedents) {
-		return new Learned(index, antecedents);
-	}
+	Clause() {}
 		
 	/**
-	 * A clause that was added to the solver (not learned).
+	 * Returns the size of this clause, measured in the 
+	 * number of literals.
+	 * @return #this.literals 
 	 */
-	private static final class Core extends Clause {
-		final IntSet literals;
-		/**
-		 * Constructs a new root clause with the given index and literals.
-		 */
-		Core(int index, IntSet literals) {
-			super(index);
-			this.literals = literals;
-		}
-		public List<Clause> antecedents() { return Collections.emptyList(); }
-		public boolean learned() { return false; }
-		public IntSet literals() { return literals;	}
-		public String toString() {
-			final StringBuilder buf = new StringBuilder();
-			buf.append("root ");
-			buf.append(index());
-			buf.append(": ");
-			buf.append(literals);
-			return buf.toString();
-		}
-	}
-	
-	/**
-	 * A clause that was learned (from root clauses)  during solving.
-	 * @author Emina Torlak
-	 */
-	private static final class Learned extends Clause {
-		final List<Clause> antecedents;
-		IntSet literals;
-		/**
-		 * Constructs a new learned clause with the given index and literals.
-		 */
-		Learned(int index, List<Clause> antecedents) {
-			super(index);
-			this.antecedents = antecedents;
-			this.literals = null;
-		}
-		
-		public List<Clause> antecedents() { return antecedents; }
-		public boolean learned() { return true; }
+	public abstract int size();
 
-		public IntSet literals() {
-			if (literals==null) {
-				final IntSet litset = new IntTreeSet();
-				for(Clause a : antecedents) {
-					for(IntIterator itr = a.literals().iterator(); itr.hasNext(); ) {
-						int lit = itr.next();
-						if (!litset.remove(-lit))
-							litset.add(lit);
-					}
+	/**
+	 * Returns an iterator over the literals in this clause, 
+	 * in the ascending order of absolute values.
+	 * @return an iterator over this.literals
+	 */
+	public abstract IntIterator literals();
+//	
+//	/**
+//	 * Returns the literal that would be returned by the
+//	 * ith call to <tt>next()</tt> on an instance of this.literals().
+//	 * @requires  0 <= i < this.size()
+//	 * @return { lit: this.literals | #{ lit': this.literals | abs(lit') < abs(lit) } = i }
+//	 * @throws IndexOutOfBoundsException - i < 0 || i >= this.size()
+//	 */
+//	public abstract int literal(int i);
+	
+	/**
+	 * Returns the largest variable identifier occuring in this.literals.
+	 * @return max(abs(this.literals))
+	 */ 
+	public abstract int maxVariable();
+	
+	/**
+     * Copies this.literals into the specified array, provided
+     * that it is large enough, and returns it.  If the array is not large enough,
+     * a new array is allocated, populated with this.literals, and returned.
+     * @return the given array, filled with this.literals, if
+     * the it is large enough; otherwise a new array containing this.literals
+     * @throws NullPointerException - array = null
+     */
+	public abstract int[] toArray(int[] array);
+	
+	/**
+	 * Returns a new array of length this.size(), initialized with this.literals.
+	 * @return a new array of length this.size(), initialized with this.literals.
+	 */
+	public int[] toArray() {
+		return toArray(new int[size()]);
+	}
+	
+	/**
+	 * Returns the number of antecedents of this clause.
+	 * @return #this.antecedents
+	 */
+	public abstract int numberOfAntecedents();
+	
+	/**
+	 * Returns an iterator that traverses this.antecedents in proper sequence.
+	 * <p><b>Note:</b>The clause objects returned by the iterator are not 
+	 * required to be immutable.  In particular, the state of a clause object 
+	 * returned by <tt>next()</tt> (as well as the state of any  object obtained
+	 * through that clause's {@linkplain Clause#antecedents()} methods) is guaranteed 
+	 * to remain the same only until the subsequent call to <tt>next()</tt>.</p>
+	 * @return an iterator that traverses this.antecedents in proper sequence.
+	 */
+	public abstract Iterator<Clause> antecedents();
+	
+	/**
+//	 * Returns the antecedent at the given index.
+//	 * @requires 0 <= index < this.numberOfAntecedents()
+//	 * @return this.antecedents[index]
+//	 * @throws IndexOutOfBoundsException - index < 0 || index >= this.numberOfAntecedents()
+//	 */
+//	public abstract Clause antecedent(int index);
+	
+	/**
+	 * Returns true if o is a Clause whose literals and antecedents
+	 * are <tt>equal</tt> to those of this clause.
+	 * @return o in Clause && o.literals.equals(this.literals) && o.antecedents.equals(this.antecedents)
+	 */
+	public boolean equals(Object o) {
+		if (o==this) return true;
+		if (o instanceof Clause) {
+			final Clause c = (Clause) o;
+			if (size()==c.size()) {
+				final IntIterator itr1 = literals(), itr2 = literals();
+				while(itr1.hasNext()) {
+					if (itr1.next()!=itr2.next()) return false;
 				}
-				literals = Ints.asSet(litset.toArray());
 			}
-			return literals;
-		}
-		
-		public String toString() {
-			final StringBuilder buf = new StringBuilder();
-			buf.append("learned ");
-			buf.append(index());
-			buf.append(": ");
-			for(Clause a : antecedents) {
-				buf.append(a.index());
-				buf.append(" ");
+			final int ante = numberOfAntecedents();
+			if (ante > 0 && ante==c.numberOfAntecedents()) {
+				final Iterator<Clause> itr1 = antecedents(), itr2 = c.antecedents();
+				while(itr1.hasNext()) {
+					if (!itr1.next().equals(itr2.next())) return false;
+				}
 			}
-			return buf.toString();
+			return ante==0;
 		}
+		return false;
+	}
+	
+	/**
+	 * Returns the hashcode for this clause.  The hashcode for a clause is equivalent
+	 * to Ints.superFastHash(x) where x is an array such that its first this.size() 
+	 * elements are the literals of this clause (as returned by this.literals()) 
+	 * and its remaining this.numberOfAntecedents() elements are the hashCodes of 
+	 * this.antecedents (as returned by this.antecedents()).
+	 * @return hashcode for this clause
+	 */
+	public int hashCode() {
+		int hash = size() + numberOfAntecedents();
+		for(IntIterator iter = literals(); iter.hasNext(); ) {
+			hash = Ints.superFastHashIncremental(iter.next(), hash);
+		}
+		for(Iterator<Clause> iter = antecedents(); iter.hasNext(); ) {
+			hash = Ints.superFastHash(iter.next().hashCode(), hash);
+		}
+		return Ints.superFastHashAvalanche(hash);
+	}
+
+	/**
+	 * Returns a string representation of this clause.
+	 * @return a string representation of this clause.
+	 */
+	public String toString() {
+		final StringBuilder ret = new StringBuilder();
+		if (numberOfAntecedents()==0) {
+			ret.append("AXIOM");
+		} else {
+			ret.append("RESOLVENT");
+		}
+		ret.append(". Literals: {");
+		for(IntIterator iter = literals(); iter.hasNext();) {
+			ret.append(" ");
+			ret.append(iter.next());
+		}
+		ret.append(" }");
+		return ret.toString();
 	}
 }

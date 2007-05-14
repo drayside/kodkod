@@ -21,20 +21,19 @@
  */
 package kodkod.engine.ucore;
 
-import java.util.Collections;
-import java.util.Iterator;
+import java.util.HashSet;
 import java.util.Set;
 
 import kodkod.engine.satlab.Clause;
 import kodkod.engine.satlab.ReductionStrategy;
 import kodkod.engine.satlab.ResolutionTrace;
-import kodkod.util.ints.IntBitSet;
+import kodkod.util.ints.IntIterator;
 import kodkod.util.ints.IntSet;
 import kodkod.util.ints.Ints;
 
 
 /**
- * A basic implementation of the Complete Resolution Refutation algorithm
+ * A basic implementation of the Complete ResolutionTrace Refutation algorithm
  * for for producing locally minimal cores.
  * An unsatisfiable core is locally minimal iff removing any single clause from
  * the core will make the resulting formula satisfiable.  No heuristic is used
@@ -51,14 +50,14 @@ import kodkod.util.ints.Ints;
  * Satisfiability Testing (SAT '06). 2006.</a>
  */
 public final class CRRStrategy implements ReductionStrategy {
-	private IntSet excluded;
+	private Set<Clause> excluded;
 	
 	/** 
 	 * Constructs a new instance of CRRStrategy. 
 	 * @effects no this.traces' and no this.nexts'
 	 **/
 	public CRRStrategy() {
-		excluded = Ints.EMPTY_SET;
+		excluded = null;
 	}
 	
 	/**
@@ -69,27 +68,23 @@ public final class CRRStrategy implements ReductionStrategy {
 	 * @effects {@inheritDoc}
 	 * @return  last(this.nexts')
 	 */
-	@SuppressWarnings("unchecked")
-	public final Set<Clause> next(final ResolutionTrace trace) {
-		if (excluded.isEmpty()) { // the first time this method is called
-			excluded = new IntBitSet(trace.maxIndex()+1);
-		}
-		for(Iterator<Clause> itr = order(trace); itr.hasNext(); ) {
-			Clause clause = itr.next();
-			if (excluded.add(clause.index())) 
-				return new UnreachableClauses(trace, clause);
+	public final IntSet next(final ResolutionTrace trace) {
+		final IntSet core = trace.core();
+		if (excluded==null) { // the first time this method is called
+			excluded = new HashSet<Clause>((int)(StrictMath.round(core.size()*.75)));
 		}
 		
-		return Collections.EMPTY_SET;
-	}
-	
-	/**
-	 * Returns an iterator that imposes some total ordering on trace.core.
-	 * @return an iterator that imposes some total ordering on trace.core.
-	 */
-	private Iterator<Clause> order(ResolutionTrace trace) {
-		return trace.core().iterator();
-	}
-	
-	
+		for(IntIterator iter = core.iterator(Integer.MAX_VALUE, Integer.MIN_VALUE); iter.hasNext();) {
+			int index = iter.next();
+			if (excluded.add(trace.get(index))) { // haven't tried excluding this one
+				// get all clauses reachable from the conflict clause
+				IntSet next = trace.reachable(Ints.singleton(trace.size()-1)); 
+				// remove all clauses backward reachable from the excluded clause
+				next.removeAll(trace.backwardReachable(Ints.singleton(index)));
+				return next;
+			}
+		}
+		
+		return Ints.EMPTY_SET;
+	}	
 }

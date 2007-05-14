@@ -335,7 +335,7 @@ public final class Containers {
 		}
 
 		public boolean hasNext() {
-			return cursor < end;
+			return cursor >= 0 && cursor < end;
 		}
 
 		public T next() {

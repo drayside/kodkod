@@ -10,14 +10,13 @@ import kodkod.ast.visitor.AbstractVoidVisitor;
 import kodkod.engine.fol2sat.RecordFilter;
 import kodkod.engine.fol2sat.TranslationLog;
 import kodkod.engine.fol2sat.TranslationRecord;
-import kodkod.engine.satlab.Clause;
 import kodkod.engine.satlab.ReductionStrategy;
 import kodkod.engine.satlab.ResolutionTrace;
 import kodkod.engine.satlab.SATProver;
+import kodkod.engine.ucore.StrategyUtils;
 import kodkod.instance.TupleSet;
 import kodkod.util.collections.IdentityHashSet;
 import kodkod.util.ints.IntSet;
-import kodkod.util.ints.IntTreeSet;
 
 /**
  * A proof of unsatisfiability based on a {@linkplain ResolutionTrace resolution trace} produced
@@ -43,45 +42,18 @@ final class ResolutionBasedProof extends Proof {
 	}
 	
 	/**
-	 * Returns the magnitude of the literal with the greatest
-	 * absolute value in the given clause.  This number uniquely
-	 * ties each clause to its corresponding  subformula of this.formula.
-	 * @return the magnitude of the literal with the greatest
-	 * absolute value in the given clause
-	 */
-	private static int idLiteral(Clause clause) {
-		final IntSet literals = clause.literals();
-		return StrictMath.max(StrictMath.abs(literals.min()), StrictMath.abs(literals.max()));
-	}
-	
-	/**
-	 * Returns the set of literals that identify the nodes in the unsatisfiable core.
-	 * @return set of literals that identify the nodes in the unsatisfiable core
-	 * @see kodkod.engine.fol2sat.TranslationRecord#literal()
-	 */
-	private IntSet coreIdLiterals() {
-		final IntSet idLits = new IntTreeSet();
-		
-		for(Clause clause : solver.proof().core()) {
-//				System.out.println(clause);
-			idLits.add(idLiteral(clause));
-		}
-		return idLits;
-	}
-	
-	/**
 	 * Returns the connected core based on the given set of 
-	 * id literals.  
-	 * @requires coreLiterals = coreIdLiterals()
-	 * @return let coreNodes = (this.log.records & literal.{i: int | abs(i) in coreLiterals}).node | 
+	 * coreVariables.  
+	 * @requires coreVariables = StrategyUtils.coreVars(solver.proof());
+	 * @return let coreNodes = (this.log.records & literal.{i: int | abs(i) in coreVariables}).node | 
 	 *  {n: coreNodes  | some s: set coreNodes | 
 	 *   n + this.log.formula in s and (s - this.log.formula).~children in s }
 	 */
-	private Set<Node> connectedCore(final IntSet coreLiterals) {
+	private Set<Node> connectedCore(final IntSet coreVars) {
 		final Set<Node> coreNodes = new IdentityHashSet<Node>();
 		final RecordFilter filter = new RecordFilter() {
 			public boolean accept(Node node, int literal, Map<Variable,TupleSet> env) {
-				return coreLiterals.contains(StrictMath.abs(literal));
+				return coreVars.contains(StrictMath.abs(literal));
 			}
 		};
 		for(Iterator<TranslationRecord> iter = log().replay(filter); iter.hasNext(); ) {
@@ -118,10 +90,10 @@ final class ResolutionBasedProof extends Proof {
 	public final Iterator<TranslationRecord> core() { 
 		if (coreFilter == null) {
 			coreFilter = new RecordFilter() {
-				final IntSet coreLiterals = coreIdLiterals();
-				final Set<Node> coreNodes = connectedCore(coreLiterals);
+				final IntSet coreVariables = StrategyUtils.maxCoreVars(solver.proof());
+				final Set<Node> coreNodes = connectedCore(coreVariables);
 				public boolean accept(Node node, int literal, Map<Variable,TupleSet> env) {
-					return coreNodes.contains(node) && coreLiterals.contains(StrictMath.abs(literal));
+					return coreNodes.contains(node) && coreVariables.contains(StrictMath.abs(literal));
 				}
 			};
 		}

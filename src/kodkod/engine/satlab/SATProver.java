@@ -26,11 +26,11 @@ package kodkod.engine.satlab;
  * proofs of unsatisfiability.
  * 
  * @specfield variables: set [1..)
- * @specfield clauses: set IntSet
- * @specfield resolvents: set IntSet  
+ * @specfield clauses: set Clause
+ * @specfield resolvents: set Clause  
  * @invariant all i: [2..) | i in variables => i-1 in variables
- * @invariant all c: clauses + resolvents | all lit: c.ints | lit in variables || -lit in variables
- * @invariant all c: clauses + resolvents | all disj i,j: c.ints | abs(i) != abs(j)
+ * @invariant all c: clauses + resolvents | all lit: c.lits | lit in variables || -lit in variables
+ * @invariant all c: clauses + resolvents | all disj i,j: c.lits | abs(i) != abs(j)
  * @author Emina Torlak
  */
 public interface SATProver extends SATSolver {
@@ -56,9 +56,9 @@ public interface SATProver extends SATSolver {
 	 *  clear this.resolvents
 	 *  for(Clause c : this.proof().elts[next]) {
 	 *    if (no c.antecedents)
-	 *      add c.literals to this.clauses
+	 *      add c to this.clauses
 	 *    else
-	 *      add c.literals to this.resolvents
+	 *      add c to this.resolvents
 	 *  }
 	 *  if (this.solve()) {
 	 *   this.clauses = oldClauses 

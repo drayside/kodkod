@@ -63,7 +63,53 @@ public abstract class AbstractSparseSequence<V> implements SparseSequence<V> {
 	public Iterator<IndexedEntry<V>> iterator() {
 		return iterator(Integer.MIN_VALUE, Integer.MAX_VALUE);
 	}
+	
+	/**
+	 * Returns the first element in this sequence, if any.  This
+	 * method first checks that the sequence is not empty, and 
+	 * if not, returns this.iterator().next();
+	 * {@inheritDoc}
+	 * @see kodkod.util.ints.SparseSequence#first()
+	 */
+	public IndexedEntry<V> first() {
+		return isEmpty() ? null : iterator().next();
+	}
 
+	/**
+	 * Returns the last element in this sequence, if any.  This
+	 * method first checks that the sequence is not empty, and 
+	 * if not, returns this.iterator(Integer.MAX_VALUE, Integer.MIN_VALUE).next();
+	 * {@inheritDoc}
+	 * @see kodkod.util.ints.SparseSequence#last()
+	 */
+	public IndexedEntry<V> last() {
+		return isEmpty() ? null : iterator(Integer.MAX_VALUE, Integer.MIN_VALUE).next();
+	}
+	
+	/**
+	 * Returns the entry whose index is the ceiling of the given index in this sequence.
+	 * This method calls this.iterator(index, Integer.MAX_VALUE), and if the resulting iterator has 
+	 * a next element returns it. 
+	 * {@inheritDoc}
+	 * @see kodkod.util.ints.SparseSequence#ceil(int)
+	 */
+	public IndexedEntry<V> ceil(int index) {
+		final Iterator<IndexedEntry<V>> itr = iterator(index, Integer.MAX_VALUE);
+		return itr.hasNext() ? itr.next() : null;
+	}
+	
+	/**
+	 * Returns the entry whose index is the floor of the given index in this sequence.
+	 * This method calls this.iterator(index, Integer.MIN_VALUE), and if the resulting iterator has 
+	 * a next element returns it. 
+	 * {@inheritDoc}
+	 * @see kodkod.util.ints.SparseSequence#floor(int)
+	 */
+	public IndexedEntry<V> floor(int index) {
+		final Iterator<IndexedEntry<V>> itr = iterator(index, Integer.MIN_VALUE);
+		return itr.hasNext() ? itr.next() : null;
+	}
+	
 	/**
 	 * Returns the set of all indices mapped by this sparse sequence.
 	 * The returned set supports removal iff this is not an unmodifiable
@@ -177,6 +223,17 @@ public abstract class AbstractSparseSequence<V> implements SparseSequence<V> {
 	}
 	
 	/**
+	 * Returns true if this sparse sequence has an entry for the
+	 * given index; otherwise returns false.  This method returns
+	 * the value of this.iterator(index,index).hasNext();
+	 * {@inheritDoc}
+	 * @see kodkod.util.ints.SparseSequence#containsIndex(int)
+	 */
+	public boolean containsIndex(int index) {
+		return iterator(index,index).hasNext();
+	}
+	
+	/**
 	 * Iterates through all the entries in this sequence and returns 
 	 * true if one of the encountered entries has the given object as
 	 * its value.
@@ -201,6 +258,49 @@ public abstract class AbstractSparseSequence<V> implements SparseSequence<V> {
 	}
 	
 	/*---------- adapted from java.util.AbstractMap -----------*/
+		
+	/**
+	 * Removes the entry with the given index, if it exists, and
+	 * returns the value previously stored at the index.  If the
+	 * sequence had no previous mapping for the index, null is returned.
+	 * This method obtains an iterator from index to index and removes
+	 * its sole element, if any.
+	 * {@inheritDoc}
+	 * @see kodkod.util.ints.SparseSequence#remove(int)
+	 */
+	public V remove(int index) {
+		final Iterator<IndexedEntry<V>> itr = iterator(index,index);
+		if (itr.hasNext()) {
+			final V ret = itr.next().value();
+			itr.remove();
+			return ret;
+		}
+		return null;
+	}
+	
+	/**
+	 * Removes all entries from this sequences.  This method
+	 * obtains an iterator over the sequences and calls remove()
+	 * after each call to next().
+	 * {@inheritDoc}
+	 * @see kodkod.util.ints.SparseSequence#clear()
+	 */
+	public void clear() {
+		final Iterator<IndexedEntry<V>> itr = iterator();
+		while(itr.hasNext()) {
+			itr.next();
+			itr.remove();
+		}
+	}
+	
+	
+	/**
+	 * Throws an UnsupportedOperationException.
+	 * @throws UnsupportedOperationException
+	 */
+	public V put(int index, V value) {
+		throw new UnsupportedOperationException();
+	}
 	
 	/**
 	 * Copies all of the entries from the specified sparse sequence to 

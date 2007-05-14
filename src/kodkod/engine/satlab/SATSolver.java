@@ -26,10 +26,10 @@ package kodkod.engine.satlab;
  * Provides an interface to a SAT solver.
  * 
  * @specfield variables: set [1..)
- * @specfield clauses: set IntSet
+ * @specfield clauses: set Clause
  * @invariant all i: [2..) | i in variables => i-1 in variables
- * @invariant all c: clauses | all lit: c.ints | lit in variables || -lit in variables
- * @invariant all c: clauses | all disj i,j: c.ints | abs(i) != abs(j)
+ * @invariant all c: clauses | all lit: c.literals | lit in variables || -lit in variables
+ * @invariant all c: clauses | all disj i,j: c.literals | abs(i) != abs(j)
  * @author Emina Torlak
  */
 public interface SATSolver {

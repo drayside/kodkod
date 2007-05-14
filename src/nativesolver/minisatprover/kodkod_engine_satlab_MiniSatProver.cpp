@@ -101,31 +101,22 @@ JNIEXPORT jboolean JNICALL Java_kodkod_engine_satlab_MiniSatProver_valueOf
   return ((PSolver*)solver)->model[var-1]==l_True;
  }
 
-
 struct TraceGenerator : public ProofTraverser {
 	JNIEnv* env;
 	jobjectArray trace;
-	jboolean core;
-	jlong* learned;
-	int idx;
+	jboolean record;
+	int idx, offset;
 	
-	TraceGenerator(JNIEnv* environment, jboolean recordCore, jint goal) { 
+	TraceGenerator(JNIEnv* environment, jboolean recordAxioms, jint goal, int nVars) { 
 	  	idx = 0; 
+	  	offset = nVars+1;
 	  	env = environment;
-	  	core = recordCore;
-	  	trace = (jobjectArray)env->NewObjectArray(goal+2, env->FindClass("java/lang/Object"), NULL);
-	  	
-	  	jlongArray last = env->NewLongArray((goal>>6)+1);
-	  	env->SetObjectArrayElement(trace, goal+1, last);
-	  	
-	  	learned = env->GetLongArrayElements(last, JNI_FALSE);
-	  	env->DeleteLocalRef(last);
-	  	
+	  	record = recordAxioms;
+	  	trace = (jobjectArray)env->NewObjectArray(goal+1, env->FindClass("[I"), NULL);
 	}
 	
 	void root (const vec<Lit>& c) {
-		if (core) {
-			
+		if (record) {	
 			jintArray lits = env->NewIntArray(c.size());
 			jint* data = env->GetIntArrayElements(lits, JNI_FALSE);
 			for(int i = 0; i < c.size(); i++) {
@@ -139,10 +130,10 @@ struct TraceGenerator : public ProofTraverser {
 	}
 	
 	 void chain  (const vec<ClauseId>& cs, const vec<Var>& xs) {
-        learned[(idx>>6)] |= ((jlong)(((jlong)1)<<(idx&0x3F)));
         jintArray ante = env->NewIntArray(cs.size());
         jint* data = env->GetIntArrayElements(ante, JNI_FALSE);
-        for(int i = 0; i< cs.size(); i++) {
+        data[0] = cs[0] + offset;
+        for(int i = 1; i< cs.size(); i++) {
         	data[i] = cs[i];
         }
         env->ReleaseIntArrayElements(ante, data, 0);
@@ -152,11 +143,8 @@ struct TraceGenerator : public ProofTraverser {
 	}
 	
 	void deleted(ClauseId c) {}
+	void done() {}
 	
-	void done() {
-		env->ReleaseLongArrayElements((jlongArray)(env->GetObjectArrayElement(trace, idx)), learned, 0);
-	}
-
 };
 
 /*
@@ -165,9 +153,10 @@ struct TraceGenerator : public ProofTraverser {
  * Signature: (JZ)[Ljava/lang/Object;
  */
 JNIEXPORT jobjectArray JNICALL Java_kodkod_engine_satlab_MiniSatProver_trace
-  (JNIEnv * env, jobject, jlong solver, jboolean recordCore) {
-    Proof* proof = ((PSolver*) solver)->proof;
-  	TraceGenerator tgen = TraceGenerator(env, recordCore, proof->last());
+  (JNIEnv * env, jobject, jlong solver, jboolean recordAxioms) {
+    PSolver* solverPtr = ((PSolver*) solver);
+    Proof* proof = solverPtr->proof;
+  	TraceGenerator tgen = TraceGenerator(env, recordAxioms, proof->last(), solverPtr->nVars());
     proof->traverse(tgen);
     return tgen.trace;
   }

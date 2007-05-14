@@ -21,12 +21,10 @@
  */
 package kodkod.engine.ucore;
 
-import java.util.Collections;
-import java.util.Set;
-
-import kodkod.engine.satlab.Clause;
 import kodkod.engine.satlab.ReductionStrategy;
 import kodkod.engine.satlab.ResolutionTrace;
+import kodkod.util.ints.IntSet;
+import kodkod.util.ints.Ints;
 
 /**
  * A non-optimal minimization strategy based on the Empty Clause Cone algorithm.
@@ -44,19 +42,19 @@ public final class EmptyClauseConeStrategy implements ReductionStrategy {
 	public EmptyClauseConeStrategy() {
 		lastCore = Integer.MAX_VALUE;
 	}
+
 	/**
 	 * {@inheritDoc}
 	 * @see kodkod.engine.satlab.ReductionStrategy#next(kodkod.engine.satlab.ResolutionTrace)
 	 */
-	@SuppressWarnings("unchecked")
-	public Set<Clause> next(final ResolutionTrace trace) {
-		final Set<Clause> core = trace.core();
+	public IntSet next(final ResolutionTrace trace) {
+		final IntSet core = trace.core();
 		if (lastCore > core.size()) {
 			lastCore = core.size();
 			return core;
 		} else {
 			lastCore = Integer.MIN_VALUE;                  
-			return Collections.EMPTY_SET;
+			return Ints.EMPTY_SET;
 		}
 	}
 

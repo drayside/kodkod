@@ -7,22 +7,18 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import kodkod.ast.Formula;
-import kodkod.ast.Node;
-import kodkod.ast.Variable;
 import kodkod.engine.Proof;
 import kodkod.engine.Solution;
 import kodkod.engine.Solver;
-import kodkod.engine.fol2sat.RecordFilter;
-import kodkod.engine.fol2sat.TranslationRecord;
 import kodkod.engine.satlab.SATFactory;
-import kodkod.engine.ucore.HybridStrategy;
+import kodkod.engine.ucore.MinTopStrategy;
+import kodkod.engine.ucore.StrategyUtils;
 import kodkod.instance.Bounds;
-import kodkod.instance.TupleSet;
 import examples.CeilingsAndFloors;
 import examples.Dijkstra;
 import examples.Pigeonhole;
@@ -34,33 +30,22 @@ import examples.tptp.GEO158;
  */
 public final class UCoreTest {
 	
-	/**
-	 * Returns a Solver configured for ucore extraction.
-	 * @return a Solver configured for ucore extraction.
-	 */
-	private static Solver solver() {
-		final Solver ret = new Solver();
-		ret.options().setLogTranslation(true);
-		ret.options().setSolver(SATFactory.MiniSatProver);
-//		ret.options().setSymmetryBreaking(0);
-		return ret;
-	}
 	
 	/**
-	 * Returns a Solution to the pigeonhole problem with the given parameters.
-	 * @return a Solution to the pigeonhole problem with the given parameters.
+	 * Returns a pigeonhole problem with the given parameters.
+	 * @return a pigeonhole problem with the given parameters.
 	 */
-	static Solution pigeonhole(List<String> params) {
+	static Problem pigeonhole(List<String> params) {
 		if (params.size() < 2)
 			usage();
 		final Pigeonhole model = new Pigeonhole();
-		final Solver solver = solver();
 		try {
 			final int p = Integer.parseInt(params.get(0));
 			final int h = Integer.parseInt(params.get(1));
-			solver.options().setSymmetryBreaking(p);
 			final Formula show = model.declarations().and(model.pigeonPerHole());
-			return solver.solve(show, model.bounds(p,h));
+			final Problem problem = new Problem(show, model.bounds(p,h));
+			problem.solver.options().setSymmetryBreaking(p);
+			return problem;
 		} catch (NumberFormatException nfe) {
 			usage();
 		}
@@ -68,20 +53,19 @@ public final class UCoreTest {
 	}
 	
 	/**
-	 * Returns a Solution to the ceilingsAndFloors problem with the given parameters.
-	 * @return a Solution to the ceilingsAndFloors problem with the given parameters.
+	 * Returns a ceilingsAndFloors problem with the given parameters.
+	 * @return a ceilingsAndFloors problem with the given parameters.
 	 */
-	static Solution ceilingsAndFloors(List<String> params) {
+	static Problem ceilingsAndFloors(List<String> params) {
 		if (params.size() < 2) usage();
 		
 		final CeilingsAndFloors model = new CeilingsAndFloors();
-		final Solver solver = solver();
-		
+				
 		try {
 			final int m = Integer.parseInt(params.get(0));
 			final int p = Integer.parseInt(params.get(1));
 			final Formula show = model.belowTooDoublePrime();
-			return solver.solve(show, model.bounds(m,p));
+			return new Problem(show, model.bounds(m,p));
 			
 			
 		} catch (NumberFormatException nfe) {
@@ -92,28 +76,22 @@ public final class UCoreTest {
 	}
 	
 	/**
-	 * Returns a Solution to the dijkstra problem with the given parameters.
-	 * @return a Solution to the dijkstra problem with the given parameters.
+	 * Returns a dijkstra problem with the given parameters.
+	 * @return a dijkstra problem with the given parameters.
 	 */
-	static Solution dijkstra(List<String> params) {
+	static Problem dijkstra(List<String> params) {
 		if (params.size() < 3)
 			usage();
 		
 		final Dijkstra model = new Dijkstra();
-		final Solver solver = solver();
-
+		
 		try {
 			final Formula noDeadlocks = model.dijkstraPreventsDeadlocksAssertion();
 			final int states = Integer.parseInt(params.get(0));
 			final int processes = Integer.parseInt(params.get(1));
 			final int mutexes = Integer.parseInt(params.get(2));
 			final Bounds bounds = model.bounds(states, processes, mutexes);
-//			System.out.println(noDeadlocks);
-//			System.out.println(bounds);
-			return solver.solve(noDeadlocks, bounds);
-//			System.out.println(sol1);
-//			System.out.println(solver.solve(model.grabOrRelease().and(model.declarations()).
-//					and(model.waits.some()).and(model.deadlock()), bounds));
+			return new Problem(noDeadlocks, bounds);
 			
 		} catch (NumberFormatException nfe) {
 			usage();
@@ -122,23 +100,20 @@ public final class UCoreTest {
 	}
 	
 	/**
-	 * Returns a Solution to the geo158 problem with the given parameters.
-	 * @return a Solution to the geo158 problem with the given parameters.
+	 * Returns a geo158 problem with the given parameters.
+	 * @return a geo158 problem with the given parameters.
 	 */
-	static Solution geo158(List<String> params) {
+	static Problem geo158(List<String> params) {
 		if (params.size() < 1)
 			usage();
 		
 		try {
 			final int n = Integer.parseInt(params.get(0));
-				
-			final Solver solver = solver();
 	
 			final GEO158 model = new GEO158();
 			final Formula f = model.axioms().and(model.someCurve());
 			final Bounds b = model.bounds(n,n);
-			
-			return solver.solve(f,b);
+			return new Problem(f,b);
 		} catch (NumberFormatException nfe) {
 			usage();
 		}
@@ -156,6 +131,54 @@ public final class UCoreTest {
 	}
 	
 	/**
+	 * Checks that the the given proof of unsatisfiablity for the given problem is
+	 * correct (i.e. the conjunction of its core formulas is unsat).
+	 */
+	private static void checkCorrect(Problem problem, Set<Formula> core) {
+		System.out.print("checking correctness ... ");
+		Formula coreFormula = Formula.TRUE;
+		for(Formula f : core) {
+			coreFormula = coreFormula.and(f);
+		}
+		if (problem.solver.solve(coreFormula, problem.bounds).instance()==null ) {
+			System.out.println("correct");
+		} else {
+			System.out.println("incorrect.  The found core is satisfiable!");
+		}
+	}
+	
+	/**
+	 * Checks that the given proof of unsatisfiablity for the given problem is miminal.
+	 * This method assumes that the given proof is correct.
+	 */
+	private static void checkMinimal(Problem problem, Set<Formula> core) {
+		System.out.print("checking minimality ... ");
+		final long start = System.currentTimeMillis();
+		final Set<Formula> minCore = new LinkedHashSet<Formula>(core);
+		for(Iterator<Formula> itr = minCore.iterator(); itr.hasNext();) {
+			Formula f = itr.next();
+			Formula noF = Formula.TRUE;
+			for( Formula f1 : minCore ) {
+				if (f!=f1)
+					noF = noF.and(f1);
+			}
+			if (problem.solver.solve(noF, problem.bounds).instance()==null) {
+				itr.remove();
+			}			
+		}
+		final long end = System.currentTimeMillis();
+		if (minCore.size()==core.size()) {
+			System.out.println("minimal (" + (end-start) + " ms).");
+		} else {
+			System.out.println("not minimal (" + (end-start) + " ms). The minimal core has these " + minCore.size() + " formulas:");
+			for(Formula f : minCore) {
+				System.out.println(" " + f);
+			}
+		}
+	}
+	
+	
+	/**
 	 * Usage:  java tests.UCoreTest <name of test> <scope parameters>
 	 */
 	public static void main(String[] args) {
@@ -164,29 +187,40 @@ public final class UCoreTest {
 		try {
 			final Method method = UCoreTest.class.getDeclaredMethod(args[0], List.class);
 			//System.out.println(method);
-			final Solution sol = (Solution) method.invoke(null, Arrays.asList(args).subList(1, args.length));
+			final Problem problem = (Problem) method.invoke(null, Arrays.asList(args).subList(1, args.length));
+			final Solution sol = problem.solve();
+			
 			System.out.println(sol);
 			if (sol.outcome()==Solution.Outcome.UNSATISFIABLE) {
 				final Proof proof = sol.proof();
+				System.out.println("top-level formulas: " + StrategyUtils.topFormulas(problem.formula).size());
+//				checkMinimal(problem,StrategyUtils.topFormulas(problem.formula));
 				System.out.println("top-level formulas before min: " + proof.highLevelCore().size());
-				final long start = System.currentTimeMillis();
-				proof.minimize(new HybridStrategy(proof.log()));
-//				proof.minimize(new BasicCRRStrategy());
+				checkMinimal(problem,proof.highLevelCore());
+//				minimize(problem,proof);
+				long start = System.currentTimeMillis();
+				proof.minimize(new MinTopStrategy(proof.log()));
+//				proof.minimize(new HybridStrategy(proof.log()));
+				
+				long end = System.currentTimeMillis();
+				final Set<Formula> topCore = proof.highLevelCore();
+				System.out.println("top-level formulas after min: " + topCore.size());
+				System.out.println("time: " + (end-start) + " ms");
+				System.out.println("core: ");
+				for(Formula f : topCore) {
+					System.out.println(" "+f);
+				}
+				checkCorrect(problem, proof.highLevelCore());
+				checkMinimal(problem, proof.highLevelCore());
+				
+//				System.out.print("low level min ... ");
+//				start = System.currentTimeMillis();
+//				proof.minimize(new CRRStrategy());
 //				proof.minimize(new EmptyClauseConeStrategy());
 //				proof.minimize(new NaiveStrategy());
-				final long end = System.currentTimeMillis();
-				System.out.println("time: " + (end-start) + " ms");
-				final Set<Formula> topCore = proof.highLevelCore();
-				System.out.println("top-level formulas: " + topCore.size());
-				for(Formula f : topCore) {
-					System.out.println(f);
-				}
-				final Iterator<TranslationRecord> iter = proof.log().replay(new RecordFilter(){
-
-					public boolean accept(Node node, int literal, Map<Variable, TupleSet> env) {
-						return node == proof.log().formula();
-					}});
-				System.out.println(iter.next());
+//				end = System.currentTimeMillis();
+//				System.out.println("(" +(end-start) + " ms)");
+						
 			}
 		} catch (SecurityException e) {
 			e.printStackTrace();
@@ -200,6 +234,31 @@ public final class UCoreTest {
 			e.printStackTrace();
 		}
 		
+	}
+	
+	private static final class Problem { 
+		final Formula formula;
+		final Bounds bounds;
+		final Solver solver;
+		
+		Problem(Formula formula, Bounds bounds) {
+			this.formula = formula; 
+			this.bounds = bounds;
+			this.solver = new Solver();
+			solver.options().setLogTranslation(true);
+			solver.options().setSolver(SATFactory.MiniSatProver);
+//			solver.options().setSymmetryBreaking(0);
+		}
+		
+		/**
+		 * Solves this problem with translation logging on,
+		 * using MiniSatProver.
+		 * @return a solution to this problem generated with 
+		 * with translation logging on, using MiniSatProver.
+		 */
+		Solution solve() {
+			return solver.solve(formula, bounds);
+		}
 	}
 	
 }

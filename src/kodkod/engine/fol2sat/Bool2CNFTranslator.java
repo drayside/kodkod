@@ -28,7 +28,6 @@ import kodkod.engine.bool.BooleanVisitor;
 import kodkod.engine.bool.ITEGate;
 import kodkod.engine.bool.MultiGate;
 import kodkod.engine.bool.NotGate;
-import kodkod.engine.bool.Operator;
 import kodkod.engine.satlab.SATFactory;
 import kodkod.engine.satlab.SATSolver;
 import kodkod.util.ints.IntSet;
@@ -54,20 +53,7 @@ final class Bool2CNFTranslator implements BooleanVisitor<int[], Object> {
 	static SATSolver translate(BooleanFormula circuit, SATFactory factory, int numPrimaryVariables) {
 		final SATSolver solver = factory.instance();
 		final Bool2CNFTranslator translator = new Bool2CNFTranslator(solver, numPrimaryVariables, circuit);
-		if (circuit.op()==Operator.AND) {
-			for(BooleanFormula input : circuit) {
-				solver.addClause(input.accept(translator,null));
-			}
-		} else if (circuit.op()==Operator.OR) {
-			final int[] last = new int[circuit.size()];
-			for(int i = 0; i < last.length; i++) {
-				last[i] = circuit.input(i).accept(translator, null)[0];
-			}
-			solver.addClause(last);
-		} else {
-			solver.addClause(circuit.accept(translator,null));
-		}
-		
+		solver.addClause(circuit.accept(translator,null));
 		return solver;
 	}
 

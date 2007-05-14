@@ -21,6 +21,7 @@
  */
 package kodkod.util.ints;
 
+
 /**
  * Represents a range of integers, [min..max]. 
  * 

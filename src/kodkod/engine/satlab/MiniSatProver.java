@@ -21,11 +21,11 @@
  */
 package kodkod.engine.satlab;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.Iterator;
 
 import kodkod.util.ints.IntBitSet;
+import kodkod.util.ints.IntIterator;
+import kodkod.util.ints.IntSet;
 
 /**
  * Java wrapper for Niklas EŽn and Niklas Sšrensson MiniSAT solver 
@@ -33,7 +33,7 @@ import kodkod.util.ints.IntBitSet;
  * @author Emina Torlak
  */
 final class MiniSatProver extends NativeSolver implements SATProver {
-	private ResolutionTrace proof;
+	private ArrayTrace proof;
 	/**
 	 * Constructs a new MiniSat prover wrapper.
 	 */
@@ -43,18 +43,62 @@ final class MiniSatProver extends NativeSolver implements SATProver {
 	}
 	
 	/**
+	 * Modifies the given raw trace so that it conforms to the 
+	 * specification of {@linkplain ArrayTrace#ArrayTrace(int[][], int)}, 
+	 * if the array contains no null entries, and to the specfication of
+	 * {@linkplain ArrayTrace#ArrayTrace(ArrayTrace, IntSet, int[][])}
+	 * otherwise.
+	 * @effects modifies the trace so that it conforms to the specification
+	 * of one of the ArrayTrace constructors.
+	 * @return trace
+	 */
+	private int[][] format(int[][] trace) {
+		final int length = trace.length;
+		final IntSet resolvents = new IntBitSet(length);
+		final int offset = numberOfVariables() + 1;
+		for(int i = 0; i < length; i++) {
+			int[] clause = trace[i];
+			if (clause!=null && clause[0]>=offset) {
+				clause[0] -= offset;
+				resolvents.add(i);
+			}
+		}
+		final int axioms = length - resolvents.size();
+		if (resolvents.min()<axioms) {
+			final int[] position = new int[length];
+			for(int i = 0, axiomIndex = 0, resolventIndex = axioms; i < length; i++) {
+				if (resolvents.contains(i)) {
+					position[i] = resolventIndex++;
+					int[] resolvent = trace[i];
+					for(int j = 0, resLength = resolvent.length; i < resLength; i++) {
+						resolvent[j] = position[resolvent[j]];
+					}
+				} else {
+					position[i] = axiomIndex++;
+				}
+			}
+			for(IntIterator itr = resolvents.iterator(axioms-1, 0); itr.hasNext(); ) {
+				int i = itr.next();
+				int pos = position[i];
+				int[] resolvent = trace[i];
+				System.arraycopy(trace, i+1, trace, i, pos-i);
+				trace[pos] = resolvent;
+			}
+		}
+		assert axioms == numberOfClauses();
+		return trace;
+	}
+		
+	/**
 	 * {@inheritDoc}
 	 * @see kodkod.engine.satlab.SATProver#proof()
 	 */
 	public ResolutionTrace proof() {	
 		if (!Boolean.FALSE.equals(status())) throw new IllegalStateException();
 		if (proof==null) {
-			final Object[] trace = trace(peer(), true);
+			final int[][] trace = trace(peer(), true);
 			free();
-			proof = new ResolutionTrace(trace, new IntBitSet(trace.length-1, (long[])trace[trace.length-1]));
-//			if (!proof.conflict().literals().isEmpty()) {
-//				throw new IllegalStateException();
-//			}
+			proof = new ArrayTrace(format(trace), numberOfClauses());
 		}
 		return proof;
 	}
@@ -65,30 +109,24 @@ final class MiniSatProver extends NativeSolver implements SATProver {
 	 */
 	public void reduce(ReductionStrategy strategy) {
 		proof();
-		for(Set<Clause> next = strategy.next(proof); !next.isEmpty(); next = strategy.next(proof)) {
-			List<Clause> core = new ArrayList<Clause>(next.size());
+		for(IntSet next = strategy.next(proof); !next.isEmpty(); next = strategy.next(proof)) {
 			long prover = make();
 			addVariables(prover, numberOfVariables());
-			for(Clause c : next) {
-				if (addClause(prover, c.literals().toArray())) {
-					core.add(c);
+			for(Iterator<Clause> itr = proof.iterator(next); itr.hasNext();) {
+				if (!addClause(prover, itr.next().toArray())) {
+					throw new AssertionError("could not add non-redundant clause");
 				}
 			}
+//			System.out.print("trying with " + next.size() + " clauses ... ");
 			if (!solve(prover)) {
-				
-				Object[] trace = trace(prover, false);
+				adjustClauseCount(next.size());
+				int[][] trace = trace(prover, false);
 				free(prover);
-				for(int i = 0, j = 0, max = trace.length-1; i < max; i++) {
-					if (trace[i]==null) { 
-						trace[i] = core.get(j++);
-					}
-				}
-				proof = new ResolutionTrace(proof, trace, new IntBitSet(trace.length-1, (long[])trace[trace.length-1]));
-				
-//				System.out.println("UNSAT: " + proof.core().size());
+				proof = new ArrayTrace(proof, next, format(trace));
+//				System.out.println("UNSAT");
 			} else {
-//				System.out.println("SAT");
 				free(prover);
+//				System.out.println("SAT");
 			}
 		}
 	}
@@ -145,17 +183,15 @@ final class MiniSatProver extends NativeSolver implements SATProver {
 	/**
 	 * Returns an array of arrays that encodes the most recently generated
 	 * resolution trace.  The resolution trace is encoded as follows. Let
-	 * R be the returned array. The last element in R is an array of longs, L.  
-	 * For all integers 0 <= i < trace.length-1 such that L[i>>>6] & (1L << i) == 1,
-	 * R[i] contains the antecedents of the ith resolvent clause, representend
-	 * by an array of integers.  In particular, for each 0 <= j < R[i].length, 
-	 * R[i][j] < i and R[j] contains the encoding of the jth antecedent of the
-	 * R[i].  For all integers 0 <= i < trace.length-1 such that 
-	 * L[i>>>6] & (1L << i) == 0, R[i] contains the literals of the ith core clause
-	 * (i.e. the clause c for which {@link #addClause(long, int[]) addClause(peer,c)} == i)
-	 * if recordCore is true; otherwise R[i] is null.
-	 * @return an array of arrays that encodes the most recently generated
-	 * resolution trace
+	 * R be the returned array. For all 0 <= i < trace.length such that 
+	 * R[i][0] > this.numberOfVariables(), the array R[i] encodes a 
+	 * resolvent clause. In particular, (R[i][0] - this.numberOfVariables() - 1) < i 
+	 * is the index of the 0th antecedent of R[i] in R; for each 0 < j < R[i].length, 
+	 * R[i][j] < i and R[i][j] is the index of the jth antecedent of R[i] in R.  
+	 * For all 0 <= i < trace.length-1 such that 
+	 * R[i][0] <= this.numberOfVariables(), R[i] contains the literals of the ith axiom, 
+	 * sorted in the increasing order of absolute values, if recordAxioms is true; otherwise R[i] is null.
+	 * @return an array of arrays that encodes the most recently generated resolution trace
 	 */
-	native Object[] trace(long peer, boolean recordCore);
+	native int[][] trace(long peer, boolean recordAxioms);
 }

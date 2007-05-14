@@ -61,6 +61,7 @@ public final class Ints {
 	private Ints() {}
 
 	/*-----------SETS AND RANGES-----------*/
+	
 	/**
 	 * Returns an integer range from min, inclusive, to max, inclusive.
 	 * @return { r: IntRange | r.min = min && r.max = max }
@@ -181,7 +182,7 @@ public final class Ints {
 				}
 				System.arraycopy(ints, 0, array, 0, ints.length); 
 				return array;
-			}
+			} 
 		};
 	}
 	
@@ -227,7 +228,7 @@ public final class Ints {
 	 * hashing function (http://www.azillionmonkeys.com/qed/hash.html)
 	 * @return the bit avalanched version of the given hash value
 	 */ 
-	static int superFastHashAvalanche(int hash) {
+	public static int superFastHashAvalanche(int hash) {
 		hash ^= hash << 3;
 		hash += hash >> 5;
 		hash ^= hash << 4;
@@ -246,7 +247,7 @@ public final class Ints {
 	 * on the value returned by this method.
 	 * @return a 32 bit hash of the given integer, based on the given hash
 	 */
-	static int superFastHashIncremental(int key, int hash) {
+	public static int superFastHashIncremental(int key, int hash) {
 
 		hash += low16(key);
 		final int tmp = (high16(key) << 11) ^ hash;
@@ -264,6 +265,7 @@ public final class Ints {
 	 * This function is very fast and collision resistent; e.g. 
 	 * it hashes the four million integers in the range 
 	 * [-2000000,...-1, 1,..., 2000000] to distinct values.
+	 * The initial hash is taken to be 11.
 	 * @return a 32 bit hash of the given integer
 	 */
 	public static int superFastHash(int key) {
@@ -274,7 +276,8 @@ public final class Ints {
 	 * An implementation of Paul Hsieh's hashing function, 
 	 * described at http://www.azillionmonkeys.com/qed/hash.html.
 	 * The method returns a 32 bit hash of the given integers,
-	 * or 0 if the array is empty.
+	 * or 0 if the array is empty. The initial hash is taken to be
+	 * the number of keys.
 	 * @return a 32 bit hash of the given integers
 	 */
 	public static int superFastHash(int... key) {
@@ -324,14 +327,14 @@ public final class Ints {
 		public IntIterator iterator(final int from, final int to) {
 			return new IntIterator() {
 				final boolean ascending = (from <= to);
-				int cursor = ascending ? StrictMath.max(range.min(), from) : StrictMath.min(range.max(), from);
+				long cursor = ascending ? StrictMath.max(range.min(), from) : StrictMath.min(range.max(), from);
 				final int end = ascending ? StrictMath.min(range.max(), to) : StrictMath.max(range.min(), to);
 				public boolean hasNext() {
 					return ascending && cursor<=end || !ascending && cursor >= end;
 				}
 				public int next() {
 					if (!hasNext()) throw new NoSuchElementException();
-					return ascending ? cursor++ : cursor--;
+					return ascending ? (int)cursor++ : (int)cursor--;
 				}
 				public void remove() { throw new UnsupportedOperationException(); }
 				
@@ -463,49 +466,18 @@ public final class Ints {
 			};
 		}
 
-		public int size() {
-			return s.size();
-		}
-
-		public void clear() {
-			throw new UnsupportedOperationException();
-		}
-
-		public V put(int index, V value) {
-			throw new UnsupportedOperationException();
-		}
-
-		public V get(int index) {
-			return s.get(index);
-		}
-
-		public V remove(int index) {
-			throw new UnsupportedOperationException();
-		}
-
-		public boolean containsIndex(int index) {
-			return s.containsIndex(index);
-		}
-
-		public boolean contains(Object value) {
-			return s.contains(value);
-		}
-
-		public IndexedEntry<V> first() {
-			return s.first();
-		}
-
-		public IndexedEntry<V> last() {
-			return s.last();
-		}
-
-		public IndexedEntry<V> ceil(int index) {
-			return s.ceil(index);
-		}
-
-		public IndexedEntry<V> floor(int index) {
-			return s.floor(index);
-		}
+		public int size() {					return s.size(); }
+		public void clear() {				throw new UnsupportedOperationException(); }
+		public V put(int index, V value) {	throw new UnsupportedOperationException(); }
+		public V get(int index) { 			return s.get(index); }
+		public V remove(int index) {		throw new UnsupportedOperationException(); }
+		public IndexedEntry<V> first() {	return s.first(); }
+		public IndexedEntry<V> last() {		return s.last(); }
+		
+		public IndexedEntry<V> ceil(int index) {	return s.ceil(index); }
+		public IndexedEntry<V> floor(int index) {	return s.floor(index); }
+		public boolean containsIndex(int index) {	return s.containsIndex(index); }
+		public boolean contains(Object value) {		return s.contains(value); }
 		
 		public SparseSequence<V> clone() throws CloneNotSupportedException {
 			return s.clone();

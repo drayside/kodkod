@@ -42,6 +42,8 @@ public abstract class TranslationLog {
 	 */
 	public abstract Formula formula();
 	
+	
+	
 	/**
 	 * Returns an iterator over the translation records in this log that are accepted
 	 * by the given filter.  The iterator returns the records in the order in which

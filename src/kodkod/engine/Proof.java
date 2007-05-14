@@ -23,17 +23,14 @@ package kodkod.engine;
 
 import java.util.Iterator;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.ListIterator;
 import java.util.Set;
 
-import kodkod.ast.BinaryFormula;
 import kodkod.ast.Formula;
 import kodkod.ast.Node;
 import kodkod.engine.fol2sat.TranslationLog;
 import kodkod.engine.fol2sat.TranslationRecord;
 import kodkod.engine.satlab.ReductionStrategy;
+import kodkod.engine.ucore.StrategyUtils;
 
 /**
  * Contains a proof of unsatisfiability of a
@@ -78,41 +75,6 @@ public abstract class Proof {
 	 * that are in the unsatisfiable core of this.formula.
 	 */
 	public abstract Iterator<TranslationRecord> core() ;
-
-	/**
-	 * Flattens the top level conjunction.  In other words, returns the subformulas
-	 * f0, ..., fk of the given formula such that calling f0.and(f1)...and(fk) produces
-	 * an AST isomorphic to the given formula.  The formulas f0, ..., fk are guaranteed not to be
-	 * conjunctions.
-	 * @return a set containing the flattened children of the top level conjunction
-	 */
-	private static final Set<Formula> flatten(Formula formula) {
-		final List<Formula> formulas = new LinkedList<Formula>();
-		formulas.add(formula);
-		if (formula instanceof BinaryFormula) {
-			final BinaryFormula top = (BinaryFormula) formula;
-			final BinaryFormula.Operator op = top.op();
-			if (op==BinaryFormula.Operator.AND) {
-				int size;
-				do {
-					size = formulas.size();
-					ListIterator<Formula> itr = formulas.listIterator();
-					while(itr.hasNext()) {
-						Formula f = itr.next();
-						if (f instanceof BinaryFormula) {
-							BinaryFormula bin = (BinaryFormula) f;
-							if (bin.op()==op) {
-								itr.remove();
-								itr.add(bin.left());
-								itr.add(bin.right());
-							}
-						}
-					}
-				} while (formulas.size() > size);
-			}
-		}
-		return new LinkedHashSet<Formula>(formulas);
-	}
 	
 	/**
 	 * Returns the unsatisfiable subset of the top-level conjunctions of this.formula
@@ -121,7 +83,7 @@ public abstract class Proof {
 	 * as given by {@linkplain #core() this.core()}.
 	 */
 	public final Set<Formula> highLevelCore() {
-		final Set<Formula> topFormulas = flatten(log.formula());
+		final Set<Formula> topFormulas = StrategyUtils.topFormulas(log.formula());
 		final Set<Formula> topCoreFormulas = new LinkedHashSet<Formula>();
 		for(Iterator<TranslationRecord> iter = core(); iter.hasNext(); ) {
 			Node next = iter.next().node();
@@ -141,19 +103,17 @@ public abstract class Proof {
 		return log;
 	}
 	
-//	/**
-//	 * Returns a string representation of this proof.
-//	 * @return a string representation of this proof.
-//	 * @see java.lang.Object#toString()
-//	 */
+	/**
+	 * Returns a string representation of this proof.
+	 * @return a string representation of this proof.
+	 * @see java.lang.Object#toString()
+	 */
 //	public String toString() {
 //		final StringBuilder ret = new StringBuilder();
-//		final Iterator<Formula> iter = topCoreFormulas().iterator();
-//		if (iter.hasNext()) 
-//			ret.append(iter.next());
-//		while(iter.hasNext()) {
-//			ret.append(" &&\n");
-//			ret.append(iter.next());
+//		for(Formula f : highLevelCore()) {
+//			ret.append(" ");
+//			ret.append(f);
+//			ret.append("\n");
 //		}
 //		return ret.toString();
 //	}
