@@ -219,7 +219,7 @@ public abstract class Expression implements Node {
      * @return {f: Formula | f <=> this op expr }
      */
     public final Formula compose(ComparisonFormula.Operator op, Expression expr) {
-    	return this==expr ? Formula.TRUE : new ComparisonFormula(this, op, expr);
+    	return new ComparisonFormula(this, op, expr);
     }
     
     /**

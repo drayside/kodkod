@@ -58,7 +58,7 @@ public final class NotFormula extends Formula {
      * @return this.formula
      */
     @Override
-	public Formula not() { return formula; }
+//	public Formula not() { return formula; }
 
     /**
      * Accepts the given visitor and returns the result.

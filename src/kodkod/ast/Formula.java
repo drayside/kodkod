@@ -38,37 +38,37 @@ public abstract class Formula implements Node {
 	
 	/** Constant formula true */
 	public static final Formula TRUE = new ConstantFormula(true) {
-		@Override
-		public Formula not() {
-			return FALSE;
-		}
-		@Override
-	    public Formula compose(BinaryFormula.Operator op, Formula formula) {
-			switch(op) {
-			case OR: return TRUE;
-			case AND: case IMPLIES: case IFF: return formula;
-			case XOR: return formula.not();
-			default: throw new IllegalArgumentException("unknown operator: " + op);
-			}
-	    }
+//		@Override
+//		public Formula not() {
+//			return FALSE;
+//		}
+//		@Override
+//	    public Formula compose(BinaryFormula.Operator op, Formula formula) {
+//			switch(op) {
+//			case OR: return TRUE;
+//			case AND: case IMPLIES: case IFF: return formula;
+//			case XOR: return formula.not();
+//			default: throw new IllegalArgumentException("unknown operator: " + op);
+//			}
+//	    }
 	};
 	
 	/** Constant formula false */
 	public static final Formula FALSE = new ConstantFormula(false) {
-		@Override
-		public Formula not() {
-			return TRUE;
-		}
-		@Override
-	    public Formula compose(BinaryFormula.Operator op, Formula formula) {
-			switch(op) {
-			case AND: return FALSE;
-			case OR: case XOR: return formula;
-			case IMPLIES: return TRUE;
-			case IFF: return formula.not();
-			default: throw new IllegalArgumentException("unknown operator: " + op);
-			}
-	    }
+//		@Override
+//		public Formula not() {
+//			return TRUE;
+//		}
+//		@Override
+//	    public Formula compose(BinaryFormula.Operator op, Formula formula) {
+//			switch(op) {
+//			case AND: return FALSE;
+//			case OR: case XOR: return formula;
+//			case IMPLIES: return TRUE;
+//			case IFF: return formula.not();
+//			default: throw new IllegalArgumentException("unknown operator: " + op);
+//			}
+//	    }
 	};
 	
     Formula() {}
@@ -114,14 +114,14 @@ public abstract class Formula implements Node {
      * given binary operator.
      * @return {f: Formula | f <=> (this op formula) }
      */
-    public Formula compose(BinaryFormula.Operator op, Formula formula) {
-    	if (formula == ConstantFormula.TRUE || formula == ConstantFormula.FALSE) {
-    		if (op == BinaryFormula.Operator.IMPLIES) {
-    			return formula==ConstantFormula.TRUE ? formula : this.not();
-    		} else {
-    			return formula.compose(op, this);
-    		}
-    	}
+    public final Formula compose(BinaryFormula.Operator op, Formula formula) {
+//    	if (formula == ConstantFormula.TRUE || formula == ConstantFormula.FALSE) {
+//    		if (op == BinaryFormula.Operator.IMPLIES) {
+//    			return formula==ConstantFormula.TRUE ? formula : this.not();
+//    		} else {
+//    			return formula.compose(op, this);
+//    		}
+//    	}
     	return new BinaryFormula(this, op, formula);
     }
     
@@ -185,7 +185,7 @@ public abstract class Formula implements Node {
      * Returns the negation of this formula.
      * @return {f : Formula | f <=> (!this)}
      */
-    public Formula not() {
+    public final Formula not() {
         return new NotFormula(this);
     }
     

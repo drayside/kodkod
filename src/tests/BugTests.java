@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import junit.framework.TestCase;
 import kodkod.ast.Decls;
@@ -47,6 +48,78 @@ public class BugTests extends TestCase {
 //		for(Map.Entry e: p.entrySet())
 //			System.out.println(e); 
 //	}
+	
+	public final void testFelix_05152007_2() {
+		Relation x5 = Relation.nary("A", 1);
+
+		List<String> atomlist = Arrays.asList("A0", "A1", "A2");
+
+		Universe universe = new Universe(atomlist);
+		TupleFactory factory = universe.factory();
+
+		Bounds bounds = new Bounds(universe);
+
+
+		TupleSet x5_upper = factory.noneOf(1);
+		x5_upper.add(factory.tuple("A2"));
+		x5_upper.add(factory.tuple("A1"));
+		x5_upper.add(factory.tuple("A0"));
+
+		bounds.bound(x5, x5_upper);
+
+		Formula x7=x5.eq(x5).not();
+
+		Solver solver = new Solver();
+
+		solver.options().setLogTranslation(true);
+		solver.options().setSolver(SATFactory.MiniSatProver);
+		solver.options().setBitwidth(4);
+		solver.options().setIntEncoding(Options.IntEncoding.BINARY);
+
+		Solution sol = solver.solve(x7,bounds);
+		Set<Formula> core = sol.proof().highLevelCore();
+		assertEquals(1, core.size());
+		assertTrue(core.contains(x7));
+	}
+	public final void testFelix_05152007_1() {
+		Relation x5 = Relation.nary("A", 1);
+		
+		List<String> atomlist = Arrays.asList("A0", "A1", "A2");
+
+		Universe universe = new Universe(atomlist);
+		TupleFactory factory = universe.factory();
+		Bounds bounds = new Bounds(universe);
+
+
+		TupleSet x5_upper = factory.noneOf(1);
+		x5_upper.add(factory.tuple("A2"));
+		x5_upper.add(factory.tuple("A1"));
+		x5_upper.add(factory.tuple("A0"));
+
+		bounds.bound(x5, x5_upper);
+
+		Formula x7=x5.some();
+		Formula x8=x5.no();
+
+		Formula x6=x7.and(x8);
+
+		Solver solver = new Solver();
+		solver.options().setLogTranslation(true);
+
+		solver.options().setSolver(SATFactory.MiniSatProver);
+		solver.options().setBitwidth(4);
+		solver.options().setIntEncoding(Options.IntEncoding.BINARY);
+		
+		Solution sol = solver.solve(x6,bounds);
+
+//		System.out.println("Sol="+sol);
+
+		Set<Formula> core = sol.proof().highLevelCore();
+		assertEquals(2, core.size());
+		assertTrue(core.contains(x7));
+		assertTrue(core.contains(x8));
+	
+	}
 	
 	public final void testMana_01312007() {
 		final Relation A = Relation.unary("A");

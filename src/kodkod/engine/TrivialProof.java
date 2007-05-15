@@ -51,7 +51,7 @@ final class TrivialProof extends Proof {
 			coreFilter = new RecordFilter() {
 				final Set<Node> core = NodePruner.relevantNodes(log());
 				public boolean accept(Node node, int literal, Map<Variable, TupleSet> env) {
-					return core.contains(node) && (StrictMath.abs(literal)==Integer.MAX_VALUE) && env.isEmpty();
+					return core.contains(node) ;
 				}
 			};
 		}
@@ -111,20 +111,18 @@ final class TrivialProof extends Proof {
 		static Set<Node> relevantNodes(TranslationLog log) {
 			final NodePruner finder = new NodePruner(log);
 			log.formula().accept(finder);
+//			System.out.println(finder.relevant);
 			return finder.relevant;
 		}
 		
 		/**
-		 * Returns true if the given node has been visited before or if 
-		 * it was not simplified to a constant during translation (since 
-		 * that means it couldn't have affected unsatisfiability so we don't
-		 * want to visit it). 
+		 * Returns true if the given node has been visited before.
 		 * @effects this.visited' = this.visited + n
-		 * @return n in this.visited || !isConstant(n)
+		 * @return n in this.visited 
 		 */
 		@Override
 		protected boolean visited(Node n) {
-			return !(visited.add(n) && isConstant(n));
+			return !visited.add(n);
 		}
 		
 		/**
@@ -190,29 +188,37 @@ final class TrivialProof extends Proof {
 			if (visited(binFormula)) return;
 			relevant.add(binFormula);
 			
-			boolean binValue = isTrue(binFormula); 
 			final Formula l = binFormula.left(), r = binFormula.right();
-		
-			switch(binFormula.op()) {
-			case AND : 
-				if (binValue || isFalse(l)) { l.accept(this); }
-				if (binValue || isFalse(r)) { r.accept(this); }
-				break;
-			case OR : 
-				if (!binValue || isTrue(l)) { l.accept(this); }
-				if (!binValue || isTrue(r)) { r.accept(this); }
-				break;
-			case IMPLIES: // !l || r
-				if (!binValue || isFalse(l)) { l.accept(this); }  
-				if (!binValue || isTrue(r))  { r.accept(this); }
-				break;
-			case IFF: // (!l || r) && (l || !r) 
+			final boolean binValue = isTrue(binFormula); 
+			
+			if (!isConstant(l)&&!isConstant(r)) {
+				
 				l.accept(this);
 				r.accept(this);
-				break;
-			default :
-				throw new IllegalArgumentException("Unknown operator: " + binFormula.op());
-			}	
+			
+			} else {
+					
+				switch(binFormula.op()) {
+				case AND : 
+					if (binValue || isFalse(l)) { l.accept(this); }
+					if (binValue || isFalse(r)) { r.accept(this); }
+					break;
+				case OR : 
+					if (!binValue || isTrue(l)) { l.accept(this); }
+					if (!binValue || isTrue(r)) { r.accept(this); }
+					break;
+				case IMPLIES: // !l || r
+					if (!binValue || isFalse(l)) { l.accept(this); }  
+					if (!binValue || isTrue(r))  { r.accept(this); }
+					break;
+				case IFF: // (!l || r) && (l || !r) 
+					l.accept(this);
+					r.accept(this);
+					break;
+				default :
+					throw new IllegalArgumentException("Unknown operator: " + binFormula.op());
+				}	
+			}
 		}
 	}
 	
