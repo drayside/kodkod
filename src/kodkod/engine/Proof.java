@@ -90,7 +90,7 @@ public abstract class Proof {
 			if (topFormulas.contains(next))
 				topCoreFormulas.add((Formula)next);
 		}
-//		System.out.println("top formulas: " + topFormulas.size());
+//		System.out.println("top formulas: " + topFormulas);
 		return topCoreFormulas;
 	}
 	

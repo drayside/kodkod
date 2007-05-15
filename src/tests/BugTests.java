@@ -49,6 +49,44 @@ public class BugTests extends TestCase {
 //			System.out.println(e); 
 //	}
 	
+	public final void testFelix_05152007_3() {
+		Relation x5 = Relation.nary("A", 1);
+
+		List<String> atomlist = Arrays.asList("A[0]", "A[1]", "A[2]");
+
+		Universe universe = new Universe(atomlist);
+		TupleFactory factory = universe.factory();
+		Bounds bounds = new Bounds(universe);
+
+		TupleSet x5_upper = factory.noneOf(1);
+		x5_upper.add(factory.tuple("A[0]"));
+		x5_upper.add(factory.tuple("A[1]"));
+		x5_upper.add(factory.tuple("A[2]"));
+
+		bounds.bound(x5, x5_upper);
+
+		Formula a=x5.some();
+		Formula a1 = x5.no();
+		Formula b=a1.and(Formula.TRUE.and(Formula.TRUE));
+		Formula c=a.and(b);
+
+		Solver solver = new Solver();
+
+		solver.options().setLogTranslation(true);
+		solver.options().setSolver(SATFactory.DefaultSAT4J);
+		solver.options().setBitwidth(4);
+		solver.options().setIntEncoding(Options.IntEncoding.BINARY);
+
+		Solution sol = solver.solve(c,bounds);
+		Set<Formula> core = sol.proof().highLevelCore();
+		
+		assertEquals(2, core.size());
+		assertTrue(core.contains(a));
+		assertTrue(core.contains(a1));
+
+
+	}
+	
 	public final void testFelix_05152007_2() {
 		Relation x5 = Relation.nary("A", 1);
 

@@ -40,6 +40,7 @@ final class TrivialProof extends Proof {
 	TrivialProof(TranslationLog log) {
 		super(log);
 		this.coreFilter = null;
+		
 	}
 	
 	/**
@@ -55,6 +56,9 @@ final class TrivialProof extends Proof {
 				}
 			};
 		}
+//		for(Iterator<TranslationRecord> itr = log().replay(coreFilter); itr.hasNext(); ) {
+//			System.out.println(itr.next());
+//		}
 		return log().replay(coreFilter); 
 	}
 
@@ -177,6 +181,7 @@ final class TrivialProof extends Proof {
 			not.formula().accept(this);
 		}
 		
+	
 		/**
 		 * If this formula should be visited, then we visit its children only
 		 * if they could have contributed to the unsatisfiability of the top-level
@@ -187,38 +192,49 @@ final class TrivialProof extends Proof {
 		public void visit(BinaryFormula binFormula) {
 			if (visited(binFormula)) return;
 			relevant.add(binFormula);
-			
-			final Formula l = binFormula.left(), r = binFormula.right();
-			final boolean binValue = isTrue(binFormula); 
-			
-			if (!isConstant(l)&&!isConstant(r)) {
-				
-				l.accept(this);
-				r.accept(this);
-			
-			} else {
 					
-				switch(binFormula.op()) {
-				case AND : 
-					if (binValue || isFalse(l)) { l.accept(this); }
-					if (binValue || isFalse(r)) { r.accept(this); }
-					break;
-				case OR : 
-					if (!binValue || isTrue(l)) { l.accept(this); }
-					if (!binValue || isTrue(r)) { r.accept(this); }
-					break;
-				case IMPLIES: // !l || r
-					if (!binValue || isFalse(l)) { l.accept(this); }  
-					if (!binValue || isTrue(r))  { r.accept(this); }
-					break;
-				case IFF: // (!l || r) && (l || !r) 
-					l.accept(this);
-					r.accept(this);
-					break;
-				default :
-					throw new IllegalArgumentException("Unknown operator: " + binFormula.op());
-				}	
-			}
+			final Formula l = binFormula.left(), r = binFormula.right();
+			final boolean ltrue = isTrue(l), lfalse = isFalse(l);
+			final boolean rtrue = isTrue(r), rfalse = isFalse(r);
+			
+			boolean lrelevant = true, rrelevant = true;
+			
+			switch(binFormula.op()) {
+			case AND : 
+				if (isFalse(binFormula)) {
+					lrelevant = !ltrue && (lfalse || !rfalse);
+					rrelevant = !rtrue && (rfalse || !lfalse);
+				} else if (!isTrue(binFormula)) {
+					lrelevant = !ltrue;
+					rrelevant = !rtrue;
+				}
+				break;
+			case OR :
+				if (isTrue(binFormula)) {
+					lrelevant = !lfalse && (ltrue || !rtrue);
+					rrelevant = !rfalse && (rtrue || !ltrue);
+				} else if (!isFalse(binFormula)) {
+					lrelevant = !lfalse;
+					rrelevant = !rfalse;
+				}
+				break;
+			case IMPLIES: // !l || r
+				if (isTrue(binFormula)) {
+					lrelevant = !ltrue && (lfalse || !rtrue);
+					rrelevant = !rfalse && (rtrue || !lfalse);
+				} else if (!isFalse(binFormula)) {
+					lrelevant = !ltrue;
+					rrelevant = !rfalse;
+				}
+				break;
+			case IFF: // (!l || r) && (l || !r) 
+				break;
+			default :
+				throw new IllegalArgumentException("Unknown operator: " + binFormula.op());
+			}	
+			
+			if (lrelevant) { l.accept(this); }
+			if (rrelevant) { r.accept(this); }
 		}
 	}
 	
