@@ -33,7 +33,6 @@ import kodkod.util.ints.Ints;
  * 
  * @specfield solver: SATFactory // SAT solver factory to use
  * @specfield reporter: Reporter // reporter to use
- * @specfield interruptible: boolean // check for interrupts during translation?
  * @specfield symmetryBreaking: int // the amount of symmetry breaking to perform
  * @specfield sharing: int // the depth to which circuits should be checked for equivalence during translation
  * @specfield intEncoding: IntEncoding // encoding to use for translating {@link kodkod.ast.IntExpression int expressions}
@@ -53,14 +52,12 @@ public final class Options {
 	private int skolemDepth = 0;
 	private boolean flatten = true;
 	private boolean logTranslation = false;
-	private volatile boolean interruptible = false;
 	
 	/**
 	 * Constructs an Options object initalized with 
 	 * default values.
 	 * @effects this.solver' = SATFactory.DefaultSAT4J
 	 *          this.reporter' is silent (no messages reported)
-	 *          this.interruptible = false
 	 *          this.symmetryBreaking' = 20
 	 *          this.sharing' = 3
 	 *          this.intEncoding' = BINARY
@@ -77,7 +74,6 @@ public final class Options {
 	 * for other options.
 	 * @effects this.solver' = solver
 	 *          this.reporter' is silent (no messages reported)
-	 *          this.interruptible = false
 	 *          this.seed' = 0
 	 *          this.symmetryBreaking' = 20
 	 *          this.sharing' = 3
@@ -132,29 +128,7 @@ public final class Options {
 			throw new NullPointerException();
 		this.reporter = reporter;
 	}
-	
-	/**
-	 * Returns the value of the interruptible flag, which indicates
-	 * whether translation to boolean can be interrupted or not. (The interruptibility
-	 * of the sat solving phase depends on whether the chosen {@link #solver() solver factory}
-	 * produces {@link SATFactory#interruptible() interruptible} solver instances or not). 
-	 * @return this.interruptible
-	 */
-	public boolean interruptible() {
-		return interruptible;
-	}
-	
-	/**
-	 * Sets the interruptible flag to the given value. Note that setting
-	 * this flag to a different value while translation is already in progress
-	 * has no effect; that is, calling Thread.interrupt on the translating
-	 * thread will not terminate the computation. 
-	 * @effects this.interruptible' = interruptible
-	 */
-	public void setInterruptible(boolean interruptible) {
-		this.interruptible = interruptible;
-	}
-	
+		
 	/**
 	 * @throws IllegalArgumentException - arg !in [min..max]
 	 */
@@ -354,8 +328,6 @@ public final class Options {
 		b.append(solver);
 		b.append("\n reporter: ");
 		b.append(reporter);
-		b.append("\n interruptible: ");
-		b.append(interruptible);
 		b.append("\n intEncoding: ");
 		b.append(intEncoding);
 		b.append("\n bitwidth: ");

@@ -40,7 +40,7 @@ import kodkod.engine.bool.BooleanMatrix;
  * @specfield cache: cached -> (Object ->lone Environment)
  * @author Emina Torlak
  */
-abstract class FOL2BoolCache {
+final class FOL2BoolCache {
 	private final Map<Node,Record> cache;
 	
 	/**
@@ -48,7 +48,7 @@ abstract class FOL2BoolCache {
 	 * @effects this.node' = annotated.node 
 	 */
 	@SuppressWarnings("unchecked") 
-	private FOL2BoolCache(AnnotatedNode<? extends Node> annotated) {
+	FOL2BoolCache(AnnotatedNode<? extends Node> annotated) {
 		final CacheCollector collector = new CacheCollector(annotated.sharedNodes());
 		annotated.node().accept(collector);
 
@@ -63,35 +63,6 @@ abstract class FOL2BoolCache {
 
 	}
 
-	/**
-	 * Returns a basic cache for storing intermediate translations for 
-	 * the given annotated node.
-	 * @return a basic cache for storing intermediate translations for 
-	 * the given annotated node.
-	 */
-	static final FOL2BoolCache basic(AnnotatedNode<? extends Node> annotated) {
-		return new FOL2BoolCache(annotated) {};
-	}
-	
-	/**
-	 * Returns an interruptible cache for storing intermediate translations
-	 * for the given annotated node.  An interruptible cache checks whether
-	 * the current thread has been interrupted on each
-	 * call to {@link #lookup(Node, Environment)}, and, if it has, throws
-	 * a {@link TranslationAbortedException}.
-	 * @return an interruptible cache for storing intermediate translations
-	 * for the given annotated node.
-	 */
-	static final FOL2BoolCache interruptible(AnnotatedNode<? extends Node> annotated) {
-		return new FOL2BoolCache(annotated) {
-			@SuppressWarnings("unchecked")
-			<T> T lookup(Node node, Environment<BooleanMatrix> env) {
-				if (Thread.currentThread().isInterrupted()) 
-					throw new TranslationAbortedException();
-				return (T)super.lookup(node, env);
-			}
-		};
-	}
 	
 	/**
 	 * If the translation of the given node, with its free variables

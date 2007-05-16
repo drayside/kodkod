@@ -77,8 +77,7 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 	
 	/**
 	 * Translates the given annotated formula or expression into a boolean
-	 * formula or matrix, using the provided interpreter.  The translation will
-	 * respond to thread interruption if the interruptible flag is set.
+	 * formula or matrix, using the provided interpreter. 
 	 * @requires interpreter.relations = AnnotatedNode.relations(annotated)
 	 * @return {transl: T | 
 	 *           annotated.node in Formula => transl in BooleanValue, 
@@ -88,8 +87,8 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 	 * @throws UnboundLeafException - annotated.node refers to an undeclared variable 
 	 **/
 	@SuppressWarnings("unchecked")
-	static final <T> T translate(AnnotatedNode<? extends Node> annotated, LeafInterpreter interpreter, boolean interruptible) {
-		final FOL2BoolCache cache = interruptible ? FOL2BoolCache.interruptible(annotated) : FOL2BoolCache.basic(annotated);
+	static final <T> T translate(AnnotatedNode<? extends Node> annotated, LeafInterpreter interpreter) {
+		final FOL2BoolCache cache = new FOL2BoolCache(annotated);
 		final FOL2BoolTranslator translator = new FOL2BoolTranslator(cache, interpreter) {};
 		return (T) annotated.node().accept(translator);
 	}
@@ -97,15 +96,14 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 	/**
 	 * Translates the given annotated formula into a boolean
 	 * formula with respect to the given interpreter and logs the translation events to the given logger.  
-	 * The translation will respond to thread interruption if the interruptible flag is set.
 	 * @requires interpreter.relations = AnnotatedNode.relations(annotated)
 	 * @return BooleanValue that is the meaning of the given annotated formula with respect to the given interpreter
 	 * @effects log.records' contains the translation events that occurred while generating the returned value
 	 * @throws HigherOrderDeclException - annotated.node contains a higher order declaration
 	 * @throws UnboundLeafException - annotated.node refers to an undeclared variable 
 	 **/
-	static final BooleanValue translate(final AnnotatedNode<Formula> annotated, LeafInterpreter interpreter, final TranslationLogger logger, boolean interruptible) {
-		final FOL2BoolCache cache = interruptible ? FOL2BoolCache.interruptible(annotated) : FOL2BoolCache.basic(annotated);
+	static final BooleanValue translate(final AnnotatedNode<Formula> annotated, LeafInterpreter interpreter, final TranslationLogger logger) {
+		final FOL2BoolCache cache = new FOL2BoolCache(annotated);
 		final FOL2BoolTranslator translator = new FOL2BoolTranslator(cache, interpreter) {
 			BooleanValue cache(Formula formula, BooleanValue translation) {
 				logger.log(formula, translation, super.env);
@@ -129,7 +127,7 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 	 **/
 	@SuppressWarnings("unchecked")
 	static final BooleanMatrix approximate(AnnotatedNode<Expression> annotated, LeafInterpreter interpreter, Environment<BooleanMatrix> env) {
-		final FOL2BoolTranslator approximator = new FOL2BoolTranslator(FOL2BoolCache.basic(annotated), interpreter, env) {
+		final FOL2BoolTranslator approximator = new FOL2BoolTranslator(new FOL2BoolCache(annotated), interpreter, env) {
 			public final BooleanMatrix visit(BinaryExpression binExpr) {
 				if (binExpr.op().equals(BinaryExpression.Operator.DIFFERENCE)) {
 					final BooleanMatrix ret = lookup(binExpr);

@@ -80,7 +80,7 @@ public final class Translator {
 	public static BooleanConstant evaluate(Formula formula, Instance instance, Options options) {
 		return (BooleanConstant) 
 		 FOL2BoolTranslator.translate(new AnnotatedNode<Formula>(formula), 
-				 LeafInterpreter.exact(instance, options), false);
+				 LeafInterpreter.exact(instance, options));
 	}
 	
 	/**
@@ -94,7 +94,7 @@ public final class Translator {
 	public static BooleanMatrix evaluate(Expression expression,Instance instance, Options options) {
 		return (BooleanMatrix) 
 		 FOL2BoolTranslator.translate(new AnnotatedNode<Expression>(expression),
-				 LeafInterpreter.exact(instance, options), false);
+				 LeafInterpreter.exact(instance, options));
 	}
 
 	/**
@@ -108,7 +108,7 @@ public final class Translator {
 	public static Int evaluate(IntExpression intExpr, Instance instance, Options options) {
 		return (Int)
 		 FOL2BoolTranslator.translate(new AnnotatedNode<IntExpression>(intExpr),
-				 LeafInterpreter.exact(instance,options), false);
+				 LeafInterpreter.exact(instance,options));
 	}
 	
 	/**
@@ -304,13 +304,13 @@ public final class Translator {
 		
 		if (options.logTranslation()) {
 			final TranslationLogger logger = new FileLogger(annotated, bounds);
-			circuit = FOL2BoolTranslator.translate(annotated, interpreter, logger, options.interruptible());
+			circuit = FOL2BoolTranslator.translate(annotated, interpreter, logger);
 			log = logger.log();
 			if (circuit.op()==Operator.CONST) {
 				throw new TrivialFormulaException(log, bounds, (BooleanConstant) circuit);
 			} 
 		} else {
-			circuit = (BooleanValue)FOL2BoolTranslator.translate(annotated, interpreter, options.interruptible());
+			circuit = (BooleanValue)FOL2BoolTranslator.translate(annotated, interpreter);
 			if (circuit.op()==Operator.CONST) {
 				throw new TrivialFormulaException(null, bounds, (BooleanConstant)circuit);
 			} 
