@@ -28,6 +28,7 @@ import static kodkod.ast.BinaryFormula.Operator.OR;
 import static kodkod.ast.QuantifiedFormula.Quantifier.ALL;
 import static kodkod.ast.QuantifiedFormula.Quantifier.SOME;
 
+import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -135,6 +136,8 @@ abstract class Skolemizer extends AbstractReplacer {
 	/* non-skolemizable quantified declarations in the current scope, in the order of declaration
 	 * (most recent decl is last in the list) */
 	private final List<DeclInfo> nonSkolems;
+	/* a Decl-only view of the nonSkolems list */
+	private final List<Decl> nonSkolemsView;
 	/* true if the polarity of the currently visited node is negative, otherwise false */
 	private boolean negated;
 	/* depth to which to skolemize; negative depth indicates that no skolemization can be done at that point */
@@ -161,6 +164,10 @@ abstract class Skolemizer extends AbstractReplacer {
 		this.interpreter = LeafInterpreter.overapproximating(bounds, options);
 		this.repEnv = Environment.empty();
 		this.nonSkolems = new ArrayList<DeclInfo>();
+		this.nonSkolemsView = new AbstractList<Decl>() {
+			public Decl get(int index) { return nonSkolems.get(index).decl;	}
+			public int size() { return nonSkolems.size(); }
+		};
 		this.negated = false;
 		this.skolemDepth = options.skolemDepth();
 	}
@@ -319,7 +326,7 @@ abstract class Skolemizer extends AbstractReplacer {
 		final int arity = depth + decl.variable().arity();
 
 		final Relation skolem = Relation.nary("$"+decl.variable().name(), arity);
-		reporter.skolemizing(decl, skolem);
+		reporter.skolemizing(decl, skolem, nonSkolemsView);
 
 		Expression skolemExpr = skolem;
 		Environment<BooleanMatrix> skolemEnv = Environment.empty();

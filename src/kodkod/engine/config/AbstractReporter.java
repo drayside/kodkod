@@ -22,6 +22,8 @@
 package kodkod.engine.config;
 
 
+import java.util.List;
+
 import kodkod.ast.Decl;
 import kodkod.ast.Formula;
 import kodkod.ast.Relation;
@@ -51,9 +53,10 @@ public abstract class AbstractReporter implements Reporter {
 	public void flattening(BooleanFormula circuit) {}
 
 	/**
-	 * @see kodkod.engine.config.Reporter#skolemizing(kodkod.ast.Decl, kodkod.ast.Relation)
+	 * {@inheritDoc}
+	 * @see kodkod.engine.config.Reporter#skolemizing(kodkod.ast.Decl, kodkod.ast.Relation, java.util.List)
 	 */
-	public void skolemizing(Decl decl, Relation skolem) {}
+	public void skolemizing(Decl decl, Relation skolem, List<Decl> context) {}
 
 	/**
 	 * @see kodkod.engine.config.Reporter#solvingCNF(int, int, int)

@@ -22,6 +22,8 @@
 package kodkod.engine.config;
 
 
+import java.util.List;
+
 import kodkod.ast.Decl;
 import kodkod.ast.Formula;
 import kodkod.ast.Relation;
@@ -55,9 +57,10 @@ public final class ConsoleReporter implements Reporter {
 	}
 
 	/**
-	 * @see kodkod.engine.config.Reporter#skolemizing(kodkod.ast.Decl, kodkod.ast.Relation)
+	 * {@inheritDoc}
+	 * @see kodkod.engine.config.Reporter#skolemizing(kodkod.ast.Decl, kodkod.ast.Relation, java.util.List)
 	 */
-	public void skolemizing(Decl decl, Relation skolem) {
+	public void skolemizing(Decl decl, Relation skolem, List<Decl> context) {
 		System.out.println("skolemizing " + decl + ": skolem relation=" + skolem + ", arity=" + skolem.arity());
 	}
 

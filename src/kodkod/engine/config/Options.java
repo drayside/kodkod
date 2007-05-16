@@ -23,6 +23,8 @@ package kodkod.engine.config;
 
 import kodkod.engine.fol2sat.TranslationLog;
 import kodkod.engine.satlab.SATFactory;
+import kodkod.util.ints.IntRange;
+import kodkod.util.ints.Ints;
 
 /**
  * Stores information about various
@@ -200,10 +202,29 @@ public final class Options {
 	 * Sets this.bitwidth to the given value.
 	 * @effects this.bitwidth' = bitwidth
 	 * @throws IllegalArgumentException - bitwidth < 1
+	 * @throws IllegalArgumentException - this.intEncoding==BINARY && bitwidth > 32
 	 */
 	public void setBitwidth(int bitwidth) {
-		checkRange(bitwidth, 1, Integer.MAX_VALUE);
+		if (intEncoding==IntEncoding.BINARY)
+			checkRange(bitwidth, 1, 32);
+		else 
+			checkRange(bitwidth, 1, Integer.MAX_VALUE);
 		this.bitwidth = bitwidth;
+	}
+	
+	/**
+	 * Returns the range of integers that can be encoded 
+	 * using this.intEncoding and this.bitwidth. 
+	 * @return  range of integers that can be encoded 
+	 * using this.intEncoding and this.bitwidth. 
+	 */
+	public IntRange integers() {
+		if (intEncoding==IntEncoding.BINARY) {
+			final int shift = bitwidth-1;
+			return Ints.range(-1<<shift, (1<<shift)-1);
+		} else {
+			return Ints.range(0, bitwidth);
+		}
 	}
 	
 	/**

@@ -22,6 +22,8 @@
 package kodkod.engine.config;
 
 
+import java.util.List;
+
 import kodkod.ast.Decl;
 import kodkod.ast.Formula;
 import kodkod.ast.Relation;
@@ -58,9 +60,11 @@ public interface Reporter {
 	
 	/**
 	 * Reports that the given declaration is being skolemized using the 
-	 * given skolem relation.
+	 * given skolem relation.  The context list contains non-skolemizable 
+	 * quantified declarations on which the given decl depends, in the order of declaration
+	 * (most recent decl is last in the list).
 	 */
-	public void skolemizing(Decl decl, Relation skolem);
+	public void skolemizing(Decl decl, Relation skolem, List<Decl> context);
 	
 	/**
 	 * Reports that the analysis of the given (optimized) formula
@@ -90,7 +94,6 @@ public interface Reporter {
 	 * Reports that the cnf generated in stage 7, consisting of the
 	 * given number of variables and clauses, is being analyzed by
 	 * a sat solver (stage 8 of the analysis).
-	 * @param primaryVars TODO
 	 */
 	public void solvingCNF(int primaryVars, int vars, int clauses);
 }
