@@ -53,6 +53,7 @@ import kodkod.ast.Relation;
 import kodkod.ast.RelationPredicate;
 import kodkod.ast.SumExpression;
 import kodkod.ast.UnaryExpression;
+import kodkod.ast.UnaryIntExpression;
 import kodkod.ast.Variable;
 
 /** 
@@ -218,7 +219,7 @@ public abstract class AbstractReplacer implements ReturnVisitor<Expression, Form
 	 * If a replacement has not been cached, visits the expression's 
 	 * child.  If nothing changes, the argument is cached and
 	 * returned, otherwise a replacement expression is cached and returned.
-	 * @return { u: UnaryExpression | b.left = binExpr.left.accept(this) && u.op = binExpr.op }
+	 * @return { u: UnaryExpression | u.left = unaryExpr.expression.accept(this) && u.op = unaryExpr.op }
 	 */
 	public Expression visit(UnaryExpression unaryExpr) {
 		Expression ret = lookup(unaryExpr);
@@ -377,6 +378,22 @@ public abstract class AbstractReplacer implements ReturnVisitor<Expression, Form
 		return cache(intExpr,ret);
     }
     
+    /** 
+	 * Calls lookup(intExpr) and returns the cached value, if any.  
+	 * If a replacement has not been cached, visits the expression's 
+	 * child.  If nothing changes, the argument is cached and
+	 * returned, otherwise a replacement expression is cached and returned.
+	 * @return { u: UnaryIntExpression | u.expression = intExpr.expression.accept(this) && u.op = intExpr.op }
+	 */
+	public IntExpression visit(UnaryIntExpression intExpr) {
+		IntExpression ret = lookup(intExpr);
+		if (ret!=null) return ret;
+
+		final IntExpression child = intExpr.expression().accept(this);
+		ret = (child==intExpr.expression()) ?  intExpr : child.apply(intExpr.op());
+		return cache(intExpr,ret);
+	}
+	
     /** 
 	 * Calls lookup(intExpr) and returns the cached value, if any.  
 	 * If a replacement has not been cached, visits the expression's 

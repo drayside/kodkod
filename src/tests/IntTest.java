@@ -16,15 +16,19 @@ import kodkod.ast.Expression;
 import kodkod.ast.Formula;
 import kodkod.ast.IntComparisonFormula;
 import kodkod.ast.IntConstant;
+import kodkod.ast.IntExpression;
 import kodkod.ast.Relation;
 import kodkod.ast.Variable;
+import kodkod.engine.Evaluator;
 import kodkod.engine.Solution;
 import kodkod.engine.Solver;
 import kodkod.engine.config.Options;
 import kodkod.instance.Bounds;
+import kodkod.instance.Instance;
 import kodkod.instance.TupleFactory;
 import kodkod.instance.TupleSet;
 import kodkod.instance.Universe;
+import kodkod.util.ints.IntRange;
 import kodkod.util.ints.Ints;
 /**
  * Tests translation of cardinality expressions/formulas.
@@ -313,10 +317,53 @@ public class IntTest extends TestCase {
 		
 	}
 	
+	public final void testConstant2sComplementBinaryOps() {
+		final Options options = new Options();
+//		options.setBitwidth(3);
+		
+		final Evaluator eval = new Evaluator(new Instance(bounds.universe()), options);
+		final IntRange range = options.integers();
+		final int mask = ~(-1 << options.bitwidth());
+		final int shiftmask = ~(-1 << (32 - Integer.numberOfLeadingZeros(options.bitwidth()-1)));
+		
+		for(int i = range.min(), max = range.max(); i <= max; i++) {
+			
+			IntExpression ci = IntConstant.constant(i);
+			
+			for(int j = range.min(); j <= max; j++) {
+				
+				IntExpression cj = IntConstant.constant(j);
+				
+				assertEquals( (i + j) & mask, eval.evaluate(ci.plus(cj)) & mask);
+				assertEquals( (i - j) & mask, eval.evaluate(ci.minus(cj)) & mask);
+				assertEquals( (i * j) & mask, eval.evaluate(ci.multiply(cj)) & mask);
+				
+				if (j != 0) {
+					assertEquals( (i / j) & mask, eval.evaluate(ci.divide(cj)) & mask);
+					assertEquals( (i % j) & mask, eval.evaluate(ci.modulo(cj)) & mask);
+				}
+				
+				assertEquals( (i & j) & mask, eval.evaluate(ci.and(cj)) & mask);
+				assertEquals( (i | j) & mask, eval.evaluate(ci.or(cj)) & mask);
+				assertEquals( (i ^ j) & mask, eval.evaluate(ci.xor(cj)) & mask);
+				
+				assertEquals( ((i&mask) << (j&shiftmask)) & mask, eval.evaluate(ci.shl(cj)) & mask);
+				assertEquals( ((i&mask) >>> (j&shiftmask)) & mask, eval.evaluate(ci.shr(cj)) & mask);
+				assertEquals( (i >> (j&shiftmask)) & mask, eval.evaluate(ci.sha(cj)) & mask);
+				
+				assertEquals( i < j, eval.evaluate(ci.lt(cj)) );
+				assertEquals( i < j || i == j, eval.evaluate(ci.lte(cj)) );
+				assertEquals( i == j, eval.evaluate(ci.eq(cj)) );
+				assertEquals( i > j, eval.evaluate(ci.gt(cj)) );
+				assertEquals( i > j || i == j, eval.evaluate(ci.gte(cj)) );
+			}
+		}			
+	}
+	
 	public final void testDivide() {
 		solver.options().setBitwidth(6);
 		TupleSet r1b = factory.setOf("1", "5", "9");
-		bounds.bound(r1, r1b, r1b);
+		bounds.bound(r1, r1b);
 		
 		Formula f = r1.count().divide(IntConstant.constant(1)).eq(IntConstant.constant(3));
 		Solution s = solve(f);
@@ -375,6 +422,74 @@ public class IntTest extends TestCase {
 		f = r1.count().divide(r2.count()).eq(IntConstant.constant(-2));
 		s = solve(f);
 		assertNull(s.instance());
+	}
+	
+	
+	public final void testModulo() {
+		solver.options().setBitwidth(6);
+		TupleSet r1b = factory.setOf("1", "5", "9");
+		bounds.bound(r1, r1b);
+		
+		Formula f = r1.count().modulo(IntConstant.constant(1)).eq(IntConstant.constant(0));
+		Solution s = solve(f);
+		assertNotNull(s.instance());
+		
+		f = r1.count().modulo(IntConstant.constant(3)).lt(IntConstant.constant(3));
+		s = solve(f);
+		assertNotNull(s.instance());
+
+		bounds.bound(r1, r1b, r1b);
+		f = r1.count().modulo(IntConstant.constant(2)).eq(IntConstant.constant(1));
+		s = solve(f);
+		assertNotNull(s.instance());
+		
+		f =  r1.count().modulo(IntConstant.constant(8)).eq(IntConstant.constant(3));
+		s = solve(f);
+		assertNotNull(s.instance());
+		
+		f = r1.count().modulo(IntConstant.constant(-3)).eq(IntConstant.constant(0));
+		s = solve(f);
+		assertNotNull(s.instance());
+		
+		f = r1.count().modulo(IntConstant.constant(-2)).eq(IntConstant.constant(1));
+		s = solve(f);
+		assertNotNull(s.instance());
+		
+		f = r1.count().modulo(IntConstant.constant(-1)).eq(IntConstant.constant(0));
+		s = solve(f);
+		assertNotNull(s.instance());	
+		
+		f = r1.count().modulo(IntConstant.constant(-4)).eq(IntConstant.constant(3));
+		s = solve(f);
+		assertNotNull(s.instance());
+		
+		f = IntConstant.constant(-3).modulo(r1.count()).eq(IntConstant.constant(0));
+		s = solve(f);
+		assertNotNull(s.instance());
+		
+		f = IntConstant.constant(-2).modulo(r1.count()).eq(IntConstant.constant(-2));
+		s = solve(f);
+		assertNotNull(s.instance());
+		
+		f = IntConstant.constant(-4).modulo(r1.count()).eq(IntConstant.constant(-1));
+		s = solve(f);
+		assertNotNull(s.instance());	
+		
+		
+		r1b = factory.setOf("1", "5", "9", "10", "11");
+		bounds.bound(r1, r1b);
+		
+		TupleSet r2b = factory.setOf(factory.tuple("1", "1"), factory.tuple("2","5"));
+		bounds.bound(r2, r2b);
+		
+		f = r1.count().modulo(r2.count()).eq(IntConstant.constant(1)).and(r2.some());
+		s = solve(f);
+		assertSame(s.instance().tuples(r1).size() % s.instance().tuples(r2).size(), 1);
+	
+		f = IntConstant.constant(0).minus(r1.count()).modulo(r2.count()).eq(IntConstant.constant(-1)).and(r2.some());
+		s = solve(f);
+		
+		assertSame(-s.instance().tuples(r1).size() % s.instance().tuples(r2).size(), -1);
 	}
 	
 	public void testSum() {

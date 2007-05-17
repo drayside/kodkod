@@ -50,6 +50,7 @@ import kodkod.ast.Relation;
 import kodkod.ast.RelationPredicate;
 import kodkod.ast.SumExpression;
 import kodkod.ast.UnaryExpression;
+import kodkod.ast.UnaryIntExpression;
 import kodkod.ast.Variable;
 
 /**
@@ -336,6 +337,21 @@ public abstract class AbstractDetector implements ReturnVisitor<Boolean, Boolean
 		} else {
 			return ret;
 		}
+	}
+	
+	/** 
+	 * Calls lookup(intExpr) and returns the cached value, if any.  
+	 * If no cached value exists, visits the child, caches its return value and returns it. 
+	 * @return let x = lookup(intExpr) | 
+	 *          x != null => x,  
+	 *          cache(intExpr, intExpr.expression.accept(this)) 
+	 */
+	public Boolean visit(UnaryIntExpression intExpr) {
+		final Boolean ret = lookup(intExpr);
+		if (ret==null)
+			return cache(intExpr, intExpr.expression().accept(this));
+		else 
+			return ret;
 	}
 	
 	/** 

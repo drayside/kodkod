@@ -201,12 +201,20 @@ public abstract class Int {
 	public abstract Int multiply(Int other);
 	
 	/**
-	 * Returns an Int that represents the ratio between this and the given Int.
+	 * Returns an Int that represents the quotient of the division between this and the given Int.
 	 * @requires this.factory = other.factory
-	 * @return an Int that represents the ratio between this and the given Int
+	 * @return an Int that represents the quotient of the division between this and the given Int
 	 * @throws UnsupportedOperationException - this.encoding does not support division
 	 */
 	public abstract Int divide(Int other);
+	
+	/**
+	 * Returns an Int that represents the remainder of the division between this and the given Int.
+	 * @requires this.factory = other.factory
+	 * @return an Int that represents the remainder of the division between this and the given Int
+	 * @throws UnsupportedOperationException - this.encoding does not support division
+	 */
+	public abstract Int modulo(Int other);
 	
 	/**
 	 * Returns an Int that evaluates to this if the condition is true, otherwise it
@@ -266,6 +274,32 @@ public abstract class Int {
 	 * @throws UnsupportedOperationException - this.encoding does not support SHA
 	 */
 	public abstract Int sha(Int other);
+	
+	/**
+	 * Returns an Int that represents the negation of this integer.
+	 * @return -[[this]]
+	 * @throws UnsupportedOperationException - this.encoding does not support negation
+	 */
+	public abstract Int negate();
+	
+	/**
+	 * Returns an Int that represents bitwise negation of this integer.
+	 * @return ~[[this]]
+	 * @throws UnsupportedOperationException - this.encoding does not support bitwise negation
+	 */
+	public abstract Int not();
+	
+	/**
+	 * Returns an Int that represents the absolute value of this integer.
+	 * @return abs([[this]])
+	 */
+	public abstract Int abs();
+	
+	/**
+	 * Returns an Int that represents the signum of this integer.
+	 * @return sgn([[this]])
+	 */
+	public abstract Int sgn();
 	
 	/**
 	 * Throws IllegalArgumentException if other.factory != this.factory.

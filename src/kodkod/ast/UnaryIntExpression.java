@@ -1,5 +1,5 @@
 /* 
- * Kodkod -- Copyright (c) 2005-2007, Emina Torlak
+ * Kodkod -- Copyright (c) 2005-2008, Emina Torlak
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,59 +21,47 @@
  */
 package kodkod.ast;
 
-
 import kodkod.ast.visitor.ReturnVisitor;
 import kodkod.ast.visitor.VoidVisitor;
 
 /**
- * A binary integer expression, e.g. x + y.
- * @specfield left: IntExpression
- * @specfield right: IntExpression
+ * A unary integer expression, e.g. -x.
+ * @specfield expression: IntExpression
  * @specfield op: Operator
- * @invariant children = left + right
+ * @invariant children = expression
  * @author Emina Torlak
  */
-public final class BinaryIntExpression extends IntExpression {
+public final class UnaryIntExpression extends IntExpression {
 	private final Operator op;
-	private final IntExpression left, right;
+	private final IntExpression expression;
 	
-	/**  
-	 * Constructs a new binary int formula: left op right
-	 * 
-	 * @effects this.left' = left && this.right' = right && this.op' = op
-	 * @throws NullPointerException - left = null || right = null || op = null
+	/**
+	 * Constructs a new unary int formula: op expression
+	 * @effects this.op' = op && this.expression' = expression
 	 */
-	public BinaryIntExpression(final IntExpression left, final Operator op, final IntExpression right) {
-		this.left = left;
-		this.right = right;
+	UnaryIntExpression(Operator op, IntExpression expression) {
 		this.op = op;
+		this.expression = expression;
 	}
 
-	/**
-	 * Returns the left child of this.
-	 * @return this.left
-	 */
-	public IntExpression left() {return left;}
-	
-	/**
-	 * Returns the right child of this.
-	 * @return this.right
-	 */
-	public IntExpression right() {return right;}
-	
 	/**
 	 * Returns the operator of this.
 	 * @return this.op
 	 */
 	public Operator op() {return op;}
 	
+	/**
+	 * Returns this.expression.
+	 * @return this.expression
+	 */
+	public IntExpression expression() {return expression;}
 	
 	/**
 	 * Returns the string representation of this int expression.
 	 * @return string representation of this int expression
 	 */
 	public String toString() {
-		return "(" + left + " " + op + " " + right + ")";
+		return op.prefix() ? "(" + op + expression + ")" : op + "(" + expression + ")" ;
 	}
 	
 	/**
@@ -95,74 +83,41 @@ public final class BinaryIntExpression extends IntExpression {
 	}
 
 	/**
-	 * Binary operators on integer expressions.
+	 * Unary operators on integer expressions.
 	 */
 	public static enum Operator {
-		/** `+' operator */
-		PLUS {
-			public String toString() {
-				return "+";
-			}
-		},
-		/** `-' operator */
+		/** unary negation (`-') operator */
 		MINUS {
 			public String toString() {
 				return "-";
 			}
 		},
-		/** `*' operator */
-		MULTIPLY {
+		/** bit negation (`~') operator */
+		NOT {
 			public String toString() {
-				return "*";
+				return "~";
 			}
 		}, 
-		/** `/' operator */
-		DIVIDE {
+		/** absolute value function */
+		ABS {
 			public String toString() {
-				return "/";
+				return "abs";
 			}
-		},
-		/** `%' operator */
-		MODULO {
-			public String toString() {
-				return "%";
-			}
-		},
-		/** Bitwise AND operator */
-		AND {
-			public String toString() {
-				return "&";
-			}
-		},
-		/** Bitwise OR operator */
-		OR {
-			public String toString() {
-				return "|";
-			}
+			boolean prefix() { return false; } 
 		}, 
-		/** Bitwise XOR operator */
-		XOR {
+		/** signum function */
+		SGN {
 			public String toString() {
-				return "^";
+				return "sgn";
 			}
-		}, 
-		/** Left shift operator */
-		SHL {
-			public String toString() {
-				return "<<";
-			}
-		}, 
-		/** Right shift operator with zero extension */
-		SHR {
-			public String toString() {
-				return ">>>";
-			}
-		}, 
-		/** Right shift operator with sign extension */
-		SHA {
-			public String toString() {
-				return ">>";
-			}
+			boolean prefix() { return false; }
 		};
+		/**
+		 * Returns true if this is a prefix operator.
+		 * Otherwise returns false (i.e. if the application
+		 * of the operator should be displayed as a function application)
+		 * @return true if this is a prefix operator.
+		 */
+		boolean prefix() { return true; }
 	}
 }

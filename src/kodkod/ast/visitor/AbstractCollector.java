@@ -51,6 +51,7 @@ import kodkod.ast.Relation;
 import kodkod.ast.RelationPredicate;
 import kodkod.ast.SumExpression;
 import kodkod.ast.UnaryExpression;
+import kodkod.ast.UnaryIntExpression;
 import kodkod.ast.Variable;
 
 /**
@@ -357,6 +358,21 @@ public abstract class AbstractCollector<T> implements
 		return cache(intExpr, ret);
 	}
 
+	/** 
+	 * Calls lookup(intExpr) and returns the cached value, if any.  
+	 * If no cached value exists, visits the child, caches its return value and returns it. 
+	 * @return let x = lookup(intExpr) | 
+	 *          x != null => x,  
+	 *          cache(intExpr, intExpr.expression.accept(this)) 
+	 */
+	public Set<T> visit(UnaryIntExpression intExpr) {
+		Set<T> ret = lookup(intExpr);
+		if (ret!=null) return ret;
+		ret = newSet();
+		ret.addAll(intExpr.expression().accept(this));
+		return cache(intExpr,ret);
+	}
+	
 	/** 
 	 * Calls lookup(intExpr) and returns the cached value, if any.  
 	 * If no cached value exists, visits each child, caches the

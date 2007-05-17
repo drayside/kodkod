@@ -186,8 +186,7 @@ final class BinaryInt extends Int {
 	@Override
 	public Int multiply(Int other) {
 		validate(other);
-		final int imax = StrictMath.max(width(), other.width())-1;
-		final int width = StrictMath.min(width()+other.width()-1, factory.bitwidth);
+		final int width = StrictMath.min(width()+other.width(), factory.bitwidth);
 		final BooleanValue[] mult = new BooleanValue[width];
 		final BinaryInt ret = new BinaryInt(factory, mult);
 		
@@ -197,8 +196,9 @@ final class BinaryInt extends Int {
 			mult[j] = factory.and(iBit, other.bit(j));
 		}
 		
+		final int last = width-1;
 		/* intermediate partial sums */
-		for(int i = 1; i < imax; i++) {
+		for(int i = 1; i < last; i++) {
 			carry = FALSE;
 			iBit = bit(i);
 			for(int j = 0, jmax = width-i; j < jmax; j++) {
@@ -207,11 +207,9 @@ final class BinaryInt extends Int {
 		}
 		
 		/* last partial sum is subtracted (see http://en.wikipedia.org/wiki/Multiplication_ALU) */
-		carry = TRUE;
-		iBit = bit(imax);
-		for(int j = 0, jmax = width-imax; j < jmax; j++) {
-			carry = ret.addAndCarry(j+imax, factory.and(iBit, other.bit(j)).negation(), carry);
-		}
+		ret.addAndCarry(last, factory.and(this.bit(last), other.bit(0)).negation(), TRUE);
+				
+//		System.out.println("this.width="+width() + ", other.width=" + other.width() + ", ret.width=" + width);
 		//System.out.println(ret);
 		return ret;
 	}
@@ -235,19 +233,104 @@ final class BinaryInt extends Int {
 		}
 		return ext;
 	}
-
+	
 	/**
-	 * Returns the disjunction of the given values.
-	 * @return the disjunction of the given values.
+	 * Performs non-restoring signed division of this and the given integer.  Returns 
+	 * the this.factory.bitwidth low-order bits of the quotient if the quotient flag 
+	 * is true; otherwise returns the this.factory.bitwidth low-order bits of the remainder.  
+	 * Both the quotionent and the remainder are given in little endian format.  
+	 * @see Behrooz Parhami, Computer Arithmetic: Algorithms and Hardware Designs,
+	 * Oxford University Press, 2000, pp. 218-221.
+	 * @requires this.factory = d.factory && d instanceof BinaryInt
+	 * @return an array of boolean values, as described above
 	 */
-	private static BooleanValue or(BooleanValue[] values, BooleanFactory factory) {
-		final BooleanAccumulator acc = BooleanAccumulator.treeGate(Operator.OR);
-		for(int i = values.length-1; i >= 0; i--) {
-			if (acc.add(values[i])==TRUE)
-				return TRUE;
+	private BooleanValue[] nonRestoringDivision(Int d, boolean quotient) {
+		final int width = factory.bitwidth, extended = width*2 + 1;
+		
+		//	extend the dividend to bitwidth*2 + 1 and store it in s; the quotient will have width digits  
+		final BooleanValue[] s = this.extend(extended), q = new BooleanValue[width];
+		
+		// detects if one of the intermediate remainders is zero
+		final BooleanValue[] svalues = new BooleanValue[width];
+		
+		BooleanValue carry, sbit, qbit, dbit;
+		
+		// the sign bit of the divisor
+		final BooleanValue dMSB = d.bit(width);
+		
+		int sleft = 0; // the index which contains the LSB of s
+		for(int i = 0; i < width; i++) {
+			svalues[i] = factory.accumulate(BooleanAccumulator.treeGate(Operator.OR, s));
+			int sright = (sleft + extended - 1) % extended; // the index which contains the MSB of s
+			
+			// q[width-i-1] is 1 if sign(s_(i)) = sign(d), otherwise it is 0
+			qbit = factory.iff(s[sright], dMSB);
+			q[width-i-1] = qbit;
+			
+			// shift s to the left by 1 -- simulated by setting sright to FALSE and sleft to sright
+			s[sright] = FALSE;
+			sleft = sright;
+			
+			// if sign(s_(i)) = sign(d), form s_(i+1) by subtracting (2^width)d from s_(i);
+			// otherwise, form s_(i+1) by adding (2^width)d to s_(i).
+			carry = qbit;
+			for(int di = 0, si = (sleft+width) % extended; di <= width; di++, si = (si+1) % extended) {
+				dbit = factory.xor(qbit, d.bit(di));
+				sbit = s[si];
+				s[si] = factory.sum(sbit, dbit, carry);
+				carry = factory.carry(sbit, dbit, carry);
+			}
 		}
-		return factory.accumulate(acc);
+		
+		// s[0..width] holds the width+1 high order bits of s
+		assert (sleft+width) % extended != 0 ;
+		
+		// correction needed if one of the intermediate remainders is zero
+		// or s is non-zero and its sign differs from the sign of the dividend
+		final BooleanValue incorrect = factory.or(
+				factory.not(factory.accumulate(BooleanAccumulator.treeGate(Operator.AND, svalues))),
+				factory.and(factory.xor(s[width], this.bit(width)),
+						    factory.accumulate(BooleanAccumulator.treeGate(Operator.OR, s))));
+		final BooleanValue corrector = factory.iff(s[width], d.bit(width));
+				
+		if (quotient) { // convert q to 2's complement, correct it if s is nonzero, and return
+			
+			// convert q to 2's complement: shift to the left by 1 and set LSB to TRUE
+			System.arraycopy(q, 0, q, 1, width-1);
+			q[0] = TRUE;
+			
+			// correct if incorrect evaluates to true as follows:  if corrector evaluates to true, 
+			// increment q; otherwise decrement q.
+			final BooleanValue sign = factory.and(incorrect, factory.not(corrector));
+			carry = factory.and(incorrect, corrector);
+			
+			for(int i = 0; i < width; i++) {
+				qbit = q[i];
+				q[i] = factory.sum(qbit, sign, carry);
+				carry = factory.carry(qbit, sign, carry);
+			}
+
+			return q;
+		} else { // correct s if non-zero and return 
+			
+			// correct if incorrect evaluates to true as follows: if corrector evaluates to true,
+			// subtract (2^width)d from s; otherwise add (2^width)d to s
+			carry = factory.and(incorrect, corrector);
+						
+			for(int i = 0; i <= width; i++) {
+				dbit = factory.and(incorrect, factory.xor(corrector, d.bit(i)));
+				sbit = s[i];
+				s[i] = factory.sum(sbit, dbit, carry);
+				carry = factory.carry(sbit, dbit, carry);
+			}
+			
+			final BooleanValue[] r = new BooleanValue[width];
+			System.arraycopy(s, 0, r, 0, width);
+			return r;
+		}
+		
 	}
+	
 	
 	/**
 	 * {@inheritDoc}
@@ -256,60 +339,17 @@ final class BinaryInt extends Int {
 	@Override
 	public Int divide(Int other) {
 		validate(other);
-		// Non-restoring signed division: Behrooz Parhami, Computer Arithmetic: Algorithms and Hardware Designs,
-		// Oxford University Press, 2000, pp. 218-221.
-		final int width = factory.bitwidth, extended = width*2 + 1;
-		
-		// extend the dividend to bitwidth*2 + 1 and store it in s; the quotient will have width digits  
-		final BooleanValue[] s = extend(extended), q = new BooleanValue[width];
-		
-		BooleanValue carry, sbit, qbit, dbit;
-		
-		// the sign bit of the divisor
-		final BooleanValue dMSB = other.bit(width);
-		
-		int sleft = 0; // the index which contains the LSB of s
-		for(int i = 0; i < width; i++) {
-			int sright = (sleft + extended - 1) % extended; // the index which contains the MSB of s
-			// q[width-i-1] is 1 if sign(s_(i)) = sign(d), otherwise it is 0
-			qbit = factory.iff(s[sright], dMSB);
-			q[width-i-1] = qbit;
-			// shift s to the left by 1 -- simulated by setting sright to FALSE and sleft to sright
-			s[sright] = FALSE;
-			sleft = sright;
-			// if sign(s_(i)) = sign(d), form s_(i+1) by subtracting (2^width)d from s_(i);
-			// otherwise, form s_(i+1) by adding (2^width)d to s_(i).
-			carry = qbit;
-			for(int di = 0, si = (sleft+width) % extended; di <= width; di++, si = (si+1) % extended) {
-				dbit = factory.xor(qbit, other.bit(di));
-				sbit = s[si];
-				s[si] = factory.sum(sbit, dbit, carry);
-				carry = factory.carry(sbit, dbit, carry);
-			}
-		}
+		return new BinaryInt(factory, nonRestoringDivision(other, true));
+	}
 	
-		// shift q one bit to the left; and let the LSB position of q be 1
-		System.arraycopy(q, 0, q, 1, width-1);
-		
-		// Check if the MSB of the final remainder and the dividend are the same, or 
-		// the final remainder is zero; if so,
-		// we are done.  Otherwise, correct q as follows:
-		// if s and d have the same sign, q + 1 is the correct quotient,
-		// else, q - 1 is the correct quotient.
-		sbit = s[(sleft + extended - 1) % extended];
-		final BooleanValue incorrect = factory.and(or(s, factory), factory.xor(sbit, bit(width)));
-		final BooleanValue addOne = factory.and(incorrect, factory.xor(sbit, dMSB));
-		
-		q[0] = factory.sum(TRUE, incorrect, FALSE); // LSB position of q is 1
-		carry = factory.carry(TRUE, incorrect, FALSE); // LSB position of q is 1
-		
-		for(int i = 1; i < width; i++) {
-			qbit = q[i];
-			q[i] = factory.sum(qbit, addOne, carry);
-			carry = factory.carry(qbit, addOne, carry);
-		}
-			
-		return new BinaryInt(factory, q);
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.engine.bool.Int#modulo(kodkod.engine.bool.Int)
+	 */
+	@Override
+	public Int modulo(Int other) {
+		validate(other);
+		return new BinaryInt(factory, nonRestoringDivision(other, false));
 	}
 	
 	/**
@@ -334,7 +374,7 @@ final class BinaryInt extends Int {
 	@Override
 	public Int and(Int other) {
 		validate(other);
-		final int width = StrictMath.min(width(), other.width());
+		final int width = StrictMath.max(width(), other.width());
 		final BooleanValue[] and = new BooleanValue[width];
 		for(int i = 0; i < width; i++) {
 			and[i] = factory.and(bit(i), other.bit(i));
@@ -381,7 +421,7 @@ final class BinaryInt extends Int {
 		validate(other);
 		final int width = factory.bitwidth;
 		final BinaryInt shifted = new BinaryInt(factory, extend(width));
-		final int max = StrictMath.min(32 - Integer.numberOfLeadingZeros(width - 1), other.width());
+		final int max = 32 - Integer.numberOfLeadingZeros(width - 1);
 		for(int i = 0; i < max; i++) {
 			int shift = 1 << i;
 			BooleanValue bit = other.bit(i);
@@ -399,7 +439,7 @@ final class BinaryInt extends Int {
 		validate(other);
 		final int width = factory.bitwidth;
 		final BinaryInt shifted = new BinaryInt(factory, extend(width));
-		final int max = StrictMath.min(32 - Integer.numberOfLeadingZeros(width - 1), other.width());
+		final int max = 32 - Integer.numberOfLeadingZeros(width - 1);
 		for(int i = 0; i < max; i++) {
 			int shift = 1 << i;
 			int fill = width - shift;
@@ -427,6 +467,50 @@ final class BinaryInt extends Int {
 	@Override
 	public Int sha(Int other) {
 		return shr(other, bits[bits.length-1]);
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.engine.bool.Int#negate()
+	 */
+	@Override
+	public Int negate() {
+		return (new BinaryInt(factory, new BooleanValue[]{FALSE})).minus(this);
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.engine.bool.Int#not()
+	 */
+	@Override
+	public Int not() {
+		final int width = width();
+		final BooleanValue[] inverse = new BooleanValue[width];
+		for(int i = 0 ; i < width; i++) {
+			inverse[i] = factory.not(bits[i]);
+		}
+		return new BinaryInt(factory, inverse);
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.engine.bool.Int#abs()
+	 */
+	@Override
+	public Int abs() {
+		return choice(factory.not(bits[bits.length-1]), negate());
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.engine.bool.Int#sgn()
+	 */
+	@Override
+	public Int sgn() { 
+		final BooleanValue[] sgn = new BooleanValue[2];
+		sgn[0] = factory.accumulate(BooleanAccumulator.treeGate(Operator.OR, bits));
+		sgn[1] = bits[bits.length-1];
+		return new BinaryInt(factory, sgn);
 	}
 	
 	/**

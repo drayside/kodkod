@@ -160,6 +160,15 @@ final class UnaryInt extends Int {
 	}
 	
 	/**
+	 * Unsupported.
+	 * @throws UnsupportedOperationException
+	 */
+	@Override
+	public Int modulo(Int other) {
+		throw new UnsupportedOperationException();
+	}
+	
+	/**
 	 * {@inheritDoc}
 	 * @see kodkod.engine.bool.Int#choice(kodkod.engine.bool.BooleanValue, kodkod.engine.bool.Int)
 	 */
@@ -172,6 +181,42 @@ final class UnaryInt extends Int {
 			choice[i] = factory.ite(condition, bit(i), other.bit(i));
 		}
 		return new UnaryInt(factory, choice);
+	}
+	
+	/**
+	 * Unsupported.
+	 * @throws UnsupportedOperationException
+	 */
+	@Override
+	public Int negate() { 
+		throw new UnsupportedOperationException();
+	}
+	
+	/**
+	 * Unsupported.
+	 * @throws UnsupportedOperationException
+	 */
+	@Override
+	public Int not() {
+		throw new UnsupportedOperationException();
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.engine.bool.Int#abs()
+	 */
+	@Override
+	public Int abs() { 
+		return this;
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.engine.bool.Int#sgn()
+	 */
+	@Override
+	public Int sgn() { 
+		return new UnaryInt(factory, new BooleanValue[]{bit(0)});
 	}
 	
 	/**

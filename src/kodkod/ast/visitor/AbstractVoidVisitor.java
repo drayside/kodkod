@@ -46,6 +46,7 @@ import kodkod.ast.Relation;
 import kodkod.ast.RelationPredicate;
 import kodkod.ast.SumExpression;
 import kodkod.ast.UnaryExpression;
+import kodkod.ast.UnaryIntExpression;
 import kodkod.ast.Variable;
 
 /** 
@@ -207,6 +208,16 @@ public abstract class AbstractVoidVisitor implements VoidVisitor {
 		if (visited(intExpr)) return;
 		intExpr.left().accept(this);
 		intExpr.right().accept(this);
+	}
+	
+	/**
+	 * Visits the subexpression  if
+	 * this.visited(intExpr) returns false.  Otherwise does nothing.
+	 * @effects unaryExpr.expression.accept(this)
+	 */
+	public void visit(UnaryIntExpression intExpr) {
+		if (visited(intExpr)) return;
+		intExpr.expression().accept(this);
 	}
 	
 	/**

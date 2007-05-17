@@ -57,13 +57,28 @@ public final class BooleanAccumulator extends BooleanValue implements Iterable<B
 	/**
 	 * Returns a tree based implementation of BooleanAccumulator.
 	 * The addInput operation executes in O(lg n) time where n is the number of gate inputs. 
-	 * @return a tree based BooleanAccumulator with the given operator and
-	 * 0 as its label.
+	 * @return an empty tree based BooleanAccumulator with the given operator.
 	 * @throws NullPointerException - op = null
 	 */
 	public static BooleanAccumulator treeGate(Operator.Nary op) {
 		if (op==null) throw new NullPointerException();
 		return new BooleanAccumulator(op);
+	}
+	
+	/**
+	 * Returns a tree based implementation of BooleanAccumulator, initialized with the given inputs.
+	 * The addInput operation executes in O(lg n) time where n is the number of gate inputs. 
+	 * @return a tree based BooleanAccumulator with the given operator, initialized with the given inputs 
+	 * @throws NullPointerException - op = null || inputs = null
+	 */
+	public static BooleanAccumulator treeGate(Operator.Nary op, BooleanValue[] inputs) {
+		if (op==null) throw new NullPointerException();
+		final BooleanAccumulator ret = new BooleanAccumulator(op);
+		for(BooleanValue v : inputs) {
+			if (ret.add(v)!=ret)
+				break;
+		}
+		return ret;
 	}
 	
 	/**

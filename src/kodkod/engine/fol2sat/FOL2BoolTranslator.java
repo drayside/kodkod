@@ -52,6 +52,7 @@ import kodkod.ast.Relation;
 import kodkod.ast.RelationPredicate;
 import kodkod.ast.SumExpression;
 import kodkod.ast.UnaryExpression;
+import kodkod.ast.UnaryIntExpression;
 import kodkod.ast.Variable;
 import kodkod.ast.visitor.ReturnVisitor;
 import kodkod.engine.bool.BooleanAccumulator;
@@ -750,6 +751,7 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 		case MINUS 		: ret = left.minus(right); break;
 		case MULTIPLY 	: ret = left.multiply(right); break;
 		case DIVIDE 	: ret = left.divide(right); break;
+		case MODULO		: ret = left.modulo(right); break;
 		case AND		: ret = left.and(right); break;
 		case OR			: ret = left.or(right); break;
 		case XOR		: ret = left.xor(right); break;
@@ -757,6 +759,28 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 		case SHR		: ret = left.shr(right); break;
 		case SHA		: ret = left.sha(right); break;
 		default    :
+			throw new IllegalArgumentException("Unknown operator: " + intExpr.op());
+		}
+		return cache(intExpr, ret);
+	}
+	
+	/** 
+	 * Calls lookup(intExpr) and returns the cached value, if any.  
+	 * If a translation has not been cached, translates the expression,
+	 * calls cache(...) on it and returns it.
+	 * @return let t = lookup(intExpr) | some t => t, 
+	 * 	cache(intExpr, intExpr.op(intExpr.expression.accept(this)))
+	 */
+	public final Int visit(UnaryIntExpression intExpr) {
+		Int ret = lookup(intExpr);
+		if (ret!=null) return ret;
+		final Int child = intExpr.expression().accept(this);
+		switch(intExpr.op()) {
+		case MINUS 	: ret = child.negate(); break;
+		case NOT 	: ret = child.not(); break;
+		case ABS 	: ret = child.abs(); break;
+		case SGN 	: ret = child.sgn(); break;
+		default : 
 			throw new IllegalArgumentException("Unknown operator: " + intExpr.op());
 		}
 		return cache(intExpr, ret);
