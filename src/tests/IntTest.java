@@ -1,5 +1,6 @@
 package tests;
 
+import static kodkod.ast.BinaryIntExpression.Operator.*;
 import static kodkod.ast.IntComparisonFormula.Operator.EQ;
 import static kodkod.ast.IntComparisonFormula.Operator.GT;
 import static kodkod.ast.IntComparisonFormula.Operator.GTE;
@@ -12,19 +13,20 @@ import java.util.ArrayList;
 import java.util.List;
 
 import junit.framework.TestCase;
+import kodkod.ast.BinaryIntExpression;
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
 import kodkod.ast.IntComparisonFormula;
 import kodkod.ast.IntConstant;
 import kodkod.ast.IntExpression;
 import kodkod.ast.Relation;
+import kodkod.ast.UnaryIntExpression;
 import kodkod.ast.Variable;
 import kodkod.engine.Evaluator;
 import kodkod.engine.Solution;
 import kodkod.engine.Solver;
 import kodkod.engine.config.Options;
 import kodkod.instance.Bounds;
-import kodkod.instance.Instance;
 import kodkod.instance.TupleFactory;
 import kodkod.instance.TupleSet;
 import kodkod.instance.Universe;
@@ -316,50 +318,143 @@ public class IntTest extends TestCase {
 		assertNotNull(s.instance());
 		
 	}
-	
-	public final void testConstant2sComplementBinaryOps() {
-		final Options options = new Options();
-//		options.setBitwidth(3);
 		
-		final Evaluator eval = new Evaluator(new Instance(bounds.universe()), options);
+	private IntExpression[] constants() {
+		final Options options = solver.options();
 		final IntRange range = options.integers();
+		final int min = range.min(), max = range.max();
+		final IntExpression[] vals = new IntExpression[max-min+1];
+		for(int i = min; i <= max; i++) {
+			vals[i-min] = constant(i);
+		}
+		return vals;
+	}
+	
+	private IntExpression[] nonConstants() {
+		final Options options = solver.options();
+			
+		final IntRange range = options.integers();
+		final int min = range.min(), max = range.max();
+		final int size = range.size();
+		
+		final Relation[] r = new Relation[size];
+				
+		final TupleFactory f = bounds.universe().factory();
+		for(int i = 0; i < size; i++) {
+			int arity = i%3 + 1;
+			r[i] = Relation.nary("r"+i, arity);
+			
+			TupleSet b = f.noneOf(arity);
+			for(int j = (i/3)*((int)Math.pow(SIZE, arity-1)), jmax = j+size; j < jmax; j++ ) {
+				b.add(f.tuple(arity, j%b.capacity()));
+			}
+			
+			bounds.bound(r[i], b);
+		}
+		
+		final IntExpression[] vals = new IntExpression[max-min+1];
+		for(int i = 0; i < size; i++) {
+			vals[i] = i+min < 0 ? r[i].count().negate() : r[i].count();
+		}
+		
+		return vals;
+	}
+	
+	private static IntExpression constant(int i) { return IntConstant.constant(i); }
+	
+	private final void testBinOp(BinaryIntExpression.Operator op, IntExpression ei, IntExpression ej, int i, int j, int result, int mask) {
+		final IntExpression e = ei.compose(op, ej);
+		final Formula f = ei.eq(constant(i)).and(ej.eq(constant(j))).and(e.eq(constant(result)));
+		final Solution s = solve(f);
+		assertNotNull(s.instance());
+		final Evaluator eval = new Evaluator(s.instance(), solver.options());
+		assertEquals(result & mask, eval.evaluate(e) & mask);
+		
+	}
+	
+	/**
+	 * Tests all binary ops for this.solver.options and range of vals.
+	 * @requires this.solver.options.intEncoding = binary 
+	 * @requires vals contains int expressions that represent all 
+	 * integers allowed by this.solver.options, in proper sequence
+	 */
+	private final void test2sComplementBinaryOps(IntExpression[] vals) {
+		final Options options = solver.options();
+		
+		final IntRange range = options.integers();
+		final int min = range.min(), max = range.max();
 		final int mask = ~(-1 << options.bitwidth());
 		final int shiftmask = ~(-1 << (32 - Integer.numberOfLeadingZeros(options.bitwidth()-1)));
 		
-		for(int i = range.min(), max = range.max(); i <= max; i++) {
+		for(int i = min; i <= max; i++) {
+				IntExpression vi = vals[i-min];
 			
-			IntExpression ci = IntConstant.constant(i);
-			
-			for(int j = range.min(); j <= max; j++) {
+			for(int j = min; j <= max; j++) {
 				
-				IntExpression cj = IntConstant.constant(j);
+				IntExpression vj = vals[j-min];
+				testBinOp(PLUS, vi, vj, i, j, i+j, mask);
+				testBinOp(MINUS, vi, vj, i, j, i-j, mask);
+				testBinOp(MULTIPLY, vi, vj, i, j, i*j, mask);
 				
-				assertEquals( (i + j) & mask, eval.evaluate(ci.plus(cj)) & mask);
-				assertEquals( (i - j) & mask, eval.evaluate(ci.minus(cj)) & mask);
-				assertEquals( (i * j) & mask, eval.evaluate(ci.multiply(cj)) & mask);
-				
-				if (j != 0) {
-					assertEquals( (i / j) & mask, eval.evaluate(ci.divide(cj)) & mask);
-					assertEquals( (i % j) & mask, eval.evaluate(ci.modulo(cj)) & mask);
+				if (j!=0) {
+					testBinOp(DIVIDE, vi, vj, i, j, i/j, mask);
+					testBinOp(MODULO, vi, vj, i, j, i%j, mask);
 				}
 				
-				assertEquals( (i & j) & mask, eval.evaluate(ci.and(cj)) & mask);
-				assertEquals( (i | j) & mask, eval.evaluate(ci.or(cj)) & mask);
-				assertEquals( (i ^ j) & mask, eval.evaluate(ci.xor(cj)) & mask);
+				testBinOp(AND, vi, vj, i, j, i & j, mask);
+				testBinOp(OR, vi, vj, i, j, i | j, mask);
+				testBinOp(XOR, vi, vj, i, j, i ^ j, mask);
 				
-				assertEquals( ((i&mask) << (j&shiftmask)) & mask, eval.evaluate(ci.shl(cj)) & mask);
-				assertEquals( ((i&mask) >>> (j&shiftmask)) & mask, eval.evaluate(ci.shr(cj)) & mask);
-				assertEquals( (i >> (j&shiftmask)) & mask, eval.evaluate(ci.sha(cj)) & mask);
-				
-				assertEquals( i < j, eval.evaluate(ci.lt(cj)) );
-				assertEquals( i < j || i == j, eval.evaluate(ci.lte(cj)) );
-				assertEquals( i == j, eval.evaluate(ci.eq(cj)) );
-				assertEquals( i > j, eval.evaluate(ci.gt(cj)) );
-				assertEquals( i > j || i == j, eval.evaluate(ci.gte(cj)) );
+				testBinOp(SHL, vi, vj, i, j, i << (j & shiftmask), mask);
+				testBinOp(SHR, vi, vj, i, j, (i & mask) >>> (j & shiftmask), mask);
+				testBinOp(SHA, vi, vj, i, j, i >> (j & shiftmask), mask);
 			}
-		}			
+		}
+		
+	}
+	public final void testNonConstant2sComplementBinaryOps() {
+		solver.options().setBitwidth(3);
+		test2sComplementBinaryOps(nonConstants());
 	}
 	
+	public final void testConstant2sComplementBinaryOps() {
+		test2sComplementBinaryOps(constants());
+	}
+	
+	private final void testUnOp(UnaryIntExpression.Operator op, IntExpression ei, int i, int result, int mask) {
+		final IntExpression e = ei.apply(op);
+		final Formula f = ei.eq(constant(i)).and(e.eq(constant(result)));
+		final Solution s = solve(f);
+
+		assertNotNull(s.instance());
+		final Evaluator eval = new Evaluator(s.instance(), solver.options());
+		assertEquals(result & mask, eval.evaluate(e) & mask);
+		
+	}
+	
+	private final void test2sComplementUnaryOps(IntExpression[] vals) {
+		final Options options = solver.options();
+		
+		final IntRange range = options.integers();
+		final int min = range.min(), max = range.max();
+		final int mask = ~(-1 << options.bitwidth());
+		
+		for(int i = min; i <= max; i++) {
+			IntExpression vi = vals[i-min];
+			testUnOp(UnaryIntExpression.Operator.MINUS, vi, i, -i, mask);
+			testUnOp(UnaryIntExpression.Operator.ABS, vi, i, Math.abs(i), mask);
+			testUnOp(UnaryIntExpression.Operator.SGN, vi, i, i < 0 ? -1 : i > 0 ? 1 : 0, mask);
+		}		
+	}
+	
+	public final void testConstant2sComplementUnaryOps() {
+		test2sComplementUnaryOps(constants());
+	}
+	
+	public final void testNonConstant2sComplementUnaryOps() {
+		solver.options().setBitwidth(3);
+		test2sComplementUnaryOps(nonConstants());
+	}
 	public final void testDivide() {
 		solver.options().setBitwidth(6);
 		TupleSet r1b = factory.setOf("1", "5", "9");
