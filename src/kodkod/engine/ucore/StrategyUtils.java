@@ -116,7 +116,10 @@ public final class StrategyUtils {
 		for(Iterator<TranslationRecord> itr = log.replay(filter); itr.hasNext();) {
 			TranslationRecord record = itr.next();
 			int[] var = maxFormulaVars.get(record.node());
-			var[0] = StrictMath.max(var[0], StrictMath.abs(record.literal()));
+			int recordVar = StrictMath.abs(record.literal());
+			if (recordVar < Integer.MAX_VALUE) {
+				var[0] = StrictMath.max(var[0], recordVar);
+			}
 		}
 		for(int[] var : maxFormulaVars.values()) {
 			topVars.add(var[0]);
