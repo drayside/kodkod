@@ -25,6 +25,7 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.RandomAccessFile;
 import java.util.BitSet;
@@ -172,6 +173,28 @@ final class ExternalSolver implements SATSolver {
 			throw new RuntimeException("invalid variable value: |" + lit + "| !in [1.."+vars+"]");
 	}
 	
+    /** Helper class that drains the stderr. */
+    private final class Drainer implements Runnable {
+        /** The stream to drain. */
+        private final InputStream input;
+        /** Constructor that constructs a new Drainer. */
+        public Drainer(InputStream input) {
+            this.input=input;
+        }
+        /** The run method that keeps reading from the InputStream until end-of-file. */
+        public void run() {
+            try {
+                byte[] buffer=new byte[8192];
+                while(true) {
+                    int n=input.read(buffer);
+                    if (n<0) break;
+                }
+            } catch (IOException ex) {
+            }
+            try { input.close(); } catch(IOException ex) { }
+        }
+    }
+
 	/**
 	 * @see kodkod.engine.satlab.SATSolver#solve()
 	 */
@@ -190,10 +213,10 @@ final class ExternalSolver implements SATSolver {
 				else 
 					command = new String[]{executable, options, inTemp};
 				p = Runtime.getRuntime().exec(command);
-				p.waitFor();
+				new Thread(new Drainer(p.getErrorStream())).start();
 				final BufferedReader out;
 				if (outTemp.length()==0) {
-					out = new BufferedReader(new InputStreamReader(p.getInputStream()));
+					out = new BufferedReader(new InputStreamReader(p.getInputStream(), "ISO-8859-1"));
 				} else {
 					out = new BufferedReader(new FileReader(outTemp));
 				}
@@ -220,7 +243,7 @@ final class ExternalSolver implements SATSolver {
 							}
 							int lit = Integer.parseInt(tokens[last]);
 							if (lit!=0) updateSolution(lit);
-							else break; // last variable line
+							else if (sat!=null) break;
 						} // not a solution line or a variable line, so ignore it.
 					}
 				}
@@ -229,9 +252,6 @@ final class ExternalSolver implements SATSolver {
 					throw new RuntimeException("invalid " + executable + " output");
 				}
 			} catch (IOException e) {
-				throw new SATAbortedException(e);
-			} catch (InterruptedException e) {
-				p.destroy(); // p cannot be null if this exception was thrown
 				throw new SATAbortedException(e);
 			} catch (NumberFormatException e) {
 				throw new RuntimeException("invalid "+ executable +" output", e);

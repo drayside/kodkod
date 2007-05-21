@@ -285,7 +285,7 @@ public final class Solver {
 	 * @throws AbortedException - this solving task was interrupted with a call to Thread.interrupt on this thread
 	 * @see Solution
 	 * @see Options
-	 * @see ResolutionRefutation
+	 * @see Proof
 	 */
 	public Solution solve(Formula formula, Bounds bounds)
 			throws HigherOrderDeclException, UnboundLeafException, AbortedException {
@@ -339,7 +339,7 @@ public final class Solver {
 	 * @throws IllegalStateException - !this.options.solver().incremental()
 	 * @see Solution
 	 * @see Options
-	 * @see ResolutionRefutation
+	 * @see Proof
 	 */
 	public Iterator<Solution> solveAll(final Formula formula, final Bounds bounds) 
 		throws HigherOrderDeclException, UnboundLeafException, AbortedException {

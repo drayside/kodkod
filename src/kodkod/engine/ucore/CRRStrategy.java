@@ -61,9 +61,7 @@ public final class CRRStrategy implements ReductionStrategy {
 	}
 	
 	/**
-	 * Returns the next subset of clauses in the given trace to be analyzed.  In particular,
-	 * returns all clauses from the given trace that are not reachable from the first clause
-	 * returned by {@link #order(ResolutionTrace) this.order(trace)} that has not yet been excluded. 
+	 * Returns the next subset of clauses in the given trace to be analyzed.  
 	 * @requires {@inheritDoc} 
 	 * @effects {@inheritDoc}
 	 * @return  last(this.nexts')

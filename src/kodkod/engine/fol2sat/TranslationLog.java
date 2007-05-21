@@ -35,6 +35,7 @@ import kodkod.ast.Formula;
  * @author Emina Torlak
  */
 public abstract class TranslationLog {
+	TranslationLog() {}
 	
 	/**
 	 * Returns this.formula.

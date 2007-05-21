@@ -110,7 +110,7 @@ public final class StrategyUtils {
 		}
 		final RecordFilter filter = new RecordFilter() {
 			public boolean accept(Node node, int literal, Map<Variable, TupleSet> env) {
-				return topFormulas.contains(node);
+				return topFormulas.contains(node) && env.isEmpty();
 			}
 		};
 		for(Iterator<TranslationRecord> itr = log.replay(filter); itr.hasNext();) {
