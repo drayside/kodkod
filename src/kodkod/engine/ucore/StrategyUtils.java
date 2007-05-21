@@ -119,12 +119,14 @@ public final class StrategyUtils {
 			int recordVar = StrictMath.abs(record.literal());
 			if (recordVar < Integer.MAX_VALUE) {
 				var[0] = StrictMath.max(var[0], recordVar);
-			}
+			} 
 		}
 		for(int[] var : maxFormulaVars.values()) {
-			topVars.add(var[0]);
+			int topVar = var[0];
+			if (topVar != 0) // topVar could be 0 if a top-level formula simplified to TRUE
+				topVars.add(var[0]);
 		}
-//		System.out.println("topFormulas: " + topFormulas.size() + ", topVars: " + topVars.size());
+
 		return topVars;
 	}
 	
@@ -135,7 +137,6 @@ public final class StrategyUtils {
 	public static IntSet maxCoreVars(ResolutionTrace trace) {
 		final IntSet coreVars = new IntTreeSet();
 		for(Iterator<Clause> iter = trace.iterator(trace.core()); iter.hasNext();) {
-//				System.out.println(clause);
 			coreVars.add(iter.next().maxVariable());
 		}
 		return coreVars;
