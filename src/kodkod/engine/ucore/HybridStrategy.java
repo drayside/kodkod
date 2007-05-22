@@ -70,7 +70,7 @@ public final class HybridStrategy implements ReductionStrategy {
 			int maxVar = clause.maxVariable();
 			if (topVars.remove(maxVar)) {
 				// get all core clauses with the given maximum variable
-				IntSet exclude = StrategyUtils.coreWithVar(trace, maxVar);
+				IntSet exclude = StrategyUtils.coreWithMaxVar(trace, maxVar);
 				assert !exclude.isEmpty();
 				//	get all clauses reachable from the conflict clause
 				IntSet next = trace.reachable(Ints.singleton(trace.size()-1)); 

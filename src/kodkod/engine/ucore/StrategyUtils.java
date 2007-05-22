@@ -44,6 +44,7 @@ import kodkod.util.ints.IntBitSet;
 import kodkod.util.ints.IntIterator;
 import kodkod.util.ints.IntSet;
 import kodkod.util.ints.IntTreeSet;
+import kodkod.util.ints.Ints;
 
 /**
  * A collection of utility methods for implementing
@@ -97,6 +98,8 @@ public final class StrategyUtils {
 	 * <pre> 
 	 * { v: int | some r: log.records | 
 	 *   r.node in topFormulas(log.formula) and 
+	 *   r.env.isEmpty() and
+	 *   abs(r.literal) != Integer.MAX_VALUE and
 	 *   v = abs(r.literal) and
 	 *   no r': log.records | r'.node = r.node && abs(r'.literal) > v }
 	 * </pre>
@@ -131,15 +134,48 @@ public final class StrategyUtils {
 	}
 	
 	/**
-	 * Returns the maximum variables of the clauses in the unsatisfiable core of the given trace.
-	 * @return trace.elts[trace.core()].maxVariable()
+	 * Returns the variables that correspond to all the subformulas of log.formula
+	 * @return { lit: abs(log.records.literal) | lit < Integer.MAX_VALUE } 
 	 */
-	public static IntSet maxCoreVars(ResolutionTrace trace) {
-		final IntSet coreVars = new IntTreeSet();
-		for(Iterator<Clause> iter = trace.iterator(trace.core()); iter.hasNext();) {
-			coreVars.add(iter.next().maxVariable());
+	public static IntSet formulaVars(TranslationLog log) {
+		final IntSet formulaVars = new IntTreeSet();
+		
+		for(Iterator<TranslationRecord> itr = log.replay(); itr.hasNext(); ) {
+			int literal = StrictMath.abs(itr.next().literal());
+			if (literal < Integer.MAX_VALUE) {
+				formulaVars.add(literal);
+			}
 		}
-		return coreVars;
+		
+		if (formulaVars.isEmpty()) return Ints.EMPTY_SET;
+		final IntSet ret = new IntBitSet(formulaVars.max()+1);
+		ret.addAll(formulaVars);
+		return ret;
+	}
+	
+	/**
+	 * Returns relevant core variables -- i.e. variables that occur both in the positive and negative
+	 * phase in trace.core.
+	 * @return { v: [1..) | some p, n: trace.core | v in trace.elts[p].literals and -v in trace.elts[n].literals }
+	 */
+	public static IntSet coreVars(ResolutionTrace trace) {
+		final IntSet posVars = new IntTreeSet(), negVars = new IntTreeSet();
+		
+		for(Iterator<Clause> iter = trace.iterator(trace.core()); iter.hasNext();) {
+			Clause clause = iter.next();
+			for(IntIterator lits = clause.literals(); lits.hasNext(); ) {
+				int lit = lits.next();
+				if (lit > 0) posVars.add(lit);
+				else negVars.add(-lit);
+			}
+		}
+		
+		posVars.retainAll(negVars);
+		assert !posVars.isEmpty();
+		
+		final IntSet ret = new IntBitSet(posVars.max()+1);
+		ret.addAll(posVars);
+		return ret;
 	}
 	
 	/**
@@ -147,7 +183,7 @@ public final class StrategyUtils {
 	 * given trace that have the specified maximum variable.
 	 * @return { i: trace.core() | trace[i].maxVariable() = maxVariable }
 	 */
-	public static IntSet coreWithVar(ResolutionTrace trace, int maxVariable) {
+	public static IntSet coreWithMaxVar(ResolutionTrace trace, int maxVariable) {
 		final IntSet core = trace.core();
 		final IntSet restricted = new IntBitSet(core.max()+1);
 		final Iterator<Clause> clauses = trace.iterator(core);

@@ -67,7 +67,10 @@ public final class NaiveStrategy implements ReductionStrategy {
 				return next;
 			}
 		}
-		
+//		System.out.println("EXCLUDED (" + excluded.size() + "):");
+//		for(Clause c : excluded) {
+//			System.out.println(c);
+//		}
 		return Ints.EMPTY_SET;
 	}
 

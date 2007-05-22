@@ -196,7 +196,7 @@ public final class UCoreTest {
 				System.out.println("top-level formulas: " + StrategyUtils.topFormulas(problem.formula).size());
 //				checkMinimal(problem,StrategyUtils.topFormulas(problem.formula));
 				System.out.println("top-level formulas before min: " + proof.highLevelCore().size());
-				checkMinimal(problem,proof.highLevelCore());
+//				checkMinimal(problem,proof.highLevelCore());
 //				minimize(problem,proof);
 				long start = System.currentTimeMillis();
 				proof.minimize(new MinTopStrategy(proof.log()));

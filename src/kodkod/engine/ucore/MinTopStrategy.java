@@ -71,7 +71,7 @@ public class MinTopStrategy implements ReductionStrategy {
 		final IntSet core = trace.core();
 		final IntSet irrelevantVars = new IntBitSet(maxVariable(trace)+1);
 		irrelevantVars.addAll(topVars);
-		irrelevantVars.removeAll(StrategyUtils.maxCoreVars(trace));
+		irrelevantVars.removeAll(StrategyUtils.coreVars(trace));
 		
 		for(Iterator<Clause> iter = trace.iterator(core); iter.hasNext();) {
 			Clause clause = iter.next();

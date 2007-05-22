@@ -90,7 +90,7 @@ final class ResolutionBasedProof extends Proof {
 	public final Iterator<TranslationRecord> core() { 
 		if (coreFilter == null) {
 			coreFilter = new RecordFilter() {
-				final IntSet coreVariables = StrategyUtils.maxCoreVars(solver.proof());
+				final IntSet coreVariables = StrategyUtils.coreVars(solver.proof());
 				final Set<Node> coreNodes = connectedCore(coreVariables);
 				public boolean accept(Node node, int literal, Map<Variable,TupleSet> env) {
 					return coreNodes.contains(node) && coreVariables.contains(StrictMath.abs(literal));
