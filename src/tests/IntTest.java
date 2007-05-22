@@ -36,6 +36,7 @@ import kodkod.engine.Evaluator;
 import kodkod.engine.Solution;
 import kodkod.engine.Solver;
 import kodkod.engine.config.Options;
+import kodkod.engine.satlab.SATFactory;
 import kodkod.instance.Bounds;
 import kodkod.instance.TupleFactory;
 import kodkod.instance.TupleSet;
@@ -69,7 +70,7 @@ public class IntTest extends TestCase {
 	protected void setUp() throws Exception {
 		super.setUp();
 		bounds = new Bounds(factory.universe());
-		
+		solver.options().setSolver(SATFactory.MiniSat);
 	}
 
 	protected void tearDown() throws Exception {
