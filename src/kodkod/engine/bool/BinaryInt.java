@@ -283,7 +283,7 @@ final class BinaryInt extends Int {
 		}
 		
 		// s[0..width] holds the width+1 high order bits of s
-		assert (sleft+width) % extended != 0 ;
+		assert (sleft+width) % extended == 0 ;
 		
 		// correction needed if one of the intermediate remainders is zero
 		// or s is non-zero and its sign differs from the sign of the dividend
