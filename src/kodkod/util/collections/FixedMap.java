@@ -341,7 +341,7 @@ public final class FixedMap<K, V> extends AbstractMap<K, V> implements Indexer<K
 		if (o == this) {
 			return true;
 		} else if (o instanceof FixedMap) {
-			FixedMap m = (FixedMap) o;
+			FixedMap<?,?> m = (FixedMap<?,?>) o;
 			if (m.size() != size())
 				return false;
 			for(int i = 0; i < keys.length; i++) {
@@ -350,7 +350,7 @@ public final class FixedMap<K, V> extends AbstractMap<K, V> implements Indexer<K
 			}
 			return true;
 		} else if (o instanceof Map) {
-			Map m = (Map)o;
+			Map<?,?> m = (Map<?,?>)o;
 			return entrySet().equals(m.entrySet());
 		} else {
 			return false;  // o is not a Map
@@ -374,6 +374,7 @@ public final class FixedMap<K, V> extends AbstractMap<K, V> implements Indexer<K
 		public int hashCode() {
 			return System.identityHashCode(keys[index]) ^ System.identityHashCode(values[index]);
 		}
+		@SuppressWarnings("unchecked")
 		public boolean equals(Object o) {
 			if (o instanceof Map.Entry) {
 				final Map.Entry e = (Map.Entry) o;

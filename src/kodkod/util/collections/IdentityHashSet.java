@@ -425,7 +425,7 @@ public final class IdentityHashSet<T> extends AbstractSet<T> {
         if (o == this) {
             return true;
         } else if (o instanceof IdentityHashSet) {
-            final IdentityHashSet s = (IdentityHashSet) o;
+            final IdentityHashSet<?> s = (IdentityHashSet<?>) o;
             if (s.size() != size) return false;
             final Object[] tab = s.table;
             for (int i = 0; i < tab.length; i++) {

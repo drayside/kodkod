@@ -114,7 +114,7 @@ public final class SingletonIdentitySet<V> extends AbstractSet<V> {
         if (o == this) {
             return true;
         } else if (o instanceof Set) {
-            final Set s = (Set) o;
+            final Set<?> s = (Set<?>) o;
             return s.size()==1 && s.iterator().next()==this.element;
         } else {
             return false;  

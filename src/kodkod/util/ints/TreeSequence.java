@@ -225,6 +225,7 @@ public final class TreeSequence<V> extends AbstractSparseSequence<V>
 			return key + "=" + value;
 		}		
 		
+		@SuppressWarnings("unchecked")
 		protected Entry<V> clone() throws CloneNotSupportedException {
 			return (Entry<V>)super.clone();
 		}

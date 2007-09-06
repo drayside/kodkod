@@ -388,6 +388,7 @@ public final class RangeSequence<V> extends AbstractSparseSequence<V> implements
 		 * @throws CloneNotSupportedException 
 		 * @see java.lang.Object#clone()
 		 */
+		@SuppressWarnings("unchecked")
 		protected Entry<V> clone() throws CloneNotSupportedException {
 			return (Entry<V>) super.clone();
 		}
@@ -417,6 +418,7 @@ public final class RangeSequence<V> extends AbstractSparseSequence<V> implements
 		@Override
 		boolean isPoint() { return true; }
 
+		@SuppressWarnings("unchecked")
 		protected Point<V> clone() throws CloneNotSupportedException {
 			return (Point<V>) super.clone();
 		}
@@ -448,6 +450,7 @@ public final class RangeSequence<V> extends AbstractSparseSequence<V> implements
 		@Override
 		boolean isPoint() { return false; }
 
+		@SuppressWarnings("unchecked")
 		protected Range<V> clone() throws CloneNotSupportedException {
 			return (Range<V>) super.clone();
 		}
