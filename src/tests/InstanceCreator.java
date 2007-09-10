@@ -163,14 +163,14 @@ final class InstanceCreator {
         final NodeList modules = document.getElementsByTagName(MODULE);
         for (int i = 0; i < modules.getLength(); i++) {
             Element module = (Element) modules.item(i);
-            for (Iterator sigs=getChildrenByTag(module, SIG); sigs.hasNext();) {
+            for (Iterator<Element> sigs=getChildrenByTag(module, SIG); sigs.hasNext();) {
                 Element sig = (Element) sigs.next();
                 processAtoms(module, sig);
-                for (Iterator fields=getChildrenByTag(sig, FIELD); fields.hasNext();) {
+                for (Iterator<Element> fields=getChildrenByTag(sig, FIELD); fields.hasNext();) {
                     processField(module, (Element) fields.next());
                 }
             }
-            for (Iterator skolems=getChildrenByTag(module, SKOLEM); skolems.hasNext(); ) {
+            for (Iterator<Element> skolems=getChildrenByTag(module, SKOLEM); skolems.hasNext(); ) {
                 processAtoms(module, (Element) skolems.next());
             }
         }
@@ -190,7 +190,7 @@ final class InstanceCreator {
         for (Map.Entry<Relation,Set<List<String>>> entry : relations.entrySet()) {
             Relation r = (Relation) entry.getKey();
             TupleSet s = f.noneOf(r.arity());
-            for (List atoms : entry.getValue()) {
+            for (List<?> atoms : entry.getValue()) {
                 s.add(f.tuple(atoms));
             }
             instance.add(r,s);

@@ -45,7 +45,7 @@ public class EvaluatorTest extends TestCase {
         super(arg0);
     }
     
-    private static Relation relation(Map nameToRelation, String path, String name) {
+    private static Relation relation(Map<String,Relation> nameToRelation, String path, String name) {
         return (Relation) nameToRelation.get(path+name);
     }
     
