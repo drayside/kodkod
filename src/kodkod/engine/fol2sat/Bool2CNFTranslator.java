@@ -144,11 +144,17 @@ final class Bool2CNFTranslator implements BooleanVisitor<int[], Object> {
 				solver.addClause(ternaryClause);
 				ternaryClause[0] = i; ternaryClause[1] = e; ternaryClause[2] = -oLit;
 				solver.addClause(ternaryClause);
+				// redundant clause that strengthens unit propagation
+				ternaryClause[0] = t; ternaryClause[1] = e; ternaryClause[2] = -oLit;
+				solver.addClause(ternaryClause);
 			}
 			if (n) {
 				ternaryClause[0] = -i; ternaryClause[1] = -t; ternaryClause[2] = oLit;
 				solver.addClause(ternaryClause);	
 				ternaryClause[0] = i; ternaryClause[1] = -e; ternaryClause[2] = oLit;
+				solver.addClause(ternaryClause);
+				// redundant clause that strengthens unit propagation
+				ternaryClause[0] = -t; ternaryClause[1] = -e; ternaryClause[2] = oLit;
 				solver.addClause(ternaryClause);
 			}	
 		}
