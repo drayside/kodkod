@@ -52,12 +52,12 @@ public class ExamplesTest extends TestCase {
 		final CeilingsAndFloors model = new CeilingsAndFloors();
 		final Solution sol = solve(model.belowTooDoublePrime(), model.bounds(6, 6));
 //		UNSATISFIABLE
-//		p cnf 1750 3290
+//		p cnf 1750 3415
 //		primary variables: 90
 		assertEquals(Solution.Outcome.UNSATISFIABLE, sol.outcome());
 		assertEquals(90, sol.stats().primaryVariables());
 		assertEquals(1750, sol.stats().variables());
-		assertEquals(3290, sol.stats().clauses());
+		assertEquals(3415, sol.stats().clauses());
 	}
 	
 	/**
@@ -68,12 +68,12 @@ public class ExamplesTest extends TestCase {
 		final Formula noDeadlocks = model.dijkstraPreventsDeadlocksAssertion();
 		final Solution sol = solve(noDeadlocks, model.bounds(6,6,6));
 //		UNSATISFIABLE
-//		p cnf 4344 18609
+//		p cnf 4344 18789
 //		primary variables: 444
 		assertEquals(Solution.Outcome.UNSATISFIABLE, sol.outcome());
 		assertEquals(444, sol.stats().primaryVariables());
 		assertEquals(4344, sol.stats().variables());
-		assertEquals(18609, sol.stats().clauses());
+		assertEquals(18789, sol.stats().clauses());
 	}
 	
 	/**
@@ -84,12 +84,12 @@ public class ExamplesTest extends TestCase {
 		final Formula show = model.declarations().and(model.pigeonPerHole());
 		final Solution sol = solve(show, model.bounds(10,9));
 //		UNSATISFIABLE
-//		p cnf 1133 1983
+//		p cnf 1133 2127
 //		primary variables: 90
 		assertEquals(Solution.Outcome.UNSATISFIABLE, sol.outcome());
 		assertEquals(90, sol.stats().primaryVariables());
 		assertEquals(1133, sol.stats().variables());
-		assertEquals(1983, sol.stats().clauses());
+		assertEquals(2127, sol.stats().clauses());
 	}
 	
 	/**
