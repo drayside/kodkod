@@ -110,6 +110,15 @@ public abstract class Formula implements Node {
     }
     
     /**
+     * Returns the exclusive OR of the specified formula by this.  The effect
+     * of this method is the same as calling this.compose(BinaryFormula.Operator.XOR, formula).
+     * @return {f : Formula | f <=> (this xor formula)}
+     */
+    public final Formula xor(Formula formula) { 
+    	return compose(BinaryFormula.Operator.XOR,formula);
+    }
+    
+    /**
      * Returns the composition of this and the specified formula using the
      * given binary operator.
      * @return {f: Formula | f <=> (this op formula) }
