@@ -116,23 +116,101 @@ public final class BinaryExpression extends Expression {
 	/**
 	 * A binary expression operator: union, difference, intersection, override, join, and product.
 	 */
-	public static enum Operator {
+	public static enum Operator implements BinaryOperator<Expression,Expression> {
 		/** Relational difference (-) operator. */
-		DIFFERENCE { public String toString() { return "-"; }},
+		DIFFERENCE { 
+			/** 
+			 * Returns false.
+			 * @return false 
+			 **/
+			public boolean commutative() { return false; }
+			/** 
+			 * Returns false.
+			 * @return false
+			 **/
+			public boolean associative() { return false; }
+			public String toString() { return "-"; }
+		},
+		
 		/** Relational union (+) operator. */
-		UNION { public String toString() { return "+"; }},
+		UNION {
+			/** 
+			 * Returns true.
+			 * @return true 
+			 **/
+			public boolean commutative() { return true; }
+			/** 
+			 * Returns true.
+			 * @return true 
+			 **/
+			public boolean associative() { return true; }
+			public String toString() { return "+"; }
+		},
+		
 		/** Relational intersection (&) operator. */
-		INTERSECTION { public String toString() { return "&"; }},
+		INTERSECTION { 
+			/** 
+			 * Returns true.
+			 * @return true 
+			 **/
+			public boolean commutative() { return true; }
+			/** 
+			 * Returns true.
+			 * @return true 
+			 **/
+			public boolean associative() { return true; }
+			public String toString() { return "&"; }
+		},
+		
 		/** Relational override (++) operator. */
-		OVERRIDE { public String toString() { return "++"; }},
+		OVERRIDE { 
+			/** 
+			 * Returns false.
+			 * @return false 
+			 **/
+			public boolean commutative() { return false; }
+			/** 
+			 * Returns true.
+			 * @return true 
+			 **/
+			public boolean associative() { return true; }
+			public String toString() { return "++"; }
+		},
+		
 		/** Relational join (.) operator. */
 		JOIN {
+			/** 
+			 * Returns false.
+			 * @return false 
+			 **/
+			public boolean commutative() { return false; }
+			/** 
+			 * Returns false.
+			 * @return false
+			 **/
+			public boolean associative() { return false; }
 			public String toString() { return "."; }
 			boolean applicable(int leftArity, int rightArity) { return leftArity + rightArity > 2; }
 			int arity(int leftArity, int rightArity) { return leftArity + rightArity - 2; }
 		},
+		
 		/** Relational product (->) operator. */
 		PRODUCT {
+			/** 
+			 * Returns false.
+			 * @return false 
+			 **/
+			public boolean commutative() { return false; }
+			/** 
+			 * Returns true.
+			 * @return true 
+			 **/
+			public boolean associative() { return true; }
+			
+			/**
+			 * {@inheritDoc}
+			 * @see java.lang.Enum#toString()
+			 */
 			public String toString() { return "->"; }
 			boolean applicable(int leftArity, int rightArity) { return true; }
 			int arity(int leftArity, int rightArity) { return leftArity + rightArity; }
@@ -153,5 +231,13 @@ public final class BinaryExpression extends Expression {
 		 */
 		int arity(int leftArity, int rightArity) { return leftArity; }
 		
+		/**
+		 * {@inheritDoc}
+		 * @see kodkod.ast.BinaryOperator#apply(java.lang.Object, java.lang.Object)
+		 */
+		public final Expression apply(Expression left, Expression right) { 
+			return new BinaryExpression(left, this, right);
+		}
+
 	}
 }

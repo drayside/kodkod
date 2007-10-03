@@ -28,6 +28,7 @@ import kodkod.ast.Node;
 import kodkod.ast.Variable;
 import kodkod.engine.bool.BooleanConstant;
 import kodkod.engine.bool.BooleanMatrix;
+import kodkod.util.nodes.AnnotatedNode;
 
 
 /**

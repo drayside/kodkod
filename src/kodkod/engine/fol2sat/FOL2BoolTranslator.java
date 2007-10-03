@@ -66,6 +66,7 @@ import kodkod.engine.bool.Operator;
 import kodkod.util.ints.IndexedEntry;
 import kodkod.util.ints.IntIterator;
 import kodkod.util.ints.IntSet;
+import kodkod.util.nodes.AnnotatedNode;
 
 /**
  * Translates an annotated node to boolean representation.

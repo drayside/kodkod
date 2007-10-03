@@ -59,6 +59,7 @@ import kodkod.engine.config.Options;
 import kodkod.engine.config.Reporter;
 import kodkod.instance.Bounds;
 import kodkod.instance.TupleSet;
+import kodkod.util.nodes.AnnotatedNode;
 
 /**
  * Skolemizes existential quantifiers, up to a given

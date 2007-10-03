@@ -47,4 +47,5 @@ public interface Node {
      * @throws NullPointerException visitor = null
      */
     public void accept(VoidVisitor visitor);
+
 }

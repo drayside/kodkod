@@ -16,6 +16,7 @@ import kodkod.engine.satlab.SATFactory;
 import kodkod.instance.Bounds;
 import kodkod.instance.TupleFactory;
 import kodkod.instance.Universe;
+import kodkod.util.nodes.Nodes;
 
 /**
  * KK encoding of mondex/a.als together with mondex/common.als.
@@ -70,7 +71,7 @@ public final class AbstractWorldDefinitions {
 		final Formula f7 = AIN.in(aNullIn.union(TransferDetails));
 		final Formula f8 = aNullOut.in(AOUT);
 		
-		return f0.and(f1).and(f2).and(f3).and(f4).and(f5).and(f6).and(f7).and(f8);
+		return Nodes.and(f0, f1, f2, f3, f4, f5, f6, f7, f8);
 		
 	}
 	
@@ -82,7 +83,7 @@ public final class AbstractWorldDefinitions {
 		final Formula f0 = p.join(from).eq(pprime.join(from));
 		final Formula f1 = p.join(to).eq(pprime.join(to));
 		final Formula f2 = p.join(value).eq(pprime.join(value));
-		return f0.and(f1).and(f2);
+		return Nodes.and(f0, f1, f2);
 	}
 	
 	/**
@@ -99,7 +100,7 @@ public final class AbstractWorldDefinitions {
 		final Variable c = Variable.unary("c");
 		final Formula f2 = e2.join(c).lone().forAll(c.oneOf(Coin));
 		
-		return f0.and(f1).and(f2);
+		return Nodes.and(f0, f1, f2);
 	}
 	/**
 	 * Returns the application of the XiAbPurse predicate.
@@ -195,7 +196,7 @@ public final class AbstractWorldDefinitions {
 		
 		final Formula f3 = XiAbPurse(s, sprime, e2);
 		
-		return f0.and(f1).and(f2).and(f3);
+		return Nodes.and(f0, f1, f2, f3);
 	}
 		
 	/**
@@ -220,7 +221,7 @@ public final class AbstractWorldDefinitions {
 		final Formula f9 = Authentic(sprime, e0);
 		final Formula f10 = Authentic(sprime, e1);
 		
-		return f0.and(f1).and(f2).and(f3).and(f4).and(f5).and(f6).and(f7).and(f8).and(f9).and(f10);
+		return Nodes.and(f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10);
 	}
 
 	/**
@@ -245,7 +246,7 @@ public final class AbstractWorldDefinitions {
 		final Formula f8 = Authentic(sprime, e0);
 		final Formula f9 = Authentic(sprime, e1);
 		
-		return f0.and(f1).and(f2).and(f3).and(f4).and(f5).and(f6).and(f7).and(f8).and(f9);
+		return Nodes.and(f0, f1, f2, f3, f4, f5, f6, f7, f8, f9);
 	}
 	
 	/**

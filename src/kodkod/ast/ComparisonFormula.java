@@ -35,7 +35,7 @@ import kodkod.ast.visitor.VoidVisitor;
  * @invariant children = left + right
  * @author Emina Torlak 
  */
-public final class ComparisonFormula extends Formula {
+public final class ComparisonFormula extends Formula{
     private final Expression left;
     private final Expression right;
     private final Operator op;
@@ -104,11 +104,26 @@ public final class ComparisonFormula extends Formula {
     /**
      * Represents a comparison operator; e.g. "in" or "=".
      */
-    public static enum Operator {
+    public static enum Operator implements BinaryOperator<Expression,Formula>{
     	/** Subset operator (in). */
-        SUBSET { public String toString() { return "in"; }},
+        SUBSET { 
+        	public String toString() { return "in"; }
+        	/** 
+			 * Returns false.
+			 * @return false
+			 **/
+			public boolean commutative() { return false; }
+			
+        },
         /** Equality operator (=). */
-        EQUALS { public String toString() { return "="; }};
+        EQUALS { 
+        	public String toString() { return "="; }
+        	/** 
+			 * Returns true.
+			 * @return true
+			 **/
+			public boolean commutative() { return true; }
+        };
         
         /**
          * @return true if two expressions with the given arities
@@ -116,6 +131,20 @@ public final class ComparisonFormula extends Formula {
          * method assumes that leftArity and rightArity are positive integers.
          */
         boolean applicable(int leftArity, int rightArity) { return leftArity==rightArity; }
+        
+        /** 
+		 * Returns false.
+		 * @return false
+		 **/
+		public final boolean associative() { return false; }
+		
+        /**
+         * {@inheritDoc}
+         * @see kodkod.ast.BinaryOperator#apply(java.lang.Object, java.lang.Object)
+         */
+        public final Formula apply(Expression left, Expression right) { 
+        	return new ComparisonFormula(left, this, right);
+        }
     }
 
 }

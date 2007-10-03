@@ -15,6 +15,7 @@ import kodkod.instance.Bounds;
 import kodkod.instance.TupleFactory;
 import kodkod.instance.TupleSet;
 import kodkod.instance.Universe;
+import kodkod.util.nodes.Nodes;
 
 /**
  * Kodkod encoding of models/examples/algorithms/dijkstra.als.
@@ -56,7 +57,7 @@ public final class Dijkstra {
 		final Formula f2 = mord.totalOrder(Mutex, mfirst, mlast);
 		final Formula f3 = holds.in(State.product(Process).product(Mutex));
 		final Formula f4 = waits.in(State.product(Process).product(Mutex));
-		return f1.and(f2).and(f3).and(f4);
+		return Nodes.and(f1, f2, f3, f4);
 	}
 	
 	/**
@@ -138,7 +139,7 @@ public final class Dijkstra {
 		final Formula f8 = otherProc.join(s2.join(holds)).eq(otherProc.join(s1.join(holds)));
 		final Formula f9 = otherProc.join(s2.join(waits)).eq(otherProc.join(s1.join(waits)));
 		final Formula f10 = f8.and(f9).forAll(otherProc.oneOf(Process.difference(p)));
-		return f1.and(f4).and(f7).and(f10);
+		return Nodes.and(f1, f4, f7, f10);
 	}
 	
 	/**
@@ -183,7 +184,7 @@ public final class Dijkstra {
 		final Formula f11 = mu.join(s2.join(waits).transpose()).eq(mu.join(s1.join(waits).transpose()));
 		final Formula f12 = mu.join(s2.join(holds).transpose()).eq(mu.join(s1.join(holds).transpose()));
 		final Formula f13 = f11.and(f12).forAll(mu.oneOf(Mutex.difference(m)));
-		return f1.and(f2).and(f3).and(f6).and(f10).and(f13);
+		return Nodes.and(f1, f2, f3, f6, f10, f13);
 	}
 	
 	/**
@@ -255,16 +256,6 @@ public final class Dijkstra {
 	}
 	
 	/**
-	 * Returns the DijkstraPreventsDeadlocks constraint.
-	 * @return
-	 * <pre> 
-	 *  some Process && GrabOrRelease() && GrabbedInOrder() => ! Deadlock()
-	 * </pre>
-	 */
-	public Formula dijkstraPreventsDeadlocks() {
-		return (Process.some().and(grabOrRelease()).and(grabbedInOrder())).implies(deadlock().not());
-	}
-	/**
 	 * Returns the DijkstraPreventsDeadlocks assertion.
 	 * @return
 	 * <pre> 
@@ -274,7 +265,7 @@ public final class Dijkstra {
 	 * </pre>
 	 */
 	public Formula dijkstraPreventsDeadlocksAssertion() {
-		return declarations().and(dijkstraPreventsDeadlocks().not());
+		return Nodes.and(declarations(), Process.some(), grabOrRelease(), grabbedInOrder(), deadlock());
 	}
 	
 	/**

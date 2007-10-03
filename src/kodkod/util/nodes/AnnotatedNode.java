@@ -19,7 +19,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package kodkod.engine.fol2sat;
+package kodkod.util.nodes;
 
 import static kodkod.ast.BinaryFormula.Operator.AND;
 import static kodkod.ast.BinaryFormula.Operator.IMPLIES;
@@ -72,7 +72,7 @@ import kodkod.util.collections.Stack;
  *                                           // (e.g. skolemization, predicate inlining)  
  * @author Emina Torlak
  */ 
-final class AnnotatedNode<N extends Node> {
+public final class AnnotatedNode<N extends Node> {
 	private final N node;
 	private final Set<Node> sharedNodes;
 	private final Map<Node, Node> source;

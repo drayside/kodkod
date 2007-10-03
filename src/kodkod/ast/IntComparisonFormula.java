@@ -97,39 +97,68 @@ public final class IntComparisonFormula extends Formula {
 	/**
 	 * Represents a binary comarison operator:  =, < , >, <=, >=.
 	 */
-	public static enum Operator {
+	public static enum Operator implements BinaryOperator<IntExpression,Formula> {
 		/** `=' operator */
 		EQ { 
 			public String toString() { return "="; }
-			public boolean apply(int i0, int i1) { return i0==i1; }
+			/** 
+			 * Returns true.
+			 * @return true
+			 **/
+			public boolean commutative() { return true; }
 		},
 		/** `<' operator */
-		LT { 
+		LT {
 			public String toString() { return "<"; }
-			public boolean apply(int i0, int i1) { return i0<i1; }
+			/** 
+			 * Returns false.
+			 * @return false
+			 **/
+			public boolean commutative() { return false; }
 		},
 		/** `<=' operator */
 		LTE { 
 			public String toString() { return "<="; }
-			public boolean apply(int i0, int i1) { return i0<=i1; }
+			/** 
+			 * Returns false.
+			 * @return false
+			 **/
+			public boolean commutative() { return false; }
+		
 		},
 		/** `>' operator */
 		GT { 
 			public String toString() { return ">"; }
-			public boolean apply(int i0, int i1) { return i0>i1; }
+			/** 
+			 * Returns false.
+			 * @return false
+			 **/
+			public boolean commutative() { return false; }
 		},
 		/** `>=' operator */
 		GTE { 
 			public String toString() { return ">="; }
-			public boolean apply(int i0, int i1) { return i0>=i1; }
+			/** 
+			 * Returns false.
+			 * @return false
+			 **/
+			public boolean commutative() { return false; }
 		};
 
+		
 		/**
-		 * Returns the result of comparing the given integers
-		 * using this comparison operator.
-		 * @return i0 op i1
+		 * {@inheritDoc}
+		 * @see kodkod.ast.BinaryOperator#apply(java.lang.Object, java.lang.Object)
 		 */
-		public abstract boolean apply(int i0, int i1);
+		public final Formula apply(IntExpression left, IntExpression right) { 
+			return new IntComparisonFormula(left, this, right);
+		}
+		
+		/** 
+		 * Returns false.
+		 * @return false
+		 **/
+		public final boolean associative() { return false; }
 	}
 	
 }

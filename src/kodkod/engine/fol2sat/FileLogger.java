@@ -48,6 +48,7 @@ import kodkod.instance.TupleSet;
 import kodkod.util.collections.Containers;
 import kodkod.util.collections.FixedMap;
 import kodkod.util.ints.Ints;
+import kodkod.util.nodes.AnnotatedNode;
 
 /**
  * A file-based translation logger that logs translation events

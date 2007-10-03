@@ -44,6 +44,7 @@ import kodkod.engine.satlab.SATSolver;
 import kodkod.instance.Bounds;
 import kodkod.instance.Instance;
 import kodkod.util.ints.IntSet;
+import kodkod.util.nodes.AnnotatedNode;
 
 
 /** 

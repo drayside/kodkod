@@ -19,10 +19,15 @@ import kodkod.engine.satlab.SATFactory;
 import kodkod.engine.ucore.MinTopStrategy;
 import kodkod.engine.ucore.StrategyUtils;
 import kodkod.instance.Bounds;
+import kodkod.util.nodes.Nodes;
+import kodkod.util.nodes.PrettyPrinter;
 import examples.CeilingsAndFloors;
 import examples.Dijkstra;
 import examples.Pigeonhole;
+import examples.tptp.GEO091;
 import examples.tptp.GEO158;
+import examples.tptp.MED007;
+import examples.tptp.TOP020;
 
 /**
  * Tests the unsat core functionality.
@@ -120,6 +125,82 @@ public final class UCoreTest {
 		return null;
 	}
 	
+	/**
+	 * Returns a top020 problem with the given parameters.
+	 * @return a top020 problem with the given parameters.
+	 */
+	static Problem top020(List<String> params) { 
+		if (params.size() < 1)
+			usage();
+		
+		try {
+			final int n = Integer.parseInt(params.get(0));
+			if (n < 1)
+				usage();
+			final TOP020 model = new TOP020();
+			final Solver solver = new Solver();
+			solver.options().setSolver(SATFactory.MiniSat);
+			final Formula f = model.axioms().and(model.challenge_AMR_1_4_4().not());
+			final Bounds b = model.bounds(n);
+//			System.out.println(f);
+//			System.out.println(b);
+			return new Problem(f,b);
+		} catch (NumberFormatException nfe) {
+			usage();
+		}
+		return null;
+	}
+	
+	/**
+	 * Returns a geo091 problem with the given parameters.
+	 * @return a geo091 problem with the given parameters.
+	 */
+	static Problem geo091(List<String> params) { 
+		if (params.size() < 1)
+			usage();
+		
+		try {
+			final int n = Integer.parseInt(params.get(0));
+	
+			final Solver solver = new Solver();
+			solver.options().setSolver(SATFactory.MiniSat);
+			final GEO091 model = new GEO091();
+			final Formula f = model.axioms().and(model.theorem_2_13().not());
+			
+			final Bounds b = model.bounds(n,n);
+			return new Problem(f,b);
+		} catch (NumberFormatException nfe) {
+			usage();
+		}
+		return null;
+	}
+	
+	/**
+	 * Returns a med007 problem with the given parameters.
+	 * @return a med007 problem with the given parameters.
+	 */
+	static Problem med007(List<String> params) { 
+		if (params.size() < 1)
+			usage();
+		
+		try {
+			final int n = Integer.parseInt(params.get(0));
+			if (n < 1)
+				usage();
+			final MED007 model = new MED007();
+			final Solver solver = new Solver();
+			solver.options().setSolver(SATFactory.MiniSat);
+//			solver.options().setSymmetryBreaking(1000);
+//			solver.options().setFlatten(false);
+			final Formula f = model.axioms().and(model.transsls2_qilt27().not());
+			final Bounds b = model.bounds(n);
+			return new Problem(f,b);
+		} catch (NumberFormatException nfe) {
+			usage();
+		}
+		return null;
+	}
+	
 	private static void usage() {
 		System.out.println("Usage: java tests.UCoreTest <command>");
 		System.out.println("Available commands:" );
@@ -127,6 +208,9 @@ public final class UCoreTest {
 		System.out.println(" ceilingsAndFloors #man #platform");
 		System.out.println(" dijkstra #states #processes #mutexes");
 		System.out.println(" geo158 #atoms");
+		System.out.println(" top020 #atoms");
+		System.out.println(" geo081 #atoms");
+		System.out.println(" med007 #atoms");
 		System.exit(1);
 	}
 	
@@ -177,6 +261,75 @@ public final class UCoreTest {
 		}
 	}
 	
+	/**
+	 * Times the naive core extraction algorithm.
+	 */
+	private static void timeNaive(Problem problem) { 
+		
+		Solution sol = problem.solve();
+		if (sol.outcome()==Solution.Outcome.UNSATISFIABLE) { 
+			
+			
+			System.out.print("\nfinding minimal core with naive algorithm ... ");
+			final long start = System.currentTimeMillis();
+			
+			final Set<Formula> core = new LinkedHashSet<Formula>(sol.proof().highLevelCore());
+			final Set<Formula> unknown = new LinkedHashSet<Formula>(core);
+			
+			while(!unknown.isEmpty()) {
+				
+				Formula f = unknown.iterator().next();
+//				System.out.println("excluding:  " + f);
+				
+				Set<Formula> tryCore = new LinkedHashSet<Formula>(core);
+				tryCore.remove(f);
+				
+				sol = problem.solver.solve(Nodes.and(tryCore), problem.bounds);
+				
+				if (sol.instance()==null) { // unsat: f is irrelevant
+					core.retainAll(sol.proof().highLevelCore());
+					unknown.retainAll(core);
+				} else {// sat:  f is relevant
+					unknown.remove(f);
+				}
+			}
+			
+			final long end = System.currentTimeMillis();
+			
+			System.out.println((end-start) + " ms");
+			System.out.println("top-level formulas after min: " + core.size());
+			System.out.println("core:");
+			for(Formula f : core) {
+				System.out.println(PrettyPrinter.print(f,2));
+			}
+		}
+		
+	}
+	
+//	private static void countMaximallyConnectedComponents(Problem problem) { 
+//		final UndirectedGraph<Node, DefaultEdge> g = new SimpleGraph<Node, DefaultEdge>(DefaultEdge.class);
+//		final AbstractCollector<Relation> collector = 
+//			new AbstractCollector<Relation>((new AnnotatedNode<Formula>(problem.formula)).sharedNodes()) {
+//			@Override
+//			protected Set<Relation> newSet() { return new LinkedHashSet<Relation>(); }
+//			public Set<Relation> visit(Relation r) { return Collections.singleton(r); }
+//		};
+//		for(Formula f : StrategyUtils.topFormulas(problem.formula)) { 
+//			g.addVertex(f);
+//			for(Relation r : f.accept(collector)) { 
+//				g.addVertex(r);
+//				g.addEdge(f, r);
+//			}
+//		}
+//		
+//		System.out.println("connected components: "+(new ConnectivityInspector<Node, DefaultEdge>(g)).connectedSets().size());
+//		
+//		System.out.println("cut points: ");
+//		for(Node n : new BiconnectivityInspector<Node, DefaultEdge>(g).getCutpoints()) { 
+//			System.out.println(n);
+//		}
+//		
+//	}
 	
 	/**
 	 * Usage:  java tests.UCoreTest <name of test> <scope parameters>
@@ -186,7 +339,6 @@ public final class UCoreTest {
 		
 		try {
 			final Method method = UCoreTest.class.getDeclaredMethod(args[0], List.class);
-			//System.out.println(method);
 			final Problem problem = (Problem) method.invoke(null, Arrays.asList(args).subList(1, args.length));
 			final Solution sol = problem.solve();
 			
@@ -194,10 +346,11 @@ public final class UCoreTest {
 			if (sol.outcome()==Solution.Outcome.UNSATISFIABLE) {
 				final Proof proof = sol.proof();
 				System.out.println("top-level formulas: " + StrategyUtils.topFormulas(problem.formula).size());
-//				checkMinimal(problem,StrategyUtils.topFormulas(problem.formula));
 				System.out.println("top-level formulas before min: " + proof.highLevelCore().size());
-//				checkMinimal(problem,proof.highLevelCore());
-//				minimize(problem,proof);
+//				for(Formula f : proof.highLevelCore()) {
+//					System.out.println(PrettyPrinter.print(f,2));
+//				}
+
 				long start = System.currentTimeMillis();
 				proof.minimize(new MinTopStrategy(proof.log()));
 //				proof.minimize(new HybridStrategy(proof.log()));
@@ -208,19 +361,13 @@ public final class UCoreTest {
 				System.out.println("time: " + (end-start) + " ms");
 				System.out.println("core: ");
 				for(Formula f : topCore) {
-					System.out.println(" "+f);
+					System.out.println(PrettyPrinter.print(f,2));
 				}
 				checkCorrect(problem, proof.highLevelCore());
 				checkMinimal(problem, proof.highLevelCore());
+				timeNaive(problem);
+//				countMaximallyConnectedComponents(problem);
 				
-//				System.out.print("low level min ... ");
-//				start = System.currentTimeMillis();
-//				proof.minimize(new CRRStrategy());
-//				proof.minimize(new EmptyClauseConeStrategy());
-//				proof.minimize(new NaiveStrategy());
-//				end = System.currentTimeMillis();
-//				System.out.println("(" +(end-start) + " ms)");
-						
 			}
 		} catch (SecurityException e) {
 			e.printStackTrace();

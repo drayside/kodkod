@@ -45,7 +45,7 @@ public final class BinaryFormula extends Formula {
      * @effects this.left' = left && this.right' = right &&  this.op' = op
      * @throws NullPointerException - left = null || right = null || op = null
      */
-    BinaryFormula(Formula left, Operator op, Formula right) {
+   BinaryFormula(Formula left, Operator op, Formula right) {
         this.left = left;
         this.right = right;
         this.op = op;
@@ -97,17 +97,90 @@ public final class BinaryFormula extends Formula {
     /**
      * Represents a binary formula operator. 
      */
-    public static enum Operator {
+    public static enum Operator implements BinaryOperator<Formula,Formula>{
         /** Logical AND operator. */      
-        AND { public String toString() { return "&&"; }},
+        AND { 
+        	public String toString() { return "&&"; }
+        	/** 
+			 * Returns true.
+			 * @return true 
+			 **/
+			public boolean commutative() { return true; }
+			/** 
+			 * Returns true.
+			 * @return true 
+			 **/
+			public boolean associative() { return true; }
+        },
+        
         /** Logical OR operator. */      
-        OR { public String toString() { return "||"; }},
+        OR { 
+        	public String toString() { return "||"; }
+        	/** 
+			 * Returns true.
+			 * @return true 
+			 **/
+			public boolean commutative() { return true; }
+			/** 
+			 * Returns true.
+			 * @return true 
+			 **/
+			public boolean associative() { return true; }
+        },
+        
         /** Logical XOR operator. */      
-        XOR { public String toString() { return "xor"; } },
+        XOR { 
+        	public String toString() { return "xor"; } 
+        	/** 
+			 * Returns true.
+			 * @return true 
+			 **/
+			public boolean commutative() { return true; }
+			/** 
+			 * Returns true.
+			 * @return true 
+			 **/
+			public boolean associative() { return true; }
+        },
+        
         /** Logical implication operator. */      
-        IMPLIES { public String toString() { return "=>"; }},
+        IMPLIES { 
+        	public String toString() { return "=>"; }
+        	/** 
+			 * Returns false.
+			 * @return false
+			 **/
+			public boolean commutative() { return false; }
+			/** 
+			 * Returns false.
+			 * @return false
+			 **/
+			public boolean associative() { return false; }
+        },
+        
         /** Logical bi-implication operator. */
-        IFF { public String toString() { return "<=>"; }}
+        IFF { 
+        	public String toString() { return "<=>"; }
+        	/** 
+			 * Returns true.
+			 * @return true 
+			 **/
+			public boolean commutative() { return true; }
+			/** 
+			 * Returns true.
+			 * @return true 
+			 **/
+			public boolean associative() { return true; }
+        };
+        
+        
+        /**
+         * {@inheritDoc}
+         * @see kodkod.ast.BinaryOperator#apply(java.lang.Object, java.lang.Object)
+         */
+        public final Formula apply(Formula left, Formula right) { 
+        	return new BinaryFormula(left, this, right);
+        }
     }
 
    

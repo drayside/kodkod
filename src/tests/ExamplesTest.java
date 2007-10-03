@@ -68,12 +68,12 @@ public class ExamplesTest extends TestCase {
 		final Formula noDeadlocks = model.dijkstraPreventsDeadlocksAssertion();
 		final Solution sol = solve(noDeadlocks, model.bounds(6,6,6));
 //		UNSATISFIABLE
-//		p cnf 4344 18789
+//		p cnf 4341 18486
 //		primary variables: 444
 		assertEquals(Solution.Outcome.UNSATISFIABLE, sol.outcome());
 		assertEquals(444, sol.stats().primaryVariables());
-		assertEquals(4344, sol.stats().variables());
-		assertEquals(18789, sol.stats().clauses());
+		assertEquals(4341, sol.stats().variables());
+		assertEquals(18486, sol.stats().clauses());
 	}
 	
 	/**
