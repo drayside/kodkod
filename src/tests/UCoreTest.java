@@ -6,6 +6,7 @@ package tests;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -21,12 +22,20 @@ import kodkod.engine.ucore.StrategyUtils;
 import kodkod.instance.Bounds;
 import kodkod.util.nodes.Nodes;
 import kodkod.util.nodes.PrettyPrinter;
+import examples.AbstractWorldDefinitions;
 import examples.CeilingsAndFloors;
 import examples.Dijkstra;
 import examples.Pigeonhole;
+import examples.tptp.ALG195;
+import examples.tptp.ALG212;
+import examples.tptp.COM008;
 import examples.tptp.GEO091;
 import examples.tptp.GEO158;
 import examples.tptp.MED007;
+import examples.tptp.MED009;
+import examples.tptp.NUM374;
+import examples.tptp.SET943;
+import examples.tptp.SET948;
 import examples.tptp.TOP020;
 
 /**
@@ -201,6 +210,198 @@ public final class UCoreTest {
 		return null;
 	}
 	
+	/**
+	 * Returns a med009 problem with the given parameters.
+	 * @return a med009 problem with the given parameters.
+	 */
+	static Problem med009(List<String> params) { 
+		if (params.size() < 1)
+			usage();
+		
+		try {
+			final int n = Integer.parseInt(params.get(0));
+			if (n < 1)
+				usage();
+			final MED009 model = new MED009();
+			final Solver solver = new Solver();
+			solver.options().setSolver(SATFactory.MiniSat);
+//			solver.options().setSymmetryBreaking(1000);
+//			solver.options().setFlatten(false);
+			final Formula f = model.axioms().and(model.transsls2_qige27().not());
+			final Bounds b = model.bounds(n);
+			return new Problem(f,b);
+		} catch (NumberFormatException nfe) {
+			usage();
+		}
+		return null;
+	}
+	/**
+	 * Returns an alg212 problem with the given parameters.
+	 * @return an alg212 problem with the given parameters.
+	 */
+	static Problem alg212(List<String> params) { 
+		if (params.size() < 1)
+			usage();
+		
+		try {
+			final int n = Integer.parseInt(params.get(0));
+			if (n < 1)
+				usage();
+			final ALG212 model = new ALG212();
+			final Solver solver = new Solver();
+			solver.options().setSolver(SATFactory.MiniSat);
+//			solver.options().setSymmetryBreaking(n*n);
+//			solver.options().setFlatten(false);
+			final Formula f = model.axioms().and(model.distLong().not());
+			final Bounds b = model.bounds(n);
+			return new Problem(f,b);
+		} catch (NumberFormatException nfe) {
+			usage();
+		}
+		return null;
+	}
+	
+	/**
+	 * Returns an alg195 problem with the given parameters.
+	 * @return an alg195 problem with the given parameters.
+	 */
+	static Problem alg195(List<String> params) { 
+		try {
+			
+			final ALG195 model = new ALG195();
+			final Solver solver = new Solver();
+			solver.options().setSolver(SATFactory.MiniSat);
+			final Formula f = model.axioms().and(model.co1().not());
+			final Bounds b = model.bounds();
+			return new Problem(f, b);
+		} catch (NumberFormatException nfe) {
+			usage();
+		}
+		return null;
+	}
+	
+	/**
+	 * Returns an num374 problem with the given parameters.
+	 * @return an num374 problem with the given parameters.
+	 */
+	static Problem num374(List<String> params) { 
+		if (params.size() < 1)
+			usage();
+		
+		try {
+			final int n = Integer.parseInt(params.get(0));
+			if (n < 1)
+				usage();
+			final NUM374 model = new NUM374();
+			final Formula f = model.axioms().and(model.wilkie().not());
+			final Bounds b = model.bounds(n);
+			final Problem p = new Problem(f,b);
+//			p.solver.options().setSymmetryBreaking(n*n*n*n);
+			return p;
+		} catch (NumberFormatException nfe) {
+			usage();
+		}
+		return null;
+	}
+	
+	/**
+	 * Returns an set943 problem with the given parameters.
+	 * @return an set943 problem with the given parameters.
+	 */
+	static Problem set943(List<String> params) { 
+		if (params.size() < 1)
+			usage();
+		
+		try {
+			final int n = Integer.parseInt(params.get(0));
+			if (n < 1)
+				usage();
+			final SET943 model = new SET943();
+			final Solver solver = new Solver();
+			solver.options().setSolver(SATFactory.MiniSat);
+//			solver.options().setSymmetryBreaking(1000);
+//			solver.options().setFlatten(false);
+			final Formula f = model.axioms().and(model.t96_zfmisc_1().not());
+			final Bounds b = model.bounds(n);
+			return new Problem(f,b);
+		} catch (NumberFormatException nfe) {
+			usage();
+		}
+		return null;
+	}
+	
+	/**
+	 * Returns an set948 problem with the given parameters.
+	 * @return an set948 problem with the given parameters.
+	 */
+	static Problem set948(List<String> params) { 
+		if (params.size() < 1)
+			usage();
+		
+		try {
+			final int n = Integer.parseInt(params.get(0));
+			if (n < 1)
+				usage();
+			final SET948 model = new SET948();
+			final Solver solver = new Solver();
+			solver.options().setSolver(SATFactory.MiniSat);
+//			solver.options().setSymmetryBreaking(n*n);
+//			solver.options().setFlatten(false);
+			final Formula f = model.axioms().and(model.t101_zfmisc_1().not());
+			final Bounds b = model.bounds(n);
+			return new Problem(f,b);
+		} catch (NumberFormatException nfe) {
+			usage();
+		}
+		return null;
+	}
+	
+	/**
+	 * Returns an com008 problem with the given parameters.
+	 * @return an com008 problem with the given parameters.
+	 */
+	static Problem com008(List<String> params) { 
+		if (params.size() < 1)
+			usage();
+		
+		try {
+			final int n = Integer.parseInt(params.get(0));
+			if (n < 1)
+				usage();
+			final COM008 model = new COM008();
+			final Formula f = model.axioms().and(model.goalToBeProved());
+			final Bounds b = model.bounds(n);
+			return new Problem(f,b);
+		} catch (NumberFormatException nfe) {
+			usage();
+		}
+		return null;
+	}
+	/**
+	 * Returns an a241 problem with the given parameters.
+	 * @return an a241 problem with the given parameters.
+	 */
+	static Problem a241(List<String> params) { 
+		if (params.size() < 1)
+			usage();
+		try {
+			final int n = Integer.parseInt(params.get(0));
+			if (n < 1)
+				usage();
+			final AbstractWorldDefinitions model = new AbstractWorldDefinitions();
+			final Solver solver = new Solver();
+			solver.options().setSolver(SATFactory.MiniSat);
+//			solver.options().setSymmetryBreaking(n*n);
+//			solver.options().setFlatten(false);
+			final Formula f = model.decls().and(model.AbOp_total().not());
+			final Bounds b = model.bounds(n);
+			return new Problem(f,b);
+		} catch (NumberFormatException nfe) {
+			usage();
+		}
+		return null;
+	}
+	
 	private static void usage() {
 		System.out.println("Usage: java tests.UCoreTest <command>");
 		System.out.println("Available commands:" );
@@ -211,6 +412,14 @@ public final class UCoreTest {
 		System.out.println(" top020 #atoms");
 		System.out.println(" geo081 #atoms");
 		System.out.println(" med007 #atoms");
+		System.out.println(" med009 #atoms");
+		System.out.println(" alg212 #atoms");
+		System.out.println(" alg195");
+		System.out.println(" num374 #atoms");
+		System.out.println(" set943 #atoms");
+		System.out.println(" set948 #atoms");
+		System.out.println(" A241 #atoms");
+		System.out.println(" com008 #atoms");
 		System.exit(1);
 	}
 	
@@ -220,14 +429,22 @@ public final class UCoreTest {
 	 */
 	private static void checkCorrect(Problem problem, Set<Formula> core) {
 		System.out.print("checking correctness ... ");
+		final long start = System.currentTimeMillis();
 		Formula coreFormula = Formula.TRUE;
 		for(Formula f : core) {
 			coreFormula = coreFormula.and(f);
 		}
-		if (problem.solver.solve(coreFormula, problem.bounds).instance()==null ) {
-			System.out.println("correct");
+		
+		final Solver solver = new Solver();
+		solver.options().setLogTranslation(false);
+		solver.options().setSolver(SATFactory.MiniSat);
+//		solver.options().setReporter(new ConsoleReporter());
+		final Solution sol = solver.solve(coreFormula, problem.bounds);
+		final long end = System.currentTimeMillis();
+		if (sol.instance()==null ) {
+			System.out.println("correct (" + (end-start) + " ms).");
 		} else {
-			System.out.println("incorrect.  The found core is satisfiable!");
+			System.out.println("incorrect. The found core is satisfiable! (" + (end-start)+" ms).");
 		}
 	}
 	
@@ -264,7 +481,7 @@ public final class UCoreTest {
 	/**
 	 * Times the naive core extraction algorithm.
 	 */
-	private static void timeNaive(Problem problem) { 
+	private static Set<Formula> timeNaive(Problem problem) { 
 		
 		Solution sol = problem.solve();
 		if (sol.outcome()==Solution.Outcome.UNSATISFIABLE) { 
@@ -298,11 +515,13 @@ public final class UCoreTest {
 			
 			System.out.println((end-start) + " ms");
 			System.out.println("top-level formulas after min: " + core.size());
-			System.out.println("core:");
-			for(Formula f : core) {
-				System.out.println(PrettyPrinter.print(f,2));
-			}
+//			System.out.println("core:");
+//			for(Formula f : core) {
+//				System.out.println(PrettyPrinter.print(f,2));
+//			}
+			return core;
 		}
+		return Collections.emptySet();
 		
 	}
 	
@@ -346,7 +565,7 @@ public final class UCoreTest {
 			if (sol.outcome()==Solution.Outcome.UNSATISFIABLE) {
 				final Proof proof = sol.proof();
 				System.out.println("top-level formulas: " + StrategyUtils.topFormulas(problem.formula).size());
-				System.out.println("top-level formulas before min: " + proof.highLevelCore().size());
+				System.out.println("top-level formulas in initial core: " + proof.highLevelCore().size());
 //				for(Formula f : proof.highLevelCore()) {
 //					System.out.println(PrettyPrinter.print(f,2));
 //				}
@@ -357,17 +576,25 @@ public final class UCoreTest {
 				
 				long end = System.currentTimeMillis();
 				final Set<Formula> topCore = proof.highLevelCore();
-				System.out.println("top-level formulas after min: " + topCore.size());
+				System.out.println("\ntop-level formulas in MinTop core: " + topCore.size());
 				System.out.println("time: " + (end-start) + " ms");
+
+				checkCorrect(problem, proof.highLevelCore());
+				checkMinimal(problem, proof.highLevelCore());
+				
+				final Set<Formula> naiveCore = timeNaive(problem);
+				System.out.println("\nnaive core = prev core: " + topCore.equals(naiveCore));
 				System.out.println("core: ");
 				for(Formula f : topCore) {
 					System.out.println(PrettyPrinter.print(f,2));
 				}
-				checkCorrect(problem, proof.highLevelCore());
-				checkMinimal(problem, proof.highLevelCore());
-				timeNaive(problem);
 //				countMaximallyConnectedComponents(problem);
 				
+			} else if (sol.outcome()==Solution.Outcome.TRIVIALLY_UNSATISFIABLE) { 
+				System.out.println("core: ");
+				for(Formula f : sol.proof().highLevelCore()) {
+					System.out.println(PrettyPrinter.print(f,2,100));
+				}
 			}
 		} catch (SecurityException e) {
 			e.printStackTrace();

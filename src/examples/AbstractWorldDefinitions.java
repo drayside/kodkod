@@ -35,7 +35,7 @@ public final class AbstractWorldDefinitions {
 	/**
 	 * Constructs an instance of AbstractWorldDefinitions.
 	 */
-	AbstractWorldDefinitions() {
+	public AbstractWorldDefinitions() {
 		Coin = Relation.unary("Coin");
 		Purse = Relation.unary("Purse");
 		TransferDetails = Relation.unary("TransferDetails");
