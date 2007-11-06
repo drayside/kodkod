@@ -353,6 +353,14 @@ public final class SET967 {
 	}
 	
 	/**
+	 * Returns the conjunction of the axioms and the negation of the hypothesis.
+	 * @return axioms() && !t120_zfmisc_1()
+	 */
+	public final Formula checkT120_zfmisc_1() { 
+		return axioms().and(t120_zfmisc_1().not());
+	}
+	
+	/**
 	 * Returns bounds for the given scope.
 	 * @return bounds for the given scope.
 	 */
@@ -399,7 +407,7 @@ public final class SET967 {
 			solver.options().setSolver(SATFactory.MiniSat);
 //			solver.options().setSymmetryBreaking(n*n);
 //			solver.options().setFlatten(false);
-			final Formula f = model.axioms().and(model.t120_zfmisc_1().not());
+			final Formula f = model.checkT120_zfmisc_1();
 			final Bounds b = model.bounds(n);
 			System.out.println(f);
 			final Solution sol = solver.solve(f, b);

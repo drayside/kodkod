@@ -44,29 +44,37 @@ public final class GEO115 extends GEO159 {
 		return f0.implies(f1).forAll(p.oneOf(point).and(q.oneOf(point)).and(r.oneOf(point)).and(c.oneOf(curve)));
 	}
 
+	/**
+	 * Returns the conjunction of the axioms and the negation of the hypothesis.
+	 * @return axioms() && !theorem385()
+	 */
+	public final Formula checkTheorem385() { 
+		return axioms().and(theorem385().not());
+	}
+	
 	private static void usage() {
 		System.out.println("java examples.tptp.GEO115 [# curves] [# points]");
 		System.exit(1);
 	}
 	
 	/**
-	 * Usage: ava examples.tptp.GEO115 [# curves] [# points]
+	 * Usage: ava examples.tptp.GEO115 [scope]
 	 */
 	public static void main(String[] args) {
-		if (args.length < 2)
+		if (args.length < 1)
 			usage();
 		
 		try {
-			final int c = Integer.parseInt(args[0]);
-			final int p = Integer.parseInt(args[1]);
+			final int n = Integer.parseInt(args[0]);
+		
 	
 			final Solver solver = new Solver();
 			solver.options().setSolver(SATFactory.MiniSat);
 	
 			final GEO115 model = new GEO115();
-			final Formula f = model.axioms().and(model.theorem385().not());
+			final Formula f = model.theorem385();
 			
-			final Bounds b = model.bounds(c,p);
+			final Bounds b = model.bounds(n);
 			final Solution sol = solver.solve(f,b);
 			
 			System.out.println(sol);

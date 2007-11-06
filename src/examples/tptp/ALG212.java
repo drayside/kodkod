@@ -128,6 +128,14 @@ public final class ALG212 {
 	}
 	
 	/**
+	 * Returns the conjunction of the axioms and the negation of the hypothesis.
+	 * @return axioms() && !distLong()
+	 */
+	public final Formula checkDistLong() { 
+		return axioms().and(distLong().not());
+	}
+	
+	/**
 	 * Returns the bounds for the given scope.
 	 * @return bounds for the given scope
 	 */
@@ -162,7 +170,7 @@ public final class ALG212 {
 			solver.options().setSolver(SATFactory.MiniSat);
 //			solver.options().setSymmetryBreaking(n*n);
 //			solver.options().setFlatten(false);
-			final Formula f = model.axioms().and(model.distLong().not());
+			final Formula f = model.checkDistLong();
 			final Bounds b = model.bounds(n);
 			System.out.println(f);
 			final Solution sol = solver.solve(f, b);

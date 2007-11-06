@@ -104,6 +104,14 @@ public final class GRA019 {
 	}
 	
 	/**
+	 * Returns the conjunction of the axioms and the negation of the hypothesis.
+	 * @return axioms() && !goalToBeProved()
+	 */
+	public final Formula checkGoalToBeProved() { 
+		return axioms().and(goalToBeProved().not());
+	}
+	
+	/**
 	 * Returns the bounds for the given scope.
 	 * @return the bounds for the given scope.
 	 */
@@ -148,7 +156,7 @@ public final class GRA019 {
 			final Solver solver = new Solver();
 			solver.options().setSolver(SATFactory.MiniSat);
 			
-			final Formula f = model.axioms().and(model.goalToBeProved().not());
+			final Formula f = model.checkGoalToBeProved();
 			System.out.println(f);
 			//System.out.println(b);
 			final Solution s = solver.solve(f, b);

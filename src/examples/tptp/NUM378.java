@@ -131,6 +131,14 @@ public final class NUM378 {
 	}
 	
 	/**
+	 * Returns the conjunction of the axioms and the hypothesis.
+	 * @return axioms() && inequalities()
+	 */
+	public final Formula checkInequalities() { 
+		return decls().and(inequalities());
+	}
+	
+	/**
 	 * Returns bounds for the problem.
 	 * @return bounds for the problem.
 	 */

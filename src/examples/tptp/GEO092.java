@@ -54,8 +54,17 @@ public class GEO092 extends GEO158 {
 		return f0.implies(f1).forAll(c1.oneOf(curve).and(c2.oneOf(curve)).and(p.oneOf(point)));
 	}
 
+	/**
+	 * Returns the conjunction of the axioms and the negation of the hypothesis.
+	 * @return axioms() && !proposition2141()
+	 */
+	public final Formula checkProposition2141() { 
+		return axioms().and(proposition2141().not());
+	}
+	
+	
 	private static void usage() {
-		System.out.println("java examples.tptp.GEO192 [# curves] [# points]");
+		System.out.println("java examples.tptp.GEO192 [scope]");
 		System.exit(1);
 	}
 	
@@ -67,17 +76,17 @@ public class GEO092 extends GEO158 {
 			usage();
 		
 		try {
-			final int c = Integer.parseInt(args[0]);
-			final int p = Integer.parseInt(args[1]);
+			final int n = Integer.parseInt(args[0]);
+		
 	
 			final Solver solver = new Solver();
 			solver.options().setSolver(SATFactory.MiniSat);
 			final GEO092 model = new GEO092();
-			final Formula f = model.axioms().and(model.proposition2141().not());
+			final Formula f = model.checkProposition2141();
 			
 			System.out.println(model.proposition2141());
 			
-			final Bounds b = model.bounds(c,p);
+			final Bounds b = model.bounds(n);
 			final Solution sol = solver.solve(f,b);
 			
 			System.out.println(sol);

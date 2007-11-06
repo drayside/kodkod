@@ -38,6 +38,14 @@ public class GEO091 extends GEO158 {
 		return f0.and(f1).implies(c1.eq(c2)).forAll(c.oneOf(curve).and(c1.oneOf(curve)).and(c2.oneOf(curve)));
 	}
 
+	/**
+	 * Returns the conjunction of the axioms and the negation of the hypothesis.
+	 * @return axioms() && !theorem_2_13()
+	 */
+	public final Formula checkTheorem_2_13() { 
+		return axioms().and(theorem_2_13().not());
+	}
+	
 	private static void usage() {
 		System.out.println("java examples.tptp.GEO191 [univ size]");
 		System.exit(1);
@@ -56,11 +64,11 @@ public class GEO091 extends GEO158 {
 			final Solver solver = new Solver();
 			solver.options().setSolver(SATFactory.MiniSat);
 			final GEO091 model = new GEO091();
-			final Formula f = model.axioms().and(model.theorem_2_13().not());
+			final Formula f = model.checkTheorem_2_13();
 			
 			System.out.println(model.theorem_2_13());
 			
-			final Bounds b = model.bounds(n,n);
+			final Bounds b = model.bounds(n);
 			final Solution sol = solver.solve(f,b);
 			
 			System.out.println(sol);

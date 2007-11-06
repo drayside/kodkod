@@ -270,6 +270,14 @@ public final class SET943 {
 				forAll(a.oneOf(UNIV).and(b.oneOf(UNIV)));
 	}
 	
+	/**
+	 * Returns the conjunction of the axioms and the negation of the hypothesis.
+	 * @return axioms() && !t96_zfmisc_1()
+	 */
+	public final Formula checkT96_zfmisc_1() { 
+		return axioms().and(t96_zfmisc_1().not());
+	}
+	
 	
 	/**
 	 * Returns bounds for the given scope.
@@ -312,7 +320,7 @@ public final class SET943 {
 			solver.options().setSolver(SATFactory.MiniSat);
 //			solver.options().setSymmetryBreaking(1000);
 //			solver.options().setFlatten(false);
-			final Formula f = model.axioms().and(model.t96_zfmisc_1().not());
+			final Formula f = model.checkT96_zfmisc_1();
 			final Bounds b = model.bounds(n);
 			System.out.println(f);
 			final Solution sol = solver.solve(f, b);

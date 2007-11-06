@@ -88,6 +88,13 @@ public final class ALG197 extends Quasigroups7 {
 		final Formula f5 = e1[5].join(h).eq(expr1);
 		return f0.and(f1).and(f2).and(f3).and(f4).and(f5);
 	}
+	/**
+	 * Returns the conjunction of the axioms and the negation of the hypothesis.
+	 * @return axioms() && !co1()
+	 */
+	public final Formula checkCO1() { 
+		return axioms().and(co1().not());
+	}
 	
 	/**
 	 * Returns the bounds the problem (axioms 1, 4, 9-11, last formula of 14-15, and first formula of 16-22).
@@ -140,7 +147,7 @@ public final class ALG197 extends Quasigroups7 {
 			final ALG197 model = new ALG197();
 			final Solver solver = new Solver();
 			solver.options().setSolver(SATFactory.MiniSat);
-			final Formula f = model.axioms().and(model.co1().not());
+			final Formula f = model.checkCO1();
 			final Bounds b = model.bounds();
 			final Solution sol = solver.solve(f, b);
 			if (sol.instance()==null) {

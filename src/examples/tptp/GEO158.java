@@ -333,18 +333,18 @@ public class GEO158 {
 	 * Returns a bounds with the given number of maximum curves and points
 	 * @return a bounds with the given number of maximum curves and points
 	 */
-	public Bounds bounds(int curves, int points) {
-		assert curves > 0 && points > 0;
-		List<String> atoms = new ArrayList<String>(curves + points);
-		for(int i = 0; i < curves; i++) 
+	public Bounds bounds(int scope) {
+		assert scope > 0;
+		List<String> atoms = new ArrayList<String>(scope);
+		for(int i = 0; i < scope; i++) 
 			atoms.add("c"+i);
-		for(int i = 0; i < points; i++) 
+		for(int i = 0; i < scope; i++) 
 			atoms.add("p"+i);
 		final Universe u = new Universe(atoms);
 		final TupleFactory f = u.factory();
 		final Bounds b = new Bounds(u);
-		final TupleSet c = f.range(f.tuple("c0"), f.tuple("c"+(curves-1)));
-		final TupleSet p = f.range(f.tuple("p0"), f.tuple("p"+(points-1)));
+		final TupleSet c = f.range(f.tuple("c0"), f.tuple("c"+(scope-1)));
+		final TupleSet p = f.range(f.tuple("p0"), f.tuple("p"+(scope-1)));
 		final TupleSet cc = c.product(c), pc = p.product(c);
 		b.bound(curve, c);
 		b.bound(point, p);
@@ -357,6 +357,14 @@ public class GEO158 {
 		b.bound(closed, c);
 		b.bound(open, c);
 		return b;
+	}
+	
+	/**
+	 * Returns the conjunction of the axioms and the hypothesis.
+	 * @return axioms() && someCurve()
+	 */
+	public final Formula checkConsistent() { 
+		return axioms().and(someCurve());
 	}
 	
 	private static void usage() {
@@ -378,7 +386,7 @@ public class GEO158 {
 			solver.options().setSolver(SATFactory.MiniSat);
 	
 			final GEO158 model = new GEO158();
-			final Formula f = model.axioms().and(model.someCurve());
+			final Formula f = model.checkConsistent();
 			
 			
 //			System.out.println(model.decls());
@@ -405,7 +413,7 @@ public class GEO158 {
 
 			
 			
-			final Bounds b = model.bounds(n,n);
+			final Bounds b = model.bounds(n);
 			final Solution sol = solver.solve(f,b);
 			System.out.println(sol);
 		} catch (NumberFormatException nfe) {

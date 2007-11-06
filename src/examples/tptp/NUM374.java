@@ -265,6 +265,14 @@ public final class NUM374 {
 	}
 	
 	/**
+	 * Returns the conjunction of the axioms and the negation of the hypothesis.
+	 * @return axioms() && !wilkie()
+	 */
+	public final Formula checkWilkie() { 
+		return axioms().and(wilkie().not());
+	}
+	
+	/**
 	 * Returns the bounds for the given scope.
 	 * @return bounds for the given scope
 	 */
@@ -304,7 +312,7 @@ public final class NUM374 {
 			solver.options().setSolver(SATFactory.MiniSat);
 			solver.options().setSymmetryBreaking(n*n);
 			solver.options().setFlatten(false);
-			final Formula f = model.axioms().and(model.wilkie().not());
+			final Formula f = model.checkWilkie();
 			final Bounds b = model.bounds(n);
 			System.out.println(f);
 			final Solution sol = solver.solve(f, b);

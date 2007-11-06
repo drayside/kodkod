@@ -239,8 +239,25 @@ public final class RingElection {
 	 * Returns the declarations and facts of the model
 	 * @return the declarations and facts of the model
 	 */
-	public Formula declsAndFacts() {
+	public Formula invariants() {
 		return declarations().and(ring()).and(traces()).and(defineElected());
+	}
+	
+	
+	/**
+	 * Returns the conjunction of the invariants and the negation of atMostOneElected.
+	 * @return invariants() && !atMostOneElected()
+	 */
+	public Formula checkAtMostOneElected() {
+		return invariants().and(atMostOneElected().not());
+	}
+	
+	/**
+	 * Returns a bounds object with scope processes and times.
+	 * @return bounds object with scope processes and times.
+	 */
+	public Bounds bounds(int scope) { 
+		return bounds(scope, scope);
 	}
 	
 	/**
@@ -299,7 +316,7 @@ public final class RingElection {
 			final int p = Integer.parseInt(args[0]);
 			final int t = Integer.parseInt(args[1]);
 	
-			final Formula checkAtMostOneElected = model.declsAndFacts().and(model.atMostOneElected().not());
+			final Formula checkAtMostOneElected = model.checkAtMostOneElected();
 			final Bounds boundspt = model.bounds(p,t);
 			
 	

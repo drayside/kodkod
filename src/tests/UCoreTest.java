@@ -16,6 +16,8 @@ import kodkod.ast.Formula;
 import kodkod.engine.Proof;
 import kodkod.engine.Solution;
 import kodkod.engine.Solver;
+import kodkod.engine.fol2sat.HigherOrderDeclException;
+import kodkod.engine.fol2sat.UnboundLeafException;
 import kodkod.engine.satlab.SATFactory;
 import kodkod.engine.ucore.MinTopStrategy;
 import kodkod.engine.ucore.StrategyUtils;
@@ -25,12 +27,14 @@ import kodkod.util.nodes.PrettyPrinter;
 import examples.AbstractWorldDefinitions;
 import examples.CeilingsAndFloors;
 import examples.Dijkstra;
+import examples.Handshake;
 import examples.Pigeonhole;
 import examples.tptp.ALG195;
 import examples.tptp.ALG212;
 import examples.tptp.COM008;
 import examples.tptp.GEO091;
 import examples.tptp.GEO158;
+import examples.tptp.LAT258;
 import examples.tptp.MED007;
 import examples.tptp.MED009;
 import examples.tptp.NUM374;
@@ -126,7 +130,7 @@ public final class UCoreTest {
 	
 			final GEO158 model = new GEO158();
 			final Formula f = model.axioms().and(model.someCurve());
-			final Bounds b = model.bounds(n,n);
+			final Bounds b = model.bounds(n);
 			return new Problem(f,b);
 		} catch (NumberFormatException nfe) {
 			usage();
@@ -176,7 +180,7 @@ public final class UCoreTest {
 			final GEO091 model = new GEO091();
 			final Formula f = model.axioms().and(model.theorem_2_13().not());
 			
-			final Bounds b = model.bounds(n,n);
+			final Bounds b = model.bounds(n);
 			return new Problem(f,b);
 		} catch (NumberFormatException nfe) {
 			usage();
@@ -402,6 +406,60 @@ public final class UCoreTest {
 		return null;
 	}
 	
+	/**
+	 * Returns an lat258 problem with the given parameters.
+	 * @return an lat258 problem with the given parameters.
+	 */
+	static Problem lat258(List<String> params) { 
+		if (params.size() < 1)
+			usage();
+		try {
+
+			final int n = Integer.parseInt(params.get(0));
+			final LAT258 model = new LAT258();
+			
+			final Bounds b = model.bounds(n);
+						
+			final Formula f = model.axioms().and(model.goalToBeProved().not());
+			return new Problem(f,b);
+	
+		} catch (NumberFormatException nfe) {
+			usage();
+		} catch (HigherOrderDeclException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (UnboundLeafException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} 
+		return null;
+	}
+	
+	/**
+	 * Returns an handshake problem with the given parameters.
+	 * @return an handshake problem with the given parameters.
+	 */
+	static Problem handshake(List<String> params) { 
+		if (params.size() < 1)
+			usage();
+		
+		try {
+			final Handshake model =  new Handshake();
+			final int persons = Integer.parseInt(params.get(0));
+			if (persons<2) usage();
+		
+			final Bounds b = model.bounds(persons);
+			final Formula f = model.runPuzzle();//.and(model.Person.count().eq(IntConstant.constant(persons)));
+			final Problem p = new Problem(f,b);
+			p.solver.options().setBitwidth(6);
+			p.solver.options().setSymmetryBreaking(0);
+			return p;
+		} catch (NumberFormatException nfe) {
+			usage();
+		} 
+		return null;
+	}
+	
 	private static void usage() {
 		System.out.println("Usage: java tests.UCoreTest <command>");
 		System.out.println("Available commands:" );
@@ -420,6 +478,8 @@ public final class UCoreTest {
 		System.out.println(" set948 #atoms");
 		System.out.println(" A241 #atoms");
 		System.out.println(" com008 #atoms");
+		System.out.println(" lat258 #atoms");
+		System.out.println(" handshake #atoms");
 		System.exit(1);
 	}
 	

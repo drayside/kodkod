@@ -25,7 +25,7 @@ public class GEO159 extends GEO158 {
 	/**
 	 * Constructs a new instance of GEO159.
 	 */
-	GEO159() {
+	public GEO159() {
 		between = Relation.nary("between_c", 4);
 	}
 	
@@ -59,8 +59,8 @@ public class GEO159 extends GEO158 {
 	 * Returns the conjunction of all axioms and decls
 	 * @returns the conjunction of all axioms and decls
 	 */
-	public Formula axioms() {
-		return super.axioms().and(betweenDefn());
+	public Formula checkDefs() {
+		return super.axioms().and(betweenDefn()).and(someCurve());
 	}
 	
 	
@@ -68,8 +68,8 @@ public class GEO159 extends GEO158 {
 	 * Returns a bounds with the given number of maximum curves and points
 	 * @return a bounds with the given number of maximum curves and points
 	 */
-	public Bounds bounds(int curves, int points) {
-		final Bounds b = super.bounds(curves, points);
+	public Bounds bounds(int scope) {
+		final Bounds b = super.bounds(scope);
 		final TupleSet c = b.upperBound(curve);
 		final TupleSet p = b.upperBound(point);
 		b.bound(between, c.product(p).product(p).product(p));
@@ -77,28 +77,27 @@ public class GEO159 extends GEO158 {
 	}
 	
 	private static void usage() {
-		System.out.println("java examples.tptp.GEO159 [# curves] [# points]");
+		System.out.println("java examples.tptp.GEO159 [scope]");
 		System.exit(1);
 	}
 	
 	/**
-	 * Usage: ava examples.tptp.GEO159 [# curves] [# points]
+	 * Usage: ava examples.tptp.GEO159 [scope]
 	 */
 	public static void main(String[] args) {
-		if (args.length < 2)
+		if (args.length < 1)
 			usage();
 		
 		try {
-			final int c = Integer.parseInt(args[0]);
-			final int p = Integer.parseInt(args[1]);
-	
+			final int n = Integer.parseInt(args[0]);
+
 			final Solver solver = new Solver();
 			solver.options().setSolver(SATFactory.MiniSat);
 	
 			final GEO159 model = new GEO159();
-			final Formula f = model.axioms();
+			final Formula f = model.checkDefs();
 			
-			final Bounds b = model.bounds(c,p);
+			final Bounds b = model.bounds(n);
 			final Solution sol = solver.solve(f,b);
 			System.out.println(sol);
 		} catch (NumberFormatException nfe) {

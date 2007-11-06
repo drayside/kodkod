@@ -97,7 +97,7 @@ public class ExamplesTest extends TestCase {
 	 */
 	public void testRingElection() {
 		final RingElection model = new RingElection();
-		final Formula checkAtMostOneElected = model.declsAndFacts().and(model.atMostOneElected().not());
+		final Formula checkAtMostOneElected = model.checkAtMostOneElected();
 		final Solution sol = solve(checkAtMostOneElected, model.bounds(5,10));
 //		UNSATISFIABLE
 //		p cnf 8665 29590 

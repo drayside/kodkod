@@ -155,11 +155,19 @@ public final class COM008 {
 	}
 	
 	/**
-	 * Returns the negation of the conjecture.
-	 * @return no goal
+	 * Returns the conjecture.
+	 * @return some goal
 	 */
 	public final Formula goalToBeProved() {
-		return goal.no();
+		return goal.some();
+	}
+	
+	/**
+	 * Returns the conjunction of the axioms and the negation of the hypothesis.
+	 * @return axioms() && !goalToBeProved()
+	 */
+	public final Formula checkGoalToBeProved() { 
+		return axioms().and(goalToBeProved().not());
 	}
 	
 	/**
@@ -214,7 +222,7 @@ public final class COM008 {
 			solver.options().setSolver(SATFactory.MiniSat);
 //			solver.options().setSymmetryBreaking(22);
 //			solver.options().setFlatten(false);
-			final Formula f = model.axioms().and(model.goalToBeProved());
+			final Formula f = model.checkGoalToBeProved();
 			final Bounds b = model.bounds(n);
 //			System.out.println(f);
 			

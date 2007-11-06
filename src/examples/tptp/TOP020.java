@@ -19,6 +19,7 @@ import kodkod.engine.satlab.SATFactory;
 import kodkod.instance.Bounds;
 import kodkod.instance.TupleFactory;
 import kodkod.instance.Universe;
+import kodkod.util.nodes.Nodes;
 
 /**
  * A KK encoding of TOP020+1.p from http://www.cs.miami.edu/~tptp/
@@ -123,14 +124,18 @@ public final class TOP020 {
 	 * @return declarations
 	 */
 	public final Formula decls() {
-		final Formula f0 = coerce.function(UNIV, UNIV);
-		final Formula f1 = diagonal.function(UNIV, UNIV);
+		
 		final Variable a = Variable.unary("A");
 		final Variable b = Variable.unary("B");
-		final Formula f2 = the_product_top_space_of(a, b).one();
-		final Formula f3 = the_product_of(a, b).one();
-		final Formula f4 = the_ordered_pair(a, b).one();
-		return f0.and(f1).and(f2.and(f3).and(f4).forAll(a.oneOf(UNIV).and(b.oneOf(UNIV))));
+			
+		final List<Formula> decls = new ArrayList<Formula>();
+		decls.add( coerce.function(UNIV, UNIV) );
+		decls.add( diagonal.function(UNIV, UNIV) );
+		decls.add( the_product_top_space_of(a, b).one().forAll(a.oneOf(UNIV).and(b.oneOf(UNIV))) );
+		decls.add( the_product_of(a, b).one().forAll(a.oneOf(UNIV).and(b.oneOf(UNIV))) );
+		decls.add( the_ordered_pair(a, b).one().forAll(a.oneOf(UNIV).and(b.oneOf(UNIV))) );
+		
+		return Nodes.and(decls);
 	}
 	
 	/**
@@ -264,6 +269,14 @@ public final class TOP020 {
 	}
 	
 	/**
+	 * Returns the conjunction of the axioms and the negation of the hypothesis.
+	 * @return axioms() && !challenge_AMR_1_4_4()
+	 */
+	public final Formula checkChallenge_AMR_1_4_4() { 
+		return axioms().and(challenge_AMR_1_4_4().not());
+	}
+	
+	/**
 	 * Returns bounds for the given scope.
 	 * @return bounds for the given scope.
 	 */
@@ -306,7 +319,7 @@ public final class TOP020 {
 			final TOP020 model = new TOP020();
 			final Solver solver = new Solver();
 			solver.options().setSolver(SATFactory.MiniSat);
-			final Formula f = model.axioms().and(model.challenge_AMR_1_4_4().not());
+			final Formula f = model.checkChallenge_AMR_1_4_4();
 			final Bounds b = model.bounds(n);
 //			System.out.println(f);
 //			System.out.println(b);

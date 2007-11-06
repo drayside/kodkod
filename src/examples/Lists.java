@@ -149,6 +149,46 @@ public final class Lists {
 	}
 	
 	/**
+	 * Returns the conjunction of declaration constraints and facts.
+	 * @return decls() and facts()
+	 */
+	public final Formula invariants() { 
+		return decls().and(facts());
+	}
+	
+	/**
+	 * Returns the conjunction of invariants and the show predicate.
+	 * @return invariants() and show()
+	 */
+	public final Formula runShow() { 
+		return invariants().and(show());
+	}
+	
+	/**
+	 * Returns the conjunction of invariants and the negation of the empty hypothesis.
+	 * @return invariants() and !empties()
+	 */
+	public final Formula checkEmpties() { 
+		return invariants().and(empties().not());
+	}
+	
+	/**
+	 * Returns the conjunction of invariants and the negation of the reflexive hypothesis.
+	 * @return invariants() and !reflexive()
+	 */
+	public final Formula checkReflexive() { 
+		return invariants().and(reflexive().not());
+	}
+	
+	/**
+	 * Returns the conjunction of invariants and the negation of the symmetric hypothesis.
+	 * @return invariants() and !symmetric()
+	 */
+	public final Formula checkSymmetric() { 
+		return invariants().and(symmetric().not());
+	}
+	
+	/**
 	 * Returns the bounds for the given scope.
 	 * @return the bounds for the given scope.
 	 */
@@ -202,23 +242,22 @@ public final class Lists {
 //			solver.options().setFlatten(false);
 //			solver.options().setSkolemize(false);
 			
-			final Formula base = model.decls().and(model.facts());
-			Formula f = base.and(model.show());
+			Formula f = model.runShow();
 			System.out.println("running show");
 			Solution s = solver.solve(f, b);
 			System.out.println(s);
 		
-			f = base.and(model.empties().not());
+			f = model.checkEmpties();
 			System.out.println("checking empties");
 			s = solver.solve(f, b);
 			System.out.println(s);
 			
-			f = base.and(model.reflexive().not());
+			f = model.checkReflexive();
 			System.out.println("checking reflexive");
 			s = solver.solve(f, b);
 			System.out.println(s);
 			
-			f = base.and(model.symmetric().not());
+			f = model.checkSymmetric();
 			System.out.println("checking symmetric");
 			s = solver.solve(f, b);
 			System.out.println(s);

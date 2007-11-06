@@ -23,6 +23,7 @@ package examples;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
@@ -232,7 +233,7 @@ public final class Hotel {
 	 * Returns the invariants for Checkin and its fields.
 	 * @return invariants for Checkin and its fields.
 	 */
-	public Formula checkinInvariants() { 
+	public Formula invsForCheckin() { 
 //		sig Checkin extends RoomCardEvent { }
 //		{
 //		no room.occ.pre
@@ -353,7 +354,7 @@ public final class Hotel {
 	 * Returns the invariants for Checkout and its fields.
 	 * @return invariants for Checkout and its fields.
 	 */
-	public Formula checkoutInvariants() { 
+	public Formula invsForCheckout() { 
 //		sig Checkout extends HotelEvent { }
 //		{
 //		some occ.pre.guest
@@ -428,6 +429,23 @@ public final class Hotel {
 	}
 	
 	/**
+	 * Returns the noIntervening fact.
+	 * @return noIntervening fact.
+	 */
+	public Formula noIntervening() { 
+//		fact NoIntervening {
+//			all c: Checkin - pre.last |
+//				some e: Enter | e.pre = c.post and e.room = c.room and e.guest = c.guest
+//			}
+		final Variable c = Variable.unary("c");
+		final Variable e = Variable.unary("e");
+		final Formula f = e.join(pre).eq(c.join(post)).
+			and(e.join(room).eq(c.join(room))).
+			and(e.join(guest).eq(c.join(guest)));
+		return f.forSome(e.oneOf(Enter)).forAll(c.oneOf(Checkin.difference(pre.join(last))));
+	}
+	
+	/**
 	 * Returns NoBadEntry formula.
 	 * @return NoBadEntry formula.
 	 */
@@ -459,46 +477,50 @@ public final class Hotel {
 		invs.add( hotelEventInvariants() );
 		
 		invs.add( roomCardInvariants() );
-		invs.add( checkinInvariants() );
+		invs.add( invsForCheckin() );
 		
 		invs.add( enterInvariants() );
 		invs.add( normalEnterInvariants() );
 		invs.add( recodeEnterInvariants() );
 		
-		invs.add( checkoutInvariants() );
+		invs.add( invsForCheckout() );
 		
 		invs.add( freshIssue() );
 		
+		invs.add( noIntervening() );
 		return Nodes.and(invs);
 	}
 	
 	/**
 	 * Returns the assertion "check noBadEntry"
-	 * @return assertion check noBadEntry
+	 * @return invariants() && !oBadEntry()
 	 */
 	public Formula checkNoBadEntry() { 
 		return invariants().and(noBadEntry().not());
 	}
 	
 	/**
-	 * Returns bounds for the given scope.
-	 * @return bounds for the given scope.
+	 * Returns bounds for the given number of times, events, rooms, cards, keys and guests.
+	 * @return bounds for the given scopes.
 	 */
-	public Bounds bounds(int n) { 
-		final Relation[] top = { Time, Event, Room, Card, Key, Guest };
+	public Bounds bounds(int t, int e, int r, int c, int k, int g) { 
+		final Relation[] tops = { Time, Event, Room, Card, Key, Guest };
+		final int[] scopes = { t, e, r, c, k, g};
 		
-		final List<String> atoms = new ArrayList<String>(n * top.length);
-		for(Relation r: top) { 
-			for(int i = 0; i < n; i++)
-				atoms.add(r.name()+i);
+		final List<String> atoms = new ArrayList<String>();
+		for(int i = 0; i < tops.length; i++) {
+			Relation top = tops[i];
+			for(int j = 0, scope = scopes[i]; j < scope; j++)
+				atoms.add(top.name()+j);
 		}
 		
 		final Universe u = new Universe(atoms);
 		final TupleFactory f = u.factory();
 		final Bounds b = new Bounds(u);
 		
-		for(Relation r : top) { 
-			b.bound(r, f.range(f.tuple(r.name()+0), f.tuple(r.name()+(n-1))));
+		for(int i = 0 ; i < tops.length; i++) { 
+			Relation top = tops[i];
+			b.bound(top, f.range(f.tuple(top.name()+0), f.tuple(top.name()+(scopes[i]-1))));
 		}
 		
 		b.bound(first, b.upperBound(Time));
@@ -532,11 +554,19 @@ public final class Hotel {
 		
 		return b;
 	}
+	/**
+	 * Returns bounds for the given scope.
+	 * @return bounds for the given scope.
+	 */
+	public Bounds bounds(int n) { 
+		return bounds(n,n,n,n,n,n);
+	}
 	
 	private static void usage() {
 		System.out.println("java examples.Hotel [scope]");
 		System.exit(1);
 	}
+
 	
 	/**
 	 * Usage: java examples.Hotel [scope]
@@ -555,9 +585,10 @@ public final class Hotel {
 			solver.options().setLogTranslation(true);
 			
 			final Formula f = model.checkNoBadEntry();
-			final Bounds b = model.bounds(n);
+			//6 but 2 Room, 2 Guest, 5 Event
+			final Bounds b = model.bounds(6,5,2,6,6,2);
 	
-			System.out.println(PrettyPrinter.print(f, 2, 100));
+//			System.out.println(PrettyPrinter.print(f, 2, 100));
 			
 			final Solution sol = solver.solve(f, b);
 			System.out.println(sol);
@@ -569,10 +600,11 @@ public final class Hotel {
 				System.out.print("\nminimizing core ... ");
 				final long start = System.currentTimeMillis();
 				proof.minimize(new MinTopStrategy(proof.log()));
+				final Set<Formula> core = proof.highLevelCore();
 				final long end = System.currentTimeMillis();
 				System.out.println("done (" + (end-start) + " ms).");
-				System.out.println("minimal core: " + proof.highLevelCore().size());
-				for(Formula u : proof.highLevelCore()) { 
+				System.out.println("minimal core: " + core.size());
+				for(Formula u : core) { 
 					System.out.println(PrettyPrinter.print(u, 2, 100));
 				}
 			}

@@ -22,7 +22,7 @@ import kodkod.instance.Universe;
  * A KK encoding of axioms MED001+0.ax and MED001+1.ax from http://www.cs.miami.edu/~tptp/
  * @author Emina Torlak
  */
-abstract class MED001 {
+public abstract class MED001 {
 	protected final Relation bcapacityne, bcapacityex, bcapacitysn,
 	conditionhyper, conditionhypo, conditionnormo,
 	drugi, uptakelg, uptakepg, releaselg, bsecretioni,

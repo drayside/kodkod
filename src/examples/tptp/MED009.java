@@ -34,6 +34,14 @@ public final class MED009 extends MED001 {
 			forSome(x0.oneOf(UNIV));
 		return f0.implies(f1);
 	}
+	/**
+	 * Returns the conjunction of the axioms and the negation of the hypothesis.
+	 * @return axioms() && !transsls2_qige27()
+	 */
+	public final Formula checkTranssls2_qige27() { 
+		return axioms().and(transsls2_qige27().not());
+	}
+	
 	private static void usage() {
 		System.out.println("java examples.tptp.MED009 [univ size]");
 		System.exit(1);
@@ -55,7 +63,7 @@ public final class MED009 extends MED001 {
 			solver.options().setSolver(SATFactory.MiniSat);
 //			solver.options().setSymmetryBreaking(1000);
 //			solver.options().setFlatten(false);
-			final Formula f = model.axioms().and(model.transsls2_qige27().not());
+			final Formula f = model.checkTranssls2_qige27();
 			final Bounds b = model.bounds(n);
 			System.out.println(f);
 			final Solution sol = solver.solve(f, b);
