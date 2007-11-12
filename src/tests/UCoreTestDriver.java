@@ -35,7 +35,7 @@ import java.util.Set;
  * @author Emina Torlak
  */
 public final class UCoreTestDriver {
-
+	
 	
 	private static final String[] UNSAT = { 
 		"examples.Lists" ,"examples.RingElection", "examples.Trees", "examples.Hotel", 
@@ -98,6 +98,12 @@ public final class UCoreTestDriver {
 //		timedOut.addAll(UCoreUnitTest.methods(UCoreUnitTest.problem("examples.tptp.NUM374")));
 //		timedOut.addAll(UCoreUnitTest.methods(UCoreUnitTest.problem("examples.tptp.SET943")));
 //		timedOut.addAll(UCoreUnitTest.methods(UCoreUnitTest.problem("examples.tptp.SET967")));
+//		timedOut.addAll(UCoreUnitTest.methods(UCoreUnitTest.problem("examples.tptp.LAT258")));
+//		timedOut.addAll(UCoreUnitTest.methods(UCoreUnitTest.problem("examples.tptp.ALG212")));
+//		timedOut.addAll(UCoreUnitTest.methods(UCoreUnitTest.problem("examples.tptp.GEO159")));
+//		timedOut.addAll(UCoreUnitTest.methods(UCoreUnitTest.problem("examples.RingElection")));
+//		timedOut.addAll(UCoreUnitTest.method(UCoreUnitTest.problem("examples.Lists"),"checkSymmetric"));
+		
 //		sat.addAll(UCoreUnitTest.methods(UCoreUnitTest.problem("examples.Hotel")));
 //		sat.addAll(UCoreUnitTest.methods(UCoreUnitTest.problem("examples.Trees")));
 		

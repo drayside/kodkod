@@ -123,7 +123,7 @@ public final class UCoreUnitTest {
 	}
 	
 	/**@return a public member method with the given name and no arguments that returns a formula. */
-	private static List<Method> method(Class<?> c, String name) { 
+	static List<Method> method(Class<?> c, String name) { 
 		try {
 			Method m = c.getMethod(name, new Class[0]);
 			if (returnsFormula(m))
@@ -218,7 +218,56 @@ public final class UCoreUnitTest {
 			throw new IllegalArgumentException(strategy.getName() + " has no accessible one-argument constructor.");
 		}
 	}
+	
+	/**
+	 * Returns the minimal core produced by the simple extraction algorithm.
+	 */
+	private static Set<Formula> simpleCE(Solution sol, Bounds bounds, Solver solver) { 
+		final Set<Formula> initialCore = sol.proof().highLevelCore();
+		final Set<Formula> minCore = new LinkedHashSet<Formula>(initialCore);
+		final Set<Formula> unknown = new LinkedHashSet<Formula>(initialCore);
 		
+		while(!unknown.isEmpty()) {
+			
+			Formula f = unknown.iterator().next();		
+			Set<Formula> tryCore = new LinkedHashSet<Formula>(minCore);
+			tryCore.remove(f);
+			
+			Solution subSol = solver.solve(Nodes.and(tryCore), bounds);
+			
+			if (subSol.instance()==null) { // unsat: f is irrelevant
+				minCore.retainAll(subSol.proof().highLevelCore());
+				unknown.retainAll(minCore);
+			} else {// sat:  f is relevant
+				unknown.remove(f);
+			}
+		}
+		return minCore;
+	}
+	
+	/**
+	 * Returns the minimal core produced by the simple extraction algorithm.
+	 */
+	private static Set<Formula> naiveCE(Formula formula, Bounds bounds) { 
+		final Solver solver = new Solver();
+		solver.options().setSolver(SATFactory.MiniSatProver);
+		final Set<Formula> minCore = new LinkedHashSet<Formula>(StrategyUtils.topFormulas(formula));
+		final Set<Formula> unknown = new LinkedHashSet<Formula>(minCore);
+		
+		while (!unknown.isEmpty()) { 
+			Formula f = unknown.iterator().next();
+			Set<Formula> tryCore = new LinkedHashSet<Formula>(minCore);
+			tryCore.remove(f);
+			
+			if (solver.solve(Nodes.and(tryCore), bounds).instance()==null) { // unsat: f is irrelevant
+				minCore.remove(f);
+			}
+			
+			unknown.remove(f);
+		}
+		return minCore;
+	}
+	
 	/**
 	 * Usage: java tests.UCoreUnitTest <class> <scope> [-m method] [-s strategy] [-o (user | stats) ]
 	 */
@@ -237,8 +286,20 @@ public final class UCoreUnitTest {
 		
 			if (checks.isEmpty()) { usage(); }
 			
-			final Class<ReductionStrategy> strategy = optional.containsKey("-s") ? strategy(optional.get("-s")) : null;
-			
+			final String extractor;
+			final Class<ReductionStrategy> strategy;
+			if (optional.containsKey("-s")) {
+				extractor = optional.get("-s");
+				if (!extractor.equals("simple") && !extractor.equals("naive") && !extractor.equals("one-step")) { 
+					strategy = strategy(optional.get("-s"));
+				} else {
+					strategy = null;
+				}
+			} else {
+				extractor = "naive";
+				strategy = null;
+			}
+				
 			final ResultPrinter out = "stats".equals(optional.get("-o")) ? ResultPrinter.STATS : ResultPrinter.USER;
 			
 			final Solver solver = new Solver();
@@ -246,7 +307,7 @@ public final class UCoreUnitTest {
 			solver.options().setSolver(SATFactory.MiniSatProver);
 			
 			for(Map.Entry<Method, Formula> check : checks.entrySet()) { 
-				System.out.println(PrettyPrinter.print(check.getValue(), 1));
+//				System.out.println(PrettyPrinter.print(check.getValue(), 1));
 				Solution sol = solver.solve(check.getValue(), bounds);
 								
 				if (sol.outcome()==Solution.Outcome.UNSATISFIABLE) { 
@@ -257,23 +318,12 @@ public final class UCoreUnitTest {
 					final long start = System.currentTimeMillis();
 					
 					if (strategy==null) { // use naive
-						minCore = new LinkedHashSet<Formula>(initialCore);
-						final Set<Formula> unknown = new LinkedHashSet<Formula>(initialCore);
-						
-						while(!unknown.isEmpty()) {
-							
-							Formula f = unknown.iterator().next();		
-							Set<Formula> tryCore = new LinkedHashSet<Formula>(minCore);
-							tryCore.remove(f);
-							
-							Solution subSol = solver.solve(Nodes.and(tryCore), bounds);
-							
-							if (subSol.instance()==null) { // unsat: f is irrelevant
-								minCore.retainAll(subSol.proof().highLevelCore());
-								unknown.retainAll(minCore);
-							} else {// sat:  f is relevant
-								unknown.remove(f);
-							}
+						if (extractor.equals("simple")) { 
+							minCore = simpleCE(sol, bounds, solver);
+						} else if (extractor.equals("naive")) {
+							minCore = naiveCE(check.getValue(), bounds);
+						} else {
+							minCore = initialCore;
 						}
 					} else {
 						sol.proof().minimize(instance(strategy, sol.proof().log()));
@@ -282,7 +332,8 @@ public final class UCoreUnitTest {
 					
 					final long end = System.currentTimeMillis();
 					
-					out.printUnsat(check.getKey().getName(), check.getValue(), bounds, sol.stats(), initialCore, minCore, end-start);
+					out.printUnsat(check.getKey().getName(), check.getValue(), bounds, sol.stats(), 
+							initialCore, minCore, end-start);
 				
 				} else if (sol.outcome()==Solution.Outcome.TRIVIALLY_UNSATISFIABLE) {	
 					out.printFalse(check.getKey().getName(), check.getValue(), bounds, sol);
