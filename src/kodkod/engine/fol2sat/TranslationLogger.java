@@ -37,19 +37,20 @@ import kodkod.engine.bool.BooleanValue;
 abstract class TranslationLogger {
 
 	/**
-	 * Records the translation of the source of the 
+	 * Optionally records the translation of the source of the 
 	 * given transformed formula to the given boolean value 
 	 * in the specified environment.
 	 * @requires some this.transforms.f
-	 * @effects this.records' = this.records + this.transforms.f -> translation -> freeVariables(f)<:env
-	 * @throws IllegalArgumentException - no this.transforms.f
+	 * @effects this.records' = this.records or 
+	 * this.records' = this.records + this.transforms.f -> translation -> freeVariables(f)<:env
+	 * @throws IllegalArgumentException - some aspect of the given translation event prevents it from being logged
 	 * @throws IllegalStateException - this log has been closed
 	 */
 	abstract void log(Formula f, BooleanValue translation, Environment<BooleanMatrix> env);
 	
 	/**
 	 * Closes this logger and releases associated resources.  Attempts to call {@link #log(Formula, BooleanValue, Environment)}
-	 * after the log has been closed will result in an IllegalStateException.
+	 * after the log has been closed may result in an IllegalStateException.
 	 * @effects closes this logger and releases associated resources. 
 	 */
 	abstract void close();

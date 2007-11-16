@@ -63,6 +63,7 @@ final class MiniSatProver extends NativeSolver implements SATProver {
 				resolvents.add(i);
 			}
 		}
+				
 		final int axioms = length - resolvents.size();
 		if (resolvents.min()<axioms) {
 			final int[] position = new int[length];
@@ -70,22 +71,25 @@ final class MiniSatProver extends NativeSolver implements SATProver {
 				if (resolvents.contains(i)) {
 					position[i] = resolventIndex++;
 					int[] resolvent = trace[i];
-					for(int j = 0, resLength = resolvent.length; i < resLength; i++) {
+					for(int j = 0, resLength = resolvent.length; j < resLength; j++) {
 						resolvent[j] = position[resolvent[j]];
 					}
 				} else {
 					position[i] = axiomIndex++;
 				}
 			}
-			for(IntIterator itr = resolvents.iterator(axioms-1, 0); itr.hasNext(); ) {
+
+			for(IntIterator itr = resolvents.iterator(length, 0); itr.hasNext(); ) {
 				int i = itr.next();
 				int pos = position[i];
+				if (i==pos) continue; // correctly positioned, do nothing
 				int[] resolvent = trace[i];
 				System.arraycopy(trace, i+1, trace, i, pos-i);
 				trace[pos] = resolvent;
 			}
 		}
 		assert axioms == numberOfClauses();
+	
 		return trace;
 	}
 		
@@ -99,6 +103,9 @@ final class MiniSatProver extends NativeSolver implements SATProver {
 			final int[][] trace = trace(peer(), true);
 			free();
 			proof = new ArrayTrace(format(trace), numberOfClauses());
+//			for(Iterator<Clause> itr = proof.iterator(proof.axioms()); itr.hasNext();) { 
+//				System.out.println(itr.next());
+//			}
 		}
 		return proof;
 	}
@@ -113,9 +120,14 @@ final class MiniSatProver extends NativeSolver implements SATProver {
 			long prover = make();
 			addVariables(prover, numberOfVariables());
 			for(Iterator<Clause> itr = proof.iterator(next); itr.hasNext();) {
-				if (!addClause(prover, itr.next().toArray())) {
-					throw new AssertionError("could not add non-redundant clause");
+				Clause c = itr.next();
+//				System.out.println(c);
+				if (!addClause(prover, c.toArray())) { 
+					throw new AssertionError("could not add non-redundant clause: " + c);
 				}
+//				if (!addClause(prover, itr.next().toArray())) {
+//					throw new AssertionError("could not add non-redundant clause");
+//				}
 			}
 //			System.out.print("trying with " + next.size() + " clauses ... ");
 			if (!solve(prover)) {

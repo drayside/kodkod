@@ -31,6 +31,10 @@ import static kodkod.ast.RelationPredicate.Name.TOTAL_ORDERING;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.IdentityHashMap;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 
@@ -42,6 +46,7 @@ import kodkod.ast.Decl;
 import kodkod.ast.Decls;
 import kodkod.ast.ExprToIntCast;
 import kodkod.ast.Expression;
+import kodkod.ast.Formula;
 import kodkod.ast.IfExpression;
 import kodkod.ast.IfIntExpression;
 import kodkod.ast.IntComparisonFormula;
@@ -119,6 +124,43 @@ public final class AnnotatedNode<N extends Node> {
 	public final Node sourceOf(Node n) {
 		final Node d = source.get(n);
 		return d==null ? n : d;
+	}
+	
+	/**
+     * If this.node is a formula, breaks it up into subformulas that correspond
+     * to the roots of this.sourceOf(this.node).  Otherwise returns the empty set. 
+     * @return subformulas, {f0, ..., fk}, of this.node such that [[f0 && ... && fk]] <=> [[this.node]]
+     * and, for all 0<=i<=k, f<sub>i</sub> is a conjunction only if sourceOf(f<sub>i</sub>) is a member 
+     * of Nodes.roots(sourceOf(this.node)).  
+     * @see Nodes#roots(Formula)   
+     */
+	public final Set<Formula> sourceSensitiveRoots() {
+		if (!(node instanceof Formula && sourceOf(node) instanceof Formula)) 
+			return Collections.emptySet();
+		
+		final Set<Formula> untransformedRoots = Nodes.roots((Formula)sourceOf(node));
+		
+		final List<Formula> formulas = new LinkedList<Formula>();
+		formulas.add((Formula)node);
+		
+		int size;
+		do {
+			size = formulas.size();
+			ListIterator<Formula> itr = formulas.listIterator();
+			while(itr.hasNext()) {
+				Formula f = itr.next();
+				if (f instanceof BinaryFormula) {
+					BinaryFormula bin = (BinaryFormula) f;
+					if (bin.op()==BinaryFormula.Operator.AND && !untransformedRoots.contains(sourceOf(bin))) {
+						itr.remove();
+						itr.add(bin.left());
+						itr.add(bin.right());
+					}
+				}
+			}
+		} while (formulas.size() > size);
+		
+		return new LinkedHashSet<Formula>(formulas);
 	}
 	
 	/**

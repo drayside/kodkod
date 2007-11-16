@@ -22,6 +22,7 @@
 package kodkod.engine.fol2sat;
 
 import java.util.Iterator;
+import java.util.Set;
 
 import kodkod.ast.Formula;
 
@@ -38,13 +39,23 @@ public abstract class TranslationLog {
 	TranslationLog() {}
 	
 	/**
-	 * Returns this.formula.
-	 * @return this.formula
+	 * Returns the roots of this.formula.  In other words, returns the subformulas, {f0, ..., fk}, 
+     * of this.formula such that, for all 0<=i<=k, f<sub>i</sub> is not a conjunction  and
+     * [[f0 && ... && fk]] <=> [[formula]]. 
+     * <p>Unless a given root translates to a constant, the highest magnitude  literal corresponding to 
+     * each root (as given by this.records) is guaranteed to be present in the translation of this.formula
+     * as a unit clause.  All the remaining clauses (except those comprising the symmetry 
+     * breaking predicate, encoded with its own unit clause containing the maximum literal)
+     * that are reachable from such a unit clause represent the translations
+     * of the given root's descendants.  We define reachability over the clauses in a translation
+     * as follows:  let l1 be the highest magnitude literal in the clause c1, and let l2 be the
+     * highest magnitude literal in c2.  If l2 occurs in c1 (in any polarity), then there is 
+     * an edge from c1 and c2. The unit clauses are always the last clauses to be added to a SAT solver
+     * during translation. </p>
+	 * @return roots of this.formula
 	 */
-	public abstract Formula formula();
-	
-	
-	
+	public abstract Set<Formula> roots();
+
 	/**
 	 * Returns an iterator over the translation records in this log that are accepted
 	 * by the given filter.  The iterator returns the records in the order in which

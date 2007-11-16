@@ -33,8 +33,7 @@ import kodkod.engine.Proof;
 import kodkod.engine.Solution;
 import kodkod.engine.Solver;
 import kodkod.engine.satlab.SATFactory;
-import kodkod.engine.ucore.MinTopStrategy;
-import kodkod.engine.ucore.StrategyUtils;
+import kodkod.engine.ucore.RCEStrategy;
 import kodkod.instance.Bounds;
 import kodkod.instance.TupleFactory;
 import kodkod.instance.Universe;
@@ -582,7 +581,7 @@ public final class Hotel {
 			final Hotel model = new Hotel();
 			final Solver solver = new Solver();
 			solver.options().setSolver(SATFactory.MiniSatProver);
-			solver.options().setLogTranslation(true);
+			solver.options().setLogTranslation(1);
 			
 			final Formula f = model.checkNoBadEntry();
 			//6 but 2 Room, 2 Guest, 5 Event
@@ -595,11 +594,11 @@ public final class Hotel {
 		
 			if (sol.instance()==null) { 
 				final Proof proof = sol.proof();
-				System.out.println("top-level formulas: " + StrategyUtils.topFormulas(f).size());
+				System.out.println("top-level formulas: " + Nodes.roots(f).size());
 				System.out.println("initial core: " + proof.highLevelCore().size());
 				System.out.print("\nminimizing core ... ");
 				final long start = System.currentTimeMillis();
-				proof.minimize(new MinTopStrategy(proof.log()));
+				proof.minimize(new RCEStrategy(proof.log()));
 				final Set<Formula> core = proof.highLevelCore();
 				final long end = System.currentTimeMillis();
 				System.out.println("done (" + (end-start) + " ms).");

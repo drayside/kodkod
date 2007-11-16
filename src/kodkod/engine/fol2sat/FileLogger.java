@@ -49,6 +49,7 @@ import kodkod.util.collections.Containers;
 import kodkod.util.collections.FixedMap;
 import kodkod.util.ints.Ints;
 import kodkod.util.nodes.AnnotatedNode;
+import kodkod.util.nodes.Nodes;
 
 /**
  * A file-based translation logger that logs translation events
@@ -135,8 +136,13 @@ final class FileLogger extends TranslationLogger {
 	}
 		
 	/**
-	 * {@inheritDoc}
-	 * @see kodkod.engine.fol2sat.TranslationLogger#log(kodkod.ast.Formula, kodkod.engine.bool.BooleanValue, kodkod.engine.fol2sat.Environment)
+	 * Records the translation of the source of the 
+	 * given transformed formula to the given boolean value 
+	 * in the specified environment.
+	 * @requires some this.transforms.f
+	 * @effects this.records' = this.records + this.transforms.f -> translation -> freeVariables(f)<:env
+	 * @throws IllegalArgumentException - no this.transforms.f
+	 * @throws IllegalStateException - this log has been closed
 	 */
 	@Override
 	void log(Formula f, BooleanValue v, Environment<BooleanMatrix> env) {
@@ -178,7 +184,7 @@ final class FileLogger extends TranslationLogger {
 	 * @author Emina Torlak
 	 */
 	private static final class FileLog extends TranslationLog {
-	    private final Formula formula;
+	    private final Set<Formula> roots;
 		private final Node[] indexedNodes;
 	    private final Variable[][] indexedVars;
 	    private final File file;
@@ -193,7 +199,8 @@ final class FileLogger extends TranslationLogger {
 	    FileLog(AnnotatedNode<Formula> annotated, FixedMap<Formula, Variable[]> logMap, File file, TupleFactory factory) {
 	    	this.file = file;
 	    	this.factory = factory;
-	    	this.formula = (Formula) annotated.sourceOf(annotated.node());
+	    	this.roots = Nodes.roots((Formula) annotated.sourceOf(annotated.node()));
+	    	assert roots.size() == annotated.sourceSensitiveRoots().size() ;
 	    	
 	    	final int size = logMap.entrySet().size();
 	    	this.indexedNodes = new Node[size];
@@ -215,10 +222,10 @@ final class FileLogger extends TranslationLogger {
 	    }
 	    
 	    /**
-	     * {@inheritDoc}
-	     * @see kodkod.engine.fol2sat.TranslationLog#formula()
-	     */
-	    public Formula formula() { return formula; } 
+		 * {@inheritDoc}
+		 * @see kodkod.engine.fol2sat.TranslationLog#roots()
+		 */
+	    public Set<Formula> roots() { return roots; } 
 	    	
 		/**
 		 * {@inheritDoc}

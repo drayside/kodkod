@@ -12,7 +12,7 @@ import kodkod.ast.Variable;
 import kodkod.engine.Solution;
 import kodkod.engine.Solver;
 import kodkod.engine.satlab.SATFactory;
-import kodkod.engine.ucore.EmptyClauseConeStrategy;
+import kodkod.engine.ucore.ECFPStrategy;
 import kodkod.instance.Bounds;
 import kodkod.instance.TupleFactory;
 import kodkod.instance.Universe;
@@ -35,7 +35,7 @@ public class ReductionAndProofTest extends TestCase {
 	public ReductionAndProofTest(String arg0) {
 		super(arg0);
 		this.solver = new Solver();
-		solver.options().setLogTranslation(true);
+		solver.options().setLogTranslation(1);
 		List<String> atoms = new ArrayList<String>(USIZE);
 		for (int i = 0; i < USIZE; i++) {
 			atoms.add(""+i);
@@ -121,11 +121,11 @@ public class ReductionAndProofTest extends TestCase {
 	    Solution sol = null;
 	    
 	
-	    	solver.options().setLogTranslation(false);
+	    	solver.options().setLogTranslation(0);
 			sol = solver.solve(f3, bounds);
 			assertEquals(Solution.Outcome.UNSATISFIABLE, sol.outcome());
 			assertNull(sol.proof());
-			solver.options().setLogTranslation(true);
+			solver.options().setLogTranslation(1);
 			sol = solver.solve(f3, bounds);
 			assertNull(sol.proof());
 			
@@ -134,7 +134,7 @@ public class ReductionAndProofTest extends TestCase {
 			
 			//System.out.println(f3 + ", " + bounds);
 
-			sol.proof().minimize(new EmptyClauseConeStrategy());
+			sol.proof().minimize(new ECFPStrategy());
 			final Set<Formula> top = sol.proof().highLevelCore();
 			assertEquals(2, top.size());
 			assertTrue(top.contains(f1));

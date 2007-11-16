@@ -22,15 +22,12 @@
 package kodkod.engine;
 
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.Set;
 
 import kodkod.ast.Formula;
-import kodkod.ast.Node;
 import kodkod.engine.fol2sat.TranslationLog;
 import kodkod.engine.fol2sat.TranslationRecord;
 import kodkod.engine.satlab.ReductionStrategy;
-import kodkod.engine.ucore.StrategyUtils;
 
 /**
  * Contains a proof of unsatisfiability of a
@@ -60,7 +57,7 @@ public abstract class Proof {
 	 * @effects minimizes the proof of this.formula's unsatisfiability
 	 * using the specified proof reduction strategy. 
 	 * @throws UnsupportedOperationException - this is a proof for a trivially
-	 * unsatisifiable formula and cannot be minimized
+	 * unsatisfiable formula and cannot be minimized
 	 * @see kodkod.engine.satlab.ReductionStrategy
 	 */
 	public abstract void minimize(ReductionStrategy strategy);
@@ -82,17 +79,25 @@ public abstract class Proof {
 	 * @return the unsatisfiable subset of the top-level conjunctions of this.formula,
 	 * as given by {@linkplain #core() this.core()}.
 	 */
-	public final Set<Formula> highLevelCore() {
-		final Set<Formula> topFormulas = StrategyUtils.topFormulas(log.formula());
-		final Set<Formula> topCoreFormulas = new LinkedHashSet<Formula>();
-		for(Iterator<TranslationRecord> iter = core(); iter.hasNext(); ) {
-			Node next = iter.next().node();
-			if (topFormulas.contains(next))
-				topCoreFormulas.add((Formula)next);
-		}
-//		System.out.println("top formulas: " + topFormulas);
-		return topCoreFormulas;
-	}
+	public abstract Set<Formula> highLevelCore() ;
+	
+//	/**
+//	 * Returns the unsatisfiable subset of the top-level conjunctions of this.formula
+//	 * as given by {@linkplain #core() this.core()}.
+//	 * @return the unsatisfiable subset of the top-level conjunctions of this.formula,
+//	 * as given by {@linkplain #core() this.core()}.
+//	 */
+//	public final Set<Formula> highLevelCore() {
+//		final Set<Formula> topFormulas = log.roots();
+//		final Set<Formula> topCoreFormulas = new LinkedHashSet<Formula>();
+//		for(Iterator<TranslationRecord> iter = core(); iter.hasNext(); ) {
+//			Node next = iter.next().node();
+//			if (topFormulas.contains(next))
+//				topCoreFormulas.add((Formula)next);
+//		}
+////		System.out.println("top formulas: " + topFormulas);
+//		return topCoreFormulas;
+//	}
 	
 	/**
 	 * Returns the log of the translation that resulted

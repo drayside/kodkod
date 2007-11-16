@@ -37,18 +37,9 @@ public abstract class Clause {
 	 * @return an iterator over this.literals
 	 */
 	public abstract IntIterator literals();
-//	
-//	/**
-//	 * Returns the literal that would be returned by the
-//	 * ith call to <tt>next()</tt> on an instance of this.literals().
-//	 * @requires  0 <= i < this.size()
-//	 * @return { lit: this.literals | #{ lit': this.literals | abs(lit') < abs(lit) } = i }
-//	 * @throws IndexOutOfBoundsException - i < 0 || i >= this.size()
-//	 */
-//	public abstract int literal(int i);
 	
 	/**
-	 * Returns the largest variable identifier occuring in this.literals.
+	 * Returns the largest variable identifier occurring in this.literals.
 	 * @return max(abs(this.literals))
 	 */ 
 	public abstract int maxVariable();

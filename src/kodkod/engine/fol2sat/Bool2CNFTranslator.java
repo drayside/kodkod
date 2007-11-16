@@ -28,6 +28,7 @@ import kodkod.engine.bool.BooleanVisitor;
 import kodkod.engine.bool.ITEGate;
 import kodkod.engine.bool.MultiGate;
 import kodkod.engine.bool.NotGate;
+import kodkod.engine.bool.Operator;
 import kodkod.engine.satlab.SATFactory;
 import kodkod.engine.satlab.SATSolver;
 import kodkod.util.ints.IntSet;
@@ -46,14 +47,27 @@ final class Bool2CNFTranslator implements BooleanVisitor<int[], Object> {
 	 * and uses it to translate the given circuit into conjunctive normal form
 	 * using the <i>definitional translation algorithm</i>.
 	 * The third parameter is required to contain the number of primary variables
-	 * allocated during translation from FOL to booelan.
+	 * allocated during translation from FOL to boolean.
 	 * @return a SATSolver instance returned by the given factory and initialized
 	 * to contain the CNF translation of the given circuit.
 	 */
 	static SATSolver translate(BooleanFormula circuit, SATFactory factory, int numPrimaryVariables) {
 		final SATSolver solver = factory.instance();
 		final Bool2CNFTranslator translator = new Bool2CNFTranslator(solver, numPrimaryVariables, circuit);
-		solver.addClause(circuit.accept(translator,null));
+//		System.out.println("--------------transls2-------------");
+		if (circuit.op()==Operator.AND) { 
+			for(BooleanFormula input : circuit) { 
+//				System.out.println(input);
+//				solver.addClause(input.accept(translator,null));
+				input.accept(translator, null);
+			}
+			for(BooleanFormula input : circuit) { 
+				translator.unaryClause[0] = input.label();
+				solver.addClause(translator.unaryClause);
+			}
+		} else {
+			solver.addClause(circuit.accept(translator,null));
+		}
 		return solver;
 	}
 
@@ -68,7 +82,7 @@ final class Bool2CNFTranslator implements BooleanVisitor<int[], Object> {
 	private final int[] unaryClause = new int[1];
 	private final int[] binaryClause = new int[2];
 	private final int[] ternaryClause = new int[3];
-
+	
 	/**
 	 * Constructs a translator for the given circuit.
 	 * @effects this.root' = circuit

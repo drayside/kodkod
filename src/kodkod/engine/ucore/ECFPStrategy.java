@@ -33,13 +33,13 @@ import kodkod.util.ints.Ints;
  * Boolean formula.</i>  In Proceedings of Sixth International Conference on Theory and Applications of 
  * Satisfiability Testing (SAT '03). 2003.</a>
  */
-public final class EmptyClauseConeStrategy implements ReductionStrategy {
+public final class ECFPStrategy implements ReductionStrategy {
 	private int lastCore;
 	/**
 	 * Constructs a new instance of the empty clause cone strategy for 
 	 * minimizing unsatisfiable cores.
 	 */
-	public EmptyClauseConeStrategy() {
+	public ECFPStrategy() {
 		lastCore = Integer.MAX_VALUE;
 	}
 

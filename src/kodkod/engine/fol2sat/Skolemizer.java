@@ -84,7 +84,7 @@ abstract class Skolemizer extends AbstractReplacer {
 	 */
 	@SuppressWarnings("unchecked")
 	static AnnotatedNode<Formula> skolemize(final AnnotatedNode<Formula> annotated, Bounds bounds, Options options) {
-		if (options.logTranslation()) {
+		if (options.logTranslation()>0) {
 			final Map<Node,Node> source = new IdentityHashMap<Node,Node>();
 			final Skolemizer r = new Skolemizer(annotated, bounds, options) {
 				protected Formula source(Formula f, Node n) {

@@ -23,6 +23,7 @@ package kodkod.engine.satlab;
 
 
 
+
 /**
  * A skeleton implementation of a wrapper for a sat solver
  * accessed through JNI.
@@ -109,6 +110,7 @@ abstract class NativeSolver implements SATSolver {
 //					System.out.print(i + " ");
 //				}
 //				System.out.println(0);
+//				System.out.println(Arrays.toString(lits));
 				clauses++;
 				return true;
 			}

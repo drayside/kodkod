@@ -25,6 +25,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -38,7 +39,6 @@ import kodkod.engine.Statistics;
 import kodkod.engine.fol2sat.TranslationLog;
 import kodkod.engine.satlab.ReductionStrategy;
 import kodkod.engine.satlab.SATFactory;
-import kodkod.engine.ucore.StrategyUtils;
 import kodkod.instance.Bounds;
 import kodkod.util.nodes.Nodes;
 import kodkod.util.nodes.PrettyPrinter;
@@ -222,7 +222,7 @@ public final class UCoreUnitTest {
 	/**
 	 * Returns the minimal core produced by the simple extraction algorithm.
 	 */
-	private static Set<Formula> simpleCE(Solution sol, Bounds bounds, Solver solver) { 
+	private static Set<Formula> sce(Solution sol, Bounds bounds, Solver solver) { 
 		final Set<Formula> initialCore = sol.proof().highLevelCore();
 		final Set<Formula> minCore = new LinkedHashSet<Formula>(initialCore);
 		final Set<Formula> unknown = new LinkedHashSet<Formula>(initialCore);
@@ -248,10 +248,10 @@ public final class UCoreUnitTest {
 	/**
 	 * Returns the minimal core produced by the simple extraction algorithm.
 	 */
-	private static Set<Formula> naiveCE(Formula formula, Bounds bounds) { 
+	private static Set<Formula> nce(Formula formula, Bounds bounds) { 
 		final Solver solver = new Solver();
-		solver.options().setSolver(SATFactory.MiniSatProver);
-		final Set<Formula> minCore = new LinkedHashSet<Formula>(StrategyUtils.topFormulas(formula));
+		solver.options().setSolver(SATFactory.MiniSat);
+		final Set<Formula> minCore = new LinkedHashSet<Formula>(Nodes.roots(formula));
 		final Set<Formula> unknown = new LinkedHashSet<Formula>(minCore);
 		
 		while (!unknown.isEmpty()) { 
@@ -266,6 +266,38 @@ public final class UCoreUnitTest {
 			unknown.remove(f);
 		}
 		return minCore;
+	}
+	
+	/**
+	 * Checks that the given proof of unsatisfiablity for the given problem is miminal.
+	 * This method assumes that the given proof is correct.
+	 */
+	static void checkMinimal(Set<Formula> core, Bounds bounds) {
+		System.out.print("checking minimality ... ");
+		final long start = System.currentTimeMillis();
+		final Set<Formula> minCore = new LinkedHashSet<Formula>(core);
+		Solver solver = new Solver(); 
+		solver.options().setSolver(SATFactory.MiniSat);
+		for(Iterator<Formula> itr = minCore.iterator(); itr.hasNext();) {
+			Formula f = itr.next();
+			Formula noF = Formula.TRUE;
+			for( Formula f1 : minCore ) {
+				if (f!=f1)
+					noF = noF.and(f1);
+			}
+			if (solver.solve(noF, bounds).instance()==null) {
+				itr.remove();
+			} 
+		}
+		final long end = System.currentTimeMillis();
+		if (minCore.size()==core.size()) {
+			System.out.println("minimal (" + (end-start) + " ms).");
+		} else {
+			System.out.println("not minimal (" + (end-start) + " ms). The minimal core has these " + minCore.size() + " formulas:");
+			for(Formula f : minCore) {
+				System.out.println(" " + f);
+			}
+		}
 	}
 	
 	/**
@@ -290,20 +322,22 @@ public final class UCoreUnitTest {
 			final Class<ReductionStrategy> strategy;
 			if (optional.containsKey("-s")) {
 				extractor = optional.get("-s");
-				if (!extractor.equals("simple") && !extractor.equals("naive") && !extractor.equals("one-step")) { 
+				if (extractor.equals("rce")) { 
+					strategy = strategy("kodkod.engine.ucore.RCEStrategy");
+				} else if (!extractor.equals("sce") && !extractor.equals("nce") && !extractor.equals("oce")) { 
 					strategy = strategy(optional.get("-s"));
 				} else {
 					strategy = null;
 				}
 			} else {
-				extractor = "naive";
+				extractor = "nce";
 				strategy = null;
 			}
 				
 			final ResultPrinter out = "stats".equals(optional.get("-o")) ? ResultPrinter.STATS : ResultPrinter.USER;
 			
 			final Solver solver = new Solver();
-			solver.options().setLogTranslation(true);
+			solver.options().setLogTranslation(1);
 			solver.options().setSolver(SATFactory.MiniSatProver);
 			
 			for(Map.Entry<Method, Formula> check : checks.entrySet()) { 
@@ -318,11 +352,11 @@ public final class UCoreUnitTest {
 					final long start = System.currentTimeMillis();
 					
 					if (strategy==null) { // use naive
-						if (extractor.equals("simple")) { 
-							minCore = simpleCE(sol, bounds, solver);
-						} else if (extractor.equals("naive")) {
-							minCore = naiveCE(check.getValue(), bounds);
-						} else {
+						if (extractor.equals("sce")) { 
+							minCore = sce(sol, bounds, solver);
+						} else if (extractor.equals("nce")) {
+							minCore = nce(check.getValue(), bounds);
+						} else { // oce
 							minCore = initialCore;
 						}
 					} else {
@@ -334,6 +368,8 @@ public final class UCoreUnitTest {
 					
 					out.printUnsat(check.getKey().getName(), check.getValue(), bounds, sol.stats(), 
 							initialCore, minCore, end-start);
+					
+//					checkMinimal(minCore, bounds);
 				
 				} else if (sol.outcome()==Solution.Outcome.TRIVIALLY_UNSATISFIABLE) {	
 					out.printFalse(check.getKey().getName(), check.getValue(), bounds, sol);
@@ -383,7 +419,7 @@ public final class UCoreUnitTest {
 			void printUnsat(String check, Formula formula, Bounds bounds, Statistics stats, 
 					Set<Formula> initialCore, Set<Formula> minCore, long minTime) {
 				print(check, formula, bounds, Solution.Outcome.UNSATISFIABLE, stats);
-				System.out.println("formulas: " + StrategyUtils.topFormulas(formula).size());
+				System.out.println("formulas: " + Nodes.roots(formula).size());
 				System.out.println("initial core: " + initialCore.size());
 				System.out.println("minimized core with " + minCore.size() + " formulas found in " + minTime + " ms:");
 				for(Formula f : minCore) { 
@@ -418,7 +454,7 @@ public final class UCoreUnitTest {
 					Set<Formula> initialCore, Set<Formula> minCore, long minTime) {
 				print(check, formula, bounds, Solution.Outcome.UNSATISFIABLE, stats);
 				System.out.print("\t");
-				System.out.print(StrategyUtils.topFormulas(formula).size());
+				System.out.print(Nodes.roots(formula).size());
 				System.out.print("\t");
 				System.out.print(initialCore.size());
 				System.out.print("\t");

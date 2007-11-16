@@ -85,7 +85,7 @@ public final class BooleanAccumulator extends BooleanValue implements Iterable<B
 	 * Returns the operator for this accumulator.
 	 * @return this.op
 	 */
-	public Operator op() {
+	public Operator.Nary op() {
 		return op;
 	}
 	

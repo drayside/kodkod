@@ -97,14 +97,15 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 
 	/**
 	 * Translates the given annotated formula into a boolean
-	 * formula with respect to the given interpreter and logs the translation events to the given logger.  
+	 * accumulator with respect to the given interpreter and logs the translation events to the given logger.  
 	 * @requires interpreter.relations = AnnotatedNode.relations(annotated)
-	 * @return BooleanValue that is the meaning of the given annotated formula with respect to the given interpreter
+	 * @requires annotated.source[annotated.sourceSensitiveRoots()] = Nodes.roots(annotated.source[annotated.node])
+	 * @return BooleanAccumulator that is the meaning of the given annotated formula with respect to the given interpreter
 	 * @effects log.records' contains the translation events that occurred while generating the returned value
 	 * @throws HigherOrderDeclException - annotated.node contains a higher order declaration
 	 * @throws UnboundLeafException - annotated.node refers to an undeclared variable 
 	 **/
-	static final BooleanValue translate(final AnnotatedNode<Formula> annotated, LeafInterpreter interpreter, final TranslationLogger logger) {
+	static final BooleanAccumulator translate(final AnnotatedNode<Formula> annotated, LeafInterpreter interpreter, final TranslationLogger logger) {
 		final FOL2BoolCache cache = new FOL2BoolCache(annotated);
 		final FOL2BoolTranslator translator = new FOL2BoolTranslator(cache, interpreter) {
 			BooleanValue cache(Formula formula, BooleanValue translation) {
@@ -112,9 +113,13 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 				return super.cache(formula, translation);
 			}	
 		};
-		final BooleanValue ret = annotated.node().accept(translator);
+		final BooleanAccumulator acc = BooleanAccumulator.treeGate(Operator.AND);
+		
+		for(Formula root : annotated.sourceSensitiveRoots()) { 	
+			acc.add(root.accept(translator));
+		}
 		logger.close();
-		return ret;
+		return acc;
 	}
 	
 	/**
@@ -427,7 +432,7 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 	 * @return constant = ConstantFormula.TRUE => BooleanConstant.TRUE, BooleanConstant.FALSE
 	 */
 	public final BooleanValue visit(ConstantFormula constant) {
-		return BooleanConstant.constant(constant.booleanValue());
+		return cache(constant, BooleanConstant.constant(constant.booleanValue()));
 	}
 
 	/**

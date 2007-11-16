@@ -1,6 +1,7 @@
 package kodkod.engine;
 
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -63,6 +64,22 @@ final class TrivialProof extends Proof {
 	}
 
 	/**
+	 * {@inheritDoc}
+	 * @see kodkod.engine.Proof#highLevelCore()
+	 */
+	public final Set<Formula> highLevelCore() {
+		final Set<Formula> topFormulas = log().roots();
+		final Set<Formula> topCoreFormulas = new LinkedHashSet<Formula>();
+		for(Iterator<TranslationRecord> iter = core(); iter.hasNext(); ) {
+			Node next = iter.next().node();
+			if (topFormulas.contains(next))
+				topCoreFormulas.add((Formula)next);
+		}
+//		System.out.println("top formulas: " + topFormulas);
+		return topCoreFormulas;
+	}
+	
+	/**
 	 * @throws UnsupportedOperationException
 	 * @see kodkod.engine.Proof#minimize(kodkod.engine.satlab.ReductionStrategy)
 	 */
@@ -103,8 +120,6 @@ final class TrivialProof extends Proof {
 				else					falseNodes.add(rec.node());
 			}
 			
-			if (!falseNodes.contains(log.formula()))
-				throw new AssertionError("trivially unsatisfiable formula not logged as FALSE");
 		}
 		
 		/**
@@ -114,7 +129,8 @@ final class TrivialProof extends Proof {
 		 */
 		static Set<Node> relevantNodes(TranslationLog log) {
 			final NodePruner finder = new NodePruner(log);
-			log.formula().accept(finder);
+			for(Formula root : log.roots())
+				root.accept(finder);
 //			System.out.println(finder.relevant);
 			return finder.relevant;
 		}

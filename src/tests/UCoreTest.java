@@ -6,7 +6,6 @@ package tests;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -19,8 +18,7 @@ import kodkod.engine.Solver;
 import kodkod.engine.fol2sat.HigherOrderDeclException;
 import kodkod.engine.fol2sat.UnboundLeafException;
 import kodkod.engine.satlab.SATFactory;
-import kodkod.engine.ucore.MinTopStrategy;
-import kodkod.engine.ucore.StrategyUtils;
+import kodkod.engine.ucore.RCEStrategy;
 import kodkod.instance.Bounds;
 import kodkod.util.nodes.Nodes;
 import kodkod.util.nodes.PrettyPrinter;
@@ -231,7 +229,7 @@ public final class UCoreTest {
 			solver.options().setSolver(SATFactory.MiniSat);
 //			solver.options().setSymmetryBreaking(1000);
 //			solver.options().setFlatten(false);
-			final Formula f = model.axioms().and(model.transsls2_qige27().not());
+			final Formula f = model.checkTranssls2_qige27();
 			final Bounds b = model.bounds(n);
 			return new Problem(f,b);
 		} catch (NumberFormatException nfe) {
@@ -373,7 +371,7 @@ public final class UCoreTest {
 			if (n < 1)
 				usage();
 			final COM008 model = new COM008();
-			final Formula f = model.axioms().and(model.goalToBeProved());
+			final Formula f = model.checkGoalToBeProved();
 			final Bounds b = model.bounds(n);
 			return new Problem(f,b);
 		} catch (NumberFormatException nfe) {
@@ -496,7 +494,7 @@ public final class UCoreTest {
 		}
 		
 		final Solver solver = new Solver();
-		solver.options().setLogTranslation(false);
+		solver.options().setLogTranslation(0);
 		solver.options().setSolver(SATFactory.MiniSat);
 //		solver.options().setReporter(new ConsoleReporter());
 		final Solution sol = solver.solve(coreFormula, problem.bounds);
@@ -516,6 +514,8 @@ public final class UCoreTest {
 		System.out.print("checking minimality ... ");
 		final long start = System.currentTimeMillis();
 		final Set<Formula> minCore = new LinkedHashSet<Formula>(core);
+		Solver solver = new Solver(); 
+		solver.options().setSolver(SATFactory.MiniSat);
 		for(Iterator<Formula> itr = minCore.iterator(); itr.hasNext();) {
 			Formula f = itr.next();
 			Formula noF = Formula.TRUE;
@@ -523,9 +523,9 @@ public final class UCoreTest {
 				if (f!=f1)
 					noF = noF.and(f1);
 			}
-			if (problem.solver.solve(noF, problem.bounds).instance()==null) {
+			if (solver.solve(noF, problem.bounds).instance()==null) {
 				itr.remove();
-			}			
+			} 
 		}
 		final long end = System.currentTimeMillis();
 		if (minCore.size()==core.size()) {
@@ -535,55 +535,58 @@ public final class UCoreTest {
 			for(Formula f : minCore) {
 				System.out.println(" " + f);
 			}
+//			Solution sol = problem.solver.solve(Nodes.and(minCore), problem.bounds);
+//			System.out.println(sol);
+//			sol.proof().highLevelCore();
 		}
 	}
 	
 	/**
 	 * Times the naive core extraction algorithm.
 	 */
-	private static Set<Formula> timeNaive(Problem problem) { 
-		
-		Solution sol = problem.solve();
-		if (sol.outcome()==Solution.Outcome.UNSATISFIABLE) { 
-			
-			
-			System.out.print("\nfinding minimal core with naive algorithm ... ");
-			final long start = System.currentTimeMillis();
-			
-			final Set<Formula> core = new LinkedHashSet<Formula>(sol.proof().highLevelCore());
-			final Set<Formula> unknown = new LinkedHashSet<Formula>(core);
-			
-			while(!unknown.isEmpty()) {
-				
-				Formula f = unknown.iterator().next();
-//				System.out.println("excluding:  " + f);
-				
-				Set<Formula> tryCore = new LinkedHashSet<Formula>(core);
-				tryCore.remove(f);
-				
-				sol = problem.solver.solve(Nodes.and(tryCore), problem.bounds);
-				
-				if (sol.instance()==null) { // unsat: f is irrelevant
-					core.retainAll(sol.proof().highLevelCore());
-					unknown.retainAll(core);
-				} else {// sat:  f is relevant
-					unknown.remove(f);
-				}
-			}
-			
-			final long end = System.currentTimeMillis();
-			
-			System.out.println((end-start) + " ms");
-			System.out.println("top-level formulas after min: " + core.size());
-//			System.out.println("core:");
-//			for(Formula f : core) {
-//				System.out.println(PrettyPrinter.print(f,2));
+//	private static Set<Formula> timeNaive(Problem problem) { 
+//		
+//		Solution sol = problem.solve();
+//		if (sol.outcome()==Solution.Outcome.UNSATISFIABLE) { 
+//			
+//			
+//			System.out.print("\nfinding minimal core with naive algorithm ... ");
+//			final long start = System.currentTimeMillis();
+//			
+//			final Set<Formula> core = new LinkedHashSet<Formula>(sol.proof().highLevelCore());
+//			final Set<Formula> unknown = new LinkedHashSet<Formula>(core);
+//			
+//			while(!unknown.isEmpty()) {
+//				
+//				Formula f = unknown.iterator().next();
+////				System.out.println("excluding:  " + f);
+//				
+//				Set<Formula> tryCore = new LinkedHashSet<Formula>(core);
+//				tryCore.remove(f);
+//				
+//				sol = problem.solver.solve(Nodes.and(tryCore), problem.bounds);
+//				
+//				if (sol.instance()==null) { // unsat: f is irrelevant
+//					core.retainAll(sol.proof().highLevelCore());
+//					unknown.retainAll(core);
+//				} else {// sat:  f is relevant
+//					unknown.remove(f);
+//				}
 //			}
-			return core;
-		}
-		return Collections.emptySet();
-		
-	}
+//			
+//			final long end = System.currentTimeMillis();
+//			
+//			System.out.println((end-start) + " ms");
+//			System.out.println("top-level formulas after min: " + core.size());
+////			System.out.println("core:");
+////			for(Formula f : core) {
+////				System.out.println(PrettyPrinter.print(f,2));
+////			}
+//			return core;
+//		}
+//		return Collections.emptySet();
+//		
+//	}
 	
 //	private static void countMaximallyConnectedComponents(Problem problem) { 
 //		final UndirectedGraph<Node, DefaultEdge> g = new SimpleGraph<Node, DefaultEdge>(DefaultEdge.class);
@@ -624,30 +627,39 @@ public final class UCoreTest {
 			System.out.println(sol);
 			if (sol.outcome()==Solution.Outcome.UNSATISFIABLE) {
 				final Proof proof = sol.proof();
-				System.out.println("top-level formulas: " + StrategyUtils.topFormulas(problem.formula).size());
+				System.out.println("top-level formulas: " + Nodes.roots(problem.formula).size());
+//				for(Iterator<TranslationRecord> itr = sol.proof().log().replay(); itr.hasNext(); ) { 
+//					TranslationRecord rec = itr.next();
+////					if (sol.proof().log().roots().contains(rec.node()))
+//						System.out.println(rec);
+//				}
 				System.out.println("top-level formulas in initial core: " + proof.highLevelCore().size());
 //				for(Formula f : proof.highLevelCore()) {
 //					System.out.println(PrettyPrinter.print(f,2));
 //				}
 
 				long start = System.currentTimeMillis();
-				proof.minimize(new MinTopStrategy(proof.log()));
+				proof.minimize(new RCEStrategy(proof.log()));
 //				proof.minimize(new HybridStrategy(proof.log()));
 				
 				long end = System.currentTimeMillis();
 				final Set<Formula> topCore = proof.highLevelCore();
 				System.out.println("\ntop-level formulas in MinTop core: " + topCore.size());
 				System.out.println("time: " + (end-start) + " ms");
-
-				checkCorrect(problem, proof.highLevelCore());
-				checkMinimal(problem, proof.highLevelCore());
 				
-				final Set<Formula> naiveCore = timeNaive(problem);
-				System.out.println("\nnaive core = prev core: " + topCore.equals(naiveCore));
-				System.out.println("core: ");
-				for(Formula f : topCore) {
-					System.out.println(PrettyPrinter.print(f,2));
+				System.out.println("Core: ");
+				for(Formula c : topCore) { 
+					System.out.println(c);
 				}
+				checkCorrect(problem, topCore);
+				checkMinimal(problem, topCore);
+				
+//				final Set<Formula> naiveCore = timeNaive(problem);
+//				System.out.println("\nnaive core = prev core: " + topCore.equals(naiveCore));
+//				System.out.println("core: ");
+//				for(Formula f : topCore) {
+//					System.out.println(PrettyPrinter.print(f,2));
+//				}
 //				countMaximallyConnectedComponents(problem);
 				
 			} else if (sol.outcome()==Solution.Outcome.TRIVIALLY_UNSATISFIABLE) { 
@@ -679,7 +691,7 @@ public final class UCoreTest {
 			this.formula = formula; 
 			this.bounds = bounds;
 			this.solver = new Solver();
-			solver.options().setLogTranslation(true);
+			solver.options().setLogTranslation(1);
 			solver.options().setSolver(SATFactory.MiniSatProver);
 //			solver.options().setSymmetryBreaking(0);
 		}

@@ -1,9 +1,12 @@
 package kodkod.engine;
 
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
+import kodkod.ast.Formula;
 import kodkod.ast.Node;
 import kodkod.ast.Variable;
 import kodkod.ast.visitor.AbstractVoidVisitor;
@@ -27,6 +30,8 @@ import kodkod.util.ints.IntSet;
 final class ResolutionBasedProof extends Proof {
 	private SATProver solver;
 	private RecordFilter coreFilter;
+	private Set<Formula> coreRoots;
+	
 	/**
 	 * Constructs a new ResolutionRefutation that will extract the 
 	 * unsatisfiable core for log.formula from the given solver.  
@@ -39,13 +44,14 @@ final class ResolutionBasedProof extends Proof {
 		super(log);
 		this.solver = solver;
 		this.coreFilter = null;
+		this.coreRoots = null;
 	}
 	
 	/**
 	 * Returns the connected core based on the given set of 
-	 * coreVariables.  
-	 * @requires coreVariables = StrategyUtils.coreVars(solver.proof());
-	 * @return let coreNodes = (this.log.records & literal.{i: int | abs(i) in coreVariables}).node | 
+	 * core variables.  
+	 * @requires coreVar = StrategyUtils.coreVars(solver.proof());
+	 * @return let coreNodes = (this.log.records & literal.{i: int | abs(i) in coreVars}).node | 
 	 *  {n: coreNodes  | some s: set coreNodes | 
 	 *   n + this.log.formula in s and (s - this.log.formula).~children in s }
 	 */
@@ -79,7 +85,9 @@ final class ResolutionBasedProof extends Proof {
 				return true;
 			}
 		};
-		log().formula().accept(traverser);
+		for(Formula root: log().roots()) {
+			root.accept(traverser);
+		}
 		return connected;
 	}
 	
@@ -101,11 +109,37 @@ final class ResolutionBasedProof extends Proof {
 	}
 	
 	/**
+	 * Returns the unsatisfiable subset of the top-level conjunctions of this.formula
+	 * as given by {@linkplain #core() this.core()}.
+	 * @return the unsatisfiable subset of the top-level conjunctions of this.formula,
+	 * as given by {@linkplain #core() this.core()}.
+	 */
+	public final Set<Formula> highLevelCore() {
+		if (coreRoots == null) { 
+			final RecordFilter unitFilter = new RecordFilter() {
+				final IntSet coreUnits = StrategyUtils.coreUnits(solver.proof());
+				final Set<Formula> roots = log().roots();
+				public boolean accept(Node node, int literal, Map<Variable, TupleSet> env) {
+					return roots.contains(node) && coreUnits.contains(Math.abs(literal));
+				}
+				
+			};
+			coreRoots = new LinkedHashSet<Formula>();
+			for(Iterator<TranslationRecord> itr = log().replay(unitFilter); itr.hasNext(); ) { 
+				coreRoots.add((Formula)itr.next().node());
+			}
+			coreRoots = Collections.unmodifiableSet(coreRoots);
+		}
+		return coreRoots;
+	}
+	
+	/**
 	 * {@inheritDoc}
 	 * @see kodkod.engine.Proof#minimize(kodkod.engine.satlab.ReductionStrategy)
 	 */
 	public void minimize(ReductionStrategy strategy) {
 		solver.reduce(strategy);
 		coreFilter = null;
+		coreRoots = null;
 	}
 }

@@ -23,9 +23,11 @@ package kodkod.util.nodes;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Set;
 
 import kodkod.ast.BinaryExpression;
 import kodkod.ast.BinaryFormula;
@@ -46,6 +48,40 @@ import kodkod.util.collections.Containers;
  */
 public final class Nodes {
 	private Nodes() {}
+	
+	/**
+     * Returns the roots of the given formula.
+     * In other words, breaks up the given formula into its conjunctive 
+     * components, {f0, ..., fk}, 
+     * such that, for all 0<=i<=k, f<sub>i</sub> is not a conjunction  and
+     * [[f0 && ... && fk]] <=> [[formula]].  
+     * @return subformulas, {f0, ..., fk}, of the given formula such that, for all 0<=i<=k, 
+     * f<sub>i</sub> is not a conjuction and [[f0 && ... && fk]] <=> [[formula]].    
+     */
+	public static Set<Formula> roots(Formula formula) {
+	
+    	final List<Formula> formulas = new LinkedList<Formula>();
+		formulas.add(formula);
+		
+		int size;
+		do {
+			size = formulas.size();
+			ListIterator<Formula> itr = formulas.listIterator();
+			while(itr.hasNext()) {
+				Formula f = itr.next();
+				if (f instanceof BinaryFormula) {
+					BinaryFormula bin = (BinaryFormula) f;
+					if (bin.op()==BinaryFormula.Operator.AND) {
+						itr.remove();
+						itr.add(bin.left());
+						itr.add(bin.right());
+					}
+				}
+			}
+		} while (formulas.size() > size);
+		
+		return new LinkedHashSet<Formula>(formulas);
+	}
 	
 	/**
 	 * Returns the conjunction of the given arguments, or Formula.TRUE

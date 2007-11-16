@@ -23,14 +23,9 @@ package kodkod.engine.ucore;
 
 import java.util.IdentityHashMap;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 
-import kodkod.ast.BinaryFormula;
 import kodkod.ast.Formula;
 import kodkod.ast.Node;
 import kodkod.ast.Variable;
@@ -55,110 +50,55 @@ import kodkod.util.ints.Ints;
 public final class StrategyUtils {
 	private StrategyUtils() {}
 	
-	/**
-     * Returns the top-level components of the given formula.
-     * In other words, returns the subformulas, {f0, ..., fk}, 
-     * of the given formula such that, for all 0<=i<=k, f<sub>i</sub> is not a conjuction  and
-     * [[f0 && ... && fk]] <=> [[formula]].  
-     * @return subformulas, {f0, ..., fk}, of the given formula such that, for all 0<=i<=k, 
-     * f<sub>i</sub> is not a conjuction and [[f0 && ... && fk]] <=> [[formula]].    
-     */
-	public static Set<Formula> topFormulas(Formula formula) {
 	
-    	final List<Formula> formulas = new LinkedList<Formula>();
-		formulas.add(formula);
-		if (formula instanceof BinaryFormula) {
-			final BinaryFormula top = (BinaryFormula) formula;
-			if (top.op()==BinaryFormula.Operator.AND) {
-				int size;
-				do {
-					size = formulas.size();
-					ListIterator<Formula> itr = formulas.listIterator();
-					while(itr.hasNext()) {
-						Formula f = itr.next();
-						if (f instanceof BinaryFormula) {
-							BinaryFormula bin = (BinaryFormula) f;
-							if (bin.op()==BinaryFormula.Operator.AND) {
-								itr.remove();
-								itr.add(bin.left());
-								itr.add(bin.right());
-							}
-						}
-					}
-				} while (formulas.size() > size);
-			}
-		}
-		return new LinkedHashSet<Formula>(formulas);
-	}
-
 	/**
-	 * Returns the variables that correspond to the top-level
-	 * subformulas of log.formula
+	 * Returns the variables (i.e. highest-magnitude literals less than Integer.MAX_VALUE) 
+	 * that correspond to the roots of log.formula
 	 * @return
 	 * <pre> 
 	 * { v: int | some r: log.records | 
-	 *   r.node in topFormulas(log.formula) and 
+	 *   r.node in log.roots() and 
 	 *   r.env.isEmpty() and
 	 *   abs(r.literal) != Integer.MAX_VALUE and
 	 *   v = abs(r.literal) and
 	 *   no r': log.records | r'.node = r.node && abs(r'.literal) > v }
 	 * </pre>
 	 */
-	public static IntSet topVars(TranslationLog log) {
-		final IntSet topVars = new IntTreeSet();
-		final Set<Formula> topFormulas = topFormulas(log.formula());
-		final Map<Formula,int[]> maxFormulaVars = new IdentityHashMap<Formula,int[]>(topFormulas.size());
-		for(Formula top : topFormulas) {
-			maxFormulaVars.put(top, new int[1]);
+	public static IntSet rootVars(TranslationLog log) {
+		final IntSet rootVars = new IntTreeSet();
+		final Set<Formula> roots = log.roots();
+		final Map<Formula,int[]> maxRootVar = new IdentityHashMap<Formula,int[]>(roots.size());
+		for(Formula top : roots) {
+			maxRootVar.put(top, new int[1]);
 		}
 		final RecordFilter filter = new RecordFilter() {
 			public boolean accept(Node node, int literal, Map<Variable, TupleSet> env) {
-				return topFormulas.contains(node) && env.isEmpty();
+				return roots.contains(node) && env.isEmpty();
 			}
 		};
 		for(Iterator<TranslationRecord> itr = log.replay(filter); itr.hasNext();) {
 			TranslationRecord record = itr.next();
-			int[] var = maxFormulaVars.get(record.node());
+			int[] var = maxRootVar.get(record.node());
 			int recordVar = StrictMath.abs(record.literal());
 			if (recordVar < Integer.MAX_VALUE) {
 				var[0] = StrictMath.max(var[0], recordVar);
 			} 
 		}
-		for(int[] var : maxFormulaVars.values()) {
+		for(int[] var : maxRootVar.values()) {
 			int topVar = var[0];
 			if (topVar != 0) // topVar could be 0 if a top-level formula simplified to TRUE
-				topVars.add(var[0]);
+				rootVars.add(var[0]);
 		}
+		return rootVars;
+	}
+	
+	/**
+	 * Returns relevant  core variables -- i.e. all variables that occur both in the positive and
+	 * negative phase in trace.core.
+	 * @return { v: [1..) | (some p, n: trace.core | v in trace.elts[p].literals and -v in trace.elts[n].literals) }
+	 */
+	public static IntSet coreVars(ResolutionTrace trace) { 
 
-		return topVars;
-	}
-	
-	/**
-	 * Returns the variables that correspond to all the subformulas of log.formula
-	 * @return { lit: abs(log.records.literal) | lit < Integer.MAX_VALUE } 
-	 */
-	public static IntSet formulaVars(TranslationLog log) {
-		final IntSet formulaVars = new IntTreeSet();
-		
-		for(Iterator<TranslationRecord> itr = log.replay(); itr.hasNext(); ) {
-			int literal = StrictMath.abs(itr.next().literal());
-			if (literal < Integer.MAX_VALUE) {
-				formulaVars.add(literal);
-			}
-		}
-		
-		if (formulaVars.isEmpty()) return Ints.EMPTY_SET;
-		final IntSet ret = new IntBitSet(formulaVars.max()+1);
-		ret.addAll(formulaVars);
-		return ret;
-	}
-	
-	/**
-	 * Returns relevant core variables -- i.e. variables that occur both in the positive and negative
-	 * phase in trace.core.
-	 * @return { v: [1..) | some p, n: trace.core | v in trace.elts[p].literals and -v in trace.elts[n].literals }
-	 */
-	public static IntSet coreVars(ResolutionTrace trace) {
 		final IntSet posVars = new IntTreeSet(), negVars = new IntTreeSet();
 		
 		for(Iterator<Clause> iter = trace.iterator(trace.core()); iter.hasNext();) {
@@ -171,29 +111,53 @@ public final class StrategyUtils {
 		}
 		
 		posVars.retainAll(negVars);
-		assert !posVars.isEmpty();
 		
+		assert !posVars.isEmpty();
 		final IntSet ret = new IntBitSet(posVars.max()+1);
 		ret.addAll(posVars);
+		
 		return ret;
 	}
 	
 	/**
-	 * Returns the indices of the clauses in the unsatifiable core of the
-	 * given trace that have the specified maximum variable.
-	 * @return { i: trace.core() | trace[i].maxVariable() = maxVariable }
+	 * Returns the set of consecutive variables at the tail of the core of the given trace
+	 * that form unit clauses.
+	 * @return set of consecutive variables at the tail of the core of the given trace
+	 * that form unit clauses
 	 */
-	public static IntSet coreWithMaxVar(ResolutionTrace trace, int maxVariable) {
-		final IntSet core = trace.core();
-		final IntSet restricted = new IntBitSet(core.max()+1);
-		final Iterator<Clause> clauses = trace.iterator(core);
-		final IntIterator indices = core.iterator();
-		while(clauses.hasNext()) {
-			Clause clause = clauses.next();
-			int index = indices.next();
-			if (clause.maxVariable()==maxVariable)
-				restricted.add(index);
+	static IntSet coreTailUnits(ResolutionTrace trace) { 
+		final IntSet units = new IntTreeSet();
+		
+		for(Iterator<Clause> itr = trace.reverseIterator(trace.core()); itr.hasNext(); ) { 	
+			Clause c = itr.next();
+			if (c.size()==1) { 
+				units.add(c.maxVariable());
+			} else {
+				break;
+			}
 		}
-		return restricted;
+		
+		return units;
 	}
+	
+	/**
+	 * Returns the set of all variables in the core of the given trace
+	 * that form unit clauses.
+	 * @return { v: [1..) | some c: trace.core | c.size() = 1 and c.maxVariable() = v }
+	 */
+	public static IntSet coreUnits(ResolutionTrace trace) { 
+		final IntSet units = new IntTreeSet();
+		
+		for(Iterator<Clause> itr = trace.reverseIterator(trace.core()); itr.hasNext(); ) { 	
+			Clause c = itr.next();
+			if (c.size()==1) { 
+				units.add(c.maxVariable());
+			}
+		}
+		
+		if (units.isEmpty()) return Ints.EMPTY_SET;
+		
+		return Ints.asSet(units.toArray());
+	}
+	
 }

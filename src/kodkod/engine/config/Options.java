@@ -21,7 +21,6 @@
  */
 package kodkod.engine.config;
 
-import kodkod.engine.fol2sat.TranslationLog;
 import kodkod.engine.satlab.SATFactory;
 import kodkod.util.ints.IntRange;
 import kodkod.util.ints.Ints;
@@ -39,7 +38,7 @@ import kodkod.util.ints.Ints;
  * @specfield bitwidth: int // the bitwidth to use for integer representation / arithmetic
  * @specfield skolemDepth: int // skolemization depth
  * @specfield flatten: boolean // eliminate extraneous intermediate variables?
- * @specfield logTranslation: boolean // log translation events (see {@link TranslationLog}})?
+ * @specfield logTranslation: [0..2] // log translation events, default is 0 (no logging)
  * @author Emina Torlak
  */
 public final class Options {
@@ -51,7 +50,7 @@ public final class Options {
 	private int sharing = 3;
 	private int skolemDepth = 0;
 	private boolean flatten = true;
-	private boolean logTranslation = false;
+	private int logTranslation = 0;
 	
 	/**
 	 * Constructs an Options object initalized with 
@@ -64,7 +63,7 @@ public final class Options {
 	 *          this.bitwidth' = 5
 	 *          this.skolemDepth' = 0
 	 *          this.flatten' = true
-	 *          this.logTranslation' = false
+	 *          this.logTranslation' = 0
 	 */
 	public Options() {}
 	
@@ -81,7 +80,7 @@ public final class Options {
 	 *          this.bitwidth' = 5
 	 *          this.skolemDepth' = 0
 	 *          this.flatten' = true
-	 *          this.logTranslation' = false
+	 *          this.logTranslation' = 0
 	 * @throws NullPointerException - solver = null
 	 */
 	public Options(SATFactory solver) {
@@ -214,11 +213,11 @@ public final class Options {
 	/**
 	 * Sets the flattening option to the given value.
 	 * @effects this.flatten' = flatten
-	 * @throws IllegalArgumentException - this.logTranslation && flatten
+	 * @throws IllegalArgumentException - this.logTranslation>0 && flatten
 	 */
 	public void setFlatten(boolean flatten) {
-		if (logTranslation && flatten)
-			throw new IllegalStateException("trackFormulas enabled:  flattening must be off.");
+		if (logTranslation>0 && flatten)
+			throw new IllegalStateException("logTranslation enabled:  flattening must be off.");
 		this.flatten = flatten;
 	}
 	
@@ -293,25 +292,30 @@ public final class Options {
 	}
 	
 	/**
-	 * Returns true if translation to cnf should be logged.  This is necessary
-	 * for determining which formulas occur in the unsat core of an 
+	 * Returns the translation logging level (0, 1, or 2), where 0
+	 * means logging is not performed, 1 means only the translations of 
+	 * top level formulas are logged, and 2 means all formula translations
+	 * are logged.  This is necessary for determining which formulas occur in the unsat core of an 
 	 * unsatisfiable formula.  Flattening  must be off whenever 
-	 * this flag is enabled.  Logging is off by default, since 
+	 * logging is enabled.  Logging is off by default, since 
 	 * it incurs a non-trivial time overhead.
 	 * @return this.logTranslation
 	 */
-	public boolean logTranslation() {
+	public int logTranslation() {
 		return logTranslation;
 	}
 	
 	/**
-	 * Sets the value of the translation logging flag.  If the 
-	 * flag is turned on, flattening is automatically disabled.
+	 * Sets the translation logging level.  If the level is above 0, 
+	 * flattening is automatically disabled.
+	 * @requires logTranslation in [0..2]
 	 * @effects this.logTranslation' = logTranslation &&
-	 *          logTranslation => this.flatten' = false 
+	 *          logTranslation>0 => this.flatten' = false 
+	 * @throws IllegalArgumentException - logTranslation !in [0..2]
 	 */
-	public void setLogTranslation(boolean logTranslation) {
-		if (logTranslation) {
+	public void setLogTranslation(int logTranslation) {
+		checkRange(logTranslation, 0, 2);
+		if (logTranslation>0) {
 			flatten = false;
 		}
 		this.logTranslation = logTranslation;

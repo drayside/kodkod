@@ -32,6 +32,7 @@ import kodkod.ast.Node;
 import kodkod.ast.Relation;
 import kodkod.ast.RelationPredicate;
 import kodkod.ast.visitor.AbstractReplacer;
+import kodkod.engine.bool.BooleanAccumulator;
 import kodkod.engine.bool.BooleanConstant;
 import kodkod.engine.bool.BooleanFactory;
 import kodkod.engine.bool.BooleanFormula;
@@ -114,11 +115,11 @@ public final class Translator {
 	
 	/**
 	 * Translates the given formula using the specified bounds and options.
-	 * @return a Translation whose solver is a SATSolver instance initalized with the 
+	 * @return a Translation whose solver is a SATSolver instance initialized with the 
 	 * CNF representation of the given formula, with respect to the given bounds.  The CNF
-	 * is generated in such a way that the magnitutude of the literal representing the truth
+	 * is generated in such a way that the magnitude of the literal representing the truth
 	 * value of a given formula is strictly larger than the magnitudes of the literals representing
-	 * the truth values of the formula's descendents.  
+	 * the truth values of the formula's descendants.  
 	 * @throws TrivialFormulaException - the given formula is reduced to a constant during translation
 	 * (i.e. the formula is trivially (un)satisfiable).
 	 * @throws NullPointerException - any of the arguments are null
@@ -207,7 +208,7 @@ public final class Translator {
 	private AnnotatedNode<Formula> optimizeFormula(AnnotatedNode<Formula> annotated, SymmetryBreaker breaker) {	
 		options.reporter().optimizingFormula();
 		final Map<RelationPredicate.Name, Set<RelationPredicate>> preds = annotated.predicates();
-		if (!options.logTranslation()) {
+		if (options.logTranslation()==0) { // no logging
 			annotated = inlinePredicates(annotated, breaker.breakMatrixSymmetries(preds, true).keySet());
 		} else {
 			annotated = inlinePredicates(annotated, breaker.breakMatrixSymmetries(preds, false));
@@ -301,24 +302,39 @@ public final class Translator {
 		options.reporter().translatingToBoolean(annotated.node(), bounds);
 		
 		final LeafInterpreter interpreter = LeafInterpreter.exact(bounds, options);
-		final BooleanValue circuit;
 		
-		if (options.logTranslation()) {
-			final TranslationLogger logger = new FileLogger(annotated, bounds);
-			circuit = FOL2BoolTranslator.translate(annotated, interpreter, logger);
+		if (options.logTranslation()>0) {
+			final TranslationLogger logger = options.logTranslation()==1 ? new MemoryLogger(annotated) : new FileLogger(annotated, bounds);
+			final BooleanAccumulator circuit = FOL2BoolTranslator.translate(annotated, interpreter, logger);
 			log = logger.log();
-			if (circuit.op()==Operator.CONST) {
-				throw new TrivialFormulaException(log, bounds, (BooleanConstant) circuit);
-			} 
+			if (circuit.isShortCircuited()) {
+				throw new TrivialFormulaException(log, bounds, circuit.op().shortCircuit());
+			} else if (circuit.size()==0) { 
+				throw new TrivialFormulaException(log, bounds, circuit.op().identity());
+			}
+			return generateSBP(circuit, interpreter, breaker);
 		} else {
-			circuit = (BooleanValue)FOL2BoolTranslator.translate(annotated, interpreter);
+			final BooleanValue circuit = (BooleanValue)FOL2BoolTranslator.translate(annotated, interpreter);
 			if (circuit.op()==Operator.CONST) {
 				throw new TrivialFormulaException(null, bounds, (BooleanConstant)circuit);
 			} 
+			return generateSBP((BooleanFormula)circuit, interpreter, breaker);
 		}
-		
-		return generateSBP((BooleanFormula)circuit, interpreter, breaker);
-		
+	}
+	
+	/**
+	 * Adds to given accumulator an SBP generated using the given symmetry breaker and interpreter,
+	 * and returns the resulting circuit's translation to CNF.
+	 * @requires circuit is a translation of this.formula with respect to this.bounds
+	 * @requires interpreter is the leaf interpreter used in generating the given circuit
+	 * @requires breaker.bounds = this.bounds
+	 * @return toCNF(circuit && breaker.generateSBP(interpreter))
+	 */
+	private Translation generateSBP(BooleanAccumulator circuit, LeafInterpreter interpreter, SymmetryBreaker breaker) {
+		options.reporter().generatingSBP();
+		final BooleanFactory factory = interpreter.factory();
+		circuit.add(breaker.generateSBP(interpreter, options.symmetryBreaking())); 
+		return toCNF((BooleanFormula)factory.accumulate(circuit), factory.numberOfVariables(), interpreter.vars());
 	}
 	
 	/**

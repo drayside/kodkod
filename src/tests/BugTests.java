@@ -26,7 +26,7 @@ import kodkod.engine.config.Options;
 import kodkod.engine.fol2sat.HigherOrderDeclException;
 import kodkod.engine.fol2sat.UnboundLeafException;
 import kodkod.engine.satlab.SATFactory;
-import kodkod.engine.ucore.MinTopStrategy;
+import kodkod.engine.ucore.RCEStrategy;
 import kodkod.instance.Bounds;
 import kodkod.instance.Instance;
 import kodkod.instance.Tuple;
@@ -51,6 +51,62 @@ public class BugTests extends TestCase {
 //		for(Map.Entry e: p.entrySet())
 //			System.out.println(e); 
 //	}
+//	
+//	public final void testEmina_12112007() {
+//		final List<String> atoms = Arrays.asList("a0", "b0", "c0", "d0");
+//		final Relation a = Relation.unary("a");
+//		final Relation b = Relation.unary("b");
+//		final Relation c = Relation.unary("c");
+//		final Relation d = Relation.unary("d");
+//		final Formula formula = a.some().and(b.some()).and(c.some()).and(d.some()).and(a.no());
+//		final Bounds bounds = new Bounds(new Universe(atoms));
+//		final TupleFactory factory = bounds.universe().factory();
+//		bounds.bound(a, factory.setOf("a0"));
+//		bounds.bound(b, factory.setOf("b0"));
+//		bounds.bound(c, factory.setOf("c0"));
+//		bounds.bound(d, factory.setOf("d0"));
+//		final Solver s = new Solver();
+//		s.options().setLogTranslation(true);
+//		s.options().setSharing(1);
+//		s.options().setSolver(SATFactory.MiniSatProver);
+//		
+//		final Solution sol = s.solve(formula, bounds);
+//		//sol.proof().minimize(new MinTopStrategy(sol.proof().log()));
+//		for(Formula core : sol.proof().highLevelCore()) { 
+//			System.out.println(core);
+//		}
+//		for(Iterator<TranslationRecord> recs = sol.proof().core(); recs.hasNext();) { 
+//			System.out.println(recs.next());
+//		}
+//	}
+	
+	private static boolean isMinimal(Solver solver, Bounds bounds, Set<Formula> core) {
+		final Set<Formula> minCore = new LinkedHashSet<Formula>(core);
+		for(Iterator<Formula> itr = minCore.iterator(); itr.hasNext();) {
+			Formula f = itr.next();
+			Formula noF = Formula.TRUE;
+			for( Formula f1 : minCore ) {
+				if (f!=f1)
+					noF = noF.and(f1);
+			}
+			if (solver.solve(noF, bounds).instance()==null) {
+				itr.remove();
+			}			
+		}
+		if (minCore.size()==core.size()) {
+			return true;
+		} else {
+			System.out.println("minimal core is: ");
+			for(Formula f : minCore) { 
+				System.out.println(f);
+			}
+			System.out.println("found core is: ");
+			for(Formula f : core) { 
+				System.out.println(f);
+			}
+			return false;
+		}
+	}
 	
 	public final void testFelix_05192007() {
 		Relation x5 = Relation.nary("this/de", 1);
@@ -488,30 +544,31 @@ public class BugTests extends TestCase {
 		Formula x10=x11.and(x349);
 
 		Solver solver = new Solver();
-		solver.options().setLogTranslation(true);
+		solver.options().setLogTranslation(1);
 		solver.options().setSolver(SATFactory.MiniSatProver);
 		solver.options().setBitwidth(4);
 		solver.options().setIntEncoding(Options.IntEncoding.BINARY);
 		Solution sol = solver.solve(x10,bounds);
 //		System.out.println(sol.toString());
 		Proof proof = sol.proof();
-		proof.minimize(new MinTopStrategy(proof.log()));
+		proof.minimize(new RCEStrategy(proof.log()));
 		Set<Formula> core = proof.highLevelCore();
 		
 
-		final Set<Formula> minCore = new LinkedHashSet<Formula>(core);
-		for(Iterator<Formula> itr = minCore.iterator(); itr.hasNext();) {
-			Formula f = itr.next();
-			Formula noF = Formula.TRUE;
-			for( Formula f1 : minCore ) {
-				if (f!=f1)
-					noF = noF.and(f1);
-			}
-			if (solver.solve(noF, bounds).instance()==null) {
-				itr.remove();
-			}			
-		}
-		assertTrue(minCore.size()==core.size());
+//		final Set<Formula> minCore = new LinkedHashSet<Formula>(core);
+//		for(Iterator<Formula> itr = minCore.iterator(); itr.hasNext();) {
+//			Formula f = itr.next();
+//			Formula noF = Formula.TRUE;
+//			for( Formula f1 : minCore ) {
+//				if (f!=f1)
+//					noF = noF.and(f1);
+//			}
+//			if (solver.solve(noF, bounds).instance()==null) {
+//				itr.remove();
+//			}			
+//		}
+//		assertTrue(minCore.size()==core.size());
+		assertTrue(isMinimal(solver, bounds, core));
 	}
 	
 	public final void testFelix_05152007_3() {
@@ -537,7 +594,7 @@ public class BugTests extends TestCase {
 
 		Solver solver = new Solver();
 
-		solver.options().setLogTranslation(true);
+		solver.options().setLogTranslation(0);
 		solver.options().setSolver(SATFactory.DefaultSAT4J);
 		solver.options().setBitwidth(4);
 		solver.options().setIntEncoding(Options.IntEncoding.BINARY);
@@ -574,7 +631,7 @@ public class BugTests extends TestCase {
 
 		Solver solver = new Solver();
 
-		solver.options().setLogTranslation(true);
+		solver.options().setLogTranslation(1);
 		solver.options().setSolver(SATFactory.MiniSatProver);
 		solver.options().setBitwidth(4);
 		solver.options().setIntEncoding(Options.IntEncoding.BINARY);
@@ -607,7 +664,7 @@ public class BugTests extends TestCase {
 		Formula x6=x7.and(x8);
 
 		Solver solver = new Solver();
-		solver.options().setLogTranslation(true);
+		solver.options().setLogTranslation(1);
 
 		solver.options().setSolver(SATFactory.MiniSatProver);
 		solver.options().setBitwidth(4);
