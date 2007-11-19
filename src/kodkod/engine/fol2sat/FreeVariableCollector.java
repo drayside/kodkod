@@ -127,7 +127,7 @@ abstract class FreeVariableCollector extends AbstractCollector<Variable> {
 	 */
 	@Override
 	public Set<Variable> visit(Variable variable) {
-		return Collections.singleton(variable);
+		return cache(variable, Collections.singleton(variable));
 	}
 	
 	/** 

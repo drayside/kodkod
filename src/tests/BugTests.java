@@ -80,6 +80,30 @@ public class BugTests extends TestCase {
 //		}
 //	}
 	
+	public final void testFelix_11192007() {
+		List<String> atomlist = Arrays.asList("A", "B", "C");
+
+		Universe universe = new Universe(atomlist);
+
+		
+		Bounds bounds = new Bounds(universe);
+
+
+
+		Solver solver = new Solver();
+
+		solver.options().setLogTranslation(2);
+		solver.options().setSolver(SATFactory.MiniSatProver);
+		solver.options().setBitwidth(4);
+		solver.options().setIntEncoding(Options.IntEncoding.BINARY);
+		solver.options().setSymmetryBreaking(20);
+		solver.options().setSkolemDepth(0);
+
+		Solution sol = solver.solve(Formula.TRUE, bounds);
+
+		System.out.println(sol.toString());
+	}
+	
 	private static boolean isMinimal(Solver solver, Bounds bounds, Set<Formula> core) {
 		final Set<Formula> minCore = new LinkedHashSet<Formula>(core);
 		for(Iterator<Formula> itr = minCore.iterator(); itr.hasNext();) {

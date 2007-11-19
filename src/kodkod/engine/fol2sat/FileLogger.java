@@ -37,6 +37,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
+import kodkod.ast.ConstantFormula;
 import kodkod.ast.Formula;
 import kodkod.ast.Node;
 import kodkod.ast.Variable;
@@ -109,6 +110,7 @@ final class FileLogger extends TranslationLogger {
 	 * Returns a map from all formulas in the given annotated node to their free variables. 
 	 * @return a map from all formulas in the given annotated node to their free variables.
 	 */
+	@SuppressWarnings("unchecked")
 	private static Map<Formula,Set<Variable>> freeVars(final AnnotatedNode<Formula> annotated) {
 		final Map<Formula,Set<Variable>> freeVarMap = new IdentityHashMap<Formula,Set<Variable>>();
 		final FreeVariableCollector collector = new FreeVariableCollector(annotated.sharedNodes()) {
@@ -118,6 +120,10 @@ final class FileLogger extends TranslationLogger {
 				}
 				return super.cache(node, freeVars);
 			}
+			public Set<Variable> visit(ConstantFormula constant) {
+				return cache(constant, Collections.EMPTY_SET);
+			}
+
 		};
 		annotated.node().accept(collector);
 		return freeVarMap;
