@@ -9,4 +9,4 @@ kodkod.engine.ucore
 kodkod.instance
 kodkod.util.collections
 kodkod.util.ints
-nativesolver
+kodkod.util.nodes

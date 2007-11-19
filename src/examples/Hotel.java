@@ -22,6 +22,8 @@
 package examples;
 
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -566,6 +568,36 @@ public final class Hotel {
 		System.exit(1);
 	}
 
+	private static void checkMinimal(Set<Formula> core, Bounds bounds) {
+		System.out.print("checking minimality ... ");
+		final long start = System.currentTimeMillis();
+		final Set<Formula> minCore = new LinkedHashSet<Formula>(core);
+		Solver solver = new Solver(); 
+		solver.options().setSolver(SATFactory.MiniSat);
+		for(Iterator<Formula> itr = minCore.iterator(); itr.hasNext();) {
+			Formula f = itr.next();
+			Formula noF = Formula.TRUE;
+			for( Formula f1 : minCore ) {
+				if (f!=f1)
+					noF = noF.and(f1);
+			}
+			if (solver.solve(noF, bounds).instance()==null) {
+				itr.remove();
+			} 
+		}
+		final long end = System.currentTimeMillis();
+		if (minCore.size()==core.size()) {
+			System.out.println("minimal (" + (end-start) + " ms).");
+		} else {
+			System.out.println("not minimal (" + (end-start) + " ms). The minimal core has these " + minCore.size() + " formulas:");
+			for(Formula f : minCore) {
+				System.out.println(" " + f);
+			}
+//			Solution sol = problem.solver.solve(Nodes.and(minCore), problem.bounds);
+//			System.out.println(sol);
+//			sol.proof().highLevelCore();
+		}
+	}
 	
 	/**
 	 * Usage: java examples.Hotel [scope]
@@ -584,8 +616,7 @@ public final class Hotel {
 			solver.options().setLogTranslation(1);
 			
 			final Formula f = model.checkNoBadEntry();
-			//6 but 2 Room, 2 Guest, 5 Event
-			final Bounds b = model.bounds(6,5,2,6,6,2);
+			final Bounds b = model.bounds(n);
 	
 //			System.out.println(PrettyPrinter.print(f, 2, 100));
 			
@@ -606,6 +637,9 @@ public final class Hotel {
 				for(Formula u : core) { 
 					System.out.println(PrettyPrinter.print(u, 2, 100));
 				}
+				checkMinimal(core, b);
+			} else {
+				System.out.println(sol);
 			}
 		} catch (NumberFormatException nfe) {
 			usage();
