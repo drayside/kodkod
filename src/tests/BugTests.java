@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Set;
 
 import junit.framework.TestCase;
+import kodkod.ast.Decl;
 import kodkod.ast.Decls;
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
@@ -22,6 +23,7 @@ import kodkod.engine.Evaluator;
 import kodkod.engine.Proof;
 import kodkod.engine.Solution;
 import kodkod.engine.Solver;
+import kodkod.engine.config.AbstractReporter;
 import kodkod.engine.config.Options;
 import kodkod.engine.fol2sat.HigherOrderDeclException;
 import kodkod.engine.fol2sat.UnboundLeafException;
@@ -80,6 +82,47 @@ public class BugTests extends TestCase {
 //		}
 //	}
 	
+	public final void testFelix_11262007() {
+		Relation x6 = Relation.unary("R2");
+
+		List<String> atomlist = Arrays.asList("X", "Y", "Z");
+		Universe universe = new Universe(atomlist);
+		TupleFactory factory = universe.factory();
+		Bounds bounds = new Bounds(universe);
+
+		bounds.bound(x6, factory.allOf(1));
+
+		final Variable x32=Variable.unary("a");
+		final Decls x31=x32.oneOf(x6);
+
+		final Variable x36=Variable.unary("b");
+		final Decls x35=x36.oneOf(x32.join(x6.product(x6)));
+
+		final Formula x29=x36.some().forSome(x35).forSome(x31);
+
+		Solver solver = new Solver();
+
+		solver.options().setSolver(SATFactory.DefaultSAT4J);
+		solver.options().setBitwidth(4);
+		solver.options().setIntEncoding(Options.IntEncoding.BINARY);
+		solver.options().setSymmetryBreaking(20);
+		solver.options().setSkolemDepth(0);
+		final Set<Decl> decls = new LinkedHashSet<Decl>();
+		solver.options().setReporter(new AbstractReporter() {
+		    @Override public void skolemizing(Decl decl, Relation skolem, List<Decl> predecl) {
+		       decls.add(decl);
+		    }
+		});
+		
+		
+		Solution sol = solver.solve(x29,bounds);
+		assertEquals(2, decls.size());
+		assertTrue(decls.contains(x31));
+		assertTrue(decls.contains(x35));
+		assertNotNull(sol.instance());
+
+	}
+	
 	public final void testFelix_11192007() {
 		List<String> atomlist = Arrays.asList("A", "B", "C");
 
@@ -100,8 +143,7 @@ public class BugTests extends TestCase {
 		solver.options().setSkolemDepth(0);
 
 		Solution sol = solver.solve(Formula.TRUE, bounds);
-
-		System.out.println(sol.toString());
+		assertNotNull(sol.instance());
 	}
 	
 	private static boolean isMinimal(Solver solver, Bounds bounds, Set<Formula> core) {

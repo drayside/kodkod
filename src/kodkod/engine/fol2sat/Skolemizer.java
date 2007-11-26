@@ -314,20 +314,20 @@ abstract class Skolemizer extends AbstractReplacer {
 		return FOL2BoolTranslator.approximate(new AnnotatedNode<Expression>(expr), interpreter, env);
 	}
 	/**
-	 * Creates a skolem relation for decl.variable, bounds it in 
+	 * Creates a skolem relation for newDecl.variable, bounds it in 
 	 * this.bounds, and returns the expression 
-	 * that should replace decl.variable in the final formula.
-	 * @requires decl has been visited by this 
-	 * @effects bounds the skolem relation for decl in this.interpreter.boundingObject
-	 * @return the expression that should replace decl.variable in 
+	 * that should replace newDecl.variable in the final formula.
+	 * @requires newDecl = this.visit(oldDecl)
+	 * @effects bounds the skolem relation for newDecl in this.interpreter.boundingObject
+	 * @return the expression that should replace newDecl.variable in 
 	 * the final formula
 	 */
-	private Expression skolemExpr(Decl decl) {
+	private Expression skolemExpr(Decl oldDecl, Decl newDecl) {
 		final int depth = nonSkolems.size();
-		final int arity = depth + decl.variable().arity();
+		final int arity = depth + newDecl.variable().arity();
 
-		final Relation skolem = Relation.nary("$"+decl.variable().name(), arity);
-		reporter.skolemizing(decl, skolem, nonSkolemsView);
+		final Relation skolem = Relation.nary("$"+newDecl.variable().name(), arity);
+		reporter.skolemizing(oldDecl, skolem, nonSkolemsView);
 
 		Expression skolemExpr = skolem;
 		Environment<BooleanMatrix> skolemEnv = Environment.empty();
@@ -340,7 +340,7 @@ abstract class Skolemizer extends AbstractReplacer {
 			skolemExpr = info.decl.variable().join(skolemExpr);
 		}
 
-		BooleanMatrix matrixBound = upperBound(decl.expression(), skolemEnv);
+		BooleanMatrix matrixBound = upperBound(newDecl.expression(), skolemEnv);
 		for(int i = depth-1; i >= 0; i--) {
 			matrixBound = nonSkolems.get(i).upperBound.cross(matrixBound);
 		}
@@ -383,7 +383,7 @@ abstract class Skolemizer extends AbstractReplacer {
 			Formula declConstraints = Formula.TRUE;
 			for(Decl decl : decls) {
 				Decl newDecl = visit(decl);
-				Expression skolemExpr = skolemExpr(newDecl);
+				Expression skolemExpr = skolemExpr(decl, newDecl);
 				repEnv = repEnv.extend(decl.variable(), skolemExpr);
 				declConstraints = source(addConstraints(declConstraints, newDecl, skolemExpr), decls);
 			}
