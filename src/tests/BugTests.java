@@ -660,7 +660,7 @@ public class BugTests extends TestCase {
 
 		Solver solver = new Solver();
 
-		solver.options().setLogTranslation(0);
+		solver.options().setLogTranslation(1);
 		solver.options().setSolver(SATFactory.DefaultSAT4J);
 		solver.options().setBitwidth(4);
 		solver.options().setIntEncoding(Options.IntEncoding.BINARY);

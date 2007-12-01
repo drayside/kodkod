@@ -128,7 +128,7 @@ public class ExamplesTest extends TestCase {
 	 */
 	public void testToughnut() {
 		final Toughnut model = new Toughnut();
-		final Solution sol = solve(model.covering(), model.board(8));
+		final Solution sol = solve(model.checkBelowTooDoublePrime(), model.bounds(8));
 //		TRIVIALLY_UNSATISFIABLE
 //		p cnf 0 0
 //		primary variables: 0

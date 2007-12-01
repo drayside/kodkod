@@ -69,7 +69,7 @@ public final class Toughnut {
 	 * since they can be expressed as bounds constraints.
 	 * @return the covering predicate
 	 */
-	public Formula covering() {
+	public Formula checkBelowTooDoublePrime() {
 		final Variable x = Variable.unary("x");
 		final Variable y = Variable.unary("y");
 		final Decls d = x.oneOf(Cell).and(y.oneOf(Cell));
@@ -88,7 +88,7 @@ public final class Toughnut {
 	 * Returns bounds for an nxn board.
 	 * @return bounds for an nxn board.
 	 */
-	public Bounds board(int n) {
+	public Bounds bounds(int n) {
 		assert n > 0;
 		final List<String> atoms = new ArrayList<String>(n);
 		for(int i = 0; i < n; i++) {
@@ -124,8 +124,8 @@ public final class Toughnut {
 			final Toughnut nut = new Toughnut();
 			final Solver solver = new Solver();
 			solver.options().setSolver(SATFactory.ZChaff);
-			final Formula covering = nut.covering();
-			final Bounds bounds = nut.board(n);
+			final Formula covering = nut.checkBelowTooDoublePrime();
+			final Bounds bounds = nut.bounds(n);
 			
 			//System.out.println(covering);
 			//System.out.println(bounds);

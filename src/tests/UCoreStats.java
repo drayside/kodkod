@@ -24,6 +24,7 @@ package tests;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -48,15 +49,58 @@ import kodkod.util.nodes.PrettyPrinter;
  * 
  * @author Emina Torlak
  */
-public final class UCoreUnitTest {
+public final class UCoreStats {
 
 	/**
-	 * Usage: java tests.UCoreUnitTest <class> <scope> [-m method] [-s strategy] [-o (user | stats) ]
+	 * Checks that the given proof of unsatisfiablity for the given problem is miminal.
+	 * This method assumes that the given proof is correct.
 	 */
-	private static void usage() {  
-		System.out.println("Usage: java test.UCoreUnitTest <class> <scope> [-m method] [-s strategy] [-o (user | stats) ]");
-		System.exit(2);
+	static void checkMinimal(Set<Formula> core, Bounds bounds) {
+		System.out.print("checking minimality ... ");
+		final long start = System.currentTimeMillis();
+		final Set<Formula> minCore = new LinkedHashSet<Formula>(core);
+		Solver solver = new Solver(); 
+		solver.options().setSolver(SATFactory.MiniSat);
+		for(Iterator<Formula> itr = minCore.iterator(); itr.hasNext();) {
+			Formula f = itr.next();
+			Formula noF = Formula.TRUE;
+			for( Formula f1 : minCore ) {
+				if (f!=f1)
+					noF = noF.and(f1);
+			}
+			if (solver.solve(noF, bounds).instance()==null) {
+				itr.remove();
+			} 
+		}
+		final long end = System.currentTimeMillis();
+		if (minCore.size()==core.size()) {
+			System.out.println("minimal (" + (end-start) + " ms).");
+		} else {
+			System.out.println("not minimal (" + (end-start) + " ms). The minimal core has these " + minCore.size() + " formulas:");
+			for(Formula f : minCore) {
+				System.out.println(" " + f);
+			}
+		}
 	}
+	
+	/**
+	 * Checks that the given core is unsatsfiable with respect to the given bounds.
+	 */
+	static void checkCorrect(Set<Formula> core, Bounds bounds) { 
+		System.out.print("checking correctness ... ");
+		final long start = System.currentTimeMillis();
+		Solver solver = new Solver(); 
+		solver.options().setSolver(SATFactory.MiniSat);
+		final Solution sol = solver.solve(Nodes.and(core), bounds);
+		final long end = System.currentTimeMillis();
+		if (sol.instance()==null) {
+			System.out.println("correct (" + (end-start) + " ms).");
+		} else {
+			System.out.println("incorrect! (" + (end-start) + " ms). The core is satisfiable:");
+			System.out.println(sol);
+		}
+	}
+	
 	
 	/**
 	 * @return class with the given name
@@ -70,10 +114,59 @@ public final class UCoreUnitTest {
 	}
 	
 	/**
+	 * Returns the formulas returned by the given methods, when invoked on 
+	 * the specified instance.
+	 * @return formulas corresponding to given methods.
+	 */
+	static Map<Method,Formula> checks(Object instance, Collection<Method> checks) { 
+		final Map<Method, Formula> ret = new LinkedHashMap<Method, Formula>();
+		for(Method check : checks) { 
+			try {
+				ret.put(check, (Formula)check.invoke(instance));
+			} catch (IllegalArgumentException e) {
+			} catch (IllegalAccessException e) {
+			} catch (InvocationTargetException e) {
+			}
+		}
+		return ret;
+	}
+	
+	/**
+	 * @return all public member methods declared by the given class that take no arguments,
+	 * return a Formula, and whose name starts with the word "check".
+	 */
+	static Collection<Method> methods(Class<?> c) {
+		final List<Method> methods = new ArrayList<Method>();
+		for(Method m : c.getMethods()) { 
+			if (m.getDeclaringClass().equals(c) && m.getName().startsWith("check") && noArgs(m) && returnsFormula(m)) {
+				methods.add(m);
+			}
+		}
+		return methods;
+	}
+	
+	/**@return a public member method with the given name and no arguments that returns a formula. */
+	static Collection<Method> method(Class<?> c, String name) { 
+		try {
+			Method m = c.getMethod(name, new Class[0]);
+			if (returnsFormula(m))
+				return Collections.singletonList(m);
+			else {
+				throw new IllegalArgumentException("Wrong signature for method " + name + ".");
+			}
+		} catch (SecurityException e) {
+			throw new IllegalArgumentException("Cannot access method " + name + ".");
+		} catch (NoSuchMethodException e) {
+			throw new IllegalArgumentException("Method " + name + " does not exist.");
+		}
+		
+	}
+	
+	/**
 	 * @return strategy with the given name
 	 */
 	@SuppressWarnings("unchecked")
-	private static Class<ReductionStrategy> strategy(String className) { 
+	private static Class<? extends ReductionStrategy> strategy(String className) { 
 		try {
 			final Class<?> c = Class.forName(className);
 			if (ReductionStrategy.class.isAssignableFrom(c)) 
@@ -108,39 +201,13 @@ public final class UCoreUnitTest {
 	/** @return true if m returns a formula **/
 	private static boolean returnsFormula(Method m) { return Formula.class.isAssignableFrom(m.getReturnType()); }
 	
-	/**
-	 * @return all public member methods declared by the given class that take no arguments,
-	 * return a Formula, and whose name starts with the word "check".
-	 */
-	static List<Method> methods(Class<?> c) {
-		final List<Method> methods = new ArrayList<Method>();
-		for(Method m : c.getMethods()) { 
-			if (m.getDeclaringClass().equals(c) && m.getName().startsWith("check") && noArgs(m) && returnsFormula(m)) {
-				methods.add(m);
-			}
-		}
-		return methods;
-	}
 	
-	/**@return a public member method with the given name and no arguments that returns a formula. */
-	static List<Method> method(Class<?> c, String name) { 
-		try {
-			Method m = c.getMethod(name, new Class[0]);
-			if (returnsFormula(m))
-				return Collections.singletonList(m);
-			else {
-				throw new IllegalArgumentException("Wrong signature for method " + name + ".");
-			}
-		} catch (SecurityException e) {
-			throw new IllegalArgumentException("Cannot access method " + name + ".");
-		} catch (NoSuchMethodException e) {
-			throw new IllegalArgumentException("Method " + name + " does not exist.");
-		}
-		
-	}
 	
-	/** @return a fresh instance of the given problem */
-	private static Object instance(Class<?> problem) { 
+	/** 
+	 * Returns a fresh instance of the given problem.
+	 * @requires problem has a no-argument constructor
+	 * @return a fresh instance of the given problem */
+	static Object instance(Class<?> problem) { 
 		try {
 			return problem.newInstance();
 		} catch (InstantiationException e) {
@@ -150,11 +217,33 @@ public final class UCoreUnitTest {
 		}
 	}
 	
-	/** @return instance.bounds(scope) */
-	private static Bounds bounds(Object instance, int scope) { 
+	/** 
+	 * Returns the bounds for the given instance.
+	 * @requires instance must have a method called bounds that takes an integer argument and returns a Bounds object
+	 * @return instance.bounds(scope) */
+	static Bounds bounds(Object instance, int scope) { 
 		try {
 			final Method bounder = instance.getClass().getMethod("bounds", new Class[]{int.class});
 			return (Bounds) bounder.invoke(instance, scope);
+		} catch (SecurityException e) {
+			throw new IllegalArgumentException(instance.getClass().getName() + " has no accessible Bounds bounds(int) method.");
+		} catch (NoSuchMethodException e) {
+			throw new IllegalArgumentException(instance.getClass().getName() + " has no Bounds bounds(int) method.");
+		} catch (IllegalAccessException e) {
+			throw new IllegalArgumentException("Could not invoke Bounds bounds(int) method of " + instance.getClass().getName() + ".");
+		} catch (InvocationTargetException e) {
+			throw new IllegalArgumentException("Could not invoke Bounds bounds(int) method of " + instance.getClass().getName() + ".");
+		}
+	}
+	
+	/** 
+	 * Returns the bounds for the given instance.
+	 * @requires instance must have a method called bounds that takes no arguments and returns a Bounds object
+	 * @return instance.bounds() */
+	static Bounds bounds(Object instance) { 
+		try {
+			final Method bounder = instance.getClass().getMethod("bounds", new Class[]{});
+			return (Bounds) bounder.invoke(instance);
 		} catch (SecurityException e) {
 			throw new IllegalArgumentException(instance.getClass().getName() + " has no accessible Bounds bounds(int) method.");
 		} catch (NoSuchMethodException e) {
@@ -185,23 +274,11 @@ public final class UCoreUnitTest {
 	}
 	
 	/**
-	 * @return formulas corresponding to given methods.
+	 * Returns an instance of the given reduction strategy.
+	 * @requires strategy has a constructor that takes a translation log
+	 * @return an instance of the given reduction strategy.
 	 */
-	private static Map<Method,Formula> checks(Object instance, List<Method> checks) { 
-		final Map<Method, Formula> ret = new LinkedHashMap<Method, Formula>();
-		for(Method check : checks) { 
-			try {
-				ret.put(check, (Formula)check.invoke(instance));
-			} catch (IllegalArgumentException e) {
-			} catch (IllegalAccessException e) {
-			} catch (InvocationTargetException e) {
-			}
-		}
-		return ret;
-	}
-
-	
-	private static ReductionStrategy instance(Class<ReductionStrategy> strategy, TranslationLog log) { 
+	static ReductionStrategy instance(Class<? extends ReductionStrategy> strategy, TranslationLog log) { 
 		try {
 			return strategy.getConstructor(TranslationLog.class).newInstance(log);
 		} catch (IllegalArgumentException e) {
@@ -218,33 +295,7 @@ public final class UCoreUnitTest {
 			throw new IllegalArgumentException(strategy.getName() + " has no accessible one-argument constructor.");
 		}
 	}
-	
-	/**
-	 * Returns the minimal core produced by the simple extraction algorithm.
-	 */
-	private static Set<Formula> sce(Solution sol, Bounds bounds, Solver solver) { 
-		final Set<Formula> initialCore = sol.proof().highLevelCore();
-		final Set<Formula> minCore = new LinkedHashSet<Formula>(initialCore);
-		final Set<Formula> unknown = new LinkedHashSet<Formula>(initialCore);
 		
-		while(!unknown.isEmpty()) {
-			
-			Formula f = unknown.iterator().next();		
-			Set<Formula> tryCore = new LinkedHashSet<Formula>(minCore);
-			tryCore.remove(f);
-			
-			Solution subSol = solver.solve(Nodes.and(tryCore), bounds);
-			
-			if (subSol.instance()==null) { // unsat: f is irrelevant
-				minCore.retainAll(subSol.proof().highLevelCore());
-				unknown.retainAll(minCore);
-			} else {// sat:  f is relevant
-				unknown.remove(f);
-			}
-		}
-		return minCore;
-	}
-	
 	/**
 	 * Returns the minimal core produced by the simple extraction algorithm.
 	 */
@@ -268,40 +319,18 @@ public final class UCoreUnitTest {
 		return minCore;
 	}
 	
-	/**
-	 * Checks that the given proof of unsatisfiablity for the given problem is miminal.
-	 * This method assumes that the given proof is correct.
-	 */
-	static void checkMinimal(Set<Formula> core, Bounds bounds) {
-		System.out.print("checking minimality ... ");
-		final long start = System.currentTimeMillis();
-		final Set<Formula> minCore = new LinkedHashSet<Formula>(core);
-		Solver solver = new Solver(); 
-		solver.options().setSolver(SATFactory.MiniSat);
-		for(Iterator<Formula> itr = minCore.iterator(); itr.hasNext();) {
-			Formula f = itr.next();
-			Formula noF = Formula.TRUE;
-			for( Formula f1 : minCore ) {
-				if (f!=f1)
-					noF = noF.and(f1);
-			}
-			if (solver.solve(noF, bounds).instance()==null) {
-				itr.remove();
-			} 
-		}
-		final long end = System.currentTimeMillis();
-		if (minCore.size()==core.size()) {
-			System.out.println("minimal (" + (end-start) + " ms).");
-		} else {
-			System.out.println("not minimal (" + (end-start) + " ms). The minimal core has these " + minCore.size() + " formulas:");
-			for(Formula f : minCore) {
-				System.out.println(" " + f);
-			}
-		}
-	}
+
 	
 	/**
 	 * Usage: java tests.UCoreUnitTest <class> <scope> [-m method] [-s strategy] [-o (user | stats) ]
+	 */
+	private static void usage() {  
+		System.out.println("Usage: java test.UCoreStats <class> <scope> [-m method] [-s strategy] [-o (user | stats) ]");
+		System.exit(2);
+	}
+	
+	/**
+	 * Usage: java tests.UCoreStats <class> <scope> [-m method] [-s strategy] [-o (user | stats) ]
 	 */
 	public static void main(String[] args) { 
 		if (args.length < 2)
@@ -319,12 +348,14 @@ public final class UCoreUnitTest {
 			if (checks.isEmpty()) { usage(); }
 			
 			final String extractor;
-			final Class<ReductionStrategy> strategy;
+			final Class<? extends ReductionStrategy> strategy;
 			if (optional.containsKey("-s")) {
 				extractor = optional.get("-s");
 				if (extractor.equals("rce")) { 
 					strategy = strategy("kodkod.engine.ucore.RCEStrategy");
-				} else if (!extractor.equals("sce") && !extractor.equals("nce") && !extractor.equals("oce")) { 
+				} else if (extractor.equals("sce")) {
+					strategy = strategy("kodkod.engine.ucore.SCEStrategy");
+				} else if (!extractor.equals("nce") && !extractor.equals("oce")) { 
 					strategy = strategy(optional.get("-s"));
 				} else {
 					strategy = null;
@@ -351,10 +382,8 @@ public final class UCoreUnitTest {
 					
 					final long start = System.currentTimeMillis();
 					
-					if (strategy==null) { // use naive
-						if (extractor.equals("sce")) { 
-							minCore = sce(sol, bounds, solver);
-						} else if (extractor.equals("nce")) {
+					if (strategy==null) { // no strategy -- naive or one-step
+						if (extractor.equals("nce")) {
 							minCore = nce(check.getValue(), bounds);
 						} else { // oce
 							minCore = initialCore;
@@ -368,10 +397,9 @@ public final class UCoreUnitTest {
 					
 					out.printUnsat(check.getKey().getName(), check.getValue(), bounds, sol.stats(), 
 							initialCore, minCore, end-start);
-					
-//					checkMinimal(minCore, bounds);
 				
 				} else if (sol.outcome()==Solution.Outcome.TRIVIALLY_UNSATISFIABLE) {	
+					
 					out.printFalse(check.getKey().getName(), check.getValue(), bounds, sol);
 				
 				} else {

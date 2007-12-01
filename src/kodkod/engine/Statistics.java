@@ -21,6 +21,8 @@
  */
 package kodkod.engine;
 
+import kodkod.engine.fol2sat.Translation;
+
 /**
  * Stores the statistics gathered while solving
  * a given formula.
@@ -35,8 +37,7 @@ public final class Statistics {
 	private final long translation, solving; 
 	
 	/**
-	 * Constructs a new Statistics object out of the provided
-	 * values.
+	 * Constructs a new Statistics object using the provided values.
 	 */
 	Statistics(int variables, int primaryVariables, int clauses, 
 			   long translationTime, long solvingTime) {
@@ -45,6 +46,14 @@ public final class Statistics {
 		this.clauses = clauses;
 		this.translation = translationTime;
 		this.solving = solvingTime;
+	}
+	
+	/**
+	 * Constructs a new Statistics object using the provided values.
+	 */
+	Statistics(Translation translation, long translationTime, long solvingTime) { 
+		this(translation.cnf().numberOfVariables(), translation.numPrimaryVariables(), 
+				translation.cnf().numberOfClauses(), translationTime, solvingTime);
 	}
 	
 	/**

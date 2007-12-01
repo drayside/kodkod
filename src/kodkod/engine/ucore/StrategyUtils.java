@@ -52,8 +52,7 @@ public final class StrategyUtils {
 	
 	
 	/**
-	 * Returns the variables (i.e. highest-magnitude literals less than Integer.MAX_VALUE) 
-	 * that correspond to the roots of log.formula
+	 * Returns the variables that correspond to the roots of log.formula.  
 	 * @return
 	 * <pre> 
 	 * { v: int | some r: log.records | 
@@ -61,16 +60,13 @@ public final class StrategyUtils {
 	 *   r.env.isEmpty() and
 	 *   abs(r.literal) != Integer.MAX_VALUE and
 	 *   v = abs(r.literal) and
-	 *   no r': log.records | r'.node = r.node && abs(r'.literal) > v }
+	 *   no r': log.records | r'.node = r.node && log.replay.r' > log.replay.r }
 	 * </pre>
 	 */
 	public static IntSet rootVars(TranslationLog log) {
 		final IntSet rootVars = new IntTreeSet();
 		final Set<Formula> roots = log.roots();
 		final Map<Formula,int[]> maxRootVar = new IdentityHashMap<Formula,int[]>(roots.size());
-		for(Formula top : roots) {
-			maxRootVar.put(top, new int[1]);
-		}
 		final RecordFilter filter = new RecordFilter() {
 			public boolean accept(Node node, int literal, Map<Variable, TupleSet> env) {
 				return roots.contains(node) && env.isEmpty();
@@ -79,14 +75,16 @@ public final class StrategyUtils {
 		for(Iterator<TranslationRecord> itr = log.replay(filter); itr.hasNext();) {
 			TranslationRecord record = itr.next();
 			int[] var = maxRootVar.get(record.node());
-			int recordVar = StrictMath.abs(record.literal());
-			if (recordVar < Integer.MAX_VALUE) {
-				var[0] = StrictMath.max(var[0], recordVar);
+			if (var==null) {
+				var = new int[1];
+				maxRootVar.put((Formula)record.node(), var);
 			} 
+			var[0] = StrictMath.abs(record.literal());
 		}
+		
 		for(int[] var : maxRootVar.values()) {
 			int topVar = var[0];
-			if (topVar != 0) // topVar could be 0 if a top-level formula simplified to TRUE
+			if (topVar != Integer.MAX_VALUE) // formula simplified to TRUE
 				rootVars.add(var[0]);
 		}
 		return rootVars;

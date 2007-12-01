@@ -131,6 +131,14 @@ public final class Viktor {
 	}
 	
 	/**
+	 * Returns decls() && equations().
+	 * @return decls() && equations()
+	 */
+	public final Formula checkEquations() { 
+		return decls().and(equations());
+	}
+	
+	/**
 	 * Returns the bounds for the problem.
 	 * @return bounds
 	 */
@@ -212,7 +220,7 @@ public final class Viktor {
 			solver.options().setReporter(new ConsoleReporter());
 			solver.options().setFlatten(false);
 			solver.options().setBitwidth(7);
-			final Formula f = model.decls().and(model.equations());
+			final Formula f = model.checkEquations();
 			final Bounds b = model.bounds();
 			System.out.println(f);
 			System.out.println(b);

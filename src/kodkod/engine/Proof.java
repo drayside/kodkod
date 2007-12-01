@@ -51,13 +51,19 @@ public abstract class Proof {
 	
 	/**
 	 * Minimizes the proof of this.formula's unsatisfiability
-	 * using the specified proof reduction strategy.  Calling this method
-	 * on a proof of unsatisfiability for a trivially unsatisfiable formula
-	 * results in an  UnsupportedOperationException}.
+	 * using the specified proof reduction strategy.  The strategy
+	 * argument is ignored (it can be null) if this.formula is 
+	 * trivially unsatisfiable with respect to this.bounds.  In that
+	 * case, the core is reduced using the trivial strategy
+	 * that does one of the following: (1) if there is a 
+	 * root that simplified to FALSE, sets the minimal core
+	 * to that root; or (2) if not, then there must be two
+	 * roots that translated to x and -x, where x is a boolean 
+	 * literal, so we pick those two as the minimal core. 
 	 * @effects minimizes the proof of this.formula's unsatisfiability
-	 * using the specified proof reduction strategy. 
-	 * @throws UnsupportedOperationException - this is a proof for a trivially
-	 * unsatisfiable formula and cannot be minimized
+	 * using the specified proof reduction strategy (or the trivial 
+	 * strategy if this.formula is trivially unsatisfiable with respect
+	 * to this.bounds). 
 	 * @see kodkod.engine.satlab.ReductionStrategy
 	 */
 	public abstract void minimize(ReductionStrategy strategy);

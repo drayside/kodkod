@@ -34,7 +34,7 @@ import java.util.Set;
  * selected unsatisfiable problems in examples.*
  * @author Emina Torlak
  */
-public final class UCoreTestDriver {
+public final class UCoreStatsDriver {
 	
 	
 	private static final String[] UNSAT = { 
@@ -75,7 +75,7 @@ public final class UCoreTestDriver {
 		System.out.println(scope+"\t"+status);
 	}
 	
-	/** Usage: java tests.UCoreTestDriver <start scope> <end scope> [strategy]*/
+	/** Usage: java tests.UCoreStatsDriver <start scope> <end scope> [strategy]*/
 	public static void main(String[] args) { 
 		if (args.length<2) usage();
 		
@@ -109,7 +109,7 @@ public final class UCoreTestDriver {
 		
 		for(int scope = min; scope <= max; scope++) {
 			for(String problem : UNSAT) { 
-				for(Method m : UCoreUnitTest.methods(UCoreUnitTest.problem(problem))) {
+				for(Method m : UCoreStats.methods(UCoreStats.problem(problem))) {
 					if (timedOut.contains(m)) { 
 						skip(problem,m,scope,"G");
 						continue;

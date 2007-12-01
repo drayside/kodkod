@@ -35,7 +35,7 @@ public class ReductionAndProofTest extends TestCase {
 	public ReductionAndProofTest(String arg0) {
 		super(arg0);
 		this.solver = new Solver();
-		solver.options().setLogTranslation(1);
+		solver.options().setLogTranslation(2);
 		List<String> atoms = new ArrayList<String>(USIZE);
 		for (int i = 0; i < USIZE; i++) {
 			atoms.add(""+i);
@@ -72,6 +72,7 @@ public class ReductionAndProofTest extends TestCase {
 			//return solver.solve(formula, bounds).reduction();
 		final Solution sol = solver.solve(formula, bounds);
 		assertEquals(Solution.Outcome.TRIVIALLY_UNSATISFIABLE, sol.outcome());
+		sol.proof().minimize(null);
 		return sol.proof().highLevelCore();
 		
 	}
@@ -101,8 +102,10 @@ public class ReductionAndProofTest extends TestCase {
 		assertEquals(1, reduction.size());
 		assertTrue(reduction.contains(f5));
 				
-		bounds.boundExactly(rba, bounds.upperBound(rba));
-		f6 = rba.function(ra, rb); // F
+		bounds.boundExactly(rab, bounds.upperBound(rab));
+		bounds.boundExactly(ra, bounds.upperBound(ra));
+		bounds.boundExactly(rb, bounds.upperBound(rb));
+		f6 = rab.function(ra, rb); // F
 		
 		reduction = reduce(f1.and(f2).and(f6));
 		assertEquals(1, reduction.size());

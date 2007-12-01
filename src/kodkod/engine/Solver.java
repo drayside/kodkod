@@ -86,120 +86,7 @@ public final class Solver {
 		return options;
 	}
 
-	/**
-	 * "Pads" the argument instance with the mappings that occur in bounds.lowerBound
-	 * but not in the instance. 
-	 * @requires instance.relations in bounds.relations
-	 * @effects instance.relations' = bounds.relations' &&
-	 *          instance.tuples' = bounds.lowerBound ++ instance.tuples
-	 * @return instance
-	 */
-	private static Instance padInstance(Instance instance, Bounds bounds) {
-		for (Relation r : bounds.relations()) {
-			if (!instance.contains(r)) {
-				instance.add(r, bounds.lowerBound(r));
-			}
-		}
-		for (IntIterator iter = bounds.ints().iterator(); iter.hasNext();) {
-			int i = iter.next();
-			instance.add(i, bounds.exactBound(i));
-		}
-		return instance;
-	}
-
-	/**
-	 * Creates an instance from the given Bounds.  The instance
-	 * is simply the mapping bounds.lowerBound.
-	 * @return the instance corresponding to bounds.lowerBound
-	 */
-	private static Instance toInstance(Bounds bounds) {
-		final Instance instance = new Instance(bounds.universe());
-		for (Relation r : bounds.relations()) {
-			instance.add(r, bounds.lowerBound(r));
-		}
-		for (IntIterator iter = bounds.ints().iterator(); iter.hasNext();) {
-			int i = iter.next();
-			instance.add(i, bounds.exactBound(i));
-		}
-		return instance;
-	}
-
-	/**
-	 * Returns the result of solving a trivially (un)sat formula.
-	 * @param bounds Bounds with which solve()  was called
-	 * @param desc TrivialFormulaException thrown as the result of the formula simplifying to a constant
-	 * @param translTime translation time
-	 * @return the result of solving a trivially (un)sat formula.
-	 */
-	private static Solution trivial(Bounds bounds, TrivialFormulaException desc, long translTime) {
-		final Statistics stats = new Statistics(0, 0, 0, translTime, 0);
-		if (desc.value().booleanValue()) {
-			return Solution.triviallySatisfiable(stats, padInstance(toInstance(desc.bounds()), bounds));
-		} else {
-			return Solution.triviallyUnsatisfiable(stats, trivialProof(desc.log()));
-		}
-	}
-
-	/**
-	 * Returns the statistics corresponding to the given translation, translation time, and solving time.
-	 * @return the statistics corresponding to the given translation, translation time, and solving time.
-	 */
-	private static Statistics stats(Translation translation, long translTime, long solveTime) {
-		return new Statistics(translation.cnf().numberOfVariables(), translation.numPrimaryVariables(), 
-				translation.cnf().numberOfClauses(), translTime, solveTime);
-	}
 	
-	/**
-	 * Returns the result of solving a sat formula.
-	 * @param originalBounds Bounds with which  solve() was called
-	 * @param translation the translation
-	 * @param stats translation / solving stats
-	 * @return the result of solving a sat formula.
-	 */
-	private static Solution sat(Bounds originalBounds, Translation translation, Statistics stats) {
-		final Solution sol = Solution.satisfiable(stats, padInstance(translation.interpret(), originalBounds));
-		translation.cnf().free();
-		return sol;
-	}
-
-	/**
-	 * Returns a proof for the trivially unsatisfiable log.formula,
-	 * provided that log is non-null.  Otherwise returns null.
-	 * @requires log != null => log.formula is trivially unsatisfiable
-	 * @return a proof for the trivially unsatisfiable log.formula,
-	 * provided that log is non-null.  Otherwise returns null.
-	 */
-	private static Proof trivialProof(TranslationLog log) {
-		return log==null ? null : new TrivialProof(log);
-	}
-	
-	/**
-	 * Returns a resolution-based proof for the unsatisfiable log.formula,
-	 * provided that log is non-null.  Otherwise returns null.
-	 * @requires log != null => translate(log.formula) = solver.clauses and !solver.solve()
-	 * @return a proof for the unsatisfiable log.formula,
-	 * provided that log is non-null.  Otherwise returns null.
-	 */
-	private static Proof resolutionBasedProof(SATProver prover, TranslationLog log) {
-		return log==null ? null : new ResolutionBasedProof(prover, log);
-	}
-	
-	/**
-	 * Returns the result of solving an unsat formula.
-	 * @param translation the translation 
-	 * @param stats translation / solving stats
-	 * @return the result of solving an unsat formula.
-	 */
-	private static Solution unsat(Options options, Translation translation, Statistics stats) {
-		final SATSolver cnf = translation.cnf();
-		if (cnf instanceof SATProver) {
-			return Solution.unsatisfiable(stats, resolutionBasedProof((SATProver) cnf, translation.log()));
-		} else { // can free memory
-			final Solution sol = Solution.unsatisfiable(stats, null);
-			cnf.free();
-			return sol;
-		}
-	}
 	
 	/**
 	 * Attempts to satisfy the given formula with respect to the specified bounds, while
@@ -251,9 +138,9 @@ public final class Solver {
 			final boolean isSat = cnf.solve();
 			final long endSolve = System.currentTimeMillis();
 
-			final Statistics stats = stats(translation, endTransl - startTransl, endSolve - startSolve);
+			final Statistics stats = new Statistics(translation, endTransl - startTransl, endSolve - startSolve);
 			
-			return isSat ? sat(bounds, translation, stats) : unsat(options, translation, stats);
+			return isSat ? sat(bounds, translation, stats) : unsat(translation, stats);
 		} catch (TrivialFormulaException trivial) {
 			final long endTransl = System.currentTimeMillis();
 			return trivial(bounds, trivial, endTransl - startTransl);
@@ -303,8 +190,8 @@ public final class Solver {
 			final boolean isSat = cnf.solve();
 			final long endSolve = System.currentTimeMillis();
 
-			final Statistics stats = stats(translation, endTransl - startTransl, endSolve - startSolve);
-			return isSat ? sat(bounds, translation, stats) : unsat(options, translation, stats);
+			final Statistics stats = new Statistics(translation, endTransl - startTransl, endSolve - startSolve);
+			return isSat ? sat(bounds, translation, stats) : unsat(translation, stats);
 			
 		} catch (TrivialFormulaException trivial) {
 			final long endTransl = System.currentTimeMillis();
@@ -359,6 +246,102 @@ public final class Solver {
 	}
 	
 	/**
+	 * Returns the result of solving a sat formula.
+	 * @param bounds Bounds with which  solve() was called
+	 * @param translation the translation
+	 * @param stats translation / solving stats
+	 * @return the result of solving a sat formula.
+	 */
+	private static Solution sat(Bounds bounds, Translation translation, Statistics stats) {
+		final Solution sol = Solution.satisfiable(stats, padInstance(translation.interpret(), bounds));
+		translation.cnf().free();
+		return sol;
+	}
+
+	/**
+	 * Returns the result of solving an unsat formula.
+	 * @param translation the translation 
+	 * @param stats translation / solving stats
+	 * @return the result of solving an unsat formula.
+	 */
+	private static Solution unsat(Translation translation, Statistics stats) {
+		final SATSolver cnf = translation.cnf();
+		final TranslationLog log = translation.log();
+		if (cnf instanceof SATProver && log != null) {
+			return Solution.unsatisfiable(stats, new ResolutionBasedProof((SATProver) cnf, log));
+		} else { // can free memory
+			final Solution sol = Solution.unsatisfiable(stats, null);
+			cnf.free();
+			return sol;
+		}
+	}
+	
+	/**
+	 * Returns the result of solving a trivially (un)sat formula.
+	 * @param bounds Bounds with which solve()  was called
+	 * @param desc TrivialFormulaException thrown as the result of the formula simplifying to a constant
+	 * @param translTime translation time
+	 * @return the result of solving a trivially (un)sat formula.
+	 */
+	private static Solution trivial(Bounds bounds, TrivialFormulaException desc, long translTime) {
+		final Statistics stats = new Statistics(0, 0, 0, translTime, 0);
+		if (desc.value().booleanValue()) {
+			return Solution.triviallySatisfiable(stats, padInstance(toInstance(desc.bounds()), bounds));
+		} else {
+			return Solution.triviallyUnsatisfiable(stats, trivialProof(desc.log()));
+		}
+	}
+	
+	/**
+	 * Returns a proof for the trivially unsatisfiable log.formula,
+	 * provided that log is non-null.  Otherwise returns null.
+	 * @requires log != null => log.formula is trivially unsatisfiable
+	 * @return a proof for the trivially unsatisfiable log.formula,
+	 * provided that log is non-null.  Otherwise returns null.
+	 */
+	private static Proof trivialProof(TranslationLog log) {
+		return log==null ? null : new TrivialProof(log);
+	}
+	
+	/**
+	 * "Pads" the argument instance with the mappings that occur in bounds.lowerBound
+	 * but not in the instance. 
+	 * @requires instance.relations in bounds.relations
+	 * @effects instance.relations' = bounds.relations' &&
+	 *          instance.tuples' = bounds.lowerBound ++ instance.tuples
+	 * @return instance
+	 */
+	private static Instance padInstance(Instance instance, Bounds bounds) {
+		for (Relation r : bounds.relations()) {
+			if (!instance.contains(r)) {
+				instance.add(r, bounds.lowerBound(r));
+			}
+		}
+		for (IntIterator iter = bounds.ints().iterator(); iter.hasNext();) {
+			int i = iter.next();
+			instance.add(i, bounds.exactBound(i));
+		}
+		return instance;
+	}
+
+	/**
+	 * Creates an instance from the given Bounds.  The instance
+	 * is simply the mapping bounds.lowerBound.
+	 * @return the instance corresponding to bounds.lowerBound
+	 */
+	private static Instance toInstance(Bounds bounds) {
+		final Instance instance = new Instance(bounds.universe());
+		for (Relation r : bounds.relations()) {
+			instance.add(r, bounds.lowerBound(r));
+		}
+		for (IntIterator iter = bounds.ints().iterator(); iter.hasNext();) {
+			int i = iter.next();
+			instance.add(i, bounds.exactBound(i));
+		}
+		return instance;
+	}
+	
+	/**
 	 * An iterator over all solutions of a model.
 	 * @author Emina Torlak
 	 */
@@ -404,7 +387,7 @@ public final class Solver {
 				final boolean isSat = cnf.solve();
 				final long endSolve = System.currentTimeMillis();
 
-				final Statistics stats = stats(translation, translTime, endSolve - startSolve);
+				final Statistics stats = new Statistics(translation, translTime, endSolve - startSolve);
 				if (isSat) {
 					// extract the current solution; can't use the sat(..) method because it frees the sat solver
 					final Solution sol = Solution.satisfiable(stats, padInstance(translation.interpret(), bounds));
@@ -418,7 +401,7 @@ public final class Solver {
 					return sol;
 				} else {
 					formula = null; bounds = null; // unsat, no more solutions, free up some space
-					return unsat(options, translation, stats);
+					return unsat(translation, stats);
 				}
 			} catch (SATAbortedException sae) {
 				throw new AbortedException(sae);

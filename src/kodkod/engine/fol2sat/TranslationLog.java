@@ -32,6 +32,7 @@ import kodkod.ast.Formula;
  * @specfield formula: Formula 
  * @specfield bounds: Bounds
  * @specfield records: set TranslationRecord
+ * @specfield replay: [0..#records) one->one records // replay order -- i.e. the order in the which records were added to the log
  * @invariant all r: records | r.node in formula.*children
  * @author Emina Torlak
  */
@@ -59,29 +60,29 @@ public abstract class TranslationLog {
 	/**
 	 * Returns an iterator over the translation records in this log that are accepted
 	 * by the given filter.  The iterator returns the records in the order in which
-	 * they were generated.  This guarantees that records for the descendents of a 
+	 * they were generated.  This guarantees that records for the descendants of a 
 	 * node are always returned before the record for the node itself.  
 	 * 
 	 * <p><b>Note:</b>The record objects returned by the iterator are not 
 	 * required to be immutable.  In particular, the state of a record object
 	 * returned by <tt>next()</tt> is guaranteed to remain the same only until the
 	 * subsequent call to <tt>next()</tt>.</p>
-	 * @return an iterator over the translation records in this log that contain the
-	 * given literals
+	 * @return an iterator, in the proper replay sequence, over the translation records 
+	 * in this log that are accepted by the given filter.
 	 */
 	public abstract Iterator<TranslationRecord> replay(RecordFilter filter);
 	
 	/**
 	 * Returns an iterator over all translation records in this log.  The iterator returns 
 	 * the records in the order in which they were generated.  This guarantees that records for 
-	 * the descendents of a  node are always returned before the record for the node itself.  
+	 * the descendants of a  node are always returned before the record for the node itself.  
 	 * The effect of this method is the same as calling {@linkplain #replay(RecordFilter) replay(RecordFilter.ALL)}.
 	 * 
 	 * <p><b>Note:</b>The record objects returned by the iterator are not 
 	 * required to be immutable.  In particular, the state of a record object
 	 * returned by <tt>next()</tt> is guaranteed to remain the same only until the
 	 * subsequent call to <tt>next()</tt>.</p>
-	 * @return an iterator over all translation records in this.log.
+	 * @return an iterator over all translation records in this.log, in the proper replay sequence.
 	 * @see #replay(RecordFilter)
 	 */
 	public final Iterator<TranslationRecord> replay() {
