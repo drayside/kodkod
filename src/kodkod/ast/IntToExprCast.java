@@ -28,20 +28,26 @@ import kodkod.ast.visitor.VoidVisitor;
  * Represents the conversion from an {@link kodkod.ast.IntExpression int expression }
  * to an {@link kodkod.ast.Expression expression}.  The meaning of the resulting 
  * expression is a singleton set containing the atom that represents the integer 
- * given by the wrapped int expression.
+ * given by the wrapped int expression, if the conversion operator is INTCAST.  
+ * Otherwise, the meaning is the set of powers of 2 that make up the given integer expression.
  * @specfield intExpr: IntExpression
+ * @specfield op: Operator
+ * @invariant children = expression
  * @invariant children = intExpr
  * @invariant arity = 1
  * @author Emina Torlak
  */
 public final class IntToExprCast extends Expression {
 	private final IntExpression intExpr;
+	private final Operator op;
 	/**
 	 * Constructs a new IntToExprCast.
+	 * @requires intExpr != null && op != null
 	 * @effects this.intexpr' = intExpr
 	 */
-	IntToExprCast(IntExpression intexpr) {
-		this.intExpr = intexpr;
+	IntToExprCast(IntExpression intExpr, Operator op) {
+		this.intExpr = intExpr;
+		this.op = op;
 	}
 
 	/**
@@ -60,7 +66,15 @@ public final class IntToExprCast extends Expression {
 	public IntExpression intExpr() {
 		return intExpr;
 	}
-		
+	
+	/**
+	 * Returns this.op
+	 * @return this.op
+	 */
+	public final Operator op() { 
+		return op;
+	}
+	
 	/**
 	 * {@inheritDoc}
 	 * @see kodkod.ast.Expression#accept(kodkod.ast.visitor.ReturnVisitor)
@@ -83,7 +97,33 @@ public final class IntToExprCast extends Expression {
 	 * @return string representation of this expression
 	 */
 	public String toString() { 
-		return "((Expression)" + intExpr + ")";
+		return op + "[" + intExpr + "]";
+	}
+	
+	/**
+	 * Represents an intexpression 'cast' operator.
+	 */
+	public static enum Operator {
+		/** The Int cast operator Int[intExpr]. */
+		INTCAST {
+			/**
+			 * {@inheritDoc}
+			 * @see java.lang.Object#toString()
+			 */
+			public String toString() { 
+				return "Int";
+			}
+		}, 
+		/** The Bitset cast operator Bits[intExpr]. */
+		BITSETCAST {
+			/**
+			 * {@inheritDoc}
+			 * @see java.lang.Object#toString()
+			 */
+			public String toString() { 
+				return "Bits";
+			}
+		};
 	}
 	
 }

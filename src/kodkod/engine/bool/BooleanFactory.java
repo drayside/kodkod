@@ -97,8 +97,8 @@ public abstract class BooleanFactory {
 	 */
 	public static BooleanFactory factory(int numVars, Options options) {
 		switch(options.intEncoding()) {
-		case UNARY  : return new UnaryFactory(numVars, options.sharing(), options.bitwidth());
-		case BINARY : return new BinaryFactory(numVars, options.sharing(), options.bitwidth()); 
+		case TWOSCOMPLEMENT : 
+			return new TwosComplementFactory(numVars, options.sharing(), options.bitwidth()); 
 		default :
 			throw new IllegalArgumentException("unknown encoding: " + options.intEncoding());
 		}
@@ -401,69 +401,13 @@ public abstract class BooleanFactory {
 		}
 	
 	}
-	
+		
 	/**
-	 * BooleanFactory that produces UnaryInts.
-	 * @invariant encoding = UNARY
+	 * BooleanFactory that produces TwosComplementInts.
+	 * @invariant encoding = TwosComplement
 	 * @author Emina Torlak
 	 */
-	private static final class UnaryFactory extends BooleanFactory {
-		
-		/**
-		 * Constructs a boolean factory with the given number of input variables.  Gates are
-		 * checked for semantic equality down to the given depth.  Integers are represented
-		 * using the given number of bits.
-		 * @requires 0 <= numVars < Integer.MAX_VALUE
-		 * @requires checkToDepth >= 0 && bitwidth > 0
-		 * @effects #this.components' = numInputVariables && this.components' in BooleanVariable 
-		 * @effects this.bitwidth' = bitwidth
-		 * @effects this.comparisonDepth' = comparisonDepth
-		 * @effects this.intEncoding' = UNARY
-		 */
-		UnaryFactory(int numVars, int comparisonDepth, int bitwidth) {
-			super(numVars, comparisonDepth, bitwidth);
-		}
-		
-		/**
-		 * Returns UNARY.
-		 * @return UNARY
-		 * @see kodkod.engine.bool.BooleanFactory#intEncoding()
-		 */
-		@Override
-		public IntEncoding intEncoding() {
-			return IntEncoding.UNARY;
-		}
-
-		/**
-		 * Returns a UnaryInt representing the given number.
-		 * @return a UnaryInt representing the given number.
-		 * @throws IllegalArgumentException - number < 0
-		 * @see kodkod.engine.bool.BooleanFactory#integer(int)
-		 */
-		@Override
-		public Int integer(int number) {
-			if (number < 0)
-				throw new IllegalArgumentException("negative numbers not supported: "  +number);
-			return new UnaryInt(this, number, BooleanConstant.TRUE);
-		}
-
-		/**
-		 * {@inheritDoc}
-		 * @see kodkod.engine.bool.BooleanFactory#integer(int, kodkod.engine.bool.BooleanValue)
-		 */
-		@Override
-		public Int integer(int number, BooleanValue bit) {
-			return new UnaryInt(this, number, bit);
-		}
-		
-	}
-	
-	/**
-	 * BooleanFactory that produces BinaryInts.
-	 * @invariant encoding = Binary
-	 * @author Emina Torlak
-	 */
-	private static final class BinaryFactory extends BooleanFactory {
+	private static final class TwosComplementFactory extends BooleanFactory {
 
 		/**
 		 * Constructs a boolean factory with the given number of input variables.  Gates are
@@ -476,17 +420,17 @@ public abstract class BooleanFactory {
 		 * @effects this.comparisonDepth' = comparisonDepth
 		 * @effects this.intEncoding' = BINARY
 		 */
-		BinaryFactory(int numVars, int comparisonDepth, int bitwidth) {
+		TwosComplementFactory(int numVars, int comparisonDepth, int bitwidth) {
 			super(numVars, comparisonDepth, bitwidth);
 		}
 		/**
-		 * Returns BINARY.
-		 * @return BINARY
+		 * Returns TWOSCOMPLEMENT.
+		 * @return TWOSCOMPLEMENT
 		 * @see kodkod.engine.bool.BooleanFactory#intEncoding()
 		 */
 		@Override
 		public IntEncoding intEncoding() {
-			return IntEncoding.BINARY;
+			return IntEncoding.TWOSCOMPLEMENT;
 		}
 		
 		/**
@@ -495,7 +439,7 @@ public abstract class BooleanFactory {
 		 */
 		@Override
 		public Int integer(int number) {
-			return new BinaryInt(this, number, BooleanConstant.TRUE);
+			return new TwosComplementInt(this, number, BooleanConstant.TRUE);
 		}
 		
 		/**
@@ -504,7 +448,7 @@ public abstract class BooleanFactory {
 		 */
 		@Override
 		public Int integer(int number, BooleanValue bit) {
-			return new BinaryInt(this, number, bit);
+			return new TwosComplementInt(this, number, bit);
 		}
 		
 	}

@@ -21,15 +21,12 @@
  */
 package kodkod.engine.bool;
 
-import static kodkod.engine.bool.BooleanConstant.FALSE;
-import static kodkod.engine.bool.BooleanConstant.TRUE;
-import static kodkod.engine.bool.Operator.AND;
-import static kodkod.engine.bool.Operator.OR;
+import java.util.List;
+
 
 /**
 * An integer represented using {@link kodkod.engine.bool.BooleanValue boolean values}
-* and {@link kodkod.engine.config.Options.IntEncoding#UNARY unary} or
-* {@link kodkod.engine.config.Options.IntEncoding#BINARY binary} encoding.
+* and a given {@link kodkod.engine.config.Options.IntEncoding integer encoding}.
 * 
 * @specfield factory: BooleanFactory
 * @specfield bits: [0..factory.bitwidth) -> one factory.components
@@ -48,6 +45,32 @@ public abstract class Int {
 	}
 	
 	/**
+	 * Throws IllegalArgumentException if other.factory != this.factory.
+	 * @throws IllegalArgumentException - other.factory != this.factory.
+	 */
+	final void validate(Int other) {
+		if (other.factory != factory)
+			throw new IllegalArgumentException("other.factory != this.factory");
+	}
+	
+	/**
+	 * Returns the BooleanValue at the specified index.
+	 * @requires 0 <= i < this.factory.bitwidth
+	 * @return this.bits[i]
+	 */
+	abstract BooleanValue bit(int i);
+	
+	/**
+	 * Returns the little endian two's complement representation of this integer that is 
+	 * this.factory.bitwidth bits wide.  Specifically, the returned list L has 
+	 * this.factory.bitwidth boolean values such that the meaning of this integer is 
+	 * 1*[[L.get(0)]] + ... + (1<<i)*[[L.get(i)]] + ... + (-1<<(L.size()-1))*[[L.get(L.size()-1)]].
+	 * @return a list containing the little endian two's complement representation of this integer.
+	 * @throws UnsupportedOperationException - this integer encoding cannot be converted to two's complement.
+	 */
+	public abstract List<BooleanValue> twosComplementBits();
+		
+	/**
 	 * Returns this.factory
 	 * @return this.factory
 	 */
@@ -59,27 +82,13 @@ public abstract class Int {
 	 * @return this.width
 	 */
 	public abstract int width(); 
-
-	/**
-	 * Returns the BooleanValue at the specified index.
-	 * @requires 0 <= i < this.factory.bitwidth
-	 * @return this.bits[i]
-	 */
-	public abstract BooleanValue bit(int i);
 	
 	/**
 	 * Returns true if all the bits representing this Int
 	 * are BooleanConstants.
 	 * @return this.bits[int] in BooleanConstant
 	 */
-	public final boolean isConstant() {
-		for(int i = width()-1; i >= 0; i--) {
-			BooleanValue b = bit(i);
-			if (b!=TRUE && b!=FALSE)
-				return false;
-		}
-		return true;
-	}
+	public abstract boolean isConstant();
 	
 	/**
 	 * If this Int is constant, returns its value.  Otherwise
@@ -99,15 +108,7 @@ public abstract class Int {
 	 * Int is equal to the integer represented by the specified Int
 	 * @throws IllegalArgumentException - this.factory != other.factory 
 	 */
-	public final BooleanValue eq(Int other) {
-		validate(other);
-		final BooleanAccumulator cmp = BooleanAccumulator.treeGate(AND);
-		for(int i = 0, width = StrictMath.max(width(), other.width()); i < width; i++) {
-			if (cmp.add(factory.iff(bit(i), other.bit(i)))==FALSE)
-				return FALSE;
-		}
-		return factory.accumulate(cmp);
-	}
+	public abstract BooleanValue eq(Int other);
 	
 	/**
 	 * Returns a BooleanValue encoding the comparator circuit
@@ -135,14 +136,7 @@ public abstract class Int {
 	 * represented by the specified Int
 	 * @throws IllegalArgumentException - this.factory != other.factory 
 	 */
-	public BooleanValue lt(Int other) {
-		final BooleanValue leq = lte(other);
-		final BooleanAccumulator acc = BooleanAccumulator.treeGate(OR);
-		for(int i = 0, width = StrictMath.max(width(), other.width()); i < width; i++) {
-			acc.add(factory.xor(bit(i), other.bit(i)));
-		}
-		return factory.and(leq, factory.accumulate(acc));
-	}
+	public abstract BooleanValue lt(Int other);
 	
 	/**
 	 * Returns a BooleanValue encoding the comparator circuit
@@ -301,12 +295,5 @@ public abstract class Int {
 	 */
 	public abstract Int sgn();
 	
-	/**
-	 * Throws IllegalArgumentException if other.factory != this.factory.
-	 * @throws IllegalArgumentException - other.factory != this.factory.
-	 */
-	final void validate(Int other) {
-		if (other.factory != factory)
-			throw new IllegalArgumentException("other.factory != this.factory");
-	}
+	
 }

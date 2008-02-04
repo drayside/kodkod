@@ -220,7 +220,7 @@ public abstract class IntExpression implements Node {
 	
 	/**
 	 * Returns an expression that combines this and the given integer expression using the
-	 * specified operatior.
+	 * specified operator.
 	 * @return {e: IntExpression | [[e]] = this op intexpr }
 	 */
 	public final IntExpression compose(BinaryIntExpression.Operator op, IntExpression intexpr) {
@@ -262,7 +262,7 @@ public abstract class IntExpression implements Node {
 	 * @return {e: IntExpression | [[e]] =  signum([[e]]) }
 	 */
 	public final IntExpression signum() {
-		return apply(UnaryIntExpression.Operator.ABS);
+		return apply(UnaryIntExpression.Operator.SGN);
 	}
 	
 	/**
@@ -278,13 +278,36 @@ public abstract class IntExpression implements Node {
 	/**
 	 * Returns an expression whose meaning is the singleton set containing the atom 
 	 * that represents the integer given by this integer expression.
+	 * The effect of this method is the same as calling this.cast(IntToExprCast.Operator.INTCAST).
 	 * @return an expression whose meaning is the singleton set containing the atom 
 	 * that represents the integer given by this integer expression.
 	 */
 	public final Expression toExpression() {
-		return new IntToExprCast(this);
+		return cast(IntToExprCast.Operator.INTCAST);
 	}
-		
+	
+	/**
+	 * Returns an expression whose meaning is the set containing the atoms 
+	 * that represent the powers of 2 (bits) present in this integer expression.
+	 * The effect of this method is the same as calling this.cast(IntToExprCast.Operator.BITSETCAST).
+	 * @return an expression whose meaning is the set containing the atoms 
+	 * that represent the powers of 2 (bits) present in this integer expression.
+	 */
+	public final Expression toBitset() { 
+		return cast(IntToExprCast.Operator.BITSETCAST);
+	}
+	
+	/**
+	 * Returns an expression that is the relational representation of this
+	 * integer expression specified by the given operator.
+	 * @return an expression that is the relational representation of this
+	 * integer expression specified by the given operator.
+	 */
+	public final Expression cast(IntToExprCast.Operator op) { 
+		if (op==null) throw new NullPointerException();
+		return new IntToExprCast(this, op);
+	}
+	
 	/**
 	 * {@inheritDoc}
 	 * @see kodkod.ast.Node#accept(kodkod.ast.visitor.ReturnVisitor)

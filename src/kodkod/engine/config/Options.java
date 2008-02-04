@@ -37,7 +37,7 @@ import kodkod.util.ints.Ints;
  * @specfield intEncoding: IntEncoding // encoding to use for translating {@link kodkod.ast.IntExpression int expressions}
  * @specfield bitwidth: int // the bitwidth to use for integer representation / arithmetic
  * @specfield skolemDepth: int // skolemization depth
- * @specfield flatten: boolean // eliminate extraneous intermediate variables?
+ * @specfield flatten: boolean // eliminate intermediate variables when possible?  default is false.
  * @specfield logTranslation: [0..2] // log translation events, default is 0 (no logging)
  * @author Emina Torlak
  */
@@ -45,11 +45,11 @@ public final class Options {
 	private Reporter reporter = new AbstractReporter(){};
 	private SATFactory solver = SATFactory.DefaultSAT4J;
 	private int symmetryBreaking = 20;
-	private IntEncoding intEncoding = IntEncoding.BINARY;
-	private int bitwidth = 5;
+	private IntEncoding intEncoding = IntEncoding.TWOSCOMPLEMENT;
+	private int bitwidth = 4;
 	private int sharing = 3;
 	private int skolemDepth = 0;
-	private boolean flatten = true;
+	private boolean flatten = false;
 	private int logTranslation = 0;
 	
 	/**
@@ -60,9 +60,9 @@ public final class Options {
 	 *          this.symmetryBreaking' = 20
 	 *          this.sharing' = 3
 	 *          this.intEncoding' = BINARY
-	 *          this.bitwidth' = 5
+	 *          this.bitwidth' = 4
 	 *          this.skolemDepth' = 0
-	 *          this.flatten' = true
+	 *          this.flatten' = false
 	 *          this.logTranslation' = 0
 	 */
 	public Options() {}
@@ -77,9 +77,9 @@ public final class Options {
 	 *          this.symmetryBreaking' = 20
 	 *          this.sharing' = 3
 	 *          this.intEncoding' = BINARY
-	 *          this.bitwidth' = 5
+	 *          this.bitwidth' = 4
 	 *          this.skolemDepth' = 0
-	 *          this.flatten' = true
+	 *          this.flatten' = false
 	 *          this.logTranslation' = 0
 	 * @throws NullPointerException - solver = null
 	 */
@@ -153,9 +153,10 @@ public final class Options {
 	 * Sets the intEncoding option to the given value.
 	 * @effects this.intEncoding' = encoding
 	 * @throws NullPointerException - encoding = null
+	 * @throws IllegalArgumentException - this.bitwidth is not a valid bitwidth for the specified encoding
 	 */
 	public void setIntEncoding(IntEncoding encoding) {
-		if (encoding==null) throw new NullPointerException();
+		if (encoding.maxAllowedBitwidth()<bitwidth) throw new IllegalArgumentException();
 		this.intEncoding = encoding;
 	}
 	
@@ -178,10 +179,7 @@ public final class Options {
 	 * @throws IllegalArgumentException - this.intEncoding==BINARY && bitwidth > 32
 	 */
 	public void setBitwidth(int bitwidth) {
-		if (intEncoding==IntEncoding.BINARY)
-			checkRange(bitwidth, 1, 32);
-		else 
-			checkRange(bitwidth, 1, Integer.MAX_VALUE);
+		checkRange(bitwidth, 1, intEncoding.maxAllowedBitwidth());
 		this.bitwidth = bitwidth;
 	}
 	
@@ -192,17 +190,12 @@ public final class Options {
 	 * using this.intEncoding and this.bitwidth. 
 	 */
 	public IntRange integers() {
-		if (intEncoding==IntEncoding.BINARY) {
-			final int shift = bitwidth-1;
-			return Ints.range(-1<<shift, (1<<shift)-1);
-		} else {
-			return Ints.range(0, bitwidth);
-		}
+		return intEncoding.range(bitwidth);
 	}
 	
 	/**
 	 * Returns the value of the flattening flag, which specifies whether
-	 * to eliminate extraneous intermediate variables.  The flag is true by default.  
+	 * to eliminate extraneous intermediate variables.  The flag is false by default.  
 	 * Flattening must be off if translation logging is enabled.  
 	 * @return this.flatten
 	 */
@@ -355,16 +348,36 @@ public final class Options {
 	 */
 	public static enum IntEncoding {
 		/**
-		 * Unary encoding of integers supports comparisons and
-		 * addition of non-negative numbers.
-		 */
-		UNARY,
-		/**
 		 * Two's-complement encoding of integers supports
 		 * comparisons, addition, subtraction, multiplication,
-		 * and division.
+		 * division, and all low-level bit operations 
+		 * (shifting, and, or, not, etc.).  Maximum allowed
+		 * bitwidth for this encoding is 32 bits.
 		 */
-		BINARY
+		TWOSCOMPLEMENT {
+			@Override
+			int maxAllowedBitwidth() { return 32; }
+			@Override
+			IntRange range(int bitwidth) { 
+				final int shift = bitwidth-1;
+				return Ints.range(-1<<shift, (1<<shift)-1);
+			}
+		};
+		
+		/**
+		 * Returns the maximum bitwidth allowed by this encoding.
+		 * @return maximum bitwidth allowed by this encoding.
+		 */
+		abstract int maxAllowedBitwidth();
+		
+		/**
+		 * Returns the range of integers representable with 
+		 * this encoding using the given number of bits.
+		 * @requires bitwidth > 0
+		 * @return range of integers representable with 
+		 * this encoding using the given number of bits.
+		 */
+		abstract IntRange range(int bitwidth) ;
 	}
 	
 }

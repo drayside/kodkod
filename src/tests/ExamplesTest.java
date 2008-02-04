@@ -22,6 +22,7 @@ public class ExamplesTest extends TestCase {
 		super(arg0);
 		this.solver = new Solver();
 		this.solver.options().setSolver(SATFactory.ZChaff);
+		this.solver.options().setFlatten(true); // enable flattening
 	}
 
 	private Solution solve(Formula formula, Bounds bounds) {

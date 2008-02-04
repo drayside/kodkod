@@ -16,8 +16,7 @@ import static kodkod.ast.IntComparisonFormula.Operator.GT;
 import static kodkod.ast.IntComparisonFormula.Operator.GTE;
 import static kodkod.ast.IntComparisonFormula.Operator.LT;
 import static kodkod.ast.IntComparisonFormula.Operator.LTE;
-import static kodkod.engine.config.Options.IntEncoding.BINARY;
-import static kodkod.engine.config.Options.IntEncoding.UNARY;
+import static kodkod.engine.config.Options.IntEncoding.TWOSCOMPLEMENT;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,6 +37,7 @@ import kodkod.engine.Solver;
 import kodkod.engine.config.Options;
 import kodkod.engine.satlab.SATFactory;
 import kodkod.instance.Bounds;
+import kodkod.instance.Instance;
 import kodkod.instance.TupleFactory;
 import kodkod.instance.TupleSet;
 import kodkod.instance.Universe;
@@ -273,105 +273,8 @@ public class IntTest extends TestCase {
 		solver.options().setBitwidth(3);
 		testComparisonOps(nonConstants());
 	}
-	
-	
-	
-	
-	
-	private final void testUnaryBinOp(BinaryIntExpression.Operator op, IntExpression ei, IntExpression ej, int i, int j, int result, int max) {
-		final IntExpression e = ei.compose(op, ej);
-		final Formula f = ei.eq(constant(i)).and(ej.eq(constant(j))).and(e.eq(constant(result)));
-		final Solution s = solve(f);
-		assertNotNull(s.instance());
-		final Evaluator eval = new Evaluator(s.instance(), solver.options());
-		assertEquals(Math.min(result, max), eval.evaluate(e));
-		
-	}
-		
-	/**
-	 * Tests all binary ops for this.solver.options and range of vals.
-	 * @requires this.solver.options.intEncoding = binary 
-	 * @requires vals contains int expressions that represent all 
-	 * integers allowed by this.solver.options, in proper sequence
-	 */
-	private final void testUnaryBinOps(IntExpression[] vals) {
-		final Options options = solver.options();
-		
-		
-		final IntRange range = options.integers();
-		final int min = range.min(), max = range.max();
 
-		for(int i = min; i <= max; i++) {
-			IntExpression vi = vals[i-min];
-			
-			for(int j = min; j <= max; j++) {
-				
-				IntExpression vj = vals[j-min];
-				testUnaryBinOp(PLUS, vi, vj, i, j, i+j, max);
-				testUnaryBinOp(AND, vi, vj, i, j, Integer.bitCount(~(-1<<i) & ~(-1<<j)), max);
-				testUnaryBinOp(OR, vi, vj, i, j, Integer.bitCount(~(-1<<i) | ~(-1<<j)), max);
-				
-			}
-		}
-		
-	}
-
-	public final void testConstantUnaryBinOps() {
-		solver.options().setIntEncoding(Options.IntEncoding.UNARY);
-		testUnaryBinOps(constants());
-	}
 	
-	public final void testNonConstantUnaryBinOps() {
-		solver.options().setBitwidth(3);
-		solver.options().setIntEncoding(Options.IntEncoding.UNARY);
-		testUnaryBinOps(nonConstants());
-	}
-	
-	private final void testUnaryUnOp(UnaryIntExpression.Operator op, IntExpression ei, int i, int result, int max) {
-		final IntExpression e = ei.apply(op);
-		final Formula f = ei.eq(constant(i)).and(e.eq(constant(result)));
-		final Solution s = solve(f);
-
-		assertNotNull(s.instance());
-		final Evaluator eval = new Evaluator(s.instance(), solver.options());
-		assertEquals(Math.min(result, max), eval.evaluate(e));
-		
-	}
-	
-	private final void testUnaryUnOps(IntExpression[] vals) {
-		final Options options = solver.options();
-		
-		final IntRange range = options.integers();
-		final int min = range.min(), max = range.max();
-			
-		for(int i = min; i <= max; i++) {
-			IntExpression vi = vals[i-min];
-			testUnaryUnOp(UnaryIntExpression.Operator.ABS, vi, i, Math.abs(i), max);
-			testUnaryUnOp(UnaryIntExpression.Operator.SGN, vi, i, i < 0 ? -1 : i > 0 ? 1 : 0, max);
-		}		
-	}
-	
-	public final void testConstantUnaryUnOps() {
-		solver.options().setIntEncoding(Options.IntEncoding.UNARY);
-		testUnaryUnOps(constants());
-	}
-	
-	public final void testNonConstantUnaryUnOps() {
-		solver.options().setBitwidth(3);
-		solver.options().setIntEncoding(Options.IntEncoding.UNARY);
-		testUnaryUnOps(nonConstants());
-	}
-	
-	public final void testConstantUnaryComparisonOps() {
-		solver.options().setIntEncoding(Options.IntEncoding.UNARY);
-		testComparisonOps(constants());
-	}
-	
-	public final void testNonConstantUnaryComparisonOps() {
-		solver.options().setBitwidth(3);
-		solver.options().setIntEncoding(Options.IntEncoding.UNARY);
-		testComparisonOps(nonConstants());
-	}
 	
 	public void testSum() {
 		solver.options().setBitwidth(6);
@@ -445,6 +348,30 @@ public class IntTest extends TestCase {
 		
 	}
 	
+	public void testBitsetCast() {
+		final int width = 4, msb = width - 1;
+		solver.options().setBitwidth(width);
+		final List<Integer> atoms = new ArrayList<Integer>(width);
+		for(int i = 0; i < msb; i++) { 
+			atoms.add(Integer.valueOf(1<<i));
+		}
+		atoms.add(Integer.valueOf(-1<<msb));
+		final Bounds b = new Bounds(new Universe(atoms));
+		final TupleFactory f = b.universe().factory();
+		for(Integer i : atoms) { b.boundExactly(i, f.setOf(i)); }
+		b.bound(r1, f.allOf(1));
+		
+		for(int i = -1<<msb, max = 1<<msb; i < max; i++) { 
+			Formula test = r1.sum().toBitset().eq(IntConstant.constant(i).toBitset());
+			Solution sol = solver.solve(test, b);
+			Instance inst = sol.instance();
+			assertNotNull(inst);
+			Evaluator eval = new Evaluator(inst, solver.options());
+			assertEquals(i, eval.evaluate(r1.sum()));
+		}
+		
+	}
+	
 	private void testIfIntExpr(Options.IntEncoding encoding) {
 		solver.options().setIntEncoding(encoding);
 		bounds.bound(r1, factory.setOf("15"), factory.setOf("15"));
@@ -477,10 +404,8 @@ public class IntTest extends TestCase {
 	}
 	
 	public void testIfIntExpr() {
-		solver.options().setBitwidth(17);
-		testIfIntExpr(UNARY);
 		solver.options().setBitwidth(8);
-		testIfIntExpr(BINARY);
+		testIfIntExpr(TWOSCOMPLEMENT);
 	}
 	
 	private void testIntSum(Options.IntEncoding encoding) {
@@ -503,10 +428,8 @@ public class IntTest extends TestCase {
 	}
 	
 	public void testIntSum() {
-		solver.options().setBitwidth(17);
-		testIntSum(UNARY);
 		solver.options().setBitwidth(8);
-		testIntSum(BINARY);
+		testIntSum(TWOSCOMPLEMENT);
 	}
 	
 }

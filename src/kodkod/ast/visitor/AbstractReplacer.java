@@ -308,7 +308,7 @@ public abstract class AbstractReplacer implements ReturnVisitor<Expression, Form
 		if (ret!=null) return ret;
 
 		final IntExpression intExpr = castExpr.intExpr().accept(this);
-		ret = (intExpr==castExpr.intExpr()) ? castExpr : intExpr.toExpression();
+		ret = (intExpr==castExpr.intExpr()) ? castExpr : intExpr.cast(castExpr.op());
 		return cache(castExpr, ret);
 	}
 	

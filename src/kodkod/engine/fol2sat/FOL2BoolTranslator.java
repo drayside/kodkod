@@ -658,13 +658,37 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 
 		final Int child = castExpr.intExpr().accept(this);
 		final BooleanFactory factory =  interpreter.factory();
+		final IntSet ints = interpreter.ints();
+		
 		ret = factory.matrix(Dimensions.square(interpreter.universe().size(), 1));
-		for(IntIterator iter = interpreter.ints().iterator(); iter.hasNext(); ) {
-			int i = iter.next();
-			int atomIndex = interpreter.interpret(i);
-			ret.set(atomIndex, factory.or(ret.get(atomIndex), child.eq(factory.integer(i))));
+		
+		switch(castExpr.op()) {
+		case INTCAST : 	
+			for(IntIterator iter = ints.iterator(); iter.hasNext(); ) {
+				int i = iter.next();
+				int atomIndex = interpreter.interpret(i);
+				ret.set(atomIndex, factory.or(ret.get(atomIndex), child.eq(factory.integer(i))));
+			}
+			break;
+		case BITSETCAST : 
+			final List<BooleanValue> twosComplement = child.twosComplementBits();
+			final int msb = twosComplement.size()-1;
+			// handle all bits but the sign bit
+			for(int i = 0; i < msb; i++) { 
+				int pow2 = 1<<i;
+				if (ints.contains(pow2)) { 
+					ret.set(interpreter.interpret(pow2), twosComplement.get(i));
+				}
+			}
+			// handle the sign bit
+			if (ints.contains(-1<<msb)) {
+				ret.set(interpreter.interpret(-1<<msb), twosComplement.get(msb));
+			}
+			break;
+		default : 
+			throw new IllegalArgumentException("Unknown cast operator: " + castExpr.op());
 		}
-
+		
 		return cache(castExpr, ret);
 	}	
 

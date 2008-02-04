@@ -104,7 +104,7 @@ public class BugTests extends TestCase {
 
 		solver.options().setSolver(SATFactory.DefaultSAT4J);
 		solver.options().setBitwidth(4);
-		solver.options().setIntEncoding(Options.IntEncoding.BINARY);
+		solver.options().setIntEncoding(Options.IntEncoding.TWOSCOMPLEMENT);
 		solver.options().setSymmetryBreaking(20);
 		solver.options().setSkolemDepth(0);
 		final Set<Decl> decls = new LinkedHashSet<Decl>();
@@ -138,7 +138,7 @@ public class BugTests extends TestCase {
 		solver.options().setLogTranslation(2);
 		solver.options().setSolver(SATFactory.MiniSatProver);
 		solver.options().setBitwidth(4);
-		solver.options().setIntEncoding(Options.IntEncoding.BINARY);
+		solver.options().setIntEncoding(Options.IntEncoding.TWOSCOMPLEMENT);
 		solver.options().setSymmetryBreaking(20);
 		solver.options().setSkolemDepth(0);
 
@@ -613,7 +613,7 @@ public class BugTests extends TestCase {
 		solver.options().setLogTranslation(1);
 		solver.options().setSolver(SATFactory.MiniSatProver);
 		solver.options().setBitwidth(4);
-		solver.options().setIntEncoding(Options.IntEncoding.BINARY);
+		solver.options().setIntEncoding(Options.IntEncoding.TWOSCOMPLEMENT);
 		Solution sol = solver.solve(x10,bounds);
 //		System.out.println(sol.toString());
 		Proof proof = sol.proof();
@@ -663,7 +663,7 @@ public class BugTests extends TestCase {
 		solver.options().setLogTranslation(1);
 		solver.options().setSolver(SATFactory.DefaultSAT4J);
 		solver.options().setBitwidth(4);
-		solver.options().setIntEncoding(Options.IntEncoding.BINARY);
+		solver.options().setIntEncoding(Options.IntEncoding.TWOSCOMPLEMENT);
 
 		Solution sol = solver.solve(c,bounds);
 		Set<Formula> core = sol.proof().highLevelCore();
@@ -700,7 +700,7 @@ public class BugTests extends TestCase {
 		solver.options().setLogTranslation(1);
 		solver.options().setSolver(SATFactory.MiniSatProver);
 		solver.options().setBitwidth(4);
-		solver.options().setIntEncoding(Options.IntEncoding.BINARY);
+		solver.options().setIntEncoding(Options.IntEncoding.TWOSCOMPLEMENT);
 
 		Solution sol = solver.solve(x7,bounds);
 		Set<Formula> core = sol.proof().highLevelCore();
@@ -734,7 +734,7 @@ public class BugTests extends TestCase {
 
 		solver.options().setSolver(SATFactory.MiniSatProver);
 		solver.options().setBitwidth(4);
-		solver.options().setIntEncoding(Options.IntEncoding.BINARY);
+		solver.options().setIntEncoding(Options.IntEncoding.TWOSCOMPLEMENT);
 		
 		Solution sol = solver.solve(x6,bounds);
 
@@ -871,7 +871,7 @@ public class BugTests extends TestCase {
 				Solver solver = new Solver();
 				solver.options().setSolver(SATFactory.DefaultSAT4J);
 				solver.options().setBitwidth(4);
-				solver.options().setIntEncoding(Options.IntEncoding.BINARY);
+				solver.options().setIntEncoding(Options.IntEncoding.TWOSCOMPLEMENT);
 				Solution sol = solver.solve(set.some(), bounds);
 
 				Evaluator eval = new Evaluator(sol.instance(), solver.options());
@@ -924,7 +924,7 @@ public class BugTests extends TestCase {
 
 		solver.options().setSolver(SATFactory.DefaultSAT4J);
 		solver.options().setBitwidth(4);
-		solver.options().setIntEncoding(Options.IntEncoding.BINARY);
+		solver.options().setIntEncoding(Options.IntEncoding.TWOSCOMPLEMENT);
 
 //		System.out.println(bounds);
 //		System.out.println(x4);
@@ -1949,7 +1949,7 @@ public class BugTests extends TestCase {
 		Solver solver = new Solver();
 		solver.options().setSolver(SATFactory.ZChaff);
 		solver.options().setBitwidth(4);
-		solver.options().setIntEncoding(Options.IntEncoding.BINARY);
+		solver.options().setIntEncoding(Options.IntEncoding.TWOSCOMPLEMENT);
 //		System.out.println(x37);
 		try {
 			Solution sol = solver.solve(x37,bounds);
@@ -1991,7 +1991,7 @@ public class BugTests extends TestCase {
 		Solver solver = new Solver();
 		solver.options().setSolver(SATFactory.ZChaff);
 		solver.options().setBitwidth(4);
-		solver.options().setIntEncoding(Options.IntEncoding.BINARY);
+		solver.options().setIntEncoding(Options.IntEncoding.TWOSCOMPLEMENT);
 		Solution sol;
 		try {
 			sol = solver.solve(f,bounds);

@@ -30,7 +30,7 @@ import kodkod.ast.visitor.VoidVisitor;
  * cardinality of an {@link kodkod.ast.Expression} or the 
  * sum of all the integer atoms contained in the expression.
  * @specfield expression: Expression
- * @specfield op: Op
+ * @specfield op: Operator
  * @invariant children = expression
  * @author Emina Torlak
  */

@@ -23,36 +23,40 @@ package kodkod.engine.bool;
 
 import static kodkod.engine.bool.BooleanConstant.FALSE;
 import static kodkod.engine.bool.BooleanConstant.TRUE;
+import static kodkod.engine.bool.Operator.AND;
+import static kodkod.engine.bool.Operator.OR;
 
+import java.util.AbstractList;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * Two's complement integer representation.  Supports comparisons, addition and subtraction.  
  * Integers are represented in little-endian (least significant bit first) order.
  * @author Emina Torlak
  */
-final class BinaryInt extends Int {
+final class TwosComplementInt extends Int {
 	private final BooleanValue[] bits;
 	
 	/**
-	 * Constructs a BinaryInt out of the given factory and bits.
+	 * Constructs a TwosComplementInt out of the given factory and bits.
 	 * @requires bits is well formed
 	 * @effects this.factory' = factory && this.bits' = bits
 	 */
-	private BinaryInt(BooleanFactory factory, BooleanValue[] bits) {
+	private TwosComplementInt(BooleanFactory factory, BooleanValue[] bits) {
 		super(factory);
 		this.bits = bits;
 	}
 	
 	/**
-	 * Constructs a BinaryInt that represents either 0 or the given number, depending on 
+	 * Constructs a TwosComplementInt that represents either 0 or the given number, depending on 
 	 * the value of the given bit.
-	 * @requires factory.encoding = BINARY  && bit in factory.components 
+	 * @requires factory.encoding = TWOSCOMPLEMENT  && bit in factory.components 
 	 * @effects this.factory' = factory
 	 * @effects bits is a two's-complement representation of the given number
 	 * that uses the provided bit in place of 1's
 	 */
-	BinaryInt(BooleanFactory factory, int number, BooleanValue bit) {
+	TwosComplementInt(BooleanFactory factory, int number, BooleanValue bit) {
 		super(factory);
 		final int width = bitwidth(number);
 		this.bits = new BooleanValue[width];
@@ -73,6 +77,37 @@ final class BinaryInt extends Int {
 			return StrictMath.min(33 - Integer.numberOfLeadingZeros(~number), factory.bitwidth);
 		else // number = 0
 			return 1;
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.engine.bool.Int#isConstant()
+	 */
+	public final boolean isConstant() {
+		for(int i = width()-1; i >= 0; i--) {
+			BooleanValue b = bit(i);
+			if (b!=TRUE && b!=FALSE)
+				return false;
+		}
+		return true;
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.engine.bool.Int#twosComplementBits()
+	 */
+	@Override
+	public final List<BooleanValue> twosComplementBits() {
+		return new AbstractList<BooleanValue>() {
+			@Override
+			public BooleanValue get(int i) {
+				if (i < 0 || i >= factory.bitwidth)
+					throw new IndexOutOfBoundsException();
+				return bit(i);
+			}
+			@Override
+			public int size() { return factory.bitwidth;	}
+		};
 	}
 	
 	/**
@@ -102,15 +137,44 @@ final class BinaryInt extends Int {
 		return ret;
 	}
 	
+	
+	
 	/**
-	 * {@inheritDoc}
-	 * @see kodkod.engine.bool.Int#bit(int)
+	 * Returns the BooleanValue at the specified index.
+	 * @requires 0 <= i < this.factory.bitwidth
+	 * @return this.bits[i]
 	 */
-	@Override
-	public BooleanValue bit(int i) {
+	public final BooleanValue bit(int i) {
 		return bits[StrictMath.min(i, bits.length-1)];
 	}
 
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.engine.bool.Int#eq(kodkod.engine.bool.Int)
+	 */
+	public final BooleanValue eq(Int other) {
+		validate(other);
+		final BooleanAccumulator cmp = BooleanAccumulator.treeGate(AND);
+		for(int i = 0, width = StrictMath.max(width(), other.width()); i < width; i++) {
+			if (cmp.add(factory.iff(bit(i), other.bit(i)))==FALSE)
+				return FALSE;
+		}
+		return factory.accumulate(cmp);
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.engine.bool.Int#lt(kodkod.engine.bool.Int)
+	 */
+	public final BooleanValue lt(Int other) {
+		final BooleanValue leq = lte(other);
+		final BooleanAccumulator acc = BooleanAccumulator.treeGate(OR);
+		for(int i = 0, width = StrictMath.max(width(), other.width()); i < width; i++) {
+			acc.add(factory.xor(bit(i), other.bit(i)));
+		}
+		return factory.and(leq, factory.accumulate(acc));
+	}
+	
 	/**
 	 * {@inheritDoc}
 	 * @see kodkod.engine.bool.Int#lte(kodkod.engine.bool.Int)
@@ -145,7 +209,7 @@ final class BinaryInt extends Int {
 			plus[i] = factory.sum(v0, v1, carry);
 			carry = factory.carry(v0, v1, carry);
 		}
-		return new BinaryInt(factory, plus);
+		return new TwosComplementInt(factory, plus);
 	}
 
 	/**
@@ -163,7 +227,7 @@ final class BinaryInt extends Int {
 			minus[i] = factory.sum(v0, v1, carry);
 			carry = factory.carry(v0, v1, carry);
 		}
-		return new BinaryInt(factory, minus);
+		return new TwosComplementInt(factory, minus);
 	}
 
 	/**
@@ -188,7 +252,7 @@ final class BinaryInt extends Int {
 		validate(other);
 		final int width = StrictMath.min(width()+other.width(), factory.bitwidth);
 		final BooleanValue[] mult = new BooleanValue[width];
-		final BinaryInt ret = new BinaryInt(factory, mult);
+		final TwosComplementInt ret = new TwosComplementInt(factory, mult);
 		
 		/* first partial sum */
 		BooleanValue iBit = bit(0), carry;
@@ -339,7 +403,7 @@ final class BinaryInt extends Int {
 	@Override
 	public Int divide(Int other) {
 		validate(other);
-		return new BinaryInt(factory, nonRestoringDivision(other, true));
+		return new TwosComplementInt(factory, nonRestoringDivision(other, true));
 	}
 	
 	/**
@@ -349,7 +413,7 @@ final class BinaryInt extends Int {
 	@Override
 	public Int modulo(Int other) {
 		validate(other);
-		return new BinaryInt(factory, nonRestoringDivision(other, false));
+		return new TwosComplementInt(factory, nonRestoringDivision(other, false));
 	}
 	
 	/**
@@ -364,7 +428,7 @@ final class BinaryInt extends Int {
 		for(int i = 0; i < width; i++) {
 			choice[i] = factory.ite(condition, bit(i), other.bit(i));
 		}
-		return new BinaryInt(factory, choice);
+		return new TwosComplementInt(factory, choice);
 	}
 	
 	/**
@@ -379,7 +443,7 @@ final class BinaryInt extends Int {
 		for(int i = 0; i < width; i++) {
 			and[i] = factory.and(bit(i), other.bit(i));
 		}
-		return new BinaryInt(factory, and);
+		return new TwosComplementInt(factory, and);
 	}
 
 	/**
@@ -394,7 +458,7 @@ final class BinaryInt extends Int {
 		for(int i = 0; i < width; i++) {
 			or[i] = factory.or(bit(i), other.bit(i));
 		}
-		return new BinaryInt(factory, or);
+		return new TwosComplementInt(factory, or);
 	}
 
 	/**
@@ -409,7 +473,7 @@ final class BinaryInt extends Int {
 		for(int i = 0; i < width; i++) {
 			xor[i] = factory.xor(bit(i), other.bit(i));
 		}
-		return new BinaryInt(factory,xor);
+		return new TwosComplementInt(factory,xor);
 	}
 
 	/**
@@ -420,7 +484,7 @@ final class BinaryInt extends Int {
 	public Int shl(Int other) {
 		validate(other);
 		final int width = factory.bitwidth;
-		final BinaryInt shifted = new BinaryInt(factory, extend(width));
+		final TwosComplementInt shifted = new TwosComplementInt(factory, extend(width));
 		final int max = 32 - Integer.numberOfLeadingZeros(width - 1);
 		for(int i = 0; i < max; i++) {
 			int shift = 1 << i;
@@ -438,7 +502,7 @@ final class BinaryInt extends Int {
 	private Int shr(Int other, BooleanValue sign) {
 		validate(other);
 		final int width = factory.bitwidth;
-		final BinaryInt shifted = new BinaryInt(factory, extend(width));
+		final TwosComplementInt shifted = new TwosComplementInt(factory, extend(width));
 		final int max = 32 - Integer.numberOfLeadingZeros(width - 1);
 		for(int i = 0; i < max; i++) {
 			int shift = 1 << i;
@@ -475,7 +539,7 @@ final class BinaryInt extends Int {
 	 */
 	@Override
 	public Int negate() {
-		return (new BinaryInt(factory, new BooleanValue[]{FALSE})).minus(this);
+		return (new TwosComplementInt(factory, new BooleanValue[]{FALSE})).minus(this);
 	}
 	
 	/**
@@ -489,7 +553,7 @@ final class BinaryInt extends Int {
 		for(int i = 0 ; i < width; i++) {
 			inverse[i] = factory.not(bits[i]);
 		}
-		return new BinaryInt(factory, inverse);
+		return new TwosComplementInt(factory, inverse);
 	}
 	
 	/**
@@ -510,7 +574,7 @@ final class BinaryInt extends Int {
 		final BooleanValue[] sgn = new BooleanValue[2];
 		sgn[0] = factory.accumulate(BooleanAccumulator.treeGate(Operator.OR, bits));
 		sgn[1] = bits[bits.length-1];
-		return new BinaryInt(factory, sgn);
+		return new TwosComplementInt(factory, sgn);
 	}
 	
 	/**
