@@ -150,12 +150,12 @@ public abstract class SATFactory {
 	 * @return  SATFactory that produces interruptible SATSolver wrappers for the specified external
 	 * SAT solver
 	 */
-	public static final SATFactory externalFactory(final String executable, final String options, final String tempInput, final String tempOutput) {
+	public static final SATFactory externalFactory(final String executable, final String tempInput, final String tempOutput, final String... options) {
 		return new SATFactory() {
 
 			@Override
 			public SATSolver instance() {
-				return new ExternalSolver(executable, options, tempInput, tempOutput);
+				return new ExternalSolver(executable, tempInput, tempOutput, options);
 			}
 			
 			@Override

@@ -38,7 +38,8 @@ import java.util.BitSet;
 final class ExternalSolver implements SATSolver {
 	private final StringBuilder buffer;
 	private final int capacity = 8192;
-	private final String executable, options, inTemp, outTemp;
+	private final String executable,  inTemp, outTemp;
+	private final String[] options;
 	private final RandomAccessFile cnf;
 	private final BitSet solution;
 	private volatile Boolean sat;
@@ -52,7 +53,7 @@ final class ExternalSolver implements SATSolver {
 	 * the solver is assumed to write its output to standard out.  Otherwise,
 	 * it is assumed to write its output to the outTemp file.
 	 */
-	ExternalSolver(String executable, String options, String inTemp, String outTemp) {
+	ExternalSolver(String executable, String inTemp, String outTemp, String... options) {
 		try {
 			this.cnf = new RandomAccessFile(inTemp,"rw");
 			this.cnf.setLength(0);
@@ -207,11 +208,10 @@ final class ExternalSolver implements SATSolver {
 				cnf.writeBytes("p cnf " + vars + " " + clauses);
 				cnf.close();
 				
-				final String[] command;
-				if (options.length()==0)
-					command = new String[]{executable,  inTemp};
-				else 
-					command = new String[]{executable, options, inTemp};
+				final String[] command = new String[options.length+2];
+				command[0] = executable;
+				System.arraycopy(options, 0, command, 1, options.length);
+				command[command.length-1] = inTemp;
 				p = Runtime.getRuntime().exec(command);
 				new Thread(new Drainer(p.getErrorStream())).start();
 				final BufferedReader out;
