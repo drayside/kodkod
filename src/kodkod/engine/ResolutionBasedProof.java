@@ -20,6 +20,7 @@ import kodkod.engine.ucore.StrategyUtils;
 import kodkod.instance.TupleSet;
 import kodkod.util.collections.IdentityHashSet;
 import kodkod.util.ints.IntSet;
+import kodkod.util.ints.IntTreeSet;
 
 /**
  * A proof of unsatisfiability based on a {@linkplain ResolutionTrace resolution trace} produced
@@ -125,8 +126,15 @@ final class ResolutionBasedProof extends Proof {
 				
 			};
 			coreRoots = new LinkedHashSet<Formula>();
-			for(Iterator<TranslationRecord> itr = log().replay(unitFilter); itr.hasNext(); ) { 
-				coreRoots.add((Formula)itr.next().node());
+			final IntSet seenUnits = new IntTreeSet();
+			for(Iterator<TranslationRecord> itr = log().replay(unitFilter); itr.hasNext(); ) {
+				// it is possible that two top-level formulas have identical meaning,
+				// and are represented with the same core unit; in that case, we want only
+				// one of them in the core.
+				final TranslationRecord rec = itr.next();
+				if (seenUnits.add(rec.literal())) {
+					coreRoots.add((Formula)rec.node());
+				}
 			}
 			coreRoots = Collections.unmodifiableSet(coreRoots);
 		}

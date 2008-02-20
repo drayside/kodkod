@@ -351,7 +351,7 @@ final class ArrayTrace implements ResolutionTrace {
 	
 	/**
 	 * {@inheritDoc}
-	 * @see kodkod.engine.satlab.ResolutionTrace#reachable(kodkod.util.ints.IntSet)
+	 * @see kodkod.engine.satlab.ResolutionTrace#implicants(kodkod.util.ints.IntSet)
 	 */
 	public IntSet reachable(IntSet indices) {
 		if (indices.isEmpty()) return Ints.EMPTY_SET;
@@ -391,6 +391,53 @@ final class ArrayTrace implements ResolutionTrace {
 			}
 			return ret;
 		}
+		else throw new IndexOutOfBoundsException("invalid indices: " + indices);
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.engine.satlab.ResolutionTrace#learnable(kodkod.util.ints.IntSet)
+	 */
+	public IntSet learnable(IntSet indices) {
+		if (indices.isEmpty()) return Ints.EMPTY_SET;
+		else if (valid(indices)) {
+			final IntSet ret = new IntBitSet(trace.length);
+			ret.addAll(indices);
+			TOP: for(int i = axioms, length = trace.length; i < length; i++) {
+				int[] resolvent = trace[i];
+				for(int j = 1, antes = resolvent[0]; j <= antes; j++) {
+					if (!ret.contains(resolvent[j])) {
+						continue TOP;
+					}
+				}
+				ret.add(i);
+			}
+			return ret;
+		}
+		else throw new IndexOutOfBoundsException("invalid indices: " + indices);
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.engine.satlab.ResolutionTrace#directlyLearnable(kodkod.util.ints.IntSet)
+	 */
+	public IntSet directlyLearnable(IntSet indices) { 
+		if (indices.isEmpty()) return Ints.EMPTY_SET;
+		else if (valid(indices)) {
+			final IntSet ret = new IntBitSet(trace.length);
+			ret.addAll(indices);
+			TOP: for(int i = axioms, length = trace.length; i < length; i++) {
+				int[] resolvent = trace[i];
+				for(int j = 1, antes = resolvent[0]; j <= antes; j++) {
+					if (!indices.contains(resolvent[j])) {
+						continue TOP;
+					}
+				}
+				ret.add(i);
+			}
+			return ret;
+		}
+		
 		else throw new IndexOutOfBoundsException("invalid indices: " + indices);
 	}
 

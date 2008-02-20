@@ -128,7 +128,7 @@ public interface ResolutionTrace extends Iterable<Clause> {
 	public abstract IntSet resolvents();
 	
 	/**
-	 * Returns the indices of all clauses reachable from the clauses at the given indices 
+	 * Returns  the indices of all clauses reachable from the clauses at the given indices 
 	 * by following the antecedent relation zero or more times.
 	 * @requires indices.min() >= 0 && indices.max() < this.size()
 	 * @return { i: int | this.elts[i] in this.elts[indices].*antecedents }
@@ -144,6 +144,25 @@ public interface ResolutionTrace extends Iterable<Clause> {
 	 * @throws IllegalArgumentException - indices.min() < 0 || indices.max() >= this.size()
 	 */
 	public abstract IntSet backwardReachable(IntSet indices);
+	
+	/**
+	 * Returns the indices of all clauses in this trace that can be learned solely from the
+	 * clauses with the given indices.
+	 * @requires indices.min() >= 0 && indices.max() < this.size()
+	 * @return { i: int | this.elts[i].*antecedents = this.elts[indices].*antecedents + this.elts[i].*antecedents & this.elts[indices].*~antecedents }
+	 * @throws IllegalArgumentException - indices.min() < 0 || indices.max() >= this.size()
+	 */
+	public abstract IntSet learnable(IntSet indices);
+	
+	/**
+	 * Returns the indices of all clauses in this trace that can be learned solely and directly from the
+	 * clauses with the given indices.
+	 * @requires indices.min() >= 0 && indices.max() < this.size()
+	 * @return { i: int | this.elts[i].antecedents in this.elts[indices] }
+	 * @throws IllegalArgumentException - indices.min() < 0 || indices.max() >= this.size()
+	 */
+	public abstract IntSet directlyLearnable(IntSet indices);
+	
 	
 	/**
 	 * Returns the clause at the given index.  Note that this method is not required 

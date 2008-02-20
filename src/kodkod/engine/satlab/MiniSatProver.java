@@ -33,7 +33,7 @@ import kodkod.util.ints.IntSet;
  * @author Emina Torlak
  */
 final class MiniSatProver extends NativeSolver implements SATProver {
-	private ArrayTrace proof;
+	private LazyTrace proof;
 	/**
 	 * Constructs a new MiniSat prover wrapper.
 	 */
@@ -89,7 +89,6 @@ final class MiniSatProver extends NativeSolver implements SATProver {
 			}
 		}
 		assert axioms == numberOfClauses();
-	
 		return trace;
 	}
 		
@@ -102,10 +101,7 @@ final class MiniSatProver extends NativeSolver implements SATProver {
 		if (proof==null) {
 			final int[][] trace = trace(peer(), true);
 			free();
-			proof = new ArrayTrace(format(trace), numberOfClauses());
-//			for(Iterator<Clause> itr = proof.iterator(proof.axioms()); itr.hasNext();) { 
-//				System.out.println(itr.next());
-//			}
+			proof = new LazyTrace(format(trace), numberOfClauses());
 		}
 		return proof;
 	}
@@ -116,29 +112,25 @@ final class MiniSatProver extends NativeSolver implements SATProver {
 	 */
 	public void reduce(ReductionStrategy strategy) {
 		proof();
+		
 		for(IntSet next = strategy.next(proof); !next.isEmpty(); next = strategy.next(proof)) {
 			long prover = make();
 			addVariables(prover, numberOfVariables());
+			
 			for(Iterator<Clause> itr = proof.iterator(next); itr.hasNext();) {
 				Clause c = itr.next();
-//				System.out.println(c);
 				if (!addClause(prover, c.toArray())) { 
 					throw new AssertionError("could not add non-redundant clause: " + c);
 				}
-//				if (!addClause(prover, itr.next().toArray())) {
-//					throw new AssertionError("could not add non-redundant clause");
-//				}
 			}
-//			System.out.print("trying with " + next.size() + " clauses ... ");
+			
 			if (!solve(prover)) {
 				adjustClauseCount(next.size());
 				int[][] trace = trace(prover, false);
 				free(prover);
-				proof = new ArrayTrace(proof, next, format(trace));
-//				System.out.println("UNSAT");
+				proof = new LazyTrace(proof, next, format(trace));
 			} else {
 				free(prover);
-//				System.out.println("SAT");
 			}
 		}
 	}

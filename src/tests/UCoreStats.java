@@ -54,12 +54,13 @@ public final class UCoreStats {
 	/**
 	 * Checks that the given proof of unsatisfiablity for the given problem is miminal.
 	 * This method assumes that the given proof is correct.
+	 * @return true if the core is minimal; false otherwise.
 	 */
-	static void checkMinimal(Set<Formula> core, Bounds bounds) {
+	static boolean checkMinimal(Set<Formula> core, Bounds bounds) {
 		System.out.print("checking minimality ... ");
 		final long start = System.currentTimeMillis();
 		final Set<Formula> minCore = new LinkedHashSet<Formula>(core);
-		Solver solver = new Solver(); 
+		Solver solver = solver(); 
 		solver.options().setSolver(SATFactory.MiniSat);
 		for(Iterator<Formula> itr = minCore.iterator(); itr.hasNext();) {
 			Formula f = itr.next();
@@ -75,29 +76,34 @@ public final class UCoreStats {
 		final long end = System.currentTimeMillis();
 		if (minCore.size()==core.size()) {
 			System.out.println("minimal (" + (end-start) + " ms).");
+			return true;
 		} else {
 			System.out.println("not minimal (" + (end-start) + " ms). The minimal core has these " + minCore.size() + " formulas:");
 			for(Formula f : minCore) {
 				System.out.println(" " + f);
 			}
+			return false;
 		}
 	}
 	
 	/**
 	 * Checks that the given core is unsatsfiable with respect to the given bounds.
+	 * @return true if the core is correct; false otherwise
 	 */
-	static void checkCorrect(Set<Formula> core, Bounds bounds) { 
+	static boolean checkCorrect(Set<Formula> core, Bounds bounds) { 
 		System.out.print("checking correctness ... ");
 		final long start = System.currentTimeMillis();
-		Solver solver = new Solver(); 
+		Solver solver = solver(); 
 		solver.options().setSolver(SATFactory.MiniSat);
 		final Solution sol = solver.solve(Nodes.and(core), bounds);
 		final long end = System.currentTimeMillis();
 		if (sol.instance()==null) {
 			System.out.println("correct (" + (end-start) + " ms).");
+			return true;
 		} else {
 			System.out.println("incorrect! (" + (end-start) + " ms). The core is satisfiable:");
 			System.out.println(sol);
+			return false;
 		}
 	}
 	
@@ -278,6 +284,29 @@ public final class UCoreStats {
 	 * @requires strategy has a constructor that takes a translation log
 	 * @return an instance of the given reduction strategy.
 	 */
+	static ReductionStrategy instance(Class<? extends ReductionStrategy> strategy, TranslationLog log, int depth) { 
+		try {
+			return strategy.getConstructor(TranslationLog.class, int.class).newInstance(log, depth);
+		} catch (IllegalArgumentException e) {
+			throw e;
+		} catch (SecurityException e) {
+			throw new IllegalArgumentException(strategy.getName() + " has no accessible two-argument constructor.");
+		} catch (InstantiationException e) {
+			throw new IllegalArgumentException(strategy.getName() + " has no accessible two-argument constructor.");
+		} catch (IllegalAccessException e) {
+			throw new IllegalArgumentException(strategy.getName() + " has no accessible two-argument constructor.");
+		} catch (InvocationTargetException e) {
+			throw new IllegalArgumentException(strategy.getName() + " has no accessible two-argument constructor.");
+		} catch (NoSuchMethodException e) {
+			throw new IllegalArgumentException(strategy.getName() + " has no accessible two-argument constructor.");
+		}
+	}
+	
+	/**
+	 * Returns an instance of the given reduction strategy.
+	 * @requires strategy has a constructor that takes a translation log
+	 * @return an instance of the given reduction strategy.
+	 */
 	static ReductionStrategy instance(Class<? extends ReductionStrategy> strategy, TranslationLog log) { 
 		try {
 			return strategy.getConstructor(TranslationLog.class).newInstance(log);
@@ -295,109 +324,64 @@ public final class UCoreStats {
 			throw new IllegalArgumentException(strategy.getName() + " has no accessible one-argument constructor.");
 		}
 	}
-		
-	/**
-	 * Returns the minimal core produced by the simple extraction algorithm.
-	 */
-	private static Set<Formula> nce(Formula formula, Bounds bounds) { 
+	
+	private static Solver solver() { 
 		final Solver solver = new Solver();
-		solver.options().setSolver(SATFactory.MiniSat);
-		final Set<Formula> minCore = new LinkedHashSet<Formula>(Nodes.roots(formula));
-		final Set<Formula> unknown = new LinkedHashSet<Formula>(minCore);
-		
-		while (!unknown.isEmpty()) { 
-			Formula f = unknown.iterator().next();
-			Set<Formula> tryCore = new LinkedHashSet<Formula>(minCore);
-			tryCore.remove(f);
-			
-			if (solver.solve(Nodes.and(tryCore), bounds).instance()==null) { // unsat: f is irrelevant
-				minCore.remove(f);
-			}
-			
-			unknown.remove(f);
-		}
-		return minCore;
+		solver.options().setBitwidth(8);
+		solver.options().setSolver(SATFactory.MiniSatProver);
+		solver.options().setLogTranslation(1);
+		return solver;
 	}
 	
-
-	
 	/**
-	 * Usage: java tests.UCoreUnitTest <class> <scope> [-m method] [-s strategy] [-o (user | stats) ]
+	 * Usage: java tests.UCoreUnitTest <class> <scope> [-m method] [-s strategy | oce] [-d depth] [-o (user | stats) ]
 	 */
 	private static void usage() {  
-		System.out.println("Usage: java test.UCoreStats <class> <scope> [-m method] [-s strategy] [-o (user | stats) ]");
+		System.out.println("Usage: java test.UCoreStats <class> <scope> [-m method] [-s strategy | oce] [-d depth] [-o (user | stats) ]");
 		System.exit(2);
 	}
 	
+		
 	/**
-	 * Usage: java tests.UCoreStats <class> <scope> [-m method] [-s strategy] [-o (user | stats) ]
+	 * Runs the minimal core finder using the specified strategy (with the given resolution depth, if applicable) on the
+	 * given methods, bounds, and prints out results using the given 
+	 * results printer.
 	 */
-	public static void main(String[] args) { 
-		if (args.length < 2)
-			usage();
+	private static void findMinCore(final Class<? extends ReductionStrategy> strategy, final int depth, final Map<Method,Formula> checks, final Bounds bounds, final ResultPrinter out) { 
 		
 		try {
-			final Class<?> problem = problem(args[0]);
-			final Map<String,String> optional = processOptionalArgs(args);
 			
-			final Object instance = instance(problem);
-			final Bounds bounds = bounds(instance, scope(args[1]));
-			final Map<Method, Formula> checks = checks(instance, 
-					optional.containsKey("-m") ? method(problem,optional.get("-m")) : methods(problem));
-		
-			if (checks.isEmpty()) { usage(); }
-			
-			final String extractor;
-			final Class<? extends ReductionStrategy> strategy;
-			if (optional.containsKey("-s")) {
-				extractor = optional.get("-s");
-				if (extractor.equals("rce")) { 
-					strategy = strategy("kodkod.engine.ucore.RCEStrategy");
-				} else if (extractor.equals("sce")) {
-					strategy = strategy("kodkod.engine.ucore.SCEStrategy");
-				} else if (!extractor.equals("nce") && !extractor.equals("oce")) { 
-					strategy = strategy(optional.get("-s"));
-				} else {
-					strategy = null;
-				}
-			} else {
-				extractor = "nce";
-				strategy = null;
-			}
-				
-			final ResultPrinter out = "stats".equals(optional.get("-o")) ? ResultPrinter.STATS : ResultPrinter.USER;
-			
-			final Solver solver = new Solver();
-			solver.options().setLogTranslation(1);
-			solver.options().setSolver(SATFactory.MiniSatProver);
+			final Solver solver = solver();
 			
 			for(Map.Entry<Method, Formula> check : checks.entrySet()) { 
 //				System.out.println(PrettyPrinter.print(check.getValue(), 1));
 				Solution sol = solver.solve(check.getValue(), bounds);
 								
-				if (sol.outcome()==Solution.Outcome.UNSATISFIABLE) { 
-					
-					final Set<Formula> initialCore = sol.proof().highLevelCore();
-					final Set<Formula> minCore;
+				if (sol.outcome()==Solution.Outcome.UNSATISFIABLE) {
 					
 					final long start = System.currentTimeMillis();
-					
-					if (strategy==null) { // no strategy -- naive or one-step
-						if (extractor.equals("nce")) {
-							minCore = nce(check.getValue(), bounds);
-						} else { // oce
-							minCore = initialCore;
-						}
+					final Set<Formula> initialCore = sol.proof().highLevelCore();
+					final Set<Formula> minCore;
+										
+					if (strategy==null) { // no strategy -- one-step
+						minCore = initialCore;
 					} else {
-						sol.proof().minimize(instance(strategy, sol.proof().log()));
+						if (strategy.getSimpleName().startsWith("RCE")) {
+							sol.proof().minimize(instance(strategy, sol.proof().log(), depth));
+						} else {
+							sol.proof().minimize(instance(strategy, sol.proof().log()));
+						}
 						minCore = sol.proof().highLevelCore();
 					}
-					
 					final long end = System.currentTimeMillis();
 					
 					out.printUnsat(check.getKey().getName(), check.getValue(), bounds, sol.stats(), 
 							initialCore, minCore, end-start);
-				
+					
+					assert checkCorrect(minCore, bounds);
+					assert checkMinimal(minCore, bounds);
+
+					
 				} else if (sol.outcome()==Solution.Outcome.TRIVIALLY_UNSATISFIABLE) {	
 					
 					out.printFalse(check.getKey().getName(), check.getValue(), bounds, sol);
@@ -411,6 +395,58 @@ public final class UCoreStats {
 			System.out.println(e.getMessage());
 			usage();
 		}
+	}
+	
+	/**
+	 * Usage: java tests.UCoreUnitTest <class> <scope> [-m method] [-s strategy | oce] [-d depth] [-o (user | stats) ]
+	 */
+	public static void main(String[] args) { 
+		if (args.length < 2)
+			usage();
+		final Class<?> problem = problem(args[0]);
+		final Map<String,String> optional = processOptionalArgs(args);
+		
+		final Object instance = instance(problem);
+		final Bounds bounds = bounds(instance, scope(args[1]));
+		final Map<Method, Formula> checks = checks(instance, 
+				optional.containsKey("-m") ? method(problem,optional.get("-m")) : methods(problem));
+	
+		if (checks.isEmpty()) { usage(); }
+		
+		final String extractor;
+		final Class<? extends ReductionStrategy> strategy;
+		if (optional.containsKey("-s")) {
+			extractor = optional.get("-s");
+			if (extractor.equals("rce")) { 
+				strategy = strategy("kodkod.engine.ucore.RCEStrategy");
+			} else if (extractor.equals("sce")) {
+				strategy = strategy("kodkod.engine.ucore.SCEStrategy");
+			} else if (extractor.equals("nce")) { 
+				strategy = strategy("kodkod.engine.ucore.NCEStrategy");
+			} else if (!extractor.equals("oce")){ 
+				strategy = strategy(optional.get("-s"));
+			} else {
+				strategy = null;
+			}
+		} else {
+			extractor = "oce";
+			strategy = null;
+		}
+		
+		final ResultPrinter out = "stats".equals(optional.get("-o")) ? ResultPrinter.STATS : ResultPrinter.USER;
+		
+		if (optional.containsKey("-d")) { 
+			try {
+//				findMinCore(strategy, Integer.parseInt(optional.get("-d")), checks, bounds(instance, 2), out);
+				findMinCore(strategy, Integer.parseInt(optional.get("-d")), checks, bounds, out);
+			} catch(NumberFormatException nfe) { 
+				usage();
+			}
+		} else {
+			findMinCore(strategy, Integer.MAX_VALUE, checks, bounds, out);
+		}
+		
+		
 	}
 	
 	/** @return short string representing a given outcome */

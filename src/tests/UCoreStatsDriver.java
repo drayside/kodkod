@@ -37,19 +37,59 @@ import java.util.Set;
 public final class UCoreStatsDriver {
 	
 	
-	private static final String[] UNSAT = { 
+	private static final String[] RANGE_PROBLEMS = { 
 		"examples.Lists" ,"examples.RingElection", "examples.Trees", "examples.Hotel", 
 		"examples.tptp.ALG212", "examples.tptp.COM008",
 		"examples.tptp.GEO091", "examples.tptp.GEO092", "examples.tptp.GEO115", "examples.tptp.GEO158",
 		"examples.tptp.GEO159", "examples.tptp.LAT258", "examples.tptp.MED007", "examples.tptp.MED009", 
 		"examples.tptp.TOP020", "examples.tptp.SET943", "examples.tptp.SET948", "examples.tptp.SET967",
-		"examples.tptp.NUM374", };
+		"examples.tptp.NUM374" };
+	
+	private static final class MaxSpec {
+		final String problem, check;
+		final int scope, depth;
+		
+		MaxSpec(String problem, String check, int scope, int depth) { 
+			this.problem = problem;
+			this.check = check;
+			this.scope = scope;
+			this.depth = depth;
+		}
+		
+		MaxSpec(String problem, int scope, int depth) { 
+			this(problem, UCoreStats.methods(UCoreStats.problem(problem)).iterator().next().getName(), scope, depth);
+		}
+	}
 	
 	
-	private static long TIMEOUT = 300000;
+	private static final MaxSpec[] MAX_SPECS = {
+		/** NCE, SCE, RCE */
+		new MaxSpec("examples.Trees", 7, 2), 		new MaxSpec("examples.Hotel", 5, Integer.MAX_VALUE), 
+		new MaxSpec("examples.RingElection", 8, 1),	new MaxSpec("examples.tptp.ALG212", 7, 2), 
+		new MaxSpec("examples.tptp.COM008", 9, 4),	new MaxSpec("examples.tptp.NUM374", 3, Integer.MAX_VALUE),
+		new MaxSpec("examples.tptp.SET943", 5, 3),	new MaxSpec("examples.tptp.LAT258", 7, Integer.MAX_VALUE),	
+		new MaxSpec("examples.tptp.GEO092", 8, 4),	new MaxSpec("examples.tptp.GEO158", 8, Integer.MAX_VALUE),	
+		new MaxSpec("examples.tptp.GEO159", 8, Integer.MAX_VALUE),
+		
+		/** SCE, RCE */
+		new MaxSpec("examples.tptp.SET948", 14, 2),	new MaxSpec("examples.tptp.SET967", 4, Integer.MAX_VALUE),	
+		new MaxSpec("examples.tptp.TOP020", 10, 2),	
+		new MaxSpec("examples.Lists", "checkEmpties", 60, 4),	
+		new MaxSpec("examples.Lists", "checkReflexive", 14, 4),
+		new MaxSpec("examples.Lists", "checkSymmetric", 8, 4),	
+		
+		/** RCE */
+		new MaxSpec("examples.tptp.GEO091", 10, Integer.MAX_VALUE),
+		new MaxSpec("examples.tptp.GEO115", 9, Integer.MAX_VALUE),
+		new MaxSpec("examples.tptp.MED007", 35, 6),
+		new MaxSpec("examples.tptp.MED009", 35, 6),		
+	};
+
+	
+	private static long FIVE_MIN = 300000, ONE_HOUR = 3600000;
 	
 	private static void usage() { 
-		System.out.println("Usage: java tests.UCoreTestDriver <start scope> <end scope> [strategy]");
+		System.out.println("Usage: java tests.UCoreTestDriver strategy [<start scope> <end scope>]");
 		System.exit(1);
 	}
 	
@@ -65,75 +105,110 @@ public final class UCoreStatsDriver {
 		System.out.print("all core\t");
 		System.out.print("init core\t");
 		System.out.print("min core\t");
-		System.out.print( (strategy==null ? "naive" : strategy.substring(strategy.lastIndexOf(".")+1)) + "(ms)\t");
+		System.out.print(strategy.substring(strategy.lastIndexOf(".")+1) + "(ms)\t");
 		System.out.println();
 	}
 	
-	private static void skip(String problem, Method m, int scope, String status) { 
+	private static void skip(String problem, String check, int scope, String status) { 
 		System.out.print(problem.substring(problem.lastIndexOf(".")+1)+"\t");
-		System.out.print(m.getName()+"\t");
+		System.out.print(check+"\t");
 		System.out.println(scope+"\t"+status);
 	}
 	
-	/** Usage: java tests.UCoreStatsDriver <start scope> <end scope> [strategy]*/
-	public static void main(String[] args) { 
-		if (args.length<2) usage();
-		
-		int min = 0, max = 0;
-		try { 
-			min = Integer.parseInt(args[0]);
-			max = Integer.parseInt(args[1]); 
-		} catch (NumberFormatException e) { }
-		
-		if (min < 1 || min > max) usage();
-		
-		
-		final String strategy = args.length<3 ? null : args[2];
+	/**
+	 * Runs all problems with the given strategy for the predetermined maximum scopes.
+	 * @requires strategy is the name of a reduction strategy supported by {@linkplain UCoreStats#main(String[])}
+	 */
+	private static void runToMax(String strategy) { 
 		headers(strategy);
 		
+		final long timeout = strategy.toLowerCase().indexOf("rce") >= 0 ? FIVE_MIN : ONE_HOUR;
+		for(MaxSpec spec : MAX_SPECS) { 
+			final String opt =  " -m " + spec.check + " -s " +strategy + " -d " + spec.depth + " -o stats";
+			final String cmd = "java -cp bin -Xmx2G tests.UCoreStats " + spec.problem + " " + spec.scope + " " + opt;
+			
+//			System.out.println(cmd);
+			final ProcessRunner runner = new ProcessRunner(cmd.split("\\s"));
+			runner.start();
+			
+			try {	
+				runner.join(timeout);
+				if (runner.getState()!=Thread.State.TERMINATED) {
+					runner.interrupt();
+					runner.destroyProcess();
+					skip(spec.problem,spec.check,spec.scope,"G");
+					continue;
+				}
+			
+				final BufferedReader out = new BufferedReader(new InputStreamReader(runner.processOutput(), "ISO-8859-1"));
+				String line = null;
+	
+				while((line = out.readLine()) != null) {
+					
+					final String[] parsed = line.split("\\s");
+					
+					System.out.print(spec.problem.substring(spec.problem.lastIndexOf(".")+1)+"\t");
+					System.out.print(parsed[0]+"\t");
+					System.out.print(spec.scope);
+												
+					for(int i = 1; i < parsed.length; i++) { 
+						System.out.print("\t"+parsed[i]);
+					}
+					System.out.println();
+				}
+			} catch (InterruptedException e) {
+				System.out.println("INTERRUPTED");
+				runner.destroyProcess();
+			} catch (UnsupportedEncodingException e) {
+				e.printStackTrace();
+				System.exit(1);
+			} catch (IOException e) {
+				e.printStackTrace();
+				System.exit(1);
+			}
+			
+		}
+		
+	}
+	
+	/**
+	 * Runs all problems with the given strategy for the given scope range.
+	 * @requires 1 < min <= max
+	 * @requires strategy is the name of a reduction strategy supported by {@linkplain UCoreStats#main(String[])}
+	 */
+	private static void runAllInScopes(String strategy, int min, int max) { 
+		headers(strategy);
 		
 		final Set<Method> timedOut = new LinkedHashSet<Method>();
 		final Set<Method> sat = new LinkedHashSet<Method>();
 		
-//		timedOut.addAll(UCoreUnitTest.methods(UCoreUnitTest.problem("examples.tptp.NUM374")));
-//		timedOut.addAll(UCoreUnitTest.methods(UCoreUnitTest.problem("examples.tptp.SET943")));
-//		timedOut.addAll(UCoreUnitTest.methods(UCoreUnitTest.problem("examples.tptp.SET967")));
-//		timedOut.addAll(UCoreUnitTest.methods(UCoreUnitTest.problem("examples.tptp.LAT258")));
-//		timedOut.addAll(UCoreUnitTest.methods(UCoreUnitTest.problem("examples.tptp.ALG212")));
-//		timedOut.addAll(UCoreUnitTest.methods(UCoreUnitTest.problem("examples.tptp.GEO159")));
-//		timedOut.addAll(UCoreUnitTest.methods(UCoreUnitTest.problem("examples.RingElection")));
-//		timedOut.addAll(UCoreUnitTest.method(UCoreUnitTest.problem("examples.Lists"),"checkSymmetric"));
-		
-//		sat.addAll(UCoreUnitTest.methods(UCoreUnitTest.problem("examples.Hotel")));
-//		sat.addAll(UCoreUnitTest.methods(UCoreUnitTest.problem("examples.Trees")));
-		
 		for(int scope = min; scope <= max; scope++) {
-			for(String problem : UNSAT) { 
+			for(String problem : RANGE_PROBLEMS) { 
 				for(Method m : UCoreStats.methods(UCoreStats.problem(problem))) {
 					if (timedOut.contains(m)) { 
-						skip(problem,m,scope,"G");
+						skip(problem,m.getName(),scope,"G");
 						continue;
 					}
 					if (sat.contains(m)) { 
-						skip(problem,m,scope,"S");
+						skip(problem,m.getName(),scope,"S");
 						continue;
 					}
 					
-					final String cmd = "java -cp bin -Xmx2G tests.UCoreUnitTest " + problem + " " + String.valueOf(scope) +  " -o stats -m " + m.getName();
-					final ProcessRunner runner = new ProcessRunner(strategy==null?cmd.split("\\s"):(cmd+" -s " +strategy).split("\\s"));
+					final String cmd = "java -cp bin -Xmx2G tests.UCoreStats " + problem + " " + String.valueOf(scope) +  " -o stats -m " + m.getName() +" -s " +strategy;
+					final ProcessRunner runner = new ProcessRunner(cmd.split("\\s"));
 					runner.start();
 					
 					try {	
-						runner.join(TIMEOUT);
+						runner.join(FIVE_MIN);
 						if (runner.getState()!=Thread.State.TERMINATED) {
 							runner.interrupt();
 							runner.destroyProcess();
-							skip(problem,m,scope,"G");
+							skip(problem,m.getName(),scope,"G");
 							timedOut.add(m);
 							continue;
 						}
 					
-						final BufferedReader out = new BufferedReader(new InputStreamReader(runner.process.getInputStream(), "ISO-8859-1"));
+						final BufferedReader out = new BufferedReader(new InputStreamReader(runner.processOutput(), "ISO-8859-1"));
 						String line = null;
 			
 						while((line = out.readLine()) != null) {
@@ -168,31 +243,25 @@ public final class UCoreStatsDriver {
 		}
 	}
 	
-	private static final class ProcessRunner extends Thread {
-		final String[] cmd;
-		private Process process;
+	/** Usage: java tests.UCoreStatsDriver strategy [<start scope> <end scope>]*/
+	public static void main(String[] args) { 
+		if (args.length<1) usage();
 		
-		ProcessRunner(String[] cmd) { 
-			this.cmd = cmd; 
-			process =  null;
-		}
+		switch(args.length) { 
+		case 1 	: runToMax(args[0]); break;
 		
-		void destroyProcess() { if (process!=null) { process.destroy(); process=null; } ; }
-		
-		public void run() { 
-			try {
-				process = Runtime.getRuntime().exec(cmd);
-				process.waitFor();
-			} catch (IOException e) {
-				System.out.print("Could not run: ");
-				for(String c: cmd) { 
-					System.out.print(c + " ");
-				}
-				System.out.println();
-				System.exit(1);
-			} catch (InterruptedException e) {
-				// ignore
+		case 3 	: 
+			try { 
+				int min = Integer.parseInt(args[1]);
+				int max = Integer.parseInt(args[2]); 
+				if (min < 1 || min > max) usage();
+				runAllInScopes(args[0], min, max);
+			} catch (NumberFormatException e) { 
+				usage();
 			}
+			break;
+		
+		default	: usage();
 		}
 	}
 	
