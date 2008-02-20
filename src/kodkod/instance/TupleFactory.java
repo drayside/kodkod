@@ -190,10 +190,6 @@ public final class TupleFactory {
 		}
 	}
 	
-	public TupleSet unsafeSetOf(int arity, IntSet tupleIndices) {
-		return new TupleSet(universe,arity,tupleIndices);
-	}
-	
 	/**
 	 * Returns an initially empty tuple set of the given arity, based on this.universe.
 	 * @return { s: TupleSet | s.universe = this.universe && s.arity = arity && no s.tuples }
