@@ -21,14 +21,15 @@
  */
 package kodkod.engine.fol2sat;
 
+import kodkod.ast.Formula;
 import kodkod.engine.bool.BooleanConstant;
 import kodkod.instance.Bounds;
 
 /**
- * Thrown when a reduction is found to be trivially (un)satisfiable 
+ * Thrown when a formula is found to be trivially (un)satisfiable 
  * with respect to given Bounds.
  * 
- * @specfield formula: Formula
+ * @specfield formula: Formula // possibly de-sugared (skolemized) formula
  * @specfield bounds: Bounds // bounds (possibly a subset of the original bounds) with respect to which the formula reduces to a constant 
  * @specfield log: lone TranslationLog // log is null if translation logging was not enabled
  * @specfield value: BooleanConstant // the value to which the reduction simplified
@@ -37,6 +38,7 @@ import kodkod.instance.Bounds;
 public final class TrivialFormulaException extends Exception {
 	private final BooleanConstant value;
 	private final TranslationLog log;
+	private final Formula formula;
 	private final Bounds bounds;
 	
 	private static final long serialVersionUID = 6251577831781586067L;
@@ -47,10 +49,11 @@ public final class TrivialFormulaException extends Exception {
 	 * @effects this.log' = log && this.formula' = log.formula && 
 	 * this.bounds' = bounds && this.value' = value 
 	 */
-	 TrivialFormulaException(TranslationLog log, Bounds bounds, BooleanConstant formulaValue) {
+	 TrivialFormulaException(Formula formula, Bounds bounds, BooleanConstant formulaValue, TranslationLog log) {
 		super("Trivially " + ((formulaValue==BooleanConstant.FALSE) ? "un" : "" )  + "satisfiable formula.");
 		assert formulaValue != null && bounds != null;
 		this.log = log;
+		this.formula = formula;
 		this.bounds = bounds;
 		this.value = formulaValue;
 	}
@@ -61,6 +64,14 @@ public final class TrivialFormulaException extends Exception {
 	 */
 	public TranslationLog log() {
 		return log;
+	}
+	
+	/**
+	 * Returns this.formula.
+	 * @return this.formula
+	 */
+	public Formula formula() { 
+		return formula;
 	}
 	
 	/**

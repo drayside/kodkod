@@ -308,17 +308,17 @@ public final class Translator {
 			final BooleanAccumulator circuit = FOL2BoolTranslator.translate(annotated, interpreter, logger);
 			log = logger.log();
 			if (circuit.isShortCircuited()) {
-				throw new TrivialFormulaException(log, bounds, circuit.op().shortCircuit());
+				throw new TrivialFormulaException(annotated.node(), bounds, circuit.op().shortCircuit(), log);
 			} else if (circuit.size()==0) { 
-				throw new TrivialFormulaException(log, bounds, circuit.op().identity());
+				throw new TrivialFormulaException(annotated.node(), bounds, circuit.op().identity(), log);
 			}
 			return generateSBP(circuit, interpreter, breaker);
 		} else {
 			final BooleanValue circuit = (BooleanValue)FOL2BoolTranslator.translate(annotated, interpreter);
 			if (circuit.op()==Operator.CONST) {
-				throw new TrivialFormulaException(null, bounds, (BooleanConstant)circuit);
+				throw new TrivialFormulaException(annotated.node(), bounds, (BooleanConstant)circuit, null);
 			} 
-			return generateSBP((BooleanFormula)circuit, interpreter, breaker);
+			return generateSBP(annotated, (BooleanFormula)circuit, interpreter, breaker);
 		}
 	}
 	
@@ -340,37 +340,39 @@ public final class Translator {
 	/**
 	 * Conjoins the given circuit with an SBP generated using the given symmetry breaker and interpreter,
 	 * and returns the resulting circuit's translation to CNF.
-	 * @requires circuit is a translation of this.formula with respect to this.bounds
+	 * @requires [[annotated.node]] <=> ([[this.formula]] and [[breaker.broken]])
+	 * @requires circuit is a translation of annotated.node with respect to this.bounds
 	 * @requires interpreter is the leaf interpreter used in generating the given circuit
 	 * @requires breaker.bounds = this.bounds
 	 * @return flatten(circuit && breaker.generateSBP(interpreter), interpreter)
 	 * @throws TrivialFormulaException - flattening the circuit and the predicate yields a constant
 	 */
-	private Translation generateSBP(BooleanFormula circuit, LeafInterpreter interpreter, SymmetryBreaker breaker) 
+	private Translation generateSBP(AnnotatedNode<Formula> annotated, BooleanFormula circuit, LeafInterpreter interpreter, SymmetryBreaker breaker) 
 	throws TrivialFormulaException {
 		options.reporter().generatingSBP();
 		final BooleanFactory factory = interpreter.factory();
 		final BooleanValue sbp = breaker.generateSBP(interpreter, options.symmetryBreaking()); 
-		return flatten((BooleanFormula)factory.and(circuit, sbp), interpreter);
+		return flatten(annotated, (BooleanFormula)factory.and(circuit, sbp), interpreter);
 	}
 
 	/**
 	 * If this.options.flatten is true, flattens the given circuit and returns its translation to CNF.
 	 * Otherwise, simply returns the given circuit's translation to CNF.
-	 * @requires circuit is a translation of this.formula with respect to this.bounds
+	 * @requires [[annotated.node]] <=> ([[this.formula]] and [[breaker.broken]])
+	 * @requires circuit is a translation of annotated.node with respect to this.bounds
 	 * @requires interpreter is the leaf interpreter used in generating the given circuit
 	 * @return if this.options.flatten then 
 	 * 	toCNF(flatten(circuit), interpreter.factory().numberOfVariables(), interpreter.vars()) else
 	 *  toCNF(circuit, interpreter.factory().numberOfVariables(), interpreter.vars())
 	 * @throws TrivialFormulaException - flattening the circuit yields a constant
 	 */
-	private Translation flatten(BooleanFormula circuit, LeafInterpreter interpreter) throws TrivialFormulaException {	
+	private Translation flatten(AnnotatedNode<Formula> annotated, BooleanFormula circuit, LeafInterpreter interpreter) throws TrivialFormulaException {	
 		final BooleanFactory factory = interpreter.factory();
 		if (options.flatten()) {
 			options.reporter().flattening(circuit);
 			final BooleanValue flatCircuit = BooleanFormulaFlattener.flatten(circuit, factory);
 			if (flatCircuit.op()==Operator.CONST) {
-				throw new TrivialFormulaException(null, bounds, (BooleanConstant)flatCircuit);
+				throw new TrivialFormulaException(annotated.node(), bounds, (BooleanConstant)flatCircuit, null);
 			} else {
 				return toCNF((BooleanFormula)flatCircuit, factory.numberOfVariables(), interpreter.vars());
 			}

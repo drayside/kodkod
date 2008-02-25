@@ -41,6 +41,7 @@ import kodkod.ast.IntComparisonFormula;
 import kodkod.ast.IntConstant;
 import kodkod.ast.IntExpression;
 import kodkod.ast.IntToExprCast;
+import kodkod.ast.Multiplicity;
 import kodkod.ast.MultiplicityFormula;
 import kodkod.ast.Node;
 import kodkod.ast.NotFormula;
@@ -190,6 +191,10 @@ public final class PrettyPrinter {
 		public void visit(Decl node) {
 			node.variable().accept(this);
 			colon();
+			if (node.multiplicity()!=Multiplicity.ONE) {
+				append(node.multiplicity());
+				space();
+			}
 			node.expression().accept(this);
 		}
 		

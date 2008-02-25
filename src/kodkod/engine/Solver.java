@@ -22,6 +22,8 @@
 package kodkod.engine;
 
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
@@ -44,6 +46,7 @@ import kodkod.instance.Instance;
 import kodkod.instance.TupleSet;
 import kodkod.util.ints.IntIterator;
 import kodkod.util.ints.IntSet;
+import kodkod.util.nodes.Nodes;
 
 
 /** 
@@ -422,17 +425,27 @@ public final class Solver {
 			final Statistics stats = new Statistics(0, 0, 0, translTime, 0);
 			if (tfe.value().booleanValue()) {
 				trivial++;
-				final Instance raw = toInstance(tfe.bounds());
+				final Bounds translBounds = tfe.bounds();
+				final Instance raw = toInstance(translBounds);
 				final Solution sol = Solution.triviallySatisfiable(stats, padInstance(raw, bounds));
+				
 				bounds = bounds.clone();
-				Formula notModel = Formula.FALSE;
+				final List<Formula> changes = new LinkedList<Formula>();
+				
 				for(Map.Entry<Relation, TupleSet> entry: raw.relationTuples().entrySet()) {
-					Relation r = entry.getKey();
-					Relation rmodel = Relation.nary(r.name()+"_"+trivial, r.arity());
+					final Relation r = entry.getKey();
+					
+					if (bounds.upperBound(r)==null) { // r is a skolem
+						bounds.bound(r, translBounds.lowerBound(r), translBounds.upperBound(r));
+					}
+					
+					final Relation rmodel = Relation.nary(r.name()+"_"+trivial, r.arity());
 					bounds.boundExactly(rmodel, entry.getValue());
-					notModel = notModel.or(r.eq(rmodel).not());
+					
+					changes.add(r.eq(rmodel).not());
 				}
-				formula = formula.and(notModel);
+				
+				formula = tfe.formula().and(Nodes.or(changes));
 				return sol;
 			} else {
 				formula = null; bounds = null;

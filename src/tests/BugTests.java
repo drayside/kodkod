@@ -82,6 +82,163 @@ public class BugTests extends TestCase {
 //		}
 //	}
 	
+	public final void testFelix_02222008() {
+		List<String> atomlist = Arrays.asList("X1", "X2", "X3");
+
+		Universe universe = new Universe(atomlist);
+		TupleFactory factory = universe.factory();
+		Bounds bounds = new Bounds(universe);
+
+		Relation x = Relation.unary("X");
+		TupleSet x_upper = factory.noneOf(1);
+		x_upper.add(factory.tuple("X1"));
+		x_upper.add(factory.tuple("X2"));
+		x_upper.add(factory.tuple("X3"));
+		bounds.bound(x, x_upper);
+
+		Variable a = Variable.unary("a");
+		Variable b = Variable.unary("b");
+		Variable c = Variable.unary("c");
+		Formula goal = x.lone().not().and(b.union(c).eq(a).forSome(c.oneOf(x)).forAll(b.oneOf(x)).forSome(a.setOf(x)));
+
+		Solver solver = new Solver();
+		solver.options().setSolver(SATFactory.DefaultSAT4J);
+		solver.options().setBitwidth(4);
+		solver.options().setIntEncoding(Options.IntEncoding.TWOSCOMPLEMENT);
+		solver.options().setSymmetryBreaking(0);
+		solver.options().setSkolemDepth(2);
+		Iterator<Solution> itr = solver.solveAll(goal, bounds);
+		int sols = 0;
+		while(itr.hasNext()) {
+			Solution sol = itr.next();
+			Instance inst = sol.instance();
+			if (inst==null) break;
+			sols++;
+		
+			for(Relation rel : inst.relations()) { 
+				if (rel!=x) {
+					if( rel.arity()==1) { // rel = a
+						assertEquals(inst.tuples(x), inst.tuples(rel));
+					} else { // rel = c
+						final TupleSet dom = factory.noneOf(1);
+						for(Tuple t : inst.tuples(rel)) { 
+							dom.add(factory.tuple(t.atom(0)));
+						}
+						assertEquals(inst.tuples(x), dom);
+					}
+				}
+			}
+		}
+		assertEquals(3, sols);
+	}
+	
+	public final void testFelix_02212008() {
+		Relation x0 = Relation.unary("Int/min");
+		Relation x1 = Relation.unary("Int/zero");
+		Relation x2 = Relation.unary("Int/max");
+		Relation x3 = Relation.nary("Int/next", 2);
+		Relation x4 = Relation.unary("seq/Int");
+
+		List<String> atomlist = Arrays.asList(
+		 "-1", "-2", "-3", "-4", "-5",
+		 "-6", "-7", "-8", "0", "1", "2",
+		 "3", "4", "5", "6", "7"
+		);
+
+		Universe universe = new Universe(atomlist);
+		TupleFactory factory = universe.factory();
+		Bounds bounds = new Bounds(universe);
+
+		TupleSet x0_upper = factory.noneOf(1);
+		x0_upper.add(factory.tuple("-8"));
+		bounds.boundExactly(x0, x0_upper);
+
+		TupleSet x1_upper = factory.noneOf(1);
+		x1_upper.add(factory.tuple("0"));
+		bounds.boundExactly(x1, x1_upper);
+
+		TupleSet x2_upper = factory.noneOf(1);
+		x2_upper.add(factory.tuple("7"));
+		bounds.boundExactly(x2, x2_upper);
+
+		TupleSet x3_upper = factory.noneOf(2);
+		x3_upper.add(factory.tuple("-8").product(factory.tuple("-7")));
+		x3_upper.add(factory.tuple("-7").product(factory.tuple("-6")));
+		x3_upper.add(factory.tuple("-6").product(factory.tuple("-5")));
+		x3_upper.add(factory.tuple("-5").product(factory.tuple("-4")));
+		x3_upper.add(factory.tuple("-4").product(factory.tuple("-3")));
+		x3_upper.add(factory.tuple("-3").product(factory.tuple("-2")));
+		x3_upper.add(factory.tuple("-2").product(factory.tuple("-1")));
+		x3_upper.add(factory.tuple("-1").product(factory.tuple("0")));
+		x3_upper.add(factory.tuple("0").product(factory.tuple("1")));
+		x3_upper.add(factory.tuple("1").product(factory.tuple("2")));
+		x3_upper.add(factory.tuple("2").product(factory.tuple("3")));
+		x3_upper.add(factory.tuple("3").product(factory.tuple("4")));
+		x3_upper.add(factory.tuple("4").product(factory.tuple("5")));
+		x3_upper.add(factory.tuple("5").product(factory.tuple("6")));
+		x3_upper.add(factory.tuple("6").product(factory.tuple("7")));
+		bounds.boundExactly(x3, x3_upper);
+
+		TupleSet x4_upper = factory.noneOf(1);
+		x4_upper.add(factory.tuple("0"));
+		x4_upper.add(factory.tuple("1"));
+		x4_upper.add(factory.tuple("2"));
+		x4_upper.add(factory.tuple("3"));
+		bounds.boundExactly(x4, x4_upper);
+
+		bounds.boundExactly(-8,factory.range(factory.tuple("-8"),factory.tuple("-8")));
+		bounds.boundExactly(-7,factory.range(factory.tuple("-7"),factory.tuple("-7")));
+		bounds.boundExactly(-6,factory.range(factory.tuple("-6"),factory.tuple("-6")));
+		bounds.boundExactly(-5,factory.range(factory.tuple("-5"),factory.tuple("-5")));
+		bounds.boundExactly(-4,factory.range(factory.tuple("-4"),factory.tuple("-4")));
+		bounds.boundExactly(-3,factory.range(factory.tuple("-3"),factory.tuple("-3")));
+		bounds.boundExactly(-2,factory.range(factory.tuple("-2"),factory.tuple("-2")));
+		bounds.boundExactly(-1,factory.range(factory.tuple("-1"),factory.tuple("-1")));
+		bounds.boundExactly(0,factory.range(factory.tuple("0"),factory.tuple("0")));
+		bounds.boundExactly(1,factory.range(factory.tuple("1"),factory.tuple("1")));
+		bounds.boundExactly(2,factory.range(factory.tuple("2"),factory.tuple("2")));
+		bounds.boundExactly(3,factory.range(factory.tuple("3"),factory.tuple("3")));
+		bounds.boundExactly(4,factory.range(factory.tuple("4"),factory.tuple("4")));
+		bounds.boundExactly(5,factory.range(factory.tuple("5"),factory.tuple("5")));
+		bounds.boundExactly(6,factory.range(factory.tuple("6"),factory.tuple("6")));
+		bounds.boundExactly(7,factory.range(factory.tuple("7"),factory.tuple("7")));
+
+		Variable x9=Variable.nary("isTree_r",2);
+		Expression x10=Expression.INTS.product(Expression.INTS);
+		Decls x8=x9.setOf(x10);
+		Expression x15=Expression.INTS.product(Expression.INTS);
+		Formula x14=x9.in(x15);
+		Formula x13=x14.and(Formula.TRUE);
+		Formula x12=x13.and(Formula.TRUE);
+		Formula x7=x12.forSome(x8);
+		Formula x19=x0.eq(x0);
+		Formula x20=x2.eq(x2);
+		Formula x18=x19.and(x20);
+		Formula x21=x3.eq(x3);
+		Formula x17=x18.and(x21);
+		Formula x6=x7.and(x17);
+		Formula x23=x1.eq(x1);
+		Formula x24=x4.eq(x4);
+		Formula x22=x23.and(x24);
+		Formula x5=x6.and(x22);
+
+		Solver solver = new Solver();
+		solver.options().setSolver(SATFactory.DefaultSAT4J);
+		solver.options().setBitwidth(4);
+		solver.options().setIntEncoding(Options.IntEncoding.TWOSCOMPLEMENT);
+		solver.options().setSymmetryBreaking(20);
+		solver.options().setSkolemDepth(0);
+
+		Iterator<Solution> sols = solver.solveAll(x5, bounds);
+		assertTrue(sols.hasNext());
+		Solution a = sols.next();
+		assertEquals(Solution.Outcome.TRIVIALLY_SATISFIABLE, a.outcome());
+		assertTrue(sols.hasNext());
+		a = sols.next();
+		assertEquals(Solution.Outcome.SATISFIABLE, a.outcome());
+		
+	}
+	
 	public final void testFelix_11262007() {
 		Relation x6 = Relation.unary("R2");
 

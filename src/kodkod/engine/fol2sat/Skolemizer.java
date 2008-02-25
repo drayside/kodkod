@@ -31,7 +31,9 @@ import static kodkod.ast.QuantifiedFormula.Quantifier.SOME;
 import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 
 import kodkod.ast.BinaryFormula;
@@ -313,21 +315,18 @@ abstract class Skolemizer extends AbstractReplacer {
 	private final BooleanMatrix upperBound(Expression expr, Environment<BooleanMatrix> env) {
 		return FOL2BoolTranslator.approximate(new AnnotatedNode<Expression>(expr), interpreter, env);
 	}
+	
 	/**
-	 * Creates a skolem relation for newDecl.variable, bounds it in 
-	 * this.bounds, and returns the expression 
-	 * that should replace newDecl.variable in the final formula.
-	 * @requires newDecl = this.visit(oldDecl)
-	 * @effects bounds the skolem relation for newDecl in this.interpreter.boundingObject
-	 * @return the expression that should replace newDecl.variable in 
-	 * the final formula
+	 * Adds a bound for the given skolem relation to
+	 * this.bounds, and returns the expression that should replace skolemDecl.variable in the final formula.
+	 * @requires skolem !in this.bounds.relations
+	 * @requires skolem.arity = nonSkolems.size() + skolemDecl.variable().arity() 
+	 * @effects adds a sound upper bound for the given skolem relation to this.bounds
+	 * @return the expression that should replace skolemDecl.variable in the final formula
 	 */
-	private Expression skolemExpr(Decl oldDecl, Decl newDecl) {
+	private Expression skolemExpr(Decl skolemDecl, Relation skolem) {
 		final int depth = nonSkolems.size();
-		final int arity = depth + newDecl.variable().arity();
-
-		final Relation skolem = Relation.nary("$"+newDecl.variable().name(), arity);
-		reporter.skolemizing(oldDecl, skolem, nonSkolemsView);
+		final int arity = depth + skolemDecl.variable().arity();
 
 		Expression skolemExpr = skolem;
 		Environment<BooleanMatrix> skolemEnv = Environment.empty();
@@ -340,7 +339,7 @@ abstract class Skolemizer extends AbstractReplacer {
 			skolemExpr = info.decl.variable().join(skolemExpr);
 		}
 
-		BooleanMatrix matrixBound = upperBound(newDecl.expression(), skolemEnv);
+		BooleanMatrix matrixBound = upperBound(skolemDecl.expression(), skolemEnv);
 		for(int i = depth-1; i >= 0; i--) {
 			matrixBound = nonSkolems.get(i).upperBound.cross(matrixBound);
 		}
@@ -350,22 +349,36 @@ abstract class Skolemizer extends AbstractReplacer {
 
 		return skolemExpr;
 	}	
-	
+		
+	/**
+	 * Returns a formula that properly constrains the given skolem's range.
+	 * @return a formula that properly constrains the given skolem's range.
+	 */ 
+	private Formula restrictRange(Decl skolemDecl, Relation skolem) { 
+		Expression rangeExpr = skolemDecl.expression();
+		for(DeclInfo info : nonSkolems) {
+			rangeExpr = info.decl.expression().product(rangeExpr);
+		}
+		return skolem.in(rangeExpr);
+	}
 	
 	/**
-	 * Adds the skolem constraint for the given declaration and skolem expr to skolemConstraints.
-	 * @return decl.multiplicity = SET => skolemConstraints && skolemExpr in decl.expression,
-	 *         skolemConstraints && skolemExpr in decl.expression && decl.multiplicity skolemExpr
+	 * Conjoins the given formulas and makes the given decls the source of every subformula of the returned formula. 
+	 * @return a conjunction of the given formulas
+	 * @effects makes the given decls the source of every subformula of the returned formula 
 	 */
-	private Formula addConstraints(Formula skolemConstraints, Decl decl, Expression skolemExpr) {
-		final Formula f0 = source(skolemExpr.in(decl.expression()), decl);
-		final Multiplicity mult = decl.multiplicity();
-		if (mult==Multiplicity.SET) {
-			return skolemConstraints.and(f0);
-		} else {
-			final Formula f1 = source(skolemExpr.apply(mult), decl);
-			return skolemConstraints.and(source(f0.and(f1), decl));
+	private Formula conjoin(List<Formula> declConstraints, Decls decls) { 
+		while(declConstraints.size()>1) { 
+			final ListIterator<Formula> itr = declConstraints.listIterator();
+			final int pairs = declConstraints.size() & (-1<<1);
+			for(int i = 0; i < pairs; i+=2) { 
+				final Formula left = itr.next();
+				itr.remove();
+				final Formula right = itr.next();
+				itr.set(source(left.and(right), decls));
+			}
 		}
+		return source(declConstraints.get(0), decls);
 	}
 	
 	/**
@@ -376,19 +389,38 @@ abstract class Skolemizer extends AbstractReplacer {
 	public final Formula visit(QuantifiedFormula qf) {
 		Formula ret = lookup(qf);
 		if (ret!=null) return ret;
+		
 		final Environment<Expression> oldRepEnv = repEnv;	
 		final QuantifiedFormula.Quantifier quant = qf.quantifier();
 		final Decls decls = qf.declarations();
+		
 		if (skolemDepth>=0 && (negated && quant==ALL || !negated && quant==SOME)) { // skolemizable formula
-			Formula declConstraints = Formula.TRUE;
-			for(Decl decl : decls) {
-				Decl newDecl = visit(decl);
-				Expression skolemExpr = skolemExpr(decl, newDecl);
+			final List<Formula> declConstraints = new LinkedList<Formula>();
+		
+			for(Decl decl : decls) {	
+				final Decl skolemDecl = visit(decl);
+				
+				final Relation skolem = Relation.nary("$"+ skolemDecl.variable().name(), nonSkolems.size() + skolemDecl.variable().arity());
+				reporter.skolemizing(decl, skolem, nonSkolemsView);
+				
+				final Expression skolemExpr = skolemExpr(skolemDecl, skolem);
+				
+				final Formula restrictRange = source(restrictRange(skolemDecl, skolem), decl);
+				final Multiplicity mult = decl.multiplicity();
+				if (mult==Multiplicity.SET) { 
+					declConstraints.add(restrictRange);
+				} else {
+					final Formula restrictMult = source(skolemExpr.apply(mult), decl);
+					declConstraints.add(source(restrictRange.and(restrictMult), decl));
+				}
+				
 				repEnv = repEnv.extend(decl.variable(), skolemExpr);
-				declConstraints = source(addConstraints(declConstraints, newDecl, skolemExpr), decls);
 			}
-			ret = declConstraints.compose(negated ? IMPLIES : AND, qf.formula().accept(this));
+			
+			ret = conjoin(declConstraints, decls).compose(negated ? IMPLIES : AND, qf.formula().accept(this));
+
 		} else { // non-skolemizable formula
+		
 			final Decls newDecls = visit((Decls)qf.declarations());
 			if (skolemDepth>=nonSkolems.size()+newDecls.size()) { // could skolemize below
 				for(Decl d: newDecls) { nonSkolems.add(new DeclInfo(d)); }
@@ -402,7 +434,8 @@ abstract class Skolemizer extends AbstractReplacer {
 				ret = ((newDecls==decls && formula==qf.formula()) ? qf : formula.quantify(quant, newDecls));
 				skolemDepth = oldDepth;
 			}				
-		}			
+		}	
+		
 		repEnv = oldRepEnv;
 		return source(cache(qf,ret), qf);
 	}
