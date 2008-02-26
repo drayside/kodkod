@@ -426,13 +426,13 @@ public final class Solver {
 			if (tfe.value().booleanValue()) {
 				trivial++;
 				final Bounds translBounds = tfe.bounds();
-				final Instance raw = toInstance(translBounds);
-				final Solution sol = Solution.triviallySatisfiable(stats, padInstance(raw, bounds));
+				final Instance trivialInstance = padInstance(toInstance(translBounds), bounds);
+				final Solution sol = Solution.triviallySatisfiable(stats, trivialInstance);
 				
 				bounds = bounds.clone();
 				final List<Formula> changes = new LinkedList<Formula>();
 				
-				for(Map.Entry<Relation, TupleSet> entry: raw.relationTuples().entrySet()) {
+				for(Map.Entry<Relation, TupleSet> entry: trivialInstance.relationTuples().entrySet()) {
 					final Relation r = entry.getKey();
 					
 					if (bounds.upperBound(r)==null) { // r is a skolem
