@@ -364,7 +364,7 @@ abstract class Skolemizer extends AbstractReplacer {
 			while(itr.hasNext()) {
 				rangeDecls = rangeDecls.and(itr.next().decl);
 			}
-			rangeDecls = rangeDecls.and(skolemDecl);
+			rangeDecls = rangeDecls.and(skolemDecl.variable().oneOf(skolemDecl.expression()));
 			return skolem.in(Formula.TRUE.comprehension(rangeDecls));
 		}
 	}

@@ -456,10 +456,22 @@ public final class PrettyPrinter {
 		/** @effects this.tokens' = concat[ this.tokens, "int","[",
 		 *   tokenize[node.expression], "]" ] **/
 		public void visit(ExprToIntCast node) {
-			append("int");
-			append("[");
-			node.expression().accept(this);
-			append("]");
+			switch(node.op()) { 
+			case SUM:
+				append("int");
+				append("[");
+				node.expression().accept(this);
+				append("]");
+				break;
+			case CARDINALITY : 
+				append("#");
+				append("(");
+				node.expression().accept(this);
+				append(")");
+				break;
+			default : throw new IllegalArgumentException("unknown operator: " + node.op());
+			}
+			
 		}
 
 		/** @effects appends the tokenization of the given node to this.tokens */
