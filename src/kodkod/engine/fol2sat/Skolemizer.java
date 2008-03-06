@@ -31,6 +31,7 @@ import static kodkod.ast.QuantifiedFormula.Quantifier.SOME;
 import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
@@ -355,11 +356,17 @@ abstract class Skolemizer extends AbstractReplacer {
 	 * @return a formula that properly constrains the given skolem's range.
 	 */ 
 	private Formula restrictRange(Decl skolemDecl, Relation skolem) { 
-		Expression rangeExpr = skolemDecl.expression();
-		for(DeclInfo info : nonSkolems) {
-			rangeExpr = info.decl.expression().product(rangeExpr);
+		if (nonSkolems.isEmpty())
+			return skolem.in(skolemDecl.expression());
+		else {
+			final Iterator<DeclInfo> itr = nonSkolems.iterator();
+			Decls rangeDecls = itr.next().decl;
+			while(itr.hasNext()) {
+				rangeDecls = rangeDecls.and(itr.next().decl);
+			}
+			rangeDecls = rangeDecls.and(skolemDecl);
+			return skolem.in(Formula.TRUE.comprehension(rangeDecls));
 		}
-		return skolem.in(rangeExpr);
 	}
 	
 	/**
