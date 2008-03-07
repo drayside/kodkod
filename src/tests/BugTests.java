@@ -48,39 +48,67 @@ import kodkod.util.ints.IntTreeSet;
 public class BugTests extends TestCase {
 	private final Solver solver = new Solver();
 	
-//	public final void testStuff() {
-//		final Properties p = System.getProperties();
-//		for(Map.Entry e: p.entrySet())
-//			System.out.println(e); 
-//	}
-//	
-//	public final void testEmina_12112007() {
-//		final List<String> atoms = Arrays.asList("a0", "b0", "c0", "d0");
-//		final Relation a = Relation.unary("a");
-//		final Relation b = Relation.unary("b");
-//		final Relation c = Relation.unary("c");
-//		final Relation d = Relation.unary("d");
-//		final Formula formula = a.some().and(b.some()).and(c.some()).and(d.some()).and(a.no());
-//		final Bounds bounds = new Bounds(new Universe(atoms));
-//		final TupleFactory factory = bounds.universe().factory();
-//		bounds.bound(a, factory.setOf("a0"));
-//		bounds.bound(b, factory.setOf("b0"));
-//		bounds.bound(c, factory.setOf("c0"));
-//		bounds.bound(d, factory.setOf("d0"));
-//		final Solver s = new Solver();
-//		s.options().setLogTranslation(true);
-//		s.options().setSharing(1);
-//		s.options().setSolver(SATFactory.MiniSatProver);
-//		
-//		final Solution sol = s.solve(formula, bounds);
-//		//sol.proof().minimize(new MinTopStrategy(sol.proof().log()));
-//		for(Formula core : sol.proof().highLevelCore()) { 
-//			System.out.println(core);
-//		}
-//		for(Iterator<TranslationRecord> recs = sol.proof().core(); recs.hasNext();) { 
-//			System.out.println(recs.next());
-//		}
-//	}
+	public final void testFelix_03062008_2() {
+		Relation x5 = Relation.unary("Role");
+		Relation x6 = Relation.unary("Session");
+
+		List<String> atomlist = Arrays.asList("Role$0", "Session$0", "Session$1");
+
+		Universe universe = new Universe(atomlist);
+		TupleFactory factory = universe.factory();
+		Bounds bounds = new Bounds(universe);
+
+		TupleSet x5_upper = factory.noneOf(1);
+		x5_upper.add(factory.tuple("Role$0"));
+		bounds.bound(x5, x5_upper);
+
+		TupleSet x6_upper = factory.noneOf(1);
+		x6_upper.add(factory.tuple("Session$0"));
+		x6_upper.add(factory.tuple("Session$1"));
+		bounds.bound(x6, x6_upper);
+
+		Variable x11=Variable.unary("x_a");
+		Decls x10=x11.oneOf(x6);
+		Variable x15=Variable.unary("x_b");
+		Decls x14=x15.oneOf(x5);
+		Variable x17=Variable.unary("x_c");
+		Decls x16=x17.oneOf(x5);
+		Decls x13=x14.and(x16);
+		Expression x20=x15.product(x17);
+		Expression x19=x11.product(x20);
+		Formula x18=x19.some();
+		Formula x12=x18.forSome(x13);
+		Formula x9=x12.forAll(x10);
+		Formula x24=x5.some();
+		Formula x23=x24.not();
+		Formula x28=x5.eq(x5);
+		Formula x29=x6.eq(x6);
+		Formula x25=x28.and(x29);
+		Formula x22=x23.and(x25);
+		Formula x8=x9.and(x22).and(x5.no()).and(x6.no());
+
+		Solver solver = new Solver();
+		solver.options().setSolver(SATFactory.DefaultSAT4J);
+		solver.options().setBitwidth(2);
+		solver.options().setFlatten(false);
+		solver.options().setIntEncoding(Options.IntEncoding.TWOSCOMPLEMENT);
+		solver.options().setSymmetryBreaking(20);
+		solver.options().setSkolemDepth(2);
+
+		System.out.flush();
+		
+		Solution sol = solver.solve(x8, bounds);
+		Instance inst = sol.instance();
+		assertNotNull(inst);
+		
+		
+		for(Relation rel : inst.relations()) { 
+			if (rel!=x5 && rel!=x6) {
+				final TupleSet range = inst.tuples(x6).product(inst.tuples(x5));
+				assertTrue(range.containsAll(inst.tuples(rel)));
+			}
+		}
+	}
 	
 	public final void testFelix_03062008() {
 		Relation x0 = Relation.unary("Int/min");
@@ -218,7 +246,7 @@ public class BugTests extends TestCase {
 		solver.options().setIntEncoding(Options.IntEncoding.TWOSCOMPLEMENT);
 		solver.options().setSymmetryBreaking(0);
 		solver.options().setSkolemDepth(2);
-		System.out.println(goal);
+		
 		Iterator<Solution> itr = solver.solveAll(goal, bounds);
 		int sols = 0;
 		while(itr.hasNext()) {

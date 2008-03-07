@@ -142,6 +142,7 @@ abstract class Skolemizer extends AbstractReplacer {
 	private final List<DeclInfo> nonSkolems;
 	/* a Decl-only view of the nonSkolems list */
 	private final List<Decl> nonSkolemsView;
+	private final List<Formula> topSkolemConstraints;
 	/* true if the polarity of the currently visited node is negative, otherwise false */
 	private boolean negated;
 	/* depth to which to skolemize; negative depth indicates that no skolemization can be done at that point */
@@ -172,6 +173,7 @@ abstract class Skolemizer extends AbstractReplacer {
 			public Decl get(int index) { return nonSkolems.get(index).decl;	}
 			public int size() { return nonSkolems.size(); }
 		};
+		this.topSkolemConstraints = new ArrayList<Formula>();
 		this.negated = false;
 		this.skolemDepth = options.skolemDepth();
 	}
@@ -370,11 +372,11 @@ abstract class Skolemizer extends AbstractReplacer {
 	}
 	
 	/**
-	 * Conjoins the given formulas and makes the given decls the source of every subformula of the returned formula. 
+	 * Conjoins the given formulas and makes the given node the source of every subformula of the returned formula. 
 	 * @return a conjunction of the given formulas
-	 * @effects makes the given decls the source of every subformula of the returned formula 
+	 * @effects makes the given node the source of every subformula of the returned formula, empties the given list 
 	 */
-	private Formula conjoin(List<Formula> declConstraints, Decls decls) { 
+	private Formula conjoin(List<Formula> declConstraints, Node node) { 
 		while(declConstraints.size()>1) { 
 			final ListIterator<Formula> itr = declConstraints.listIterator();
 			final int pairs = declConstraints.size() & (-1<<1);
@@ -382,10 +384,10 @@ abstract class Skolemizer extends AbstractReplacer {
 				final Formula left = itr.next();
 				itr.remove();
 				final Formula right = itr.next();
-				itr.set(source(left.and(right), decls));
+				itr.set(source(left.and(right), node));
 			}
 		}
-		return source(declConstraints.get(0), decls);
+		return source(declConstraints.remove(0), node);
 	}
 	
 	/**
@@ -402,8 +404,9 @@ abstract class Skolemizer extends AbstractReplacer {
 		final Decls decls = qf.declarations();
 		
 		if (skolemDepth>=0 && (negated && quant==ALL || !negated && quant==SOME)) { // skolemizable formula
-			final List<Formula> declConstraints = new LinkedList<Formula>();
-		
+			final List<Formula> multConstraints = new LinkedList<Formula>();
+			final List<Formula> rangeConstraints = new LinkedList<Formula>();
+			
 			for(Decl decl : decls) {	
 				final Decl skolemDecl = visit(decl);
 				
@@ -412,20 +415,21 @@ abstract class Skolemizer extends AbstractReplacer {
 				
 				final Expression skolemExpr = skolemExpr(skolemDecl, skolem);
 				
-				final Formula restrictRange = source(restrictRange(skolemDecl, skolem), decl);
 				final Multiplicity mult = decl.multiplicity();
-				if (mult==Multiplicity.SET) { 
-					declConstraints.add(restrictRange);
-				} else {
-					final Formula restrictMult = source(skolemExpr.apply(mult), decl);
-					declConstraints.add(source(restrictRange.and(restrictMult), decl));
+				if (mult!=Multiplicity.SET) { 
+					multConstraints.add(source(skolemExpr.apply(mult), decl));
 				}
+				rangeConstraints.add(source(restrictRange(skolemDecl, skolem), decl));
 				
 				repEnv = repEnv.extend(decl.variable(), skolemExpr);
 			}
+			if (multConstraints.isEmpty()) { 
+				ret = qf.formula().accept(this);
+			} else {
+				ret = conjoin(multConstraints, decls).compose(negated ? IMPLIES : AND, qf.formula().accept(this));
+			}
+			topSkolemConstraints.add(conjoin(rangeConstraints, decls));
 			
-			ret = conjoin(declConstraints, decls).compose(negated ? IMPLIES : AND, qf.formula().accept(this));
-
 		} else { // non-skolemizable formula
 		
 			final Decls newDecls = visit((Decls)qf.declarations());
@@ -444,6 +448,9 @@ abstract class Skolemizer extends AbstractReplacer {
 		}	
 		
 		repEnv = oldRepEnv;
+		if (repEnv.isEmpty() && !topSkolemConstraints.isEmpty()) { 
+			ret = conjoin(topSkolemConstraints, qf).compose(negated ? IMPLIES : AND, ret);
+		}
 		return source(cache(qf,ret), qf);
 	}
 
