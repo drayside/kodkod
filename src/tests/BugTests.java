@@ -48,6 +48,8 @@ import kodkod.util.ints.IntTreeSet;
 public class BugTests extends TestCase {
 	private final Solver solver = new Solver();
 	
+//	
+	
 	public final void testFelix_03062008_2() {
 		Relation x5 = Relation.unary("Role");
 		Relation x6 = Relation.unary("Session");

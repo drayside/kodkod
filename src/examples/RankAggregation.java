@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
+import kodkod.ast.BinaryExpression;
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
 import kodkod.ast.Relation;
@@ -17,6 +18,8 @@ import kodkod.instance.Bounds;
 import kodkod.instance.TupleFactory;
 import kodkod.instance.TupleSet;
 import kodkod.instance.Universe;
+import kodkod.util.nodes.Nodes;
+import kodkod.util.nodes.PrettyPrinter;
 
 /**
  * A toy implementation of the Kemeny rank aggregation function.
@@ -25,7 +28,7 @@ import kodkod.instance.Universe;
  */
 public final class RankAggregation {
 	private final Relation[] rankings;
-	private final Relation kemeny, cost, kfirst, klast, elts;
+	private final Relation kemeny, disagrees, kfirst, klast, elts;
 	
 	/**
 	 * Constructs a RankAggregation model for finding the Kemeny rank
@@ -39,7 +42,7 @@ public final class RankAggregation {
 		this.kemeny = Relation.binary("kemeny");
 		this.kfirst = Relation.unary("kfirst");
 		this.klast = Relation.unary("klast");
-		this.cost = Relation.binary("cost");
+		this.disagrees = Relation.binary("disagrees");
 		this.elts = Relation.unary("elts");
 	}
 
@@ -59,11 +62,12 @@ public final class RankAggregation {
 	 */
 	public Formula kemeny() {
 		final Variable e = Variable.unary("e");
-		Expression r = rankings[0].closure();
-		for(int i = 1; i < rankings.length; i++) {
-			r = r.union(rankings[i].closure());
+		Expression[] closures = new Expression[rankings.length]; 
+		for(int i = 0; i < rankings.length; i++) {
+			closures[i] = rankings[i].closure();
 		}
-		return e.join(cost).eq(e.join(kemeny.closure()).intersection(r.join(e))).forAll(e.oneOf(elts));
+		final Expression union = Nodes.apply(BinaryExpression.Operator.UNION, closures);
+		return e.join(disagrees).eq(e.join(kemeny.closure()).intersection(union.join(e))).forAll(e.oneOf(elts));
 	}
 	
 	/**
@@ -74,7 +78,7 @@ public final class RankAggregation {
 		return new Cost() {
 
 			public int edgeCost(Relation relation) {
-				return relation==cost ? 2: 0;
+				return relation==disagrees ? 2: 0;
 			}
 			
 		};
@@ -115,12 +119,12 @@ public final class RankAggregation {
 			}
 		}
 		b.bound(kemeny, kbound);
-		b.bound(cost, f.allOf(2));
+		b.bound(disagrees, f.allOf(2));
 		
 //		final int rsize = (int)StrictMath.ceil(usize*.75);
 		final long seed = System.currentTimeMillis();
 		final Random rand = new Random(seed);
-		System.out.println(seed);
+//		System.out.println(seed);
 		for(Relation r : rankings) {
 			Collections.shuffle(atoms, rand);
 			TupleSet rbound = f.noneOf(2);
@@ -151,7 +155,9 @@ public final class RankAggregation {
 			
 			Formula f = model.show();
 			Bounds b = model.bounds(Integer.parseInt(args[0]));
-						
+			System.out.println(PrettyPrinter.print(f, 2));
+			System.out.println(b);
+			
 			System.out.println("solving with mincost");
 			solver.options().setSolver(SATFactory.ZChaffMincost);
 			Solution solm = solver.solve(f, b, model.cost());
