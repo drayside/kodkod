@@ -330,7 +330,7 @@ public final class Nodes {
 				ret = apply(op, children);
 			}
 			
-			return cache(node, ret);
+			return cache((N)node, ret);
 		}
 		
 		/**
