@@ -8,6 +8,7 @@ import java.util.Set;
 import junit.framework.TestCase;
 import kodkod.ast.Decl;
 import kodkod.ast.Decls;
+import kodkod.ast.Expression;
 import kodkod.ast.Formula;
 import kodkod.ast.Multiplicity;
 import kodkod.ast.Relation;
@@ -125,10 +126,14 @@ public class SkolemizationTest extends TestCase {
 		inst = solve(va.in(r1b.join(r2b)).forSome(da));
 		assertSkolems(bounds, inst, skolems);
 		
-		
 		inst = solve(va.in(r1b.join(r2b)).forSome(da).and(va.in(r1b).not().forAll(mult==Multiplicity.ONE ? da : va.oneOf(r1a))));
 		assertSkolems(bounds, inst, skolems);
+		final Expression e0 = va.join(r2a);
+		final Formula f0 = e0.some().forSome(va.oneOf(r1a));
+		final Formula f1 = e0.no().forAll(va.oneOf(r2a.join(r1b)));
 		
+		inst = solve(f0.and(f1));
+		assertSkolems(bounds, inst, skolems);
 		
 		skolems.add("$"+vb.name());
 		
@@ -146,6 +151,9 @@ public class SkolemizationTest extends TestCase {
 		
 		inst = solve(va.in(r1b.join(r2b)).forSome(da).and(r1b.in(vb).forAll(db).not()));
 		assertSkolems(bounds, inst, skolems);
+		
+		
+		
 	}
 	
 	public final void testSkolems() {
