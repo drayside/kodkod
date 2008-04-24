@@ -32,7 +32,11 @@ import org.sat4j.minisat.SolverFactory;
  * @author Emina Torlak
  */
 public abstract class SATFactory {
-	private SATFactory() {}
+	
+	/**
+	 * Constructs a new instance of SATFactory.
+	 */
+	protected SATFactory() {}
 	
 	/**
 	 * The factory that produces instances of the default sat4j solver.

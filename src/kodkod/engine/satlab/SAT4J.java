@@ -21,12 +21,11 @@
  */
 package kodkod.engine.satlab;
 
-import java.util.Iterator;
 import java.util.NoSuchElementException;
-
 import org.sat4j.specs.ContradictionException;
 import org.sat4j.specs.ISolver;
 import org.sat4j.specs.IVecInt;
+import org.sat4j.specs.IteratorInt;
 
 /**
  * A wrapper class that provides
@@ -272,23 +271,28 @@ final class SAT4J implements SATSolver {
 			throw new UnsupportedOperationException();
 		}
 
-		public Iterator<Integer> iterator() {
-			return new Iterator<Integer>() {
+		public IteratorInt iterator() {
+			return new IteratorInt() {
 				int cursor = 0;
 				public boolean hasNext() {
 					return cursor < vec.length;
 				}
-
-				public Integer next() {
+				public int next() {
 					if (!hasNext()) 
 						throw new NoSuchElementException();
 					return vec[cursor++];
 				}
-
-				public void remove() {
-					throw new UnsupportedOperationException();
-				}
 			};
+		}
+
+		public int containsAt(int e) {
+			for(int n=vec.length, i=0; i<n; i++) if (vec[i]==e) return i;
+			return -1;
+		}
+
+		public int containsAt(int e, int from) {
+			if (from<vec.length) for(int n=vec.length, i=from+1; i<n; i++) if (vec[i]==e) return i;
+			return -1;
 		}
 		
 	}
