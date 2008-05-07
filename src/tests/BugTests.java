@@ -91,23 +91,28 @@ public class BugTests extends TestCase {
 	}
 	public final void testEmina_05072008() {
 		Relation A=Relation.unary("A"), first=Relation.unary("OrdFirst"), last=Relation.unary("OrdLast"), next=Relation.nary("OrdNext", 2);
-		Relation B=Relation.unary("B");
+		Relation B=Relation.unary("B"), acyclic = Relation.binary("acyclic");
 		
-		List<String> atomlist = Arrays.asList("A1", "A2", "A3", "B1", "B2", "B3");
+		List<String> atomlist = Arrays.asList("A1", "A2", "A3", "B1", "B2", "B3", "C1", "C2");
 		Universe universe = new Universe(atomlist);
 		TupleFactory factory = universe.factory();
 		Bounds bounds = new Bounds(universe);
 
 		TupleSet allA = factory.setOf("A1","A2","A3");
+		TupleSet allB = factory.setOf("B1","B2","B3");
+		TupleSet allC = factory.setOf("C1", "C2");
 		bounds.boundExactly(A, allA);
 		bounds.bound(first, allA);
 		bounds.bound(last, allA);
 		bounds.bound(next, allA.product(allA));
-		bounds.boundExactly(B, factory.setOf("B1","B2","B3"));
+		bounds.boundExactly(B, allB);
+		bounds.bound(acyclic, allC.product(allC));
 		
 		Variable v = Variable.unary("v");
-		Formula f = Formula.TRUE.forSome(v.setOf(B));
-		Formula form = next.totalOrder(A,first,last).and(f);
+		Formula f0 = Formula.TRUE.forSome(v.setOf(B));
+		Formula f1 = next.totalOrder(A, first, last);
+		Formula f2 = acyclic.acyclic();
+		Formula form = f0.and(f1).and(f2);
 
 		Solver solver = new Solver();
 		solver.options().setSolver(SATFactory.MiniSat);
@@ -121,7 +126,7 @@ public class BugTests extends TestCase {
 		int i=1;
 		
 		while (sol.hasNext()) {
-			assertTrue(i <= 9);
+			assertTrue(i <= 17);
 			sol.next();
 			i++;
 		}

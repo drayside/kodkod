@@ -429,36 +429,31 @@ public final class Solver {
 				final Instance trivialInstance = padInstance(toInstance(translBounds), bounds);
 				final Solution sol = Solution.triviallySatisfiable(stats, trivialInstance);
 				
-				bounds = bounds.clone();
 				final List<Formula> changes = new LinkedList<Formula>();
-				
+								
 				for(Map.Entry<Relation, TupleSet> entry: trivialInstance.relationTuples().entrySet()) {
 					final Relation r = entry.getKey();
 					
-					final TupleSet upper = bounds.upperBound(r);
-					if (upper==null) { 
-						// r is a skolem and may change in the next solution.
-						bounds.bound(r, translBounds.lowerBound(r), translBounds.upperBound(r));
-					} else { 
-						final TupleSet lower = bounds.lowerBound(r);
-						if (upper.size()==lower.size() || entry.getValue().size()!=lower.size()) { 
-							// if r is a constant, it cannot be changed in the next solution;
-							// if r is not a constant but its trivial value is not equal to 
-							// its lower bound, then the current value of r is the result of 
-							// direct symmetry breaking and cannot be changed in the next solution.
-							bounds.boundExactly(r, entry.getValue());
-							continue;
+					if (!translBounds.relations().contains(r)) { 
+						translBounds.bound(r, bounds.lowerBound(r), bounds.upperBound(r));
+					}
+					
+					if (translBounds.lowerBound(r)!=translBounds.upperBound(r)) { // r may change
+						if (entry.getValue().isEmpty()) { 
+							changes.add(r.some());
+						} else {
+							final Relation rmodel = Relation.nary(r.name()+"_"+trivial, r.arity());
+							translBounds.boundExactly(rmodel, entry.getValue());	
+							changes.add(r.eq(rmodel).not());
 						}
 					}
-					final Relation rmodel = Relation.nary(r.name()+"_"+trivial, r.arity());
-					bounds.boundExactly(rmodel, entry.getValue());	
-					changes.add(r.eq(rmodel).not());
 				}
-				if (changes.isEmpty()) { // won't get another solution
-					formula = Formula.FALSE;
-				} else { // use the changed formula
-					formula = tfe.formula().and(Nodes.or(changes));
-				}
+				
+				bounds = translBounds;
+				
+				// no changes => there can be no more solutions (besides the current trivial one)
+				formula = changes.isEmpty() ? Formula.FALSE : tfe.formula().and(Nodes.or(changes));
+				
 				return sol;
 			} else {
 				formula = null; bounds = null;
