@@ -51,7 +51,7 @@ public class ExamplesTest extends TestCase {
 	 */
 	public void testCeilingsAndFloors() {
 		final CeilingsAndFloors model = new CeilingsAndFloors();
-		final Solution sol = solve(model.belowTooDoublePrime(), model.bounds(6, 6));
+		final Solution sol = solve(model.checkBelowTooDoublePrime(), model.bounds(6, 6));
 //		UNSATISFIABLE
 //		p cnf 1751 3415
 //		primary variables: 90

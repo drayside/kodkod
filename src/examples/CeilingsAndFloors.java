@@ -115,7 +115,7 @@ public final class CeilingsAndFloors {
 	 * Returns the belowToo'' constraint.
 	 * @return declarations() &&  paulSimon() && noSharing() && !belowToo()
 	 */
-	public Formula belowTooDoublePrime() {
+	public Formula checkBelowTooDoublePrime() {
 		return declarations().and(paulSimon()).and(noSharing()).and(belowToo().not());
 	}
 	
@@ -123,9 +123,15 @@ public final class CeilingsAndFloors {
 	 * Returns the belowToo assertion.
 	 * @return declarations() && paulSimon() && !belowToo()
 	 */
-	public Formula belowTooAssertion() {
+	public Formula checkBelowTooAssertion() {
 		return declarations().and(paulSimon()).and(belowToo().not());
 	}
+	
+	/**
+	 * Creates bounds for the problem using the given number of platforms and men. 
+	 * @return bounds for the problem using the given number of platforms and men. 
+	 */
+	public Bounds bounds(int scope) { return bounds(scope, scope); }
 	
 	/**
 	 * Creates bounds for the problem using the given number of platforms and men. 
@@ -170,7 +176,7 @@ public final class CeilingsAndFloors {
 		try {
 			final int m = Integer.parseInt(args[0]);
 			final int p = Integer.parseInt(args[1]);
-			final Formula show = model.belowTooDoublePrime();
+			final Formula show = model.checkBelowTooDoublePrime();
 			final Solution sol = solver.solve(show, model.bounds(m,p));
 			System.out.println(show);
 			System.out.println(sol);

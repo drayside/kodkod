@@ -435,17 +435,30 @@ public final class Solver {
 				for(Map.Entry<Relation, TupleSet> entry: trivialInstance.relationTuples().entrySet()) {
 					final Relation r = entry.getKey();
 					
-					if (bounds.upperBound(r)==null) { // r is a skolem
+					final TupleSet upper = bounds.upperBound(r);
+					if (upper==null) { 
+						// r is a skolem and may change in the next solution.
 						bounds.bound(r, translBounds.lowerBound(r), translBounds.upperBound(r));
+					} else { 
+						final TupleSet lower = bounds.lowerBound(r);
+						if (upper.size()==lower.size() || entry.getValue().size()!=lower.size()) { 
+							// if r is a constant, it cannot be changed in the next solution;
+							// if r is not a constant but its trivial value is not equal to 
+							// its lower bound, then the current value of r is the result of 
+							// direct symmetry breaking and cannot be changed in the next solution.
+							bounds.boundExactly(r, entry.getValue());
+							continue;
+						}
 					}
-					
 					final Relation rmodel = Relation.nary(r.name()+"_"+trivial, r.arity());
-					bounds.boundExactly(rmodel, entry.getValue());
-					
+					bounds.boundExactly(rmodel, entry.getValue());	
 					changes.add(r.eq(rmodel).not());
 				}
-				
-				formula = tfe.formula().and(Nodes.or(changes));
+				if (changes.isEmpty()) { // won't get another solution
+					formula = Formula.FALSE;
+				} else { // use the changed formula
+					formula = tfe.formula().and(Nodes.or(changes));
+				}
 				return sol;
 			} else {
 				formula = null; bounds = null;

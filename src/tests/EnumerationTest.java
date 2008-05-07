@@ -35,7 +35,7 @@ public class EnumerationTest extends TestCase {
 
 	public final void testCeilingsAndFloors() {
 		final CeilingsAndFloors model = new CeilingsAndFloors();
-		final Formula f = model.belowTooAssertion();
+		final Formula f = model.checkBelowTooAssertion();
 		
 		// has exactly one instance
 		Iterator<Solution> sol = solver.solveAll(f, model.bounds(2,2));
@@ -50,7 +50,7 @@ public class EnumerationTest extends TestCase {
 		assertTrue(sol.hasNext());
 		
 		// has no instances
-		sol = solver.solveAll(model.belowTooDoublePrime(), model.bounds(3,3));
+		sol = solver.solveAll(model.checkBelowTooDoublePrime(), model.bounds(3,3));
 		assertNull(sol.next().instance());
 	}
 	
@@ -83,5 +83,6 @@ public class EnumerationTest extends TestCase {
 		assertFalse(sol.hasNext());
 
 	}
+	
 	
 }

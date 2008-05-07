@@ -49,7 +49,83 @@ public class BugTests extends TestCase {
 	private final Solver solver = new Solver();
 	
 //	
-	
+	public final void testFelix_05072008() { 
+		Relation A=Relation.unary("A"), first=Relation.unary("OrdFirst"), last=Relation.unary("OrdLast"), next=Relation.nary("OrdNext", 2);
+		
+		List<String> atomlist = Arrays.asList("A1", "A2", "A3");
+		Universe universe = new Universe(atomlist);
+		TupleFactory factory = universe.factory();
+		Bounds bounds = new Bounds(universe);
+
+		TupleSet all = factory.setOf("A1","A2","A3");
+		bounds.boundExactly(A, all);
+		bounds.bound(first, all);
+		bounds.bound(last, all);
+		bounds.bound(next, all.product(all));
+		
+		Formula form = next.totalOrder(A,first,last);
+
+		Solver solver = new Solver();
+		solver.options().setSolver(SATFactory.MiniSat);
+		solver.options().setBitwidth(4);
+		solver.options().setFlatten(false);
+		solver.options().setIntEncoding(Options.IntEncoding.TWOSCOMPLEMENT);
+		solver.options().setSymmetryBreaking(0);
+		solver.options().setSkolemDepth(0);
+		
+		Iterator<Solution> sol = solver.solveAll(form, bounds);
+		assertTrue(sol.hasNext());
+		assertEquals(sol.next().outcome(), Solution.Outcome.TRIVIALLY_SATISFIABLE);
+		assertTrue(sol.hasNext());
+		assertEquals(sol.next().outcome(), Solution.Outcome.TRIVIALLY_UNSATISFIABLE);
+		assertFalse(sol.hasNext());
+		
+//		int i=1;
+//		
+//		while (sol.hasNext()) {
+//			System.out.println("================================== "+i+" ===================================");
+//		  System.out.println(sol.next());
+//		  System.out.flush();
+//		  i++;
+//		}
+	}
+	public final void testEmina_05072008() {
+		Relation A=Relation.unary("A"), first=Relation.unary("OrdFirst"), last=Relation.unary("OrdLast"), next=Relation.nary("OrdNext", 2);
+		Relation B=Relation.unary("B");
+		
+		List<String> atomlist = Arrays.asList("A1", "A2", "A3", "B1", "B2", "B3");
+		Universe universe = new Universe(atomlist);
+		TupleFactory factory = universe.factory();
+		Bounds bounds = new Bounds(universe);
+
+		TupleSet allA = factory.setOf("A1","A2","A3");
+		bounds.boundExactly(A, allA);
+		bounds.bound(first, allA);
+		bounds.bound(last, allA);
+		bounds.bound(next, allA.product(allA));
+		bounds.boundExactly(B, factory.setOf("B1","B2","B3"));
+		
+		Variable v = Variable.unary("v");
+		Formula f = Formula.TRUE.forSome(v.setOf(B));
+		Formula form = next.totalOrder(A,first,last).and(f);
+
+		Solver solver = new Solver();
+		solver.options().setSolver(SATFactory.MiniSat);
+		solver.options().setBitwidth(4);
+		solver.options().setFlatten(false);
+		solver.options().setIntEncoding(Options.IntEncoding.TWOSCOMPLEMENT);
+		solver.options().setSymmetryBreaking(0);
+		solver.options().setSkolemDepth(0);
+		
+		Iterator<Solution> sol = solver.solveAll(form, bounds);
+		int i=1;
+		
+		while (sol.hasNext()) {
+			assertTrue(i <= 9);
+			sol.next();
+			i++;
+		}
+	}
 	public final void testFelix_03062008_2() {
 		Relation x5 = Relation.unary("Role");
 		Relation x6 = Relation.unary("Session");

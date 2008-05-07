@@ -78,7 +78,7 @@ public final class RankAggregation {
 		return new Cost() {
 
 			public int edgeCost(Relation relation) {
-				return relation==disagrees ? 2: 0;
+				return relation==disagrees ? 1: 0;
 			}
 			
 		};
@@ -121,10 +121,8 @@ public final class RankAggregation {
 		b.bound(kemeny, kbound);
 		b.bound(disagrees, f.allOf(2));
 		
-//		final int rsize = (int)StrictMath.ceil(usize*.75);
-		final long seed = System.currentTimeMillis();
+		final long seed = 1209158694505L;//System.currentTimeMillis();
 		final Random rand = new Random(seed);
-//		System.out.println(seed);
 		for(Relation r : rankings) {
 			Collections.shuffle(atoms, rand);
 			TupleSet rbound = f.noneOf(2);
