@@ -234,14 +234,11 @@ public final class ConfigAssure {
 		final Universe univ = inst.universe();
 		final Evaluator eval = new Evaluator(inst, opt);
 		final TupleFactory factory = univ.factory();
-		
-		final Relation[] ports = new Relation[univ.size()-31];
-		for(int i = 0; i < ports.length; i++) { 
-			ports[i] = Relation.unary(univ.atom(i).toString());
-			inst.add(ports[i], factory.setOf(ports[i].name()));
-		}
-		
-		for(Relation p : ports) { 
+				
+		for(Object atom : univ) {
+			final Relation p = Relation.unary(atom.toString());
+			inst.add(p, factory.setOf(atom));
+			
 			System.out.print(p);
 			System.out.print(": addr=" + eval.evaluate(addr(p).sum()));
 			System.out.print(", mask=" + eval.evaluate(mask(p).sum()));
