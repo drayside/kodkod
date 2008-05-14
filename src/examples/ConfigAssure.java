@@ -21,7 +21,6 @@ import kodkod.ast.Variable;
 import kodkod.engine.Evaluator;
 import kodkod.engine.Solution;
 import kodkod.engine.Solver;
-import kodkod.engine.config.ConsoleReporter;
 import kodkod.engine.config.Options;
 import kodkod.engine.satlab.SATFactory;
 import kodkod.instance.Bounds;
@@ -38,9 +37,32 @@ import kodkod.util.nodes.PrettyPrinter;
  * @author Emina Torlak
  */
 public final class ConfigAssure {
-	private final Relation port, addr, mask, subnet;
+	/** 
+	 * port is a unary relation that contains all the port atoms, represented 
+	 * by concatenating the device name and the interface of each port.
+	 **/
+	private final Relation port;
+	
+	/** The addr relation maps port atoms to all the power-of-2 atoms (1, 2, 4, ..., 2^31). */
+	private final Relation addr;
+	
+	/** 
+	 * The mask relation maps port atoms to the integer atoms 1, 2, 4, 8 and 16, implicitly
+	 * representing each mask by the number of zeros it contains [0..31]. 
+	 **/
+	private final Relation mask;
+	
+	/**
+	 * The subnet relation maps one representative port atom in each subnet to all the other
+	 * port atoms in the same subnet.  For example, the Prolog predicate subnet(['IOS_00037'-'Vlan790', 'IOS_00038'-'Vlan790'])
+	 * is represented by the tuples <'IOS_00037'-'Vlan790', 'IOS_00037'-'Vlan790'> and <'IOS_00037'-'Vlan790', 'IOS_00038'-'Vlan790'>
+	 * in the subnet relation.  We arbitrarily chose the first atom in each Prolog predicate to be representative of
+	 * that subnet.  This encoding assumes that each port can participate in at most one subnet.
+	 */
+	private final Relation subnet;
+	
 	private final IntConstant ones = IntConstant.constant(-1);
-	private final int min = (121<<24) | (96<<24);
+	private final int min = (121<<24) | (96<<16);
 	private final int max = min | (255<<8) | 255;
 	
 	/**
@@ -57,21 +79,27 @@ public final class ConfigAssure {
 	 * Returns the netID of the given port.
 	 * @return netID of the given port
 	 */
-	Expression netid(Expression p) { 
-		return addr(p).intersection(mask(p));
+	IntExpression netid(Expression p) { 
+		return addr(p).and(mask(p));
 	}
 	
 	/**
 	 * Returns the ip address of the given port.
 	 * @return ip address of the given port
 	 */
-	Expression addr(Expression p) { return p.join(addr); }
+	IntExpression addr(Expression p) { return p.join(addr).sum(); }
 	
 	/**
-	 * Returns the mask of the given port.
-	 * @return mask of the given port
+	 * Returns the number of zeros in the mask of the given port.
+	 * @return the number of zeros in the mask of the given port
 	 */
-	Expression mask(Expression p) { return p.join(mask); }
+	IntExpression zeros(Expression p) { return p.join(mask).sum(); }
+	
+	/**
+	 * Returns the explicit mask of the given port.
+	 * @return explicit mask of the given port
+	 */
+	IntExpression mask(Expression p) { return ones.shl(zeros(p)); }
 	
 	/**
 	 * Returns the subnet of the given port.
@@ -80,27 +108,49 @@ public final class ConfigAssure {
 	Expression subnet(Expression p) { return p.join(subnet); }
 	
 	/**
+	 * Returns a Formula that evaluates to true if the netid represented of the port p0
+	 * contains the netid of the port p1.
+	 * @return zeros(p0) >= zeros(p1) and (addr(p0) & mask(p0)) = (addr(p1) & mask(p0))
+	 */
+	Formula contains(Expression p0, Expression p1) { 
+		final Formula f0 = zeros(p0).gte(zeros(p1));
+		final Formula f1 = addr(p0).and(mask(p0)).eq(addr(p1).and(mask(p0)));
+		return f0.and(f1);
+	}
+	
+	/**
 	 * Returns the requirements.
 	 * @return requirements
 	 */
 	public Formula requirements () { 
 		
-		final Variable p1 = Variable.unary("p1"), p2 = Variable.unary("p2");
+		final List<Formula> reqs = new ArrayList<Formula>();
 		
-		// no two ports have the same address: all disj p1, p2: Port | p1.addr != p2.addr
-		final Formula f0 = p1.eq(p2).not().implies(addr(p1).eq(addr(p2)).not()).forAll(p1.oneOf(port).and(p2.oneOf(port)));
+		final Variable p0 = Variable.unary("p0"), p1 = Variable.unary("p1"), p2 = Variable.unary("p2");
 		
-		// two ports on the same subnet have the same netid:  all p1, p2: Port | p1.subnet = p2.subnet => p1.netid = p2.netid
-		final Formula f1 = subnet(p1).eq(subnet(p2)).implies(netid(p1).eq(netid(p2))).forAll(p1.oneOf(port).and(p2.oneOf(port)));
+		// the domain of the subnet expression contains all the representative atoms for each subnet
+		final Expression subreps = subnet.join(port);
 		
-		// net ids don't overlap:  all disj p1, p2: Port | bitwise-and (p1.netid, p2.netid) = 0
-		final Formula f2 = p1.eq(p2).not().implies(netid(p1).intersection(netid(p2)).no()).forAll(p1.oneOf(port).and(p2.oneOf(port)));
+		// no two ports on the same subnet have the same address:
+		// all p0: subreps, disj p1, p2: p0.subnet | addr(p1) != addr(p2)
+		final Expression submembers = p0.join(subnet);
+		reqs.add( p1.eq(p2).not().implies(addr(p1).eq(addr(p2)).not()).
+					forAll(p0.oneOf(subreps).and(p1.oneOf(submembers)).and(p2.oneOf(submembers)))  );
 		
-		// all addresses are in the range 121.96.0.0 to 121.96.255.255:  all p: Port | 121.96.0.0 <= p.addr <= 121.96.255.255
-		final IntExpression p1bits = addr(p1).sum();
-		final Formula f3 = IntConstant.constant(min).lte(p1bits).and(p1bits.lte(IntConstant.constant(max))).forAll(p1.oneOf(port));
+		// all ports on the same subnet have the same netid:
+		// all p0: subreps, p1: p0.subnet | netid(p0) = netid(p1)
+		reqs.add( netid(p0).eq(netid(p1)).forAll(p0.oneOf(subreps).and(p1.oneOf(submembers))) );
 		
-		return Nodes.and(f0, f1, f2, f3);
+		// netids don't overlap: 
+		// all disj p0, p1: subreps | not contains(p0, p1) and not contains(p1, p0)
+		reqs.add( p0.eq(p1).not().implies(contains(p0,p1).not().and(contains(p1, p0).not())).
+					forAll(p0.oneOf(subreps).and(p1.oneOf(subreps)) ));	
+		
+		// all addresses are in the range 121.96.0.0 to 121.96.255.255:  
+		// all p0: Port | 121.96.0.0 <= addr(p0) <= 121.96.255.255
+		reqs.add( IntConstant.constant(min).lte(addr(p0)).and(addr(p0).lte(IntConstant.constant(max))).forAll(p0.oneOf(port)) );
+						
+		return Nodes.and(reqs);
 	}
 	
 	/**
@@ -111,20 +161,20 @@ public final class ConfigAssure {
 		final BufferedReader reader = new BufferedReader(new FileReader(new File(ipAddresses)));
 		final List<Object> atoms = new ArrayList<Object>();
 		
-		final Pattern p = Pattern.compile("ipAddress\\((.+), (.+), \\S+, \\S+\\)\\.");
+		final Pattern pDeviceInterface = Pattern.compile("ipAddress\\((.+), (.+), \\S+, \\S+\\)\\.");
 		
 		String line = "";
-		final Matcher m = p.matcher(line);
+		final Matcher mDeviceInterface = pDeviceInterface.matcher(line);
 		
-		for(line = reader.readLine(); line != null && m.reset(line).matches(); line = reader.readLine()) { 
-			atoms.add(m.group(1) + "-" + m.group(2));
+		for(line = reader.readLine(); line != null && mDeviceInterface.reset(line).matches(); line = reader.readLine()) { 
+			atoms.add(mDeviceInterface.group(1) + "-" + mDeviceInterface.group(2));
 		}
-		System.out.println("port names: "+atoms.size());
+		
 		// add the integers
 		for(int i = 0; i < 32; i++) { 
 			atoms.add(Integer.valueOf(1<<i));
 		}
-		System.out.println("u size: " + atoms.size());
+		
 		return new Universe(atoms);
 	}
 
@@ -143,7 +193,6 @@ public final class ConfigAssure {
 			}
 			
 			bounds.boundExactly(port, factory.range(factory.tuple(universe.atom(0)), factory.tuple(universe.atom(universe.size()-33))));
-			System.out.println("port names: "+bounds.upperBound(port).size());
 			BufferedReader reader = new BufferedReader(new FileReader(new File(ipAddresses)));
 			String line = "";
 			
@@ -152,18 +201,18 @@ public final class ConfigAssure {
 			final TupleSet lMask = factory.noneOf(2), uMask = factory.noneOf(2);
 			
 			// example:  ipAddress('IOS_00096', 'FastEthernet0/0', 2036387617, 8).
-			final Pattern p0 = Pattern.compile("ipAddress\\((.+), (.+), (\\S+), (\\S+)\\)\\.");
-			final Pattern p1 = Pattern.compile("\\d+");
+			final Pattern pAddress = Pattern.compile("ipAddress\\((.+), (.+), (\\S+), (\\S+)\\)\\.");
+			final Pattern pDigits = Pattern.compile("\\d+");
 			
-			final Matcher m0 = p0.matcher(line), m1 = p1.matcher(line);
+			final Matcher mFullAddr = pAddress.matcher(line), mDigits = pDigits.matcher(line);
 			
-			for(line = reader.readLine(); line != null && m0.reset(line).matches(); line = reader.readLine()) { 
-				final String portName = m0.group(1) + "-" + m0.group(2);
+			for(line = reader.readLine(); line != null && mFullAddr.reset(line).matches(); line = reader.readLine()) { 
+				final String portName = mFullAddr.group(1) + "-" + mFullAddr.group(2);
 				
-				if (m1.reset(m0.group(3)).matches()) { // address is constant
-					final int pAddr = Integer.parseInt(m0.group(3));
+				if (mDigits.reset(mFullAddr.group(3)).matches()) { // address is constant
+					final int addrVal = Integer.parseInt(mFullAddr.group(3));
 					for(int i = 0 ; i < 32; i++) {
-						if ((pAddr & (1<<i)) != 0) {
+						if ((addrVal & (1<<i)) != 0) {
 							final Tuple tuple = factory.tuple(portName, Integer.valueOf(1<<i));
 							lAddr.add(tuple);
 							uAddr.add(tuple);
@@ -171,6 +220,9 @@ public final class ConfigAssure {
 					}
 				} else {
 					for(int i = 0 ; i < 32; i++) {
+						// specify a lower / upper bound based on the knowledge that
+						// all addresses are between 21.96.0.0 to 121.96.255.255
+						// (i.e. share the first 16 bits).
 						if ((min & (1<<i))!=0)
 							lAddr.add(factory.tuple(portName, Integer.valueOf(1<<i)));
 						if ((max & (1<<i))!=0)
@@ -178,23 +230,25 @@ public final class ConfigAssure {
 					}
 				}
 				
-				if (m1.reset(m0.group(4)).matches()) { // mask is constant
-					final int pMask = Integer.parseInt(m0.group(4));
-					for(int i = 0 ; i < 32; i++) {
-						if ((pMask & (1<<i)) != 0) {
+				if (mDigits.reset(mFullAddr.group(4)).matches()) { // mask is constant
+					final int maskVal = Integer.parseInt(mFullAddr.group(4));
+					// number of zeros must be between 0 and 31, inclusive
+					if (maskVal < 0 || maskVal > 31)
+						throw new RuntimeException("Illegal implicit mask definition (must be between 0 and 31 inclusive): " + line);
+					for(int i = 0 ; i < 5; i++) { // need to look at only low-order 5 bits for the mask
+						if ((maskVal & (1<<i)) != 0) {
 							final Tuple tuple = factory.tuple(portName, Integer.valueOf(1<<i));
 							lMask.add(tuple);
 							uMask.add(tuple);
 						}
 					}
 				} else {
-					for(int i = 0 ; i < 32; i++) {
+					for(int i = 0 ; i < 5; i++) { // need only 5 bits for the mask
 						uMask.add(factory.tuple(portName, Integer.valueOf(1<<i)));
 					}
 				}
 			}
-			
-			
+						
 			bounds.bound(addr, lAddr, uAddr);
 			bounds.bound(mask, lMask, uMask);
 			
@@ -205,24 +259,22 @@ public final class ConfigAssure {
 			final TupleSet bsubnet = factory.noneOf(2);
 			
 			// example: subnet(['IOS_00022'-'Vlan172', 'IOS_00023'-'Vlan172']).
-			final Pattern p2 = Pattern.compile("subnet\\(\\[(.+)\\]\\)\\.");
-			final Pattern p3 = Pattern.compile(",*\\s*([^,]+)");
-			final Matcher m2 = p2.matcher(line), m3 = p3.matcher(line);
+			final Pattern pSubnet = Pattern.compile("subnet\\(\\[(.+)\\]\\)\\.");
+			final Pattern pSubMember = Pattern.compile(",*\\s*([^,]+)");
+			final Matcher mSubnet = pSubnet.matcher(line), mSubMember = pSubMember.matcher(line);
 			
 			int n = 1;
-			for(line = reader.readLine(); line != null && m2.reset(line).matches(); line = reader.readLine()) { 
-//				System.out.println(line+ ": "+ m2.groupCount());
-				m3.reset(m2.group(1));
-				while(m3.find()) { 
-					final String portName = m3.group(1);
-//					System.out.println(portName);
-					for(int j = 0 ; j < 32; j++) {
-						if ((n & (1<<j)) != 0) {
-							bsubnet.add(factory.tuple(portName, Integer.valueOf(1<<j)));
-						}
-					}
-						
-				} 
+			for(line = reader.readLine(); line != null && mSubnet.reset(line).matches(); line = reader.readLine()) { 
+
+				mSubMember.reset(mSubnet.group(1));
+				if (mSubMember.find()) { 
+					final String repPort = mSubMember.group(1);
+					bsubnet.add(factory.tuple(repPort, repPort));
+					
+					while(mSubMember.find()) { 
+						bsubnet.add(factory.tuple(repPort, mSubMember.group(1)));	
+					} 
+				}
 				n++;
 			}
 			
@@ -246,17 +298,29 @@ public final class ConfigAssure {
 		final Universe univ = inst.universe();
 		final Evaluator eval = new Evaluator(inst, opt);
 		final TupleFactory factory = univ.factory();
-				
-		for(Object atom : univ) {
+		final List<TupleSet> subnets = new ArrayList<TupleSet>();
+		
+		System.out.println("--------addresses and masks--------");
+		for(int i = 0, ports = univ.size()-32; i < ports; i++) {
+			final Object atom = univ.atom(i);
 			final Relation p = Relation.unary(atom.toString());
 			inst.add(p, factory.setOf(atom));
 			
 			System.out.print(p);
-			System.out.print(": addr=" + eval.evaluate(addr(p).sum()));
-			System.out.print(", mask=" + eval.evaluate(mask(p).sum()));
-			System.out.print(", netid=" + eval.evaluate(netid(p).sum()));
-			System.out.println(", subnet=" + eval.evaluate(subnet(p).sum()) + ".");
+			System.out.print(": addr=" + eval.evaluate(addr(p)));
+			System.out.print(", mask=" + eval.evaluate(zeros(p)));
+			System.out.println(", netid=" + eval.evaluate(netid(p)) + ".");
+			
+			final TupleSet members = eval.evaluate(subnet(p));
+			if (!members.isEmpty())
+				subnets.add(members);
 		}
+		
+		System.out.println("--------subnets--------");
+		for(TupleSet sub : subnets) { 
+			System.out.println(sub);
+		}
+		
 	}
 	
 	private static void usage() {
@@ -274,19 +338,27 @@ public final class ConfigAssure {
 		final Solver solver = new Solver();
 		solver.options().setBitwidth(32);
 		solver.options().setSolver(SATFactory.MiniSat);
-		solver.options().setReporter(new ConsoleReporter());
+		
+		
+		final Formula formula = ca.requirements();
+		final Bounds bounds = ca.bounds(args[0], args[1]);
 		
 		System.out.println("requirements: ");
-		System.out.println(PrettyPrinter.print(ca.requirements(), 2));
+		System.out.println(PrettyPrinter.print(formula, 2));
 		
 		System.out.println("solving with config files " + args[0] + " and " + args[1]);
-		final Solution sol = solver.solve(ca.requirements(), ca.bounds(args[0], args[1]));
+		
+		final Solution sol = solver.solve(formula, bounds);
+		
+		System.out.println("---OUTCOME---");
+		System.out.println(sol.outcome());
+		
+		System.out.println("\n---STATS---");
+		System.out.println(sol.stats());
 		
 		if (sol.instance() != null) {
-			System.out.println(sol.stats());
+			System.out.println("\n---INSTANCE--");
 			ca.display(sol.instance(), solver.options());
-		} else {
-			System.out.println(sol);
-		}
+		} 
 	}
 }
