@@ -21,6 +21,7 @@ import kodkod.ast.Variable;
 import kodkod.engine.Evaluator;
 import kodkod.engine.Solution;
 import kodkod.engine.Solver;
+import kodkod.engine.config.ConsoleReporter;
 import kodkod.engine.config.Options;
 import kodkod.engine.satlab.SATFactory;
 import kodkod.instance.Bounds;
@@ -30,6 +31,7 @@ import kodkod.instance.TupleFactory;
 import kodkod.instance.TupleSet;
 import kodkod.instance.Universe;
 import kodkod.util.nodes.Nodes;
+import kodkod.util.nodes.PrettyPrinter;
 
 /**
  * Pure Kodkod encoding of the new test case for ConfigAssure.
@@ -263,7 +265,12 @@ public final class ConfigAssure {
 		final Solver solver = new Solver();
 		solver.options().setBitwidth(32);
 		solver.options().setSolver(SATFactory.MiniSat);
+		solver.options().setReporter(new ConsoleReporter());
 		
+		System.out.println("requirements: ");
+		System.out.println(PrettyPrinter.print(ca.requirements(), 2));
+		
+		System.out.println("solving with config files " + args[0] + " and " + args[1]);
 		final Solution sol = solver.solve(ca.requirements(), ca.bounds(args[0], args[1]));
 		
 		if (sol.instance() != null) {
