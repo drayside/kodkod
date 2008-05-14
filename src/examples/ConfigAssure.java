@@ -39,6 +39,7 @@ import kodkod.util.nodes.PrettyPrinter;
  */
 public final class ConfigAssure {
 	private final Relation port, addr, mask, subnet;
+	private final IntConstant ones = IntConstant.constant(-1);
 	private final int min = (121<<24) | (96<<24);
 	private final int max = min | (255<<8) | 255;
 	
