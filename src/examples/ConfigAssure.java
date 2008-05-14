@@ -39,6 +39,8 @@ import kodkod.util.nodes.PrettyPrinter;
  */
 public final class ConfigAssure {
 	private final Relation port, addr, mask, subnet;
+	private final int min = (121<<24) | (96<<24);
+	private final int max = min | (255<<8) | 255;
 	
 	/**
 	 * Constructs a new instance of ConfigAssure.
@@ -95,7 +97,7 @@ public final class ConfigAssure {
 		
 		// all addresses are in the range 121.96.0.0 to 121.96.255.255:  all p: Port | 121.96.0.0 <= p.addr <= 121.96.255.255
 		final IntExpression p1bits = addr(p1).sum();
-		final Formula f3 = IntConstant.constant(2036334592).lte(p1bits).and(p1bits.lte(IntConstant.constant(2036400127))).forAll(p1.oneOf(port));
+		final Formula f3 = IntConstant.constant(min).lte(p1bits).and(p1bits.lte(IntConstant.constant(max))).forAll(p1.oneOf(port));
 		
 		return Nodes.and(f0, f1, f2, f3);
 	}
@@ -116,12 +118,12 @@ public final class ConfigAssure {
 		for(line = reader.readLine(); line != null && m.reset(line).matches(); line = reader.readLine()) { 
 			atoms.add(m.group(1) + "-" + m.group(2));
 		}
-		
+		System.out.println("port names: "+atoms.size());
 		// add the integers
 		for(int i = 0; i < 32; i++) { 
 			atoms.add(Integer.valueOf(1<<i));
 		}
-		
+		System.out.println("u size: " + atoms.size());
 		return new Universe(atoms);
 	}
 
@@ -139,8 +141,8 @@ public final class ConfigAssure {
 				bounds.boundExactly(1<<i, factory.setOf(Integer.valueOf(1<<i)));
 			}
 			
-			bounds.boundExactly(port, factory.range(factory.tuple(universe.atom(0)), factory.tuple(universe.atom(universe.size()-32))));
-			
+			bounds.boundExactly(port, factory.range(factory.tuple(universe.atom(0)), factory.tuple(universe.atom(universe.size()-33))));
+			System.out.println("port names: "+bounds.upperBound(port).size());
 			BufferedReader reader = new BufferedReader(new FileReader(new File(ipAddresses)));
 			String line = "";
 			
@@ -168,7 +170,10 @@ public final class ConfigAssure {
 					}
 				} else {
 					for(int i = 0 ; i < 32; i++) {
-						uAddr.add(factory.tuple(portName, Integer.valueOf(1<<i)));
+						if ((min & (1<<i))!=0)
+							lAddr.add(factory.tuple(portName, Integer.valueOf(1<<i)));
+						if ((max & (1<<i))!=0)
+							uAddr.add(factory.tuple(portName, Integer.valueOf(1<<i)));
 					}
 				}
 				
@@ -193,24 +198,30 @@ public final class ConfigAssure {
 			bounds.bound(mask, lMask, uMask);
 			
 			// then parse the subnets file and populate the exact bound for the subnet relation
+			reader = new BufferedReader(new FileReader(new File(subnets)));
+			line = "";
 			
 			final TupleSet bsubnet = factory.noneOf(2);
-			reader = new BufferedReader(new FileReader(new File(subnets)));
-
+			
 			// example: subnet(['IOS_00022'-'Vlan172', 'IOS_00023'-'Vlan172']).
-			final Pattern p2 = Pattern.compile("subnet\\(\\[(.+)(?:, (.+))*\\]\\)\\.");
-			final Matcher m2 = p2.matcher(line);
+			final Pattern p2 = Pattern.compile("subnet\\(\\[(.+)\\]\\)\\.");
+			final Pattern p3 = Pattern.compile(",*\\s*([^,]+)");
+			final Matcher m2 = p2.matcher(line), m3 = p3.matcher(line);
 			
 			int n = 1;
 			for(line = reader.readLine(); line != null && m2.reset(line).matches(); line = reader.readLine()) { 
-				for(int i = 1, groups = m2.groupCount(); i < groups; i++) { 
-					final String portName = m2.group(i);
-					for(int j = 0 ; j < 32; i++) {
+//				System.out.println(line+ ": "+ m2.groupCount());
+				m3.reset(m2.group(1));
+				while(m3.find()) { 
+					final String portName = m3.group(1);
+//					System.out.println(portName);
+					for(int j = 0 ; j < 32; j++) {
 						if ((n & (1<<j)) != 0) {
 							bsubnet.add(factory.tuple(portName, Integer.valueOf(1<<j)));
 						}
 					}
-				}
+						
+				} 
 				n++;
 			}
 			
