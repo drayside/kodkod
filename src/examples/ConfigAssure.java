@@ -8,7 +8,14 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -29,6 +36,8 @@ import kodkod.instance.Tuple;
 import kodkod.instance.TupleFactory;
 import kodkod.instance.TupleSet;
 import kodkod.instance.Universe;
+import kodkod.util.ints.IntSet;
+import kodkod.util.ints.IntTreeSet;
 import kodkod.util.nodes.Nodes;
 import kodkod.util.nodes.PrettyPrinter;
 
@@ -46,12 +55,6 @@ public final class ConfigAssure {
 	/** The addr relation maps port atoms to all the power-of-2 atoms (1, 2, 4, ..., 2^31). */
 	private final Relation addr;
 	
-	/** 
-	 * The mask relation maps port atoms to the integer atoms 1, 2, 4, 8 and 16, implicitly
-	 * representing each mask by the number of zeros it contains [0..31]. 
-	 **/
-	private final Relation mask;
-	
 	/**
 	 * The subnet relation maps one representative port atom in each subnet to all the other
 	 * port atoms in the same subnet.  For example, the Prolog predicate subnet(['IOS_00037'-'Vlan790', 'IOS_00038'-'Vlan790'])
@@ -61,9 +64,30 @@ public final class ConfigAssure {
 	 */
 	private final Relation subnet;
 	
+	/**
+	 * The group relation maps all atoms in each subnet that have the same interface
+	 * to one representative port atom.  For example, the Prolog predicate subnet(['IOS_00091'-'Vlan820', 'IOS_00092'-'Vlan820', 'IOS_00096'-'FastEthernet0/0'])
+	 * is represented by the tuples <'IOS_00091'-'Vlan820', 'IOS_00091'-'Vlan820'>, <'IOS_00092'-'Vlan820', 'IOS_00091'-'Vlan820>, 
+	 * and <'IOS_00096'-'FastEthernet0/0','IOS_00096'-'FastEthernet0/0'>
+	 * in the group relation.  Ports that are not part of any subnet form their own group (of which they are a representative).
+	 */
+	private final Relation group;
+	
+	/** 
+	 * The groupMask relation maps port atoms that are group representatives to the integer atoms 1, 2, 4, 8 and 16, implicitly
+	 * representing each group's mask by the number of zeros it contains [0..31]. 
+	 **/
+	private final Relation groupMask;
+	
+	/**
+	 * Join of the group relation with the groupMask relation: provides an implicit mask for each port.
+	 */
+	private final Expression mask;
+	
+	
 	private final IntConstant ones = IntConstant.constant(-1);
-	private final int min = (121<<24) | (96<<16);
-	private final int max = min | (255<<8) | 255;
+	private final static int minAddr = (121<<24) | (96<<16);
+	private final static int maxAddr = minAddr | (255<<8) | 255;
 	
 	/**
 	 * Constructs a new instance of ConfigAssure.
@@ -71,8 +95,10 @@ public final class ConfigAssure {
 	public ConfigAssure() {
 		this.port = Relation.unary("port");
 		this.addr = Relation.binary("addr");
-		this.mask = Relation.binary("mask");
+		this.groupMask = Relation.binary("groupMask");
 		this.subnet = Relation.binary("subnet");
+		this.group = Relation.binary("group");
+		this.mask = group.join(groupMask);
 	}
 
 	/**
@@ -80,7 +106,7 @@ public final class ConfigAssure {
 	 * @return netID of the given port
 	 */
 	IntExpression netid(Expression p) { 
-		return addr(p).and(mask(p));
+		return addr(p).and(explicitMask(p));
 	}
 	
 	/**
@@ -93,13 +119,13 @@ public final class ConfigAssure {
 	 * Returns the number of zeros in the mask of the given port.
 	 * @return the number of zeros in the mask of the given port
 	 */
-	IntExpression zeros(Expression p) { return p.join(mask).sum(); }
+	IntExpression implicitMask(Expression p) { return p.join(mask).sum(); }
 	
 	/**
 	 * Returns the explicit mask of the given port.
 	 * @return explicit mask of the given port
 	 */
-	IntExpression mask(Expression p) { return ones.shl(zeros(p)); }
+	IntExpression explicitMask(Expression p) { return ones.shl(implicitMask(p)); }
 	
 	/**
 	 * Returns the subnet of the given port.
@@ -113,8 +139,8 @@ public final class ConfigAssure {
 	 * @return zeros(p0) >= zeros(p1) and (addr(p0) & mask(p0)) = (addr(p1) & mask(p0))
 	 */
 	Formula contains(Expression p0, Expression p1) { 
-		final Formula f0 = zeros(p0).gte(zeros(p1));
-		final Formula f1 = addr(p0).and(mask(p0)).eq(addr(p1).and(mask(p0)));
+		final Formula f0 = implicitMask(p0).gte(implicitMask(p1));
+		final Formula f1 = addr(p0).and(explicitMask(p0)).eq(addr(p1).and(explicitMask(p0)));
 		return f0.and(f1);
 	}
 	
@@ -139,155 +165,147 @@ public final class ConfigAssure {
 		
 		// all ports on the same subnet have the same netid:
 		// all p0: subreps, p1: p0.subnet | netid(p0) = netid(p1)
-		reqs.add( netid(p0).eq(netid(p1)).forAll(p0.oneOf(subreps).and(p1.oneOf(submembers))) );
+		reqs.add( netid(p0).eq(netid(p1)).
+					forAll(p0.oneOf(subreps).and(p1.oneOf(submembers))) );
 		
 		// netids don't overlap: 
 		// all disj p0, p1: subreps | not contains(p0, p1) and not contains(p1, p0)
 		reqs.add( p0.eq(p1).not().implies(contains(p0,p1).not().and(contains(p1, p0).not())).
 					forAll(p0.oneOf(subreps).and(p1.oneOf(subreps)) ));	
-		
-		// all addresses are in the range 121.96.0.0 to 121.96.255.255:  
-		// all p0: Port | 121.96.0.0 <= addr(p0) <= 121.96.255.255
-		reqs.add( IntConstant.constant(min).lte(addr(p0)).and(addr(p0).lte(IntConstant.constant(max))).forAll(p0.oneOf(port)) );
-						
+								
 		return Nodes.and(reqs);
-	}
-	
-	/**
-	 * Returns the universe from the given ipAddresses file.
-	 * @throws IOException 
-	 */
-	private Universe universe(String ipAddresses) throws IOException { 
-		final BufferedReader reader = new BufferedReader(new FileReader(new File(ipAddresses)));
-		final List<Object> atoms = new ArrayList<Object>();
-		
-		final Pattern pDeviceInterface = Pattern.compile("ipAddress\\((.+), (.+), \\S+, \\S+\\)\\.");
-		
-		String line = "";
-		final Matcher mDeviceInterface = pDeviceInterface.matcher(line);
-		
-		for(line = reader.readLine(); line != null && mDeviceInterface.reset(line).matches(); line = reader.readLine()) { 
-			atoms.add(mDeviceInterface.group(1) + "-" + mDeviceInterface.group(2));
-		}
-		
-		// add the integers
-		for(int i = 0; i < 32; i++) { 
-			atoms.add(Integer.valueOf(1<<i));
-		}
-		
-		return new Universe(atoms);
 	}
 
 	/**
+	 * Returns a new universe that contains the given ports atoms, followed by Integer objects
+	 * containing powers of 2 (1, 2, 4, ..., 2^31).
+	 */
+	private final Universe universe(Set<String> ports) { 
+		final List<Object> atoms = new ArrayList<Object>(ports.size() + 32);
+		atoms.addAll(ports);
+		for(int i = 0; i < 32; i++) { 
+			atoms.add(Integer.valueOf(1<<i));
+		}
+		return new Universe(atoms);
+	}
+	
+	/**
 	 * Returns the bounds corresponding to the given ip address and subnet files.
 	 * @return bounds corresponding to the given ip address and subnet files.
+	 * @throws IOException if either of the files cannot be found or accessed
+	 * @throws IllegalArgumentException if either of the files cannot be parsed
 	 */
-	public Bounds bounds(String ipAddresses, String subnets) { 
-		try {
-			final Universe universe = universe(ipAddresses);
-			final Bounds bounds = new Bounds(universe);
-			final TupleFactory factory = universe.factory();
-			
-			for(int i = 0; i < 32; i++) { 
-				bounds.boundExactly(1<<i, factory.setOf(Integer.valueOf(1<<i)));
+	public Bounds bounds(String ipAddrsFile, String subnetsFile) throws IOException { 
+		final Map<String, IPAddress> addresses = parseAddresses(ipAddrsFile);
+		final Collection<Subnet> subnets = parseSubnets(subnetsFile, addresses);
+		
+		final Universe universe = universe(addresses.keySet());
+		final Bounds bounds = new Bounds(universe);
+		final TupleFactory factory = universe.factory();
+
+		// bind the integers
+		for(int i = 0; i < 32; i++) { bounds.boundExactly(1<<i, factory.setOf(Integer.valueOf(1<<i))); }
+
+		// bind the port relation exactly to the port names
+		bounds.boundExactly(port, factory.range(factory.tuple(1, 0), factory.tuple(1, addresses.keySet().size()-1)));
+		
+		// bind the subnet relation exactly, choosing the first element of each subnet as the representative
+		final TupleSet subnetBound = factory.noneOf(2);
+		for(Subnet sub : subnets) { 
+			final Iterator<IPAddress> itr = sub.members.iterator();
+			final String first = itr.next().port;
+			subnetBound.add(factory.tuple(first, first));
+			while(itr.hasNext()) { 
+				subnetBound.add(factory.tuple(first, itr.next().port));
 			}
-			
-			bounds.boundExactly(port, factory.range(factory.tuple(universe.atom(0)), factory.tuple(universe.atom(universe.size()-33))));
-			BufferedReader reader = new BufferedReader(new FileReader(new File(ipAddresses)));
-			String line = "";
-			
-			// first parse the ipAddresses file and populate the upper and lower bounds of the addr and mask relations
-			final TupleSet lAddr = factory.noneOf(2), uAddr = factory.noneOf(2);
-			final TupleSet lMask = factory.noneOf(2), uMask = factory.noneOf(2);
-			
-			// example:  ipAddress('IOS_00096', 'FastEthernet0/0', 2036387617, 8).
-			final Pattern pAddress = Pattern.compile("ipAddress\\((.+), (.+), (\\S+), (\\S+)\\)\\.");
-			final Pattern pDigits = Pattern.compile("\\d+");
-			
-			final Matcher mFullAddr = pAddress.matcher(line), mDigits = pDigits.matcher(line);
-			
-			for(line = reader.readLine(); line != null && mFullAddr.reset(line).matches(); line = reader.readLine()) { 
-				final String portName = mFullAddr.group(1) + "-" + mFullAddr.group(2);
-				
-				if (mDigits.reset(mFullAddr.group(3)).matches()) { // address is constant
-					final int addrVal = Integer.parseInt(mFullAddr.group(3));
-					for(int i = 0 ; i < 32; i++) {
-						if ((addrVal & (1<<i)) != 0) {
-							final Tuple tuple = factory.tuple(portName, Integer.valueOf(1<<i));
-							lAddr.add(tuple);
-							uAddr.add(tuple);
-						}
-					}
-				} else {
-					for(int i = 0 ; i < 32; i++) {
-						// specify a lower / upper bound based on the knowledge that
-						// all addresses are between 21.96.0.0 to 121.96.255.255
-						// (i.e. share the first 16 bits).
-						if ((min & (1<<i))!=0)
-							lAddr.add(factory.tuple(portName, Integer.valueOf(1<<i)));
-						if ((max & (1<<i))!=0)
-							uAddr.add(factory.tuple(portName, Integer.valueOf(1<<i)));
+		}
+		bounds.boundExactly(subnet, subnetBound);
+		
+		// bind the addr relation so that each address is guaranteed to be between minAddr (121.96.0.0) and maxAddr (121.96.255.255), inclusive
+		final TupleSet lAddr = factory.noneOf(2), uAddr = factory.noneOf(2);
+		for(IPAddress ad : addresses.values()) { 
+			if (ad.varAddress) { // unknown address
+				for(int i = 0 ; i < 32; i++) {
+					if ((minAddr & (1<<i))!=0)
+						lAddr.add(factory.tuple(ad.port, Integer.valueOf(1<<i)));
+					if ((maxAddr & (1<<i))!=0)
+						uAddr.add(factory.tuple(ad.port, Integer.valueOf(1<<i)));
+				}
+			} else { // known address
+				for(int i = 0 ; i < 32; i++) {
+					if ((ad.address & (1<<i)) != 0) {
+						final Tuple tuple = factory.tuple(ad.port, Integer.valueOf(1<<i));
+						lAddr.add(tuple);
+						uAddr.add(tuple);
 					}
 				}
+			}
+		}
+		bounds.bound(addr, lAddr, uAddr);
+		
+		// bind the group and groupMask relations so that all ports with the same interface on the same subnet are guaranteed to have the same mask
+		final TupleSet lMask = factory.noneOf(2), uMask = factory.noneOf(2), groupBound = factory.noneOf(2);
+		for(Subnet sub : subnets) { 
+			
+			for(Set<IPAddress> subgroup : sub.groups.values()) {
 				
-				if (mDigits.reset(mFullAddr.group(4)).matches()) { // mask is constant
-					final int maskVal = Integer.parseInt(mFullAddr.group(4));
-					// number of zeros must be between 0 and 31, inclusive
-					if (maskVal < 0 || maskVal > 31)
-						throw new RuntimeException("Illegal implicit mask definition (must be between 0 and 31 inclusive): " + line);
+				final Iterator<IPAddress> itr = subgroup.iterator();
+				
+				final IPAddress first = itr.next();
+				addresses.remove(first.port);
+				
+				int maskVal = first.varMask ? -1 : first.mask;
+				groupBound.add(factory.tuple(first.port, first.port));
+				
+				while(itr.hasNext()) { 
+					final IPAddress next = itr.next();
+					addresses.remove(next.port);
+					
+					if (maskVal < 0 && !next.varMask)
+						maskVal = next.mask;
+					groupBound.add(factory.tuple(next.port, first.port));
+				}
+				
+				if (maskVal < 0) { // unknown (same) mask for this group
+					for(int i = 0 ; i < 5; i++) { // need only 5 bits for the mask
+						uMask.add(factory.tuple(first.port, Integer.valueOf(1<<i)));
+					}
+				} else { // known (same) mask for this group
 					for(int i = 0 ; i < 5; i++) { // need to look at only low-order 5 bits for the mask
 						if ((maskVal & (1<<i)) != 0) {
-							final Tuple tuple = factory.tuple(portName, Integer.valueOf(1<<i));
+							final Tuple tuple = factory.tuple(first.port, Integer.valueOf(1<<i));
 							lMask.add(tuple);
 							uMask.add(tuple);
 						}
 					}
-				} else {
-					for(int i = 0 ; i < 5; i++) { // need only 5 bits for the mask
-						uMask.add(factory.tuple(portName, Integer.valueOf(1<<i)));
+				}
+			}
+		}
+		
+		// bind the group and groupMask relations for ports that are not a part of any subnet
+		for(IPAddress ad : addresses.values()) { 
+			groupBound.add(factory.tuple(ad.port, ad.port));
+			if (ad.varMask) { // unknown (same) mask for this group
+				for(int i = 0 ; i < 5; i++) { // need only 5 bits for the mask
+					uMask.add(factory.tuple(ad.port, Integer.valueOf(1<<i)));
+				}
+			} else { // known (same) mask for this group
+				for(int i = 0 ; i < 5; i++) { // need to look at only low-order 5 bits for the mask
+					if ((ad.mask & (1<<i)) != 0) {
+						final Tuple tuple = factory.tuple(ad.port, Integer.valueOf(1<<i));
+						lMask.add(tuple);
+						uMask.add(tuple);
 					}
 				}
 			}
-						
-			bounds.bound(addr, lAddr, uAddr);
-			bounds.bound(mask, lMask, uMask);
-			
-			// then parse the subnets file and populate the exact bound for the subnet relation
-			reader = new BufferedReader(new FileReader(new File(subnets)));
-			line = "";
-			
-			final TupleSet bsubnet = factory.noneOf(2);
-			
-			// example: subnet(['IOS_00022'-'Vlan172', 'IOS_00023'-'Vlan172']).
-			final Pattern pSubnet = Pattern.compile("subnet\\(\\[(.+)\\]\\)\\.");
-			final Pattern pSubMember = Pattern.compile(",*\\s*([^,]+)");
-			final Matcher mSubnet = pSubnet.matcher(line), mSubMember = pSubMember.matcher(line);
-			
-			int n = 1;
-			for(line = reader.readLine(); line != null && mSubnet.reset(line).matches(); line = reader.readLine()) { 
-
-				mSubMember.reset(mSubnet.group(1));
-				if (mSubMember.find()) { 
-					final String repPort = mSubMember.group(1);
-					bsubnet.add(factory.tuple(repPort, repPort));
-					
-					while(mSubMember.find()) { 
-						bsubnet.add(factory.tuple(repPort, mSubMember.group(1)));	
-					} 
-				}
-				n++;
-			}
-			
-			bounds.boundExactly(subnet, bsubnet);
-			
-			return bounds;
-			
-		} catch (IOException e) {
-			e.printStackTrace();
-			usage();
 		}
 		
-		return null;
+		bounds.bound(groupMask, lMask, uMask);
+		bounds.boundExactly(group, groupBound);
+		
+		System.out.println("groupMask.size: " + uMask.size() + ", group.size: " + groupBound.size());
+		return bounds;
+
 	}
 	
 	/**
@@ -308,7 +326,7 @@ public final class ConfigAssure {
 			
 			System.out.print(p);
 			System.out.print(": addr=" + eval.evaluate(addr(p)));
-			System.out.print(", mask=" + eval.evaluate(zeros(p)));
+			System.out.print(", mask=" + eval.evaluate(implicitMask(p)));
 			System.out.println(", netid=" + eval.evaluate(netid(p)) + ".");
 			
 			final TupleSet members = eval.evaluate(subnet(p));
@@ -333,32 +351,215 @@ public final class ConfigAssure {
 	 */
 	public static void main(String[] args) {
 		if (args.length < 2) usage();
+		try {
+			final ConfigAssure ca = new ConfigAssure();
+			final Solver solver = new Solver();
+			solver.options().setBitwidth(32);
+			solver.options().setSolver(SATFactory.MiniSat);
+			
+			
+			final Formula formula = ca.requirements();
+			final Bounds bounds = ca.bounds(args[0], args[1]);
+			
+			System.out.println("requirements: ");
+			System.out.println(PrettyPrinter.print(formula, 2));
+			
+			System.out.println("solving with config files " + args[0] + " and " + args[1]);
+			
+			final Solution sol = solver.solve(formula, bounds);
+			
+			System.out.println("---OUTCOME---");
+			System.out.println(sol.outcome());
+			
+			System.out.println("\n---STATS---");
+			System.out.println(sol.stats());
+			
+			if (sol.instance() != null) {
+				System.out.println("\n---INSTANCE--");
+				ca.display(sol.instance(), solver.options());
+			} 
+		} catch (IOException ioe) { 
+			ioe.printStackTrace();
+			usage();
+		}
+	}
+	
+	/**
+	 * Parses the given ipAddresses file and returns a map that 
+	 * binds each port name in the file to its corresponding IPAddress record.
+	 * @return a map that binds each port name in the given file to its corresponding IPAddress record.
+	 * @throws IOException 
+	 */
+	private static Map<String, IPAddress> parseAddresses(String ipAddrsFile) throws IOException { 
+		final Map<String, IPAddress> addresses = new LinkedHashMap<String, IPAddress>();
+		final BufferedReader reader = new BufferedReader(new FileReader(new File(ipAddrsFile)));
+		for(String line = reader.readLine(); line != null; line = reader.readLine()) { 
+			final IPAddress addr = new IPAddress(line);
+			if (addresses.put(addr.port, addr) != null) 
+				throw new IllegalArgumentException("Duplicate ip address specification: " + line);
+		}
+		return addresses;
+	}
+	
+	/**
+	 * Returns a grouping of the given IPAddresses into subnets according to the subnet information
+	 * in the given file.  
+	 * @return a grouping of the given IPAddresses into subnets according to the subnet information
+	 * in the given file.
+	 * @throws IOException 
+	 */
+	private static Collection<Subnet> parseSubnets(String subnetsFile, Map<String, IPAddress> addresses) throws IOException { 
+		final Collection<Subnet> subnets = new ArrayList<Subnet>();
+		final BufferedReader reader = new BufferedReader(new FileReader(new File(subnetsFile)));
+		for(String line = reader.readLine(); line != null; line = reader.readLine()) { 
+			subnets.add(new Subnet(line, addresses));
+		}
+		return subnets;
+	}
+	
+	/**
+	 * A record containing  the information parsed out of a 
+	 * Prolog ipAddress predicate, e.g. ipAddress('IOS_00008', 'Vlan608', int(0), mask(1)).
+	 * @specfield device, interfaceName, port: String
+	 * @specfield varAddress, varMask: boolean // true if the address (resp. mask) are variables
+	 * @specfield address, mask: int // variable or constant identifier of the address or mask
+	 * @invariant port = device + "-" + port
+	 * @invariant !varAddress => (minAddr <= address <= maxAddr)
+	 * @invariant !varMask => (0 <= mask <= 31)
+	 * @author Emina Torlak
+	 */
+	private static class IPAddress {
+		final String device, interfaceName, port;
+		final boolean varAddress, varMask; 
+		final int address, mask;
 		
-		final ConfigAssure ca = new ConfigAssure();
-		final Solver solver = new Solver();
-		solver.options().setBitwidth(32);
-		solver.options().setSolver(SATFactory.MiniSat);
+		private static final Pattern pAddress = Pattern.compile("ipAddress\\((.+), (.+), (\\S+), (\\S+)\\)\\.");
+		private static final Pattern pAddrVar = Pattern.compile("int\\((\\d+)\\)");
+		private static final Pattern pMaskVar = Pattern.compile("mask\\((\\d+)\\)");
 		
+		private static final Matcher mAddress = pAddress.matcher("");
+		private static final Matcher mAddrVar = pAddrVar.matcher(""), mMaskVar = pMaskVar.matcher("");
 		
-		final Formula formula = ca.requirements();
-		final Bounds bounds = ca.bounds(args[0], args[1]);
+		/**
+		 * Constructs an IP address object using the provided ipAddress string.
+		 */
+		IPAddress(String addrString) { 
+			if (mAddress.reset(addrString).matches()) { 
+				this.device = mAddress.group(1);
+				this.interfaceName = mAddress.group(2);
+				this.port = device + "-" + interfaceName;
+				if (mAddrVar.reset(mAddress.group(3)).matches()) { 
+					this.varAddress = true;
+					this.address = Integer.parseInt(mAddrVar.group(1));
+				} else {
+					this.varAddress = false;
+					this.address = parseConstant(mAddress.group(3), minAddr, maxAddr, "Expected the address to be a variable spec, int(<number>), or a number between " + minAddr + " and " + maxAddr + ", inclusive: " + addrString);
+				}
+				if (mMaskVar.reset(mAddress.group(4)).matches()) { 
+					this.varMask = true;
+					this.mask = Integer.parseInt(mMaskVar.group(1));
+				} else {
+					this.varMask = false;
+					this.mask = parseConstant(mAddress.group(4), 0, 31, "Expected the mask to be a variable spec, mask(<number>), or a number between 0 and 31, inclusive: " + addrString);
+				}
+			} else {
+				throw new IllegalArgumentException("Unrecognized IP Address format: " + addrString);
+			}
+		}
+	
+		/**
+		 * Returns the integer value embedded in the given string iff it is between min
+		 * and max, inclusive.  Otherwise throws an illegal argument exception with the
+		 * given message.
+		 */
+		private static int parseConstant(String value, int min, int max, String msg) { 
+			try {
+				final int val = Integer.parseInt(value);
+				if (min <= val && val <= max) { 
+					return val;
+				}
+			} catch (NumberFormatException nfe) { }
+			throw new IllegalArgumentException(msg);
+		}
+	}
+	
+	/**
+	 * A record containing  the information parsed out of a 
+	 * Prolog subnet predicate, e.g. subnet(['IOS_00091'-'Vlan820', 'IOS_00092'-'Vlan820', 'IOS_00096'-'FastEthernet0/0']).
+	 * @specfield member: some IPAddress // members of this subnet
+	 * @specfield groups: String -> member
+	 * @invariant groups = { s: String, a: IPAddress | a.interfaceName = s }
+	 * @invariant all i: member.interfaceName, m1, m2: groups[i] | (!m1.varMask and !m2.varMask) => m1.mask = m2.mask
+	 * @author Emina Torlak
+	 */
+	private static class Subnet {
+		final Set<IPAddress> members;
+		final Map<String, Set<IPAddress>> groups;
 		
-		System.out.println("requirements: ");
-		System.out.println(PrettyPrinter.print(formula, 2));
+		private static final Pattern pSubnet = Pattern.compile("subnet\\(\\[(.+)\\]\\)\\.");
+		private static final Pattern pSubMember = Pattern.compile(",*\\s*([^,]+)");
+		private static final Matcher mSubnet = pSubnet.matcher(""), mSubMember = pSubMember.matcher("");
 		
-		System.out.println("solving with config files " + args[0] + " and " + args[1]);
+		/**
+		 * Constructs a subnet object out of the given subnet string and addresses.
+		 */
+		Subnet(String subnetString, Map<String, IPAddress> addresses) { 
+			this.members = members(subnetString, addresses);
+			this.groups = groups(subnetString, members);
+		}
 		
-		final Solution sol = solver.solve(formula, bounds);
+		/**
+		 * Returns the subnet members specified by the given subnet string.
+		 * @return subnet members specified by the given subnet string.
+		 */
+		private static Set<IPAddress> members(String subnetString, Map<String, IPAddress> addresses) { 
+			if (mSubnet.reset(subnetString).matches()) { 
+				final Set<IPAddress> members = new LinkedHashSet<IPAddress>();
+				mSubMember.reset(mSubnet.group(1));
+				while(mSubMember.find()) { 
+					final String port = mSubMember.group(1);
+					if (addresses.containsKey(port)) { 
+						members.add(addresses.get(port));
+					} else {
+						throw new IllegalArgumentException("Unrecognized port " + port + " in " + subnetString);
+					}
+				}
+				if (members.isEmpty()) { 
+					throw new IllegalArgumentException("Subnet spec is empty: " + subnetString);
+				}
+				return Collections.unmodifiableSet(members);
+			} else {
+				throw new IllegalArgumentException("Unrecognized subnet format: " + subnetString);
+			}
+		}
 		
-		System.out.println("---OUTCOME---");
-		System.out.println(sol.outcome());
-		
-		System.out.println("\n---STATS---");
-		System.out.println(sol.stats());
-		
-		if (sol.instance() != null) {
-			System.out.println("\n---INSTANCE--");
-			ca.display(sol.instance(), solver.options());
-		} 
+		/**
+		 * Returns a grouping of the given subnet members according to their interface names.
+		 * @return a grouping of the given subnet members according to their interface names.
+		 */
+		private static Map<String, Set<IPAddress>> groups(String subnetString, Set<IPAddress> members) { 
+			final Map<String, Set<IPAddress>> groups = new LinkedHashMap<String, Set<IPAddress>>();
+			for(IPAddress addr : members) { 
+				Set<IPAddress> group = groups.get(addr.interfaceName);
+				if (group == null) {
+					group = new LinkedHashSet<IPAddress>();
+					groups.put(addr.interfaceName, group);
+				}
+				group.add(addr);
+				
+			}
+			for(Map.Entry<String, Set<IPAddress>> entry : groups.entrySet()) { 
+				final Set<IPAddress> group = entry.getValue();
+				final IntSet masks = new IntTreeSet();
+				for(IPAddress addr : group) { 
+					if (!addr.varMask) { masks.add(addr.mask); }
+				}
+				if (masks.size()>1) 
+					throw new IllegalArgumentException("All members of a subnet with the same interface must have the same mask: " + subnetString);
+				
+				entry.setValue(Collections.unmodifiableSet(group));
+			}
+			return Collections.unmodifiableMap(groups);
+		}
 	}
 }
