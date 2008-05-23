@@ -8,9 +8,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -32,12 +30,9 @@ import kodkod.engine.config.Options;
 import kodkod.engine.satlab.SATFactory;
 import kodkod.instance.Bounds;
 import kodkod.instance.Instance;
-import kodkod.instance.Tuple;
 import kodkod.instance.TupleFactory;
 import kodkod.instance.TupleSet;
 import kodkod.instance.Universe;
-import kodkod.util.ints.IntSet;
-import kodkod.util.ints.IntTreeSet;
 import kodkod.util.nodes.Nodes;
 import kodkod.util.nodes.PrettyPrinter;
 
@@ -52,6 +47,11 @@ public final class ConfigAssure {
 	 **/
 	private final Relation port;
 	
+	/**
+	 * unknown contains ports whose components aren't fully specified.
+	 */
+	private final Relation unknown;
+	
 	/** The addr relation maps port atoms to all the power-of-2 atoms (1, 2, 4, ..., 2^31). */
 	private final Relation addr;
 	
@@ -59,8 +59,9 @@ public final class ConfigAssure {
 	 * The subnet relation maps one representative port atom in each subnet to all the other
 	 * port atoms in the same subnet.  For example, the Prolog predicate subnet(['IOS_00037'-'Vlan790', 'IOS_00038'-'Vlan790'])
 	 * is represented by the tuples <'IOS_00037'-'Vlan790', 'IOS_00037'-'Vlan790'> and <'IOS_00037'-'Vlan790', 'IOS_00038'-'Vlan790'>
-	 * in the subnet relation.  We arbitrarily chose the first atom in each Prolog predicate to be representative of
-	 * that subnet.  This encoding assumes that each port can participate in at most one subnet.
+	 * in the subnet relation.  We choose the first port in each Prolog predicate that has a constant address and 
+	 * mask to be the representative of that subnet, if such a port exists.  Otherwise, we choose the first Prolog predicate 
+	 * encountered during parsing to be the representative of a given subnet.  This encoding assumes that each port can participate in at most one subnet.
 	 */
 	private final Relation subnet;
 	
@@ -94,6 +95,7 @@ public final class ConfigAssure {
 	 */
 	public ConfigAssure() {
 		this.port = Relation.unary("port");
+		this.unknown = Relation.unary("unknown");
 		this.addr = Relation.binary("addr");
 		this.groupMask = Relation.binary("groupMask");
 		this.subnet = Relation.binary("subnet");
@@ -154,24 +156,28 @@ public final class ConfigAssure {
 		
 		final Variable p0 = Variable.unary("p0"), p1 = Variable.unary("p1"), p2 = Variable.unary("p2");
 		
-		// the domain of the subnet expression contains all the representative atoms for each subnet
+		// contains the representatives of all subnets
 		final Expression subreps = subnet.join(port);
+		// contains the representatives of subnets with some unknown members
+		final Expression unknownSubs = subnet.join(unknown);
 		
-		// no two ports on the same subnet have the same address:
-		// all p0: subreps, disj p1, p2: p0.subnet | addr(p1) != addr(p2)
+		// the ports with known components are guaranteed to obey the following constraints (ensured by the preprocessing steps).
+		
+		// no two ports on the same subnet (with some unknown ports) have the same address:
+		// all p0: unknownSubs, p1: unknown & p0.subnet, p2: p0.subnet - p1 | addr(p1) != addr(p2)
 		final Expression submembers = p0.join(subnet);
-		reqs.add( p1.eq(p2).not().implies(addr(p1).eq(addr(p2)).not()).
-					forAll(p0.oneOf(subreps).and(p1.oneOf(submembers)).and(p2.oneOf(submembers)))  );
+		reqs.add( addr(p1).eq(addr(p2)).not().
+					forAll(p0.oneOf(unknownSubs).and(p1.oneOf(submembers.intersection(unknown))).and(p2.oneOf(submembers.difference(p1))))  );
 		
-		// all ports on the same subnet have the same netid:
-		// all p0: subreps, p1: p0.subnet | netid(p0) = netid(p1)
+		// all ports on the same subnet (with some unknown ports) have the same netid:
+		// all p0: unknownSubs, p1: p0.subnet | netid(p0) = netid(p1)
 		reqs.add( netid(p0).eq(netid(p1)).
-					forAll(p0.oneOf(subreps).and(p1.oneOf(submembers))) );
+					forAll(p0.oneOf(unknownSubs).and(p1.oneOf(submembers))) );
 		
-		// netids don't overlap: 
-		// all disj p0, p1: subreps | not contains(p0, p1) and not contains(p1, p0)
-		reqs.add( p0.eq(p1).not().implies(contains(p0,p1).not().and(contains(p1, p0).not())).
-					forAll(p0.oneOf(subreps).and(p1.oneOf(subreps)) ));	
+		// netids of subnets with unknown representatives don't overlap with netids of any other subnet: 
+		// all p0: subreps & unknown, p1: subreps- p0 | not contains(p0, p1) and not contains(p1, p0)
+		reqs.add( contains(p0,p1).not().and(contains(p1, p0).not()).
+					forAll(p0.oneOf(subreps.intersection(unknown)).and(p1.oneOf(subreps.difference(p0))) ));	
 								
 		return Nodes.and(reqs);
 	}
@@ -190,16 +196,31 @@ public final class ConfigAssure {
 	}
 	
 	/**
+	 * Returns a tupleset that maps the given port atom to each non-zero bit in 
+	 * the given bit string.
+	 * @return a tupleset that maps the given port atom to each non-zero bit in 
+	 * the given bit string.
+	 */
+	private final TupleSet portToBits(TupleFactory factory, String port, int bits) { 
+		final TupleSet s = factory.noneOf(2);
+		for(int i = 0, max = 32 - Integer.numberOfLeadingZeros(bits) ; i < max; i++) { 
+			if ((bits & (1<<i)) != 0)
+				s.add(factory.tuple(port, Integer.valueOf(1<<i)));
+		}
+		return s;
+	}
+	
+	/**
 	 * Returns the bounds corresponding to the given ip address and subnet files.
 	 * @return bounds corresponding to the given ip address and subnet files.
 	 * @throws IOException if either of the files cannot be found or accessed
 	 * @throws IllegalArgumentException if either of the files cannot be parsed
 	 */
 	public Bounds bounds(String ipAddrsFile, String subnetsFile) throws IOException { 
-		final Map<String, IPAddress> addresses = parseAddresses(ipAddrsFile);
-		final Collection<Subnet> subnets = parseSubnets(subnetsFile, addresses);
+		final Map<String, NetNode> nodes = parseAddresses(ipAddrsFile);
+		final Map<NetNode,Subnet> subnets = parseSubnets(subnetsFile, nodes);
 		
-		final Universe universe = universe(addresses.keySet());
+		final Universe universe = universe(nodes.keySet());
 		final Bounds bounds = new Bounds(universe);
 		final TupleFactory factory = universe.factory();
 
@@ -207,105 +228,87 @@ public final class ConfigAssure {
 		for(int i = 0; i < 32; i++) { bounds.boundExactly(1<<i, factory.setOf(Integer.valueOf(1<<i))); }
 
 		// bind the port relation exactly to the port names
-		bounds.boundExactly(port, factory.range(factory.tuple(1, 0), factory.tuple(1, addresses.keySet().size()-1)));
+		bounds.boundExactly(port, factory.range(factory.tuple(universe.atom(0)), factory.tuple(universe.atom(nodes.keySet().size()-1))));
+		
+		// bind the unknown relation exactly to the port names of ports with unknown addresses or masks
+		final TupleSet unknownBound = factory.noneOf(1);
+		for(NetNode n : nodes.values()) { 
+			if (!n.known()) { 
+				unknownBound.add(factory.tuple(n.port));
+			}
+		}
+		bounds.boundExactly(unknown, unknownBound);
 		
 		// bind the subnet relation exactly, choosing the first element of each subnet as the representative
 		final TupleSet subnetBound = factory.noneOf(2);
-		for(Subnet sub : subnets) { 
-			final Iterator<IPAddress> itr = sub.members.iterator();
-			final String first = itr.next().port;
-			subnetBound.add(factory.tuple(first, first));
-			while(itr.hasNext()) { 
-				subnetBound.add(factory.tuple(first, itr.next().port));
+		for(Map.Entry<NetNode,Subnet> entry : subnets.entrySet()) {
+			final NetNode rep = entry.getKey();
+			for(NetNode member : entry.getValue().members) { 
+				subnetBound.add(factory.tuple(rep.port, member.port));
 			}
 		}
 		bounds.boundExactly(subnet, subnetBound);
 		
 		// bind the addr relation so that each address is guaranteed to be between minAddr (121.96.0.0) and maxAddr (121.96.255.255), inclusive
 		final TupleSet lAddr = factory.noneOf(2), uAddr = factory.noneOf(2);
-		for(IPAddress ad : addresses.values()) { 
-			if (ad.varAddress) { // unknown address
-				for(int i = 0 ; i < 32; i++) {
-					if ((minAddr & (1<<i))!=0)
-						lAddr.add(factory.tuple(ad.port, Integer.valueOf(1<<i)));
-					if ((maxAddr & (1<<i))!=0)
-						uAddr.add(factory.tuple(ad.port, Integer.valueOf(1<<i)));
-				}
+		for(NetNode node : nodes.values()) { 
+			if (node.varAddress) { // unknown address
+				lAddr.addAll(portToBits(factory, node.port, minAddr));
+				uAddr.addAll(portToBits(factory, node.port, maxAddr));
 			} else { // known address
-				for(int i = 0 ; i < 32; i++) {
-					if ((ad.address & (1<<i)) != 0) {
-						final Tuple tuple = factory.tuple(ad.port, Integer.valueOf(1<<i));
-						lAddr.add(tuple);
-						uAddr.add(tuple);
-					}
-				}
+				final TupleSet portToAddrBits = portToBits(factory, node.port, node.address);
+				lAddr.addAll(portToAddrBits); 
+				uAddr.addAll(portToAddrBits);
 			}
 		}
 		bounds.bound(addr, lAddr, uAddr);
 		
 		// bind the group and groupMask relations so that all ports with the same interface on the same subnet are guaranteed to have the same mask
 		final TupleSet lMask = factory.noneOf(2), uMask = factory.noneOf(2), groupBound = factory.noneOf(2);
-		for(Subnet sub : subnets) { 
-			
-			for(Set<IPAddress> subgroup : sub.groups.values()) {
-				
-				final Iterator<IPAddress> itr = subgroup.iterator();
-				
-				final IPAddress first = itr.next();
-				addresses.remove(first.port);
-				
-				int maskVal = first.varMask ? -1 : first.mask;
-				groupBound.add(factory.tuple(first.port, first.port));
-				
-				while(itr.hasNext()) { 
-					final IPAddress next = itr.next();
-					addresses.remove(next.port);
-					
-					if (maskVal < 0 && !next.varMask)
-						maskVal = next.mask;
-					groupBound.add(factory.tuple(next.port, first.port));
+		for(Subnet sub : subnets.values()) { 
+			for(Map.Entry<NetNode,Set<NetNode>> entry : sub.groups.entrySet()) { 
+				final NetNode rep = entry.getKey();
+				for(NetNode member : entry.getValue()) { 
+					groupBound.add(factory.tuple(member.port, rep.port));
+					nodes.remove(member.port); // remove a grouped member out of the addresses set
 				}
-				
-				if (maskVal < 0) { // unknown (same) mask for this group
-					for(int i = 0 ; i < 5; i++) { // need only 5 bits for the mask
-						uMask.add(factory.tuple(first.port, Integer.valueOf(1<<i)));
-					}
-				} else { // known (same) mask for this group
-					for(int i = 0 ; i < 5; i++) { // need to look at only low-order 5 bits for the mask
-						if ((maskVal & (1<<i)) != 0) {
-							final Tuple tuple = factory.tuple(first.port, Integer.valueOf(1<<i));
-							lMask.add(tuple);
-							uMask.add(tuple);
-						}
-					}
+				if (rep.varMask) { // unknown mask for the representative
+					uMask.addAll(portToBits(factory, rep.port, 31));
+				} else { // known mask for the representative
+					final TupleSet portToMaskBits = portToBits(factory, rep.port, rep.mask);
+					lMask.addAll(portToMaskBits);
+					uMask.addAll(portToMaskBits);
 				}
 			}
 		}
 		
 		// bind the group and groupMask relations for ports that are not a part of any subnet
-		for(IPAddress ad : addresses.values()) { 
-			groupBound.add(factory.tuple(ad.port, ad.port));
-			if (ad.varMask) { // unknown (same) mask for this group
-				for(int i = 0 ; i < 5; i++) { // need only 5 bits for the mask
-					uMask.add(factory.tuple(ad.port, Integer.valueOf(1<<i)));
-				}
-			} else { // known (same) mask for this group
-				for(int i = 0 ; i < 5; i++) { // need to look at only low-order 5 bits for the mask
-					if ((ad.mask & (1<<i)) != 0) {
-						final Tuple tuple = factory.tuple(ad.port, Integer.valueOf(1<<i));
-						lMask.add(tuple);
-						uMask.add(tuple);
-					}
-				}
+		for(NetNode ungrouped : nodes.values()) { 
+			groupBound.add(factory.tuple(ungrouped.port, ungrouped.port));
+			if (ungrouped.varMask) { // unknown mask for the representative
+				uMask.addAll(portToBits(factory, ungrouped.port, 31));
+			} else { // known mask for the representative
+				final TupleSet portToMaskBits = portToBits(factory, ungrouped.port, ungrouped.mask);
+				lMask.addAll(portToMaskBits);
+				uMask.addAll(portToMaskBits);
 			}
 		}
 		
 		bounds.bound(groupMask, lMask, uMask);
 		bounds.boundExactly(group, groupBound);
 		
-		System.out.println("groupMask.size: " + uMask.size() + ", group.size: " + groupBound.size());
+//		System.out.println("groupMask.size: " + uMask.size() + ", group.size: " + groupBound.size());
+//		System.out.println("ports.size: " + bounds.upperBound(port).size() + ", unknown.size: " + unknownBound.size());
 		return bounds;
 
+	}
+	
+	/**
+	 * Returns a string representation of the given bit string in the quad notation.
+	 * @return a string representation of the given bit string in the quad notation.
+	 */
+	private static final String toQuad(int bits) { 
+		return (bits>>>24) + "." + ((bits>>>16)&255) + "." + ((bits>>>8)&255) + "." + (bits & 255) + ".";
 	}
 	
 	/**
@@ -318,23 +321,23 @@ public final class ConfigAssure {
 		final TupleFactory factory = univ.factory();
 		final List<TupleSet> subnets = new ArrayList<TupleSet>();
 		
-		System.out.println("--------addresses and masks--------");
+		System.out.println("address\t\tnetwork id\tmask\tdevice-interface");
 		for(int i = 0, ports = univ.size()-32; i < ports; i++) {
 			final Object atom = univ.atom(i);
 			final Relation p = Relation.unary(atom.toString());
 			inst.add(p, factory.setOf(atom));
 			
-			System.out.print(p);
-			System.out.print(": addr=" + eval.evaluate(addr(p)));
-			System.out.print(", mask=" + eval.evaluate(implicitMask(p)));
-			System.out.println(", netid=" + eval.evaluate(netid(p)) + ".");
-			
+			System.out.print(toQuad(eval.evaluate(addr(p)))+"\t");
+			System.out.print(toQuad(eval.evaluate(netid(p)))+"\t");
+			System.out.print(eval.evaluate(implicitMask(p))+"\t");
+			System.out.println(p);
+						
 			final TupleSet members = eval.evaluate(subnet(p));
 			if (!members.isEmpty())
 				subnets.add(members);
 		}
 		
-		System.out.println("--------subnets--------");
+		System.out.println("\nsubnets:");
 		for(TupleSet sub : subnets) { 
 			System.out.println(sub);
 		}
@@ -361,14 +364,14 @@ public final class ConfigAssure {
 			final Formula formula = ca.requirements();
 			final Bounds bounds = ca.bounds(args[0], args[1]);
 			
-			System.out.println("requirements: ");
+			System.out.println("---explicit requirements (others are implicit in the bounds)---");
 			System.out.println(PrettyPrinter.print(formula, 2));
 			
-			System.out.println("solving with config files " + args[0] + " and " + args[1]);
+			System.out.println("\n---solving with config files " + args[0] + " and " + args[1] + "---");
 			
 			final Solution sol = solver.solve(formula, bounds);
 			
-			System.out.println("---OUTCOME---");
+			System.out.println("\n---OUTCOME---");
 			System.out.println(sol.outcome());
 			
 			System.out.println("\n---STATS---");
@@ -390,29 +393,40 @@ public final class ConfigAssure {
 	 * @return a map that binds each port name in the given file to its corresponding IPAddress record.
 	 * @throws IOException 
 	 */
-	private static Map<String, IPAddress> parseAddresses(String ipAddrsFile) throws IOException { 
-		final Map<String, IPAddress> addresses = new LinkedHashMap<String, IPAddress>();
+	private static Map<String, NetNode> parseAddresses(String ipAddrsFile) throws IOException { 
+		final Map<String, NetNode> nodes = new LinkedHashMap<String, NetNode>();
 		final BufferedReader reader = new BufferedReader(new FileReader(new File(ipAddrsFile)));
 		for(String line = reader.readLine(); line != null; line = reader.readLine()) { 
-			final IPAddress addr = new IPAddress(line);
-			if (addresses.put(addr.port, addr) != null) 
+			final NetNode node = new NetNode(line);
+			if (nodes.put(node.port, node) != null) 
 				throw new IllegalArgumentException("Duplicate ip address specification: " + line);
 		}
-		return addresses;
+		return nodes;
 	}
 	
 	/**
-	 * Returns a grouping of the given IPAddresses into subnets according to the subnet information
-	 * in the given file.  
-	 * @return a grouping of the given IPAddresses into subnets according to the subnet information
-	 * in the given file.
+	 * Returns a map of each representative IPAddress to its subnet, as specified by the given
+	 * file and addresses.  
+	 * @return a map of each representative IPAddress to its subnet, as specified by the given
+	 * file and addresses. 
 	 * @throws IOException 
 	 */
-	private static Collection<Subnet> parseSubnets(String subnetsFile, Map<String, IPAddress> addresses) throws IOException { 
-		final Collection<Subnet> subnets = new ArrayList<Subnet>();
+	private static Map<NetNode, Subnet> parseSubnets(String subnetsFile, Map<String, NetNode> addresses) throws IOException { 
+		final Map<NetNode,Subnet> subnets = new LinkedHashMap<NetNode, Subnet>();
 		final BufferedReader reader = new BufferedReader(new FileReader(new File(subnetsFile)));
 		for(String line = reader.readLine(); line != null; line = reader.readLine()) { 
-			subnets.add(new Subnet(line, addresses));
+			final Subnet sub = new Subnet(line, addresses);
+			subnets.put(sub.representative(), sub);
+		}
+		// check that all known representatives have disjoint netids
+		for(NetNode n1 : subnets.keySet()) { 
+			for(NetNode n2: subnets.keySet()) { 
+				if (n1 != n2) { 
+					if (n1.known() && n2.known() && (n1.contains(n2) || n2.contains(n1))) { 
+						throw new IllegalArgumentException("Netids of members of different subnets cannot overlap: " + n1 + ".netid = " + n2 + ".netid");
+					}
+				}
+			}
 		}
 		return subnets;
 	}
@@ -428,7 +442,7 @@ public final class ConfigAssure {
 	 * @invariant !varMask => (0 <= mask <= 31)
 	 * @author Emina Torlak
 	 */
-	private static class IPAddress {
+	private static class NetNode {
 		final String device, interfaceName, port;
 		final boolean varAddress, varMask; 
 		final int address, mask;
@@ -443,7 +457,7 @@ public final class ConfigAssure {
 		/**
 		 * Constructs an IP address object using the provided ipAddress string.
 		 */
-		IPAddress(String addrString) { 
+		NetNode(String addrString) { 
 			if (mAddress.reset(addrString).matches()) { 
 				this.device = mAddress.group(1);
 				this.interfaceName = mAddress.group(2);
@@ -468,6 +482,30 @@ public final class ConfigAssure {
 		}
 	
 		/**
+		 * Returns the netid of this port.
+		 * @requires this.known
+		 * @return this.address & (-1<<this.mask)
+		 */
+		int netid() { 
+			return address & (-1<<mask);
+		}
+		
+		/**
+		 * Returns true if this net node is fully specified.
+		 * @return !varAddress && !varMask
+		 */
+		boolean known() { return !varAddress && !varMask; }
+		
+		/**
+		 * Returns true if this address and mask contains the other.
+		 * @requires this.known && other.known
+		 * @return this.mask >= other.mask and (this.address & (-1<<this.mask)) = (other.address & (-1<<this.mask))
+		 */
+		boolean contains(NetNode other) { 
+			return mask >= other.mask && (this.address & (-1<<mask)) == (other.address & (-1<<mask));
+		}
+		
+		/**
 		 * Returns the integer value embedded in the given string iff it is between min
 		 * and max, inclusive.  Otherwise throws an illegal argument exception with the
 		 * given message.
@@ -487,14 +525,18 @@ public final class ConfigAssure {
 	 * A record containing  the information parsed out of a 
 	 * Prolog subnet predicate, e.g. subnet(['IOS_00091'-'Vlan820', 'IOS_00092'-'Vlan820', 'IOS_00096'-'FastEthernet0/0']).
 	 * @specfield member: some IPAddress // members of this subnet
-	 * @specfield groups: String -> member
-	 * @invariant groups = { s: String, a: IPAddress | a.interfaceName = s }
-	 * @invariant all i: member.interfaceName, m1, m2: groups[i] | (!m1.varMask and !m2.varMask) => m1.mask = m2.mask
+	 * @specfield groups: member one-> member
+	 * @specfield representative: member
+	 * @invariant all rep: groups.member, m: groups[rep] | rep.interfaceName = m.interfaceName and 
+	 * 				(!rep.varMask => !m.varMask else (m.varMask => m.mask = rep.mask))  
+	 * @invariant all disj m1, m2: member | (!m1.varAddress and !m2.varAddress) => m1.address != m2.address
+	 * @invariant all disj m1, m2: member | (!m1.varAddress and !m2.varAddress and !m1.varMask and !m2.varMask) => m1.netid() = m2.netid()
+	 * @invariant (representative.varAddress && representative.varMask) => (all m: member | m.varAddress && m.varMask)
 	 * @author Emina Torlak
 	 */
 	private static class Subnet {
-		final Set<IPAddress> members;
-		final Map<String, Set<IPAddress>> groups;
+		final Set<NetNode> members;
+		final Map<NetNode, Set<NetNode>> groups;
 		
 		private static final Pattern pSubnet = Pattern.compile("subnet\\(\\[(.+)\\]\\)\\.");
 		private static final Pattern pSubMember = Pattern.compile(",*\\s*([^,]+)");
@@ -503,18 +545,31 @@ public final class ConfigAssure {
 		/**
 		 * Constructs a subnet object out of the given subnet string and addresses.
 		 */
-		Subnet(String subnetString, Map<String, IPAddress> addresses) { 
+		Subnet(String subnetString, Map<String, NetNode> addresses) { 
 			this.members = members(subnetString, addresses);
 			this.groups = groups(subnetString, members);
+		}
+		
+		/**
+		 * Returns the first net node encountered during parsing with known address and mask, if one exists.
+		 * Otherwise, returns the first net node encountered during parsing.
+		 * @return this.representative
+		 */
+		NetNode representative() { 
+			for(NetNode n : members) { 
+				if (!n.varAddress && !n.varMask)
+					return n;
+			}
+			return members.iterator().next();
 		}
 		
 		/**
 		 * Returns the subnet members specified by the given subnet string.
 		 * @return subnet members specified by the given subnet string.
 		 */
-		private static Set<IPAddress> members(String subnetString, Map<String, IPAddress> addresses) { 
+		private static Set<NetNode> members(String subnetString, Map<String, NetNode> addresses) { 
 			if (mSubnet.reset(subnetString).matches()) { 
-				final Set<IPAddress> members = new LinkedHashSet<IPAddress>();
+				final Set<NetNode> members = new LinkedHashSet<NetNode>();
 				mSubMember.reset(mSubnet.group(1));
 				while(mSubMember.find()) { 
 					final String port = mSubMember.group(1);
@@ -527,6 +582,22 @@ public final class ConfigAssure {
 				if (members.isEmpty()) { 
 					throw new IllegalArgumentException("Subnet spec is empty: " + subnetString);
 				}
+				for(NetNode n1 : members) { 
+					for(NetNode n2: members) { 
+						if (n1 != n2) { 
+							if (!n1.varAddress && !n2.varAddress) {
+								if (n1.address == n2.address) {
+									throw new IllegalArgumentException("Two ports on the same subnet must have distinct addresses: " + 
+										subnetString + " (" + n1.port + ".address = " + n2.port + ".address)");
+								}
+								if (!n1.varMask && !n2.varMask && n1.netid() != n2.netid()) { 
+									throw new IllegalArgumentException("Two ports on the same subnet must have the same net id: " + 
+											subnetString + " (" + n1.port + ".netid != " + n2.port + ".netid)");
+								}
+							}
+						}
+					}
+				}
 				return Collections.unmodifiableSet(members);
 			} else {
 				throw new IllegalArgumentException("Unrecognized subnet format: " + subnetString);
@@ -534,32 +605,36 @@ public final class ConfigAssure {
 		}
 		
 		/**
-		 * Returns a grouping of the given subnet members according to their interface names.
-		 * @return a grouping of the given subnet members according to their interface names.
+		 * Returns a grouping of the given subnet members according to their group representatives.
+		 * @return a grouping of the given subnet members according to their group representatives.
 		 */
-		private static Map<String, Set<IPAddress>> groups(String subnetString, Set<IPAddress> members) { 
-			final Map<String, Set<IPAddress>> groups = new LinkedHashMap<String, Set<IPAddress>>();
-			for(IPAddress addr : members) { 
-				Set<IPAddress> group = groups.get(addr.interfaceName);
+		private static Map<NetNode, Set<NetNode>> groups(String subnetString, Set<NetNode> members) { 
+			final Map<String, Set<NetNode>> byInterface = new LinkedHashMap<String, Set<NetNode>>();
+			for(NetNode addr : members) { 
+				Set<NetNode> group = byInterface.get(addr.interfaceName);
 				if (group == null) {
-					group = new LinkedHashSet<IPAddress>();
-					groups.put(addr.interfaceName, group);
+					group = new LinkedHashSet<NetNode>();
+					byInterface.put(addr.interfaceName, group);
 				}
 				group.add(addr);
 				
 			}
-			for(Map.Entry<String, Set<IPAddress>> entry : groups.entrySet()) { 
-				final Set<IPAddress> group = entry.getValue();
-				final IntSet masks = new IntTreeSet();
-				for(IPAddress addr : group) { 
-					if (!addr.varMask) { masks.add(addr.mask); }
+			final Map<NetNode, Set<NetNode>> byRep = new LinkedHashMap<NetNode, Set<NetNode>>();
+			for(Set<NetNode> group : byInterface.values()) { 
+				NetNode rep = null;
+				for(NetNode ad : group) { 
+					if (rep==null || (rep.varMask && !ad.varMask)) { 
+						rep = ad;
+					} else {
+						if (!ad.varMask && rep.mask != ad.mask) { 
+							throw new IllegalArgumentException("All members of a subnet with the same interface must have the same mask: " + subnetString);
+						}
+					}
 				}
-				if (masks.size()>1) 
-					throw new IllegalArgumentException("All members of a subnet with the same interface must have the same mask: " + subnetString);
-				
-				entry.setValue(Collections.unmodifiableSet(group));
+						
+				byRep.put(rep, Collections.unmodifiableSet(group));
 			}
-			return Collections.unmodifiableMap(groups);
+			return Collections.unmodifiableMap(byRep);
 		}
 	}
 }
