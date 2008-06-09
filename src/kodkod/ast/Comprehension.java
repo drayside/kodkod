@@ -41,6 +41,7 @@ public final class Comprehension extends Expression  {
     private final Decls declarations;
     private final Formula formula;
 
+    
     /**  
      * Constructs a comprehension expression with the specified declarations
      * and formula
@@ -49,7 +50,11 @@ public final class Comprehension extends Expression  {
      * @throws NullPointerException - declarations = null || formula = null
      */
     Comprehension(Decls declarations, Formula formula) {
-        if (declarations == null || formula == null) throw new NullPointerException("null arg");
+        if (formula == null) throw new NullPointerException("null formula");
+        for(Decl decl : declarations) { 
+        	if (decl.variable().arity()>1 || decl.multiplicity()!=Multiplicity.ONE)
+        		throw new IllegalArgumentException("Cannot have a higher order declaration in a comprehension: "+decl);
+        }
         this.declarations = declarations;
         this.formula = formula;
     }
@@ -71,11 +76,7 @@ public final class Comprehension extends Expression  {
      * @return sum(this.declarations.declarations().arity)
      */
     public int arity() {
-        int arity = 0;
-        for (Decl decl : declarations.declarations()) {
-            arity += decl.variable().arity();
-        }
-        return arity;
+        return declarations.size();
     }
     
     /**

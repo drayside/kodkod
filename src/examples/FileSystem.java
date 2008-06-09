@@ -56,7 +56,7 @@ public final class FileSystem {
 		final Formula f1 = Root.in(Dir).and(Cur.in(Dir)).and(Root.intersection(Cur).no());
 		// don't need to specify that Dir, Name, and DirEntry are disjoint; implied by bounds
 		final Formula f2 = entries.in(Dir.product(DirEntry));
-		final Formula f3 = parent.functional(Dir, Dir); 
+		final Formula f3 = parent.partialFunction(Dir, Dir); 
 		final Formula f4 = name.function(DirEntry, Name);
 		final Formula f5 = contents.function(DirEntry, Obj);
 		return f0.and(f1).and(f2).and(f3).and(f4).and(f5);

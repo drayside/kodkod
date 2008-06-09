@@ -561,7 +561,7 @@ public abstract class AbstractReplacer implements ReturnVisitor<Expression, Form
 			final Expression range = fp.range().accept(this);
 			ret = (r==fp.relation() && domain==fp.domain() && range==fp.range()) ?
 					fp : 
-					(fp.targetMult()==Multiplicity.ONE ? r.function(domain, range) : r.functional(domain,range));
+					(fp.targetMult()==Multiplicity.ONE ? r.function(domain, range) : r.partialFunction(domain,range));
 			break;
 		case TOTAL_ORDERING : 
 			final RelationPredicate.TotalOrdering tp = (RelationPredicate.TotalOrdering) pred;

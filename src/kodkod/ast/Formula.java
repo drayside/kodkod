@@ -166,6 +166,7 @@ public abstract class Formula implements Node {
     /**
      * Returns the comprehension expression constructed from this formula and
      * the given declarations.
+     * @requires all d: decls.declarations[int] | decl.variable.arity = 1 and decl.multiplicity = ONE
      * @return {e: Expression | e = {decls | this} }
      */
     public final Expression comprehension(Decls decls) {

@@ -58,6 +58,7 @@ public abstract class RelationPredicate extends Formula {
 		return relation;
 	}
 	
+	
 	/**
 	 * Returns the name of this predicate.
 	 * @return this.name
@@ -92,8 +93,10 @@ public abstract class RelationPredicate extends Formula {
 	 * The name of the predicate.
 	 */
 	public static enum Name {
-		/** Function (total or partial) predicate. */
+		/** Function predicate. */
 		FUNCTION,
+		/** Partial function predicate. */
+		//PARTIAL_FUNCTION,
 		/** Acyclic predicate. */
 		ACYCLIC,
 		/** Total ordering predicate. */
@@ -187,6 +190,7 @@ public abstract class RelationPredicate extends Formula {
 		public Name name() { 
 			return Name.FUNCTION;
 		}
+		
 		
 		/**
 		 * Returns the target multiplicity of the function represented

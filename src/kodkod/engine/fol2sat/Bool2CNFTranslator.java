@@ -95,6 +95,22 @@ final class Bool2CNFTranslator implements BooleanVisitor<int[], Object> {
 		this.visited = Ints.bestSet(pdetector.offset, StrictMath.max(pdetector.offset, maxLiteral));
 	}
 
+	/** @return 0->lit */
+	final int[] clause(int lit) { 
+		unaryClause[0] = lit;
+		return unaryClause;
+	}
+	/** @return 0->lit0 + 1->lit1 */
+	final int[] clause(int lit0, int lit1) { 
+		binaryClause[0] = lit0; binaryClause[1] = lit1;
+		return binaryClause;
+	}
+	/** @return 0->lit0 + 1->lit1 + 2->lit2 */
+	final int[] clause(int lit0, int lit1, int lit2) { 
+		ternaryClause[0] = lit0; ternaryClause[1] = lit1; ternaryClause[2] = lit2;
+		return ternaryClause;
+	}
+	
 	/**
 	 * Adds translation clauses to the solver and returns an array containing the
 	 * gate's literal. The CNF clauses are generated according to the standard SAT to CNF translation:
@@ -120,9 +136,7 @@ final class Bool2CNFTranslator implements BooleanVisitor<int[], Object> {
 			for(BooleanFormula input : multigate) {
 				int iLit = input.accept(this, arg)[0];
 				if (p) {
-					binaryClause[0] = iLit * sgn;
-					binaryClause[1] = output;
-					solver.addClause(binaryClause);
+					solver.addClause(clause(iLit * sgn, output));
 				}
 				if (n) { 
 					lastClause[i++] = iLit * -sgn;
@@ -133,8 +147,7 @@ final class Bool2CNFTranslator implements BooleanVisitor<int[], Object> {
 				solver.addClause(lastClause);
 			}
 		}
-		unaryClause[0] = oLit;
-		return unaryClause;        
+		return clause(oLit);        
 	}
 
 	/**
@@ -154,26 +167,19 @@ final class Bool2CNFTranslator implements BooleanVisitor<int[], Object> {
 			final int e = itegate.input(2).accept(this, arg)[0];
 			final boolean p = pdetector.positive(oLit), n = pdetector.negative(oLit);
 			if (p) {
-				ternaryClause[0] = -i; ternaryClause[1] = t; ternaryClause[2] = -oLit;
-				solver.addClause(ternaryClause);
-				ternaryClause[0] = i; ternaryClause[1] = e; ternaryClause[2] = -oLit;
-				solver.addClause(ternaryClause);
+				solver.addClause(clause(-i, t, -oLit));
+				solver.addClause(clause(i, e, -oLit));
 				// redundant clause that strengthens unit propagation
-				ternaryClause[0] = t; ternaryClause[1] = e; ternaryClause[2] = -oLit;
-				solver.addClause(ternaryClause);
+				solver.addClause(clause(t, e, -oLit));
 			}
 			if (n) {
-				ternaryClause[0] = -i; ternaryClause[1] = -t; ternaryClause[2] = oLit;
-				solver.addClause(ternaryClause);	
-				ternaryClause[0] = i; ternaryClause[1] = -e; ternaryClause[2] = oLit;
-				solver.addClause(ternaryClause);
+				solver.addClause(clause(-i, -t, oLit));	
+				solver.addClause(clause(i, -e, oLit));
 				// redundant clause that strengthens unit propagation
-				ternaryClause[0] = -t; ternaryClause[1] = -e; ternaryClause[2] = oLit;
-				solver.addClause(ternaryClause);
+				solver.addClause(clause(-t, -e, oLit));
 			}	
 		}
-		unaryClause[0] = oLit;
-		return unaryClause;
+		return clause(oLit);
 	}
 
 	/** 
@@ -182,10 +188,7 @@ final class Bool2CNFTranslator implements BooleanVisitor<int[], Object> {
 	 * @return o: int[] | o.length = 1 && o[0] = - translate(negation.inputs)[0]
 	 *  */
 	public int[] visit(NotGate negation, Object arg) {
-		final int[] o = negation.input(0).accept(this, arg);
-		assert o.length == 1;
-		o[0] = -o[0];
-		return o;
+		return clause(-negation.input(0).accept(this, arg)[0]);
 	}
 
 	/**
@@ -193,10 +196,8 @@ final class Bool2CNFTranslator implements BooleanVisitor<int[], Object> {
 	 * @return o: int[] | o.length = 1 && o[0] = variable.literal
 	 */
 	public int[] visit(BooleanVariable variable, Object arg) {
-		unaryClause[0] = variable.label();
-		return unaryClause;
+		return clause(variable.label());
 	}
-
 
 
 	/**

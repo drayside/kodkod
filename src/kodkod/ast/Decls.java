@@ -21,13 +21,12 @@
  */
 package kodkod.ast;
 
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.Iterator;
-import java.util.List;
 
 import kodkod.ast.visitor.ReturnVisitor;
 import kodkod.ast.visitor.VoidVisitor;
+import kodkod.util.collections.Containers;
 
 
 /** 
@@ -40,7 +39,7 @@ import kodkod.ast.visitor.VoidVisitor;
  * @author Emina Torlak 
  */
 public class Decls implements Node, Iterable<Decl> {
-	private final List<Decl> declarations;
+	private final Decl[] declarations;
 	
 	/**
 	 * Constructs a Decls object with itself as its sole
@@ -51,8 +50,7 @@ public class Decls implements Node, Iterable<Decl> {
 	 * @throws ClassCastException - this !in Decl
 	 */
     Decls() {
-    	Decl singleDecl = (Decl)this;
-    	this.declarations = Collections.singletonList(singleDecl);
+    	this.declarations = new Decl[]{ (Decl) this };
     }
     
     /**
@@ -64,31 +62,29 @@ public class Decls implements Node, Iterable<Decl> {
 	 * @throws NullPointerException - head = null || tail is null 
 	 */
 	private Decls(Decls head, Decls tail) {
-		List<Decl> temp = new ArrayList<Decl>(head.declarations.size() + tail.declarations.size());
-		temp.addAll(head.declarations());
-		temp.addAll(tail.declarations());
-		this.declarations = Collections.unmodifiableList(temp);
+		this.declarations = new Decl[head.size()+tail.size()];
+		System.arraycopy(head.declarations, 0, declarations, 0, head.size());
+		System.arraycopy(tail.declarations, 0, declarations, head.size(), tail.size());
 	}
-	
-    /**
-     * Returns an unmodifiable List view of this declaration sequence
-     * @return {l: List | l.elems =  this.declarations }
-     */
-    public List<Decl> declarations() {
-    	return declarations;
-    }
     
     /**
      * Returns the number of declarations in this Decls object.
      * @return this.size
      */
-    public int size() { return declarations.size(); }
+    public int size() { return declarations.length; }
+    
+    /**
+     * Returns the ith declaration in this Decls sequence.
+     * @requires 0 <= i < this.size
+     * @return this.declarations[i]
+     */
+    public Decl get(int i) { return declarations[i]; }
     
     /**
      * Returns an unmodifiable iterator over the declarations in this Decls object.
      * @return this.declarations().iterator()
      */
-    public Iterator<Decl> iterator() { return declarations.iterator(); }
+    public Iterator<Decl> iterator() { return Containers.iterate(declarations); }
     
     /**
      * Returns a sequence of this.size + decls.size declarations that has 
@@ -109,9 +105,7 @@ public class Decls implements Node, Iterable<Decl> {
     public <E, F, D, I> D accept(ReturnVisitor<E, F, D, I> visitor) {
         return visitor.visit(this);
     }
-    
    
-    
     /**
      * Accepts the given visitor.
      * @see kodkod.ast.Node#accept(kodkod.ast.visitor.VoidVisitor)
@@ -125,7 +119,7 @@ public class Decls implements Node, Iterable<Decl> {
 	 * @return string representation of these decls
 	 */
     public String toString() {
-        return declarations.toString();
+        return Arrays.toString(declarations);
     }
     
 }

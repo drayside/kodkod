@@ -204,7 +204,7 @@ public final class PrettyPrinter {
 		 *    ..., tokenize[ node.declarations[ node.size() - 1 ] ] ] 
 		 **/
 		public void visit(Decls node) {
-			Iterator<Decl> decls = node.declarations().iterator();
+			Iterator<Decl> decls = node.iterator();
 			decls.next().accept(this);
 			while(decls.hasNext()) { 
 				comma();

@@ -36,7 +36,7 @@ import kodkod.ast.visitor.VoidVisitor;
  * printing, viewing, etc.  The name has no meaning otherwise.
  * 
  * <p>Four methods for creating commonly used predicates over binary relations
- * are provided: {@link #function(Expression, Expression)}, {@link #functional(Expression, Expression)},
+ * are provided: {@link #function(Expression, Expression)}, {@link #partialFunction(Expression, Expression)},
  * {@link #acyclic()}, and {@link #totalOrder(Relation, Relation, Relation)}.  Using
  * these methods to generate desired predicates will result in faster constraint solving
  * than creating the same predicates via other API calls.</p> 
@@ -138,7 +138,7 @@ public class Relation extends LeafExpression {
      * @throws IllegalArgumentException - domain.arity != 1 || range.arity != 1
      * @throws IllegalArgumentException - this.arity != 2
      */
-    public Formula functional(Expression domain, Expression range) {
+    public Formula partialFunction(Expression domain, Expression range) {
     		return new RelationPredicate.Function(this, domain, Multiplicity.LONE, range);
     }
     

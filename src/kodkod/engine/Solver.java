@@ -32,7 +32,6 @@ import kodkod.ast.Relation;
 import kodkod.engine.config.Options;
 import kodkod.engine.fol2sat.HigherOrderDeclException;
 import kodkod.engine.fol2sat.Translation;
-import kodkod.engine.fol2sat.TranslationAbortedException;
 import kodkod.engine.fol2sat.TranslationLog;
 import kodkod.engine.fol2sat.Translator;
 import kodkod.engine.fol2sat.TrivialFormulaException;
@@ -147,8 +146,6 @@ public final class Solver {
 		} catch (TrivialFormulaException trivial) {
 			final long endTransl = System.currentTimeMillis();
 			return trivial(bounds, trivial, endTransl - startTransl);
-		} catch (TranslationAbortedException tie) {
-			throw new AbortedException(tie);
 		} catch (SATAbortedException sae) {
 			throw new AbortedException(sae);
 		}
@@ -199,8 +196,6 @@ public final class Solver {
 		} catch (TrivialFormulaException trivial) {
 			final long endTransl = System.currentTimeMillis();
 			return trivial(bounds, trivial, endTransl - startTransl);
-		} catch (TranslationAbortedException tie) {
-			throw new AbortedException(tie);
 		} catch (SATAbortedException sae) {
 			throw new AbortedException(sae);
 		}
@@ -475,9 +470,7 @@ public final class Solver {
 				} catch (TrivialFormulaException tfe) {
 					translTime = System.currentTimeMillis() - translTime;
 					return trivialSolution(tfe);
-				} catch (TranslationAbortedException tae) {
-					throw new AbortedException(tae);
-				}
+				} 
 			} else {
 				return nonTrivialSolution();
 			}
