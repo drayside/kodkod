@@ -227,7 +227,7 @@ public final class Lists {
 	}
 	
 	/**
-	 * Usage: java examples.FileSystem [scope]
+	 * Usage: java examples.Lists [scope]
 	 */
 	public  static void main(String[] args) {
 		if (args.length < 1)
