@@ -367,6 +367,38 @@ public final class AbstractWorldDefinitions {
 		return b;
 	}
 	
+	/**
+	 * Returns decls() && !A241()
+	 * @return  decls() && !A241()
+	 */
+	public Formula checkA241() { 
+		return decls().and(A241().not());
+	}
+	
+	/**
+	 * Returns decls() && !AbOp_total()
+	 * @return  decls() && !AbOp_total()
+	 */
+	public Formula checkAbOp_total() { 
+		return decls().and(AbOp_total().not());
+	}
+	
+	/**
+	 * Returns decls() && !AbIgnore_inv()
+	 * @return  decls() && !AbIgnore_inv()
+	 */
+	public Formula checkAbIgnore_inv() { 
+		return decls().and(AbIgnore_inv().not());
+	}
+	
+	/**
+	 * Returns decls() && !AbTransfer_inv()
+	 * @return  decls() && !AbTransfer_inv()
+	 */
+	public Formula checkAbTransfer_inv() { 
+		return decls().and(AbTransfer_inv().not());
+	}
+	
 	private static void usage() {
 		System.out.println("java examples.AbstractWorldDefinitions [A241 | AbOp_total | AbIgnore_inv | AbTransfer_inv] [univ size]");
 		System.exit(1);

@@ -354,21 +354,22 @@ abstract class Skolemizer extends AbstractReplacer {
 	}	
 		
 	/**
-	 * Returns a formula that properly constrains the given skolem's range.
-	 * @return a formula that properly constrains the given skolem's range.
-	 */ 
-	private Formula restrictRange(Decl skolemDecl, Relation skolem) { 
-		if (nonSkolems.isEmpty())
-			return skolem.in(skolemDecl.expression());
-		else {
-			final Iterator<DeclInfo> itr = nonSkolems.iterator();
-			Decls rangeDecls = itr.next().decl;
-			while(itr.hasNext()) {
-				rangeDecls = rangeDecls.and(itr.next().decl);
-			}
-			rangeDecls = rangeDecls.and(skolemDecl.variable().oneOf(skolemDecl.expression()));
-			return skolem.in(Formula.TRUE.comprehension(rangeDecls));
+	 * Returns a formula that properly constrains the given skolem's domain.
+	 * @requires !nonSkolems.isEmpty()
+	 * @return a formula that properly constrains the given skolem's domain.
+	 */
+	private Formula domConstraint(Decl skolemDecl, Relation skolem) { 
+		final Iterator<DeclInfo> itr = nonSkolems.iterator();
+		Decls rangeDecls = itr.next().decl;
+		while(itr.hasNext()) {
+			rangeDecls = rangeDecls.and(itr.next().decl);
 		}
+//		System.out.println(skolemDecl.expression());
+		Expression skolemDomain = skolem;
+		for(int i = 0, max = skolemDecl.variable().arity(); i < max; i++) { 
+			skolemDomain = skolemDomain.join(Expression.UNIV);
+		}
+		return skolemDomain.in(Formula.TRUE.comprehension(rangeDecls));	
 	}
 	
 	/**
@@ -404,8 +405,8 @@ abstract class Skolemizer extends AbstractReplacer {
 		final Decls decls = qf.declarations();
 		
 		if (skolemDepth>=0 && (negated && quant==ALL || !negated && quant==SOME)) { // skolemizable formula
-			final List<Formula> multConstraints = new LinkedList<Formula>();
 			final List<Formula> rangeConstraints = new LinkedList<Formula>();
+			final List<Formula> domConstraints = new LinkedList<Formula>();
 			
 			for(Decl decl : decls) {	
 				final Decl skolemDecl = visit(decl);
@@ -416,19 +417,20 @@ abstract class Skolemizer extends AbstractReplacer {
 				final Expression skolemExpr = skolemExpr(skolemDecl, skolem);
 				
 				final Multiplicity mult = decl.multiplicity();
+				rangeConstraints.add(source(skolemExpr.in(skolemDecl.expression()), decl));
 				if (mult!=Multiplicity.SET) { 
-					multConstraints.add(source(skolemExpr.apply(mult), decl));
+					rangeConstraints.add(source(skolemExpr.apply(mult), decl));
 				}
-				rangeConstraints.add(source(restrictRange(skolemDecl, skolem), decl));
+				if (!nonSkolems.isEmpty())
+					domConstraints.add(source(domConstraint(skolemDecl, skolem), decl));
 				
 				repEnv = repEnv.extend(decl.variable(), skolemExpr);
 			}
-			if (multConstraints.isEmpty()) { 
-				ret = qf.formula().accept(this);
-			} else {
-				ret = conjoin(multConstraints, decls).compose(negated ? IMPLIES : AND, qf.formula().accept(this));
-			}
-			topSkolemConstraints.add(conjoin(rangeConstraints, decls));
+			
+			ret = conjoin(rangeConstraints, decls).compose(negated ? IMPLIES : AND, qf.formula().accept(this));
+			
+			if (!domConstraints.isEmpty()) 
+				topSkolemConstraints.add(conjoin(domConstraints, decls));
 			
 		} else { // non-skolemizable formula
 		

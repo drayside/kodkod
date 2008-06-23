@@ -48,7 +48,56 @@ import kodkod.util.ints.IntTreeSet;
 public class BugTests extends TestCase {
 	private final Solver solver = new Solver();
 	
-//	
+	public final void testFelix_06192008() {
+		Relation x5 = Relation.unary("R");
+
+		List<String> atomlist = Arrays.asList("X");
+
+		Universe universe = new Universe(atomlist);
+		TupleFactory factory = universe.factory();
+		Bounds bounds = new Bounds(universe);
+
+		TupleSet x5_upper = factory.noneOf(1);
+		x5_upper.add(factory.tuple("X"));
+		bounds.bound(x5, x5_upper);
+
+		Variable x10=Variable.unary("a");
+		Expression x11=x5.difference(x5);
+		Decls x9=x10.oneOf(x11);
+		Variable x14=Variable.nary("b",2);
+		Expression x15=x5.product(x5);
+		Decls x13=x14.setOf(x15);
+		Expression x19=x5.product(x5);
+		Formula x17=x14.in(x19);
+		Expression x22=x10.product(x10);
+		Formula x21=x22.eq(x14);
+		Formula x16=x17.and(x21);
+		Formula x12=x16.forSome(x13);
+		Formula x7= x12.forAll(x9);
+
+//		System.out.println(x7);
+		
+		Solver solver = new Solver();
+		solver.options().setSolver(SATFactory.DefaultSAT4J);
+		solver.options().setBitwidth(4);
+		solver.options().setFlatten(false);
+		solver.options().setIntEncoding(Options.IntEncoding.TWOSCOMPLEMENT);
+		solver.options().setSymmetryBreaking(20);
+
+//		System.out.println("Depth=0..."); System.out.flush();
+		solver.options().setSkolemDepth(0);
+		assertEquals(Solution.Outcome.TRIVIALLY_SATISFIABLE, solver.solve(x7, bounds).outcome());
+
+//		System.out.println("Depth=1..."); System.out.flush();
+		solver.options().setSkolemDepth(1);
+		final Solution sol = solver.solve(x7, bounds);
+		assertEquals(Solution.Outcome.SATISFIABLE, sol.outcome());
+		assertEquals(2, sol.instance().relations().size());
+		for(Relation r : sol.instance().relations()) { 
+			assertTrue(sol.instance().tuples(r).isEmpty());
+		}
+	}
+	
 	public final void testFelix_05072008() { 
 		Relation A=Relation.unary("A"), first=Relation.unary("OrdFirst"), last=Relation.unary("OrdLast"), next=Relation.nary("OrdNext", 2);
 		
