@@ -21,6 +21,8 @@
  */
 package kodkod.engine.bool;
 
+import kodkod.engine.CapacityExceededException;
+
 
 
 
@@ -43,8 +45,10 @@ public abstract class Dimensions {
 	/**
 	 * Constructs a Dimensions with the given capacity.
 	 */
-	private Dimensions(int capacity) { 
-		this.capacity = capacity;
+	private Dimensions(long capacity) { 
+		if (capacity>Integer.MAX_VALUE || capacity<=0) 
+			throw new CapacityExceededException("Matrix too large: requested capacity of " + capacity);
+		this.capacity = (int)capacity;
 	}
 	
 	/**  
@@ -69,7 +73,7 @@ public abstract class Dimensions {
 	 */
 	public static Dimensions rectangular(int[] dimensions) {
 		if (dimensions.length==0) throw new IllegalArgumentException("n=0.");
-		int capacity = 1;
+		long capacity = 1;
 		int size = dimensions[0];
 		for (int i = 0; i < dimensions.length; i++) {
 			if (dimensions[i] < 1) throw new IllegalArgumentException("Invalid dimension: " + dimensions[i]);
@@ -174,7 +178,7 @@ public abstract class Dimensions {
 			final int[] dims = new int[n0+n1];
 			copy(0, dims, 0, n0);
 			dim.copy(0, dims, n0, n1);
-			return new Rectangle(dims, capacity*dim.capacity);
+			return new Rectangle(dims, (long)capacity*(long)dim.capacity);
 		}
 	}
 	
@@ -320,7 +324,7 @@ public abstract class Dimensions {
 		 * @throws IllegalArgumentException - n < 1 || size < 1
 		 */
 		Square(int n, int size) {
-			super((int)Math.pow(size,n));	
+			super(Math.round(Math.pow(size,n)));	
 			this.size = size;
 			this.n = n;
 		}
@@ -395,7 +399,7 @@ public abstract class Dimensions {
 		 *             (some i, j: [0..dimensions.n) | dimensions[i] != dimensions[j]) &&
 		 *             capacity = dimensions[0]*dimensions[1]*...*dimensions[dimensions.length-1] 
 		 */
-		Rectangle(int[] dims, int capacity) {
+		Rectangle(int[] dims, long capacity) {
 			super(capacity);
 			this.dimensions = dims;
 		}

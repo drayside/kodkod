@@ -24,6 +24,7 @@ package kodkod.instance;
 import java.util.Collection;
 import java.util.List;
 
+import kodkod.engine.CapacityExceededException;
 import kodkod.util.ints.IntSet;
 
 
@@ -254,6 +255,18 @@ public final class TupleFactory {
 	}
 	
 	/**
+	 * Throws a CapacityExceededException if all tuples of the given arity 
+	 * drawn from this.universe cannot be represented as an integer.
+	 * @throws CapacityExceededException if all tuples of the given arity 
+	 * drawn from this.universe cannot be represented as an integer.
+	 */
+	void checkCapacity(int arity) { 
+		if (StrictMath.pow(base,arity) > Integer.MAX_VALUE) {
+			throw new CapacityExceededException("Arity too large (" + arity + ") for a universe of size " + universe.size());
+		}
+	}
+	
+	/**
 	 * Projects the tuple with the specified index and arity onto the 
 	 * specified column.    
 	 * @requires tupleIndex >= 0 && tupleIndex < this.universe.size() ^ arity
@@ -289,6 +302,7 @@ public final class TupleFactory {
 	     * @throws IllegalArgumentException - arity < 1 || index < 0 || index >= TupleFactory.this.base^arity
 	     */
 	    IntTuple(final int arity, final int index) {
+	    	checkCapacity(arity);
 	        if (arity < 1 || index < 0 || index >= Math.pow(base, arity)) {
 	            throw new IllegalArgumentException("arity < 1 || index < 0 || index >= universe.size^arity");
 	        }
@@ -307,6 +321,7 @@ public final class TupleFactory {
 	     */
 	    IntTuple(final Object... atoms) {
 	        this.arity = atoms.length;
+	        checkCapacity(arity);
 	        int tempIndex = 0, multiplier = 1;
 	        for (int i = arity - 1; i >= 0; i--) { 
 	            tempIndex += universe.index(atoms[i]) * multiplier;
@@ -324,6 +339,7 @@ public final class TupleFactory {
 	     * @throws IllegalArgumentException - arity < 1 || atom !in this.universe.atoms[int]
 	     */
 	    IntTuple(final int arity, final Object atom) {
+	    	checkCapacity(arity);
 	    	if (arity < 1) throw new IllegalArgumentException("arity < 1");
 	    	this.arity = arity;
 	    	int tempIndex = 1;
