@@ -28,48 +28,15 @@ import kodkod.ast.visitor.ReturnVisitor;
  * all methods in this class throw a NullPointerException when given
  * null arguments.
  * 
- * <p><b>Implementation Note</b>: The {@linkplain #compose(kodkod.ast.BinaryFormula.Operator, Formula) compose} method
- * performs constant folding, so that, for example, calling f.and(Formula.TRUE) returns f.  If it is necessary to 
- * have a new Formula returned in such cases, then f.and(<i>triviallyTrue</i>) should be called instead, 
- * where <i>triviallyTrue</i> is a trivially true formula such as Expression.NONE.no(). </p>
  * @author Emina Torlak 
  */
 public abstract class Formula implements Node {
 	
 	/** Constant formula true */
-	public static final Formula TRUE = new ConstantFormula(true) {
-//		@Override
-//		public Formula not() {
-//			return FALSE;
-//		}
-//		@Override
-//	    public Formula compose(BinaryFormula.Operator op, Formula formula) {
-//			switch(op) {
-//			case OR: return TRUE;
-//			case AND: case IMPLIES: case IFF: return formula;
-//			case XOR: return formula.not();
-//			default: throw new IllegalArgumentException("unknown operator: " + op);
-//			}
-//	    }
-	};
+	public static final Formula TRUE = new ConstantFormula(true) {};
 	
 	/** Constant formula false */
-	public static final Formula FALSE = new ConstantFormula(false) {
-//		@Override
-//		public Formula not() {
-//			return TRUE;
-//		}
-//		@Override
-//	    public Formula compose(BinaryFormula.Operator op, Formula formula) {
-//			switch(op) {
-//			case AND: return FALSE;
-//			case OR: case XOR: return formula;
-//			case IMPLIES: return TRUE;
-//			case IFF: return formula.not();
-//			default: throw new IllegalArgumentException("unknown operator: " + op);
-//			}
-//	    }
-	};
+	public static final Formula FALSE = new ConstantFormula(false) {};
 	
     Formula() {}
 
@@ -108,29 +75,13 @@ public abstract class Formula implements Node {
     public final Formula implies(Formula formula) {
         return compose(BinaryFormula.Operator.IMPLIES,formula);
     }
-    
-    /**
-     * Returns the exclusive OR of the specified formula by this.  The effect
-     * of this method is the same as calling this.compose(BinaryFormula.Operator.XOR, formula).
-     * @return {f : Formula | f <=> (this xor formula)}
-     */
-    public final Formula xor(Formula formula) { 
-    	return compose(BinaryFormula.Operator.XOR,formula);
-    }
-    
+      
     /**
      * Returns the composition of this and the specified formula using the
      * given binary operator.
      * @return {f: Formula | f <=> (this op formula) }
      */
     public final Formula compose(BinaryFormula.Operator op, Formula formula) {
-//    	if (formula == ConstantFormula.TRUE || formula == ConstantFormula.FALSE) {
-//    		if (op == BinaryFormula.Operator.IMPLIES) {
-//    			return formula==ConstantFormula.TRUE ? formula : this.not();
-//    		} else {
-//    			return formula.compose(op, this);
-//    		}
-//    	}
     	return new BinaryFormula(this, op, formula);
     }
     

@@ -127,22 +127,7 @@ public final class BinaryFormula extends Formula {
 			 **/
 			public boolean associative() { return true; }
         },
-        
-        /** Logical XOR operator. */      
-        XOR { 
-        	public String toString() { return "xor"; } 
-        	/** 
-			 * Returns true.
-			 * @return true 
-			 **/
-			public boolean commutative() { return true; }
-			/** 
-			 * Returns true.
-			 * @return true 
-			 **/
-			public boolean associative() { return true; }
-        },
-        
+     
         /** Logical implication operator. */      
         IMPLIES { 
         	public String toString() { return "=>"; }

@@ -557,7 +557,6 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 		switch(op) {
 		case AND		: ret = f.and(left, right); break;
 		case OR			: ret = f.or(left, right); break;
-		case XOR		: ret = f.xor(left, right); break;
 		case IMPLIES	: ret = f.implies(left, right); break;
 		case IFF		: ret = f.iff(left, right); break;
 		default : 
