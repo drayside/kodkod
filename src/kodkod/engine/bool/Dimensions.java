@@ -22,6 +22,7 @@
 package kodkod.engine.bool;
 
 import kodkod.engine.CapacityExceededException;
+import kodkod.util.ints.Ints;
 
 
 
@@ -45,10 +46,8 @@ public abstract class Dimensions {
 	/**
 	 * Constructs a Dimensions with the given capacity.
 	 */
-	private Dimensions(long capacity) { 
-		if (capacity>Integer.MAX_VALUE || capacity<=0) 
-			throw new CapacityExceededException("Matrix too large: requested capacity of " + capacity);
-		this.capacity = (int)capacity;
+	private Dimensions(int capacity) { 
+		this.capacity = capacity;
 	}
 	
 	/**  
@@ -324,9 +323,16 @@ public abstract class Dimensions {
 		 * @throws IllegalArgumentException - n < 1 || size < 1
 		 */
 		Square(int n, int size) {
-			super(Math.round(Math.pow(size,n)));	
+			super(capacity(n, size));	
 			this.size = size;
 			this.n = n;
+		}
+		
+		static int capacity(int n, int size) { 
+			final long cap = Math.round(Math.pow(size,n));
+			if (cap>Integer.MAX_VALUE || cap<=0) 
+				throw new CapacityExceededException("Matrix too large: requested capacity of " + cap, Ints.nCopies(n, size));
+			return (int)cap;
 		}
 		
 		@Override
@@ -400,10 +406,12 @@ public abstract class Dimensions {
 		 *             capacity = dimensions[0]*dimensions[1]*...*dimensions[dimensions.length-1] 
 		 */
 		Rectangle(int[] dims, long capacity) {
-			super(capacity);
+			super((int)capacity);
+			if (capacity>Integer.MAX_VALUE || capacity<=0) 
+				throw new CapacityExceededException("Matrix too large: requested capacity of " + capacity, Ints.asIntVector(dims));
 			this.dimensions = dims;
 		}
-		
+				
 		@Override
 		void copy(int srcPos, int[] dest, int destPos, int length){
 			System.arraycopy(dimensions, srcPos, dest, destPos, length);

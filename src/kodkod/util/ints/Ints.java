@@ -186,6 +186,29 @@ public final class Ints {
 		};
 	}
 	
+	/**
+	 * Returns an unmodifiable IntArray of length n which contains the given
+	 * element at each position.
+	 * @return an unmodifiable IntArray of length n which contains the given
+	 * element at each position
+	 */
+	public static IntVector nCopies(final int n, final int elt) { 
+		return new AbstractIntVector() {
+			public int get(int index) { 
+				if (index < 0 || index >= n) throw new IndexOutOfBoundsException();
+				return elt;
+			}
+			public int size() { return n; }
+			public int[] toArray(int[] array) { 
+				if (array.length < n) {
+					array = new int[n];
+				}
+				for(int i = 0; i < n; i++) { array[i] = elt; }
+				return array;
+			} 
+		};
+	}
+	
 	/*-----------SEQUENCES-----------*/
 	/**
 	 * Returns an unmodifiable view of the specified sparse sequence. This method 

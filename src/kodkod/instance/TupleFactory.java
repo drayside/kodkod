@@ -26,6 +26,7 @@ import java.util.List;
 
 import kodkod.engine.CapacityExceededException;
 import kodkod.util.ints.IntSet;
+import kodkod.util.ints.Ints;
 
 
 /**
@@ -262,7 +263,7 @@ public final class TupleFactory {
 	 */
 	void checkCapacity(int arity) { 
 		if (StrictMath.pow(base,arity) > Integer.MAX_VALUE) {
-			throw new CapacityExceededException("Arity too large (" + arity + ") for a universe of size " + universe.size());
+			throw new CapacityExceededException("Arity too large (" + arity + ") for a universe of size " + universe.size(), Ints.nCopies(arity, base));
 		}
 	}
 	
