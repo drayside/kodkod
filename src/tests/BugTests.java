@@ -48,6 +48,20 @@ import kodkod.util.ints.IntTreeSet;
 public class BugTests extends TestCase {
 	private final Solver solver = new Solver();
 	
+	public final void testGreg_07012008() {
+		final Relation r = Relation.unary("r");
+		final Formula f = Formula.TRUE.and(Formula.TRUE).and(Formula.TRUE).not();
+		final Universe u = new Universe(Arrays.asList("a0", "a1"));
+		final Bounds b = new Bounds(u);
+		b.bound(r, u.factory().allOf(1));
+		final Solver solver = new Solver();
+		solver.options().setLogTranslation(1);
+		solver.options().setSolver(SATFactory.MiniSatProver);
+		final Solution sol = solver.solve(f, b);
+		sol.proof().minimize(new RCEStrategy(sol.proof().log()));
+		System.out.println(sol.proof().highLevelCore());
+	}
+	
 	public final void testFelix_06192008() {
 		Relation x5 = Relation.unary("R");
 

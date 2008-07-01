@@ -149,7 +149,7 @@ final class TrivialProof extends Proof {
 		}
 		
 		coreFilter = null;
-		assert coreRoots.size()==1 && lits.contains(-Integer.MAX_VALUE) || coreRoots.size()==2;
+		assert coreRoots.size()==1 && outputs.get(coreRoots.iterator().next())[0]==-Integer.MAX_VALUE || coreRoots.size()==2;
 	}
 
 	/**
