@@ -32,6 +32,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 //=================================================================================================
 // Basic Types & Minor Things:
 
+typedef unsigned int uint;
 
 #ifdef _MSC_VER
 typedef INT64              int64;

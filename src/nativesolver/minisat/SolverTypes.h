@@ -107,7 +107,7 @@ public:
 
     bool        isLit    () const { return ((uintp)data & 1) == 1; }
     bool        isNull   () const { return data == NULL; }
-    Lit         lit      () const { return toLit(((int)data) >> 1); }
+    Lit         lit      () const { return toLit(((intp)data) >> 1); }
     Clause*     clause   () const { return (Clause*)data; }
     bool        operator == (GClause c) const { return data == c.data; }
     bool        operator != (GClause c) const { return data != c.data; }
