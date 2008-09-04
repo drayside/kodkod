@@ -906,7 +906,6 @@ int CSolver::solve(void) {
       _stats.outcome = UNSATISFIABLE;
     else  // the real search
       real_solve();
-    cout << endl;
     _stats.finish_cpu_time = get_cpu_time();
   }
   return _stats.outcome;
