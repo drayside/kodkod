@@ -868,7 +868,7 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 				values.set(max/2, values.get(max));
 			}
 		}
-		return cache(intExpr, values.get(0));
+		return cache(intExpr, values.isEmpty() ? interpreter.factory().integer(0) : values.get(0));
 	}
 
 	/** 
