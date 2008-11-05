@@ -186,14 +186,12 @@ public final class Translator {
 	 * @return { b: SymmetryBreaker | b.bounds = this.bounds' }
 	 */
 	private SymmetryBreaker optimizeBounds(AnnotatedNode<Formula> annotated) {	
-		options.reporter().optimizingBounds();
-		
 		// remove bindings for unused relations/ints
 		bounds.relations().retainAll(annotated.relations());
 		if (!annotated.usesInts()) bounds.ints().clear();
 		
 		// detect symmetries
-		return new SymmetryBreaker(bounds);
+		return new SymmetryBreaker(bounds, options.reporter());
 	}
 	
 	/**
@@ -206,7 +204,7 @@ public final class Translator {
 	 * the broken predicates replaced with simpler constraints and the remaining predicates inlined. 
 	 */
 	private AnnotatedNode<Formula> optimizeFormula(AnnotatedNode<Formula> annotated, SymmetryBreaker breaker) {	
-		options.reporter().optimizingFormula();
+		options.reporter().optimizingBoundsAndFormula();
 		final Map<RelationPredicate.Name, Set<RelationPredicate>> preds = annotated.predicates();
 		if (options.logTranslation()==0) { // no logging
 			annotated = inlinePredicates(annotated, breaker.breakMatrixSymmetries(preds, true).keySet());

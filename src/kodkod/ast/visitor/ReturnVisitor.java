@@ -37,6 +37,9 @@ import kodkod.ast.IntComparisonFormula;
 import kodkod.ast.IntConstant;
 import kodkod.ast.IntToExprCast;
 import kodkod.ast.MultiplicityFormula;
+import kodkod.ast.NaryExpression;
+import kodkod.ast.NaryFormula;
+import kodkod.ast.NaryIntExpression;
 import kodkod.ast.NotFormula;
 import kodkod.ast.ProjectExpression;
 import kodkod.ast.QuantifiedFormula;
@@ -87,15 +90,20 @@ public interface ReturnVisitor<E, F, D, I> {
     public E visit(ConstantExpression constExpr);
     
     /** 
+	 * Visits the given unary expression and returns the result.
+	 * @return the result of visiting <code>unaryExpr</code> 
+	 **/
+    public E visit(UnaryExpression unaryExpr);   
+    /** 
 	 * Visits the given binary expression and returns the result.
 	 * @return the result of visiting <code>binExpr</code> 
 	 **/
     public E visit(BinaryExpression binExpr);
     /** 
-	 * Visits the given unary expression and returns the result.
-	 * @return the result of visiting <code>unaryExpr</code> 
+	 * Visits the given nary expression and returns the result.
+	 * @return the result of visiting <code>expr</code> 
 	 **/
-    public E visit(UnaryExpression unaryExpr);   
+    public E visit(NaryExpression expr);
     /** 
 	 * Visits the given comprehension and returns the result.
 	 * @return the result of visiting <code>comprehension</code> 
@@ -133,6 +141,11 @@ public interface ReturnVisitor<E, F, D, I> {
 	 * @return the result of visiting <code>intExpr</code> 
      */
     public I visit(ExprToIntCast intExpr);
+    /** 
+	 * Visits the given nary expression and returns the result.
+	 * @return the result of visiting <code>intExpr</code> 
+	 **/
+    public I visit(NaryIntExpression intExpr);
     /**
      * Visits the given binary integer expression and returns the result.
 	 * @return the result of visiting <code>intExpr</code> 
@@ -159,6 +172,11 @@ public interface ReturnVisitor<E, F, D, I> {
 	 * @return the result of visiting <code>quantFormula</code> 
 	 **/
     public F visit(QuantifiedFormula quantFormula);
+    /** 
+	 * Visits the given nary formula and returns the result.
+	 * @return the result of visiting <code>formula</code> 
+	 **/
+    public F visit(NaryFormula formula);
     /** 
 	 * Visits the given binary formula and returns the result.
 	 * @return the result of visiting <code>binFormula</code> 

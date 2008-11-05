@@ -23,6 +23,7 @@ package kodkod.engine.ucore;
 
 import java.util.IdentityHashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -41,6 +42,8 @@ import kodkod.util.ints.IntIterator;
 import kodkod.util.ints.IntSet;
 import kodkod.util.ints.IntTreeSet;
 import kodkod.util.ints.Ints;
+import kodkod.util.ints.SparseSequence;
+import kodkod.util.ints.TreeSequence;
 
 /**
  * A collection of utility methods for implementing
@@ -67,7 +70,7 @@ public final class StrategyUtils {
 	public static IntSet rootVars(TranslationLog log) {
 		final IntSet rootVars = new IntTreeSet();
 		final Set<Formula> roots = log.roots();
-		final Map<Formula,int[]> maxRootVar = new IdentityHashMap<Formula,int[]>(roots.size());
+		final Map<Formula,int[]> maxRootVar = new LinkedHashMap<Formula,int[]>(roots.size());
 		final RecordFilter filter = new RecordFilter() {
 			public boolean accept(Node node, int literal, Map<Variable, TupleSet> env) {
 				return roots.contains(node) && env.isEmpty();
@@ -88,8 +91,78 @@ public final class StrategyUtils {
 			if (topVar != Integer.MAX_VALUE) // formula simplified to TRUE
 				rootVars.add(var[0]);
 		}
+		
+//		for(Map.Entry<Formula,int[]> entry : maxRootVar.entrySet()) {
+//			final int topVar = entry.getValue()[0];
+//			if (topVar != Integer.MAX_VALUE) // formula simplified to TRUE
+//				rootVars.add(topVar);
+//			System.out.println(topVar + " ==>" + entry.getKey());
+//		}
+		
 		return rootVars;
 	}
+ 
+	static SparseSequence<Formula> roots(TranslationLog log) { 
+		final SparseSequence<Formula> rootVars = new TreeSequence<Formula>();
+		final Set<Formula> roots = log.roots();
+		final Map<Formula,int[]> maxRootVar = new IdentityHashMap<Formula,int[]>(roots.size());
+		final RecordFilter filter = new RecordFilter() {
+			public boolean accept(Node node, int literal, Map<Variable, TupleSet> env) {
+				return roots.contains(node) && env.isEmpty();
+			}
+		};
+		for(Iterator<TranslationRecord> itr = log.replay(filter); itr.hasNext();) {
+			TranslationRecord record = itr.next();
+			int[] var = maxRootVar.get(record.node());
+			if (var==null) {
+				var = new int[1];
+				maxRootVar.put((Formula)record.node(), var);
+			} 
+			var[0] = StrictMath.abs(record.literal());
+		}
+		
+		for(Map.Entry<Formula,int[]> entry : maxRootVar.entrySet()) {
+			final int topVar = entry.getValue()[0];
+			if (topVar != Integer.MAX_VALUE) // formula simplified to TRUE
+				rootVars.put(topVar, entry.getKey());
+		}
+		return rootVars;
+	}
+	
+	/**
+	 * Returns the variables that correspond to the roots of log.formula, in the order
+	 * in which they were specified in log.formula.  
+	 * @return variables that correspond to the roots of log.formula, in the order
+	 * in which they were specified in log.formula. 
+	 */
+//	static IntVector orderedRootVars(TranslationLog log) { 
+//		final Set<Formula> roots = log.roots();
+//		final Map<Formula,int[]> maxRootVar = new LinkedHashMap<Formula,int[]>(roots.size());
+//		final RecordFilter filter = new RecordFilter() {
+//			public boolean accept(Node node, int literal, Map<Variable, TupleSet> env) {
+//				return roots.contains(node) && env.isEmpty();
+//			}
+//		};
+//		for(Iterator<TranslationRecord> itr = log.replay(filter); itr.hasNext();) {
+//			TranslationRecord record = itr.next();
+//			int[] var = maxRootVar.get(record.node());
+//			if (var==null) {
+//				var = new int[1];
+//				maxRootVar.put((Formula)record.node(), var);
+//			} 
+//			var[0] = StrictMath.abs(record.literal());
+//		}
+//		final IntSet uniqueRoots = new IntTreeSet();
+//		final IntVector orderedRoots = new ArrayIntVector(roots.size());
+//		for(int[] var : maxRootVar.values()) {
+//			int topVar = var[0];
+//			if (topVar != Integer.MAX_VALUE) // formula simplified to TRUE
+//				if (uniqueRoots.add(var[0])) {
+//					orderedRoots.add(var[0]);
+//				};
+//		}
+//		return orderedRoots;
+//	}
 	
 	/**
 	 * Returns relevant  core variables -- i.e. all variables that occur both in the positive and
@@ -139,9 +212,9 @@ public final class StrategyUtils {
 	}
 	
 	/**
-	 * Returns the set of consecutive variables at the tail of the core of the given trace
-	 * that form unit clauses.
-	 * @return set of consecutive variables at the tail of the core of the given trace
+	 * Returns the consecutive variables at the tail of the core of the given trace
+	 * that form unit clauses.  
+	 * @return the consecutive variables at the tail of the core of the given trace
 	 * that form unit clauses
 	 */
 	static IntSet coreTailUnits(ResolutionTrace trace) { 
@@ -182,8 +255,8 @@ public final class StrategyUtils {
 		final Iterator<Clause> itr = trace.reverseIterator(axioms);
 		for(int i = axioms.max(); i >= 0; i--) {
 			Clause clause = itr.next();
-			int maxVar = clause.maxVariable(), size = clause.size();
-			if ((size>1 && reachableVars.contains(maxVar)) || (size==1 && relevantVars.contains(maxVar))) {
+			int maxVar = clause.maxVariable();
+			if (reachableVars.contains(maxVar)) {
 				for(IntIterator lits = clause.literals(); lits.hasNext(); ) {
 					reachableVars.add(StrictMath.abs(lits.next()));
 				}

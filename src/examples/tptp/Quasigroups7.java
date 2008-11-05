@@ -31,8 +31,8 @@ public abstract class Quasigroups7 {
 	Quasigroups7() {
 		op1 = Relation.ternary("op1");
 		op2 = Relation.ternary("op2");
-		s1 = Relation.unary("s1");
-		s2 = Relation.unary("s2");
+		s1 = Relation.unary("e1");
+		s2 = Relation.unary("e2");
 		e1 = new Relation[7];
 		e2 = new Relation[7];
 		h = new Relation[7];
@@ -53,57 +53,34 @@ public abstract class Quasigroups7 {
 	 * @returns the relation constraints.
 	 */
 	public final Formula decls() {
-		Formula f = function(s1, op1).and(function(s2, op2));
+		final List<Formula> formulas = new ArrayList<Formula>(2+h.length);
+		formulas.add(function(s1, op1));
+		formulas.add(function(s2, op2));
 		for(Relation x: h) {
-			f = f.and(x.function(s1, s2));
+			formulas.add(x.function(s1, s2));
 		}
-		return f;
+		return Formula.and(formulas);
 	}
 	
-	/**
-	 * States that op is a latin square over s = e[0] +...+ e[6].
-	 * @requires e's are unary, s is unary, op is ternary
-	 */
-	private static Formula opCoversRange(Relation[] e, Relation s, Relation op) {
-		Formula f = Formula.TRUE;
-		for( Relation x : e) {
-			f = f.and(s.eq(s.join(x.join(op)))).and(s.eq(x.join(s.join(op))));
-		}	
-		return f;
-	}
-	
+
+	private Expression op1(Expression arg1, Expression arg2) {  return arg1.join(arg2.join(op1)); }
+	private Expression op2(Expression arg1, Expression arg2) {  return arg1.join(arg2.join(op2)); }
 	/**
 	 * Returns axioms 2 and 7.
 	 * @return ax2 and ax7
 	 */
 	public final Formula ax2ax7() {
-		return opCoversRange(e1, s1, op1);
+		final Variable x = Variable.unary("x");
+		return s1.eq(op1(x,s1)).and(s1.eq(op1(s1,x))).forAll(x.oneOf(s1));
 	}
-	
-	/**
-	 * Parametrization of axioms 3 and 6.
-	 * @requires s is unary, op is ternary
-	 */
-	private static Formula ax3and6(Relation[] e, Relation op) {
-		Formula f = Formula.TRUE;
-		for( Relation x : e) {
-			for (Relation y: e) {
-				Expression expr0 = x.join(y.join(op)); // op(y,x)
-				Expression expr1 = y.join(expr0.join(op)); // op(op(y,x),y)
-				Expression expr2 = y.join(expr1.join(op)); // op(op(op(y,x),y),y)
-				f = f.and(expr2.eq(x));
-			}
-		}
-		return f;
-	}
-	
 	
 	/**
 	 * Returns axiom 3.
 	 * @return ax3
 	 */
 	public final Formula ax3() {
-		return ax3and6(e1,op1);
+		final Variable x = Variable.unary("x"), y = Variable.unary("y");
+		return x.eq(op1(op1(op1(y,x),y),y)).forAll(x.oneOf(s1).and(y.oneOf(s1)));
 	}
 	
 	/**
@@ -111,7 +88,8 @@ public abstract class Quasigroups7 {
 	 * @return ax5 and ax8
 	 */
 	public final Formula ax5ax8() {
-		return opCoversRange(e2, s2, op2);
+		final Variable x = Variable.unary("x");
+		return s2.eq(op2(x,s2)).and(s2.eq(op2(s2,x))).forAll(x.oneOf(s2));
 	}
 	
 	/**
@@ -119,7 +97,8 @@ public abstract class Quasigroups7 {
 	 * @return ax6
 	 */
 	public final Formula ax6() {
-		return ax3and6(e2,op2);
+		final Variable x = Variable.unary("x"), y = Variable.unary("y");
+		return x.eq(op2(op2(op2(y,x),y),y)).forAll(x.oneOf(s2).and(y.oneOf(s2)));
 	}
 	
 	/**
@@ -177,11 +156,11 @@ public abstract class Quasigroups7 {
 	 * @return lines 2-7 of axioms 16-22.
 	 */
 	public final Formula ax16_22() {
-		Formula f = Formula.TRUE;
+		final List<Formula> formulas = new ArrayList<Formula>();
 		for(int i = 0; i < 7; i++) {
-			f = f.and(ax16_22(e2[i], h[i]));
+			formulas.add(ax16_22(e2[i], h[i]));
 		}
-		return f;
+		return Formula.and(formulas);
 	}
 	
 	/**
@@ -189,7 +168,18 @@ public abstract class Quasigroups7 {
 	 * @return the conjunction of all axioms and implicit constraints
 	 */
 	public final Formula axioms() {
-		return decls().and(ax2ax7()).and(ax3()).and(ax5ax8()).and(ax6()).and(ax12()).and(ax13()).and(ax14()).and(ax15()).and(ax16_22());
+		final List<Formula> formulas = new ArrayList<Formula>();
+		formulas.add(decls());
+		formulas.add(ax2ax7());
+		formulas.add(ax3());
+		formulas.add(ax5ax8());
+		formulas.add(ax6());
+		formulas.add(ax12());
+		formulas.add(ax13());
+		formulas.add(ax14());
+		formulas.add(ax15());
+		formulas.add(ax16_22());
+		return Formula.and(formulas);
 	}
 	
 	/**
@@ -197,15 +187,8 @@ public abstract class Quasigroups7 {
 	 * @return  the part of the conjecture 1 that applies to the given h.
 	 */
 	private final Formula co1h(Relation h) {
-		Formula f = Formula.TRUE;
-		for(Relation x : e1) {
-			for(Relation y: e1) {
-				Expression expr0 = (y.join(x.join(op1))).join(h); // h(op1(x,y))
-				Expression expr1 = (y.join(h)).join((x.join(h)).join(op2)); // op2(h(x),h(y))
-				f = f.and(expr0.eq(expr1));
-			}
-		}
-		return f.and(s2.eq(s1.join(h)));
+		final Variable x = Variable.unary("x"), y = Variable.unary("y");
+		return op1(x,y).join(h).eq(op2(x.join(h),y.join(h))).forAll(x.oneOf(s1).and(y.oneOf(s1)));
 	}
 	
 	/**
@@ -214,12 +197,12 @@ public abstract class Quasigroups7 {
 	 */
 	public final Formula co1() {
 		
-		Formula f = Formula.FALSE;
+		final List<Formula> formulas = new ArrayList<Formula>();
 		for(int i = 0; i < 7; i++) {	
-			f = f.or(co1h(h[i]));
+			formulas.add(co1h(h[i]));
 		}
 		
-		return f;
+		return Formula.or(formulas);
 	}
 	
 	/**

@@ -21,6 +21,7 @@
  */
 package kodkod.ast;
 
+import kodkod.ast.operator.ExprCompOperator;
 import kodkod.ast.visitor.ReturnVisitor;
 import kodkod.ast.visitor.VoidVisitor;
 
@@ -31,14 +32,14 @@ import kodkod.ast.visitor.VoidVisitor;
  * 
  * @specfield left: Expression
  * @specfield right: Expression
- * @specfield op: Operator
- * @invariant children = left + right
+ * @specfield op: ExprCompOperator
+ * @invariant children = 0->left + 1->right
  * @author Emina Torlak 
  */
 public final class ComparisonFormula extends Formula{
     private final Expression left;
     private final Expression right;
-    private final Operator op;
+    private final ExprCompOperator op;
     
     /**  
      * Constructs a new comparison formula: left op  right
@@ -47,8 +48,8 @@ public final class ComparisonFormula extends Formula{
      * * @throws NullPointerException - left = null || right = null || op = null
      * @throws IllegalArgumentException - left.arity != right.arity
      */
-    ComparisonFormula(Expression left, Operator op, Expression right) {
-        if (!op.applicable(left.arity(), right.arity())) {
+    ComparisonFormula(Expression left, ExprCompOperator op, Expression right) {
+        if (left.arity()!=right.arity()) {
             throw new IllegalArgumentException(
             		"Arity mismatch: " + left + "::" + left.arity() + 
                     " and " + right + "::" + right.arity());
@@ -74,77 +75,30 @@ public final class ComparisonFormula extends Formula{
      * Returns the operator of this.
      * @return this.op
      */
-    public Operator op() {return op;}
+    public ExprCompOperator op() {return op;}
     
     /**
-     * Accepts the given visitor and returns the result.
-     * @see kodkod.ast.Node#accept(kodkod.ast.visitor.ReturnVisitor)
+     * {@inheritDoc}
+     * @see kodkod.ast.Formula#accept(kodkod.ast.visitor.ReturnVisitor)
      */
-    public <E, F, D, I> F accept(ReturnVisitor<E, F, D, I> visitor) {
-        return visitor.visit(this);
-    }
-  
-    
-    /**
-     * Accepts the given visitor.
-     * @see kodkod.ast.Node#accept(kodkod.ast.visitor.VoidVisitor)
-     */
-    public void accept(VoidVisitor visitor) {
-        visitor.visit(this);
-    }
-
-    /**
-	 * Returns the string representation of this formula.
-	 * @return string representation of this formula
-	 */
+     public <E, F, D, I> F accept(ReturnVisitor<E, F, D, I> visitor) {
+         return visitor.visit(this);
+     }
+     
+     /**
+      * {@inheritDoc}
+      * @see kodkod.ast.Node#accept(kodkod.ast.visitor.VoidVisitor)
+      */
+     public void accept(VoidVisitor visitor) {
+         visitor.visit(this);
+     }
+     
+     /**
+      * {@inheritDoc}
+      * @see kodkod.ast.Node#toString()
+      */
     public String toString() {
         return "(" + left + " " + op + " " + right + ")";
-    }
-    
-    /**
-     * Represents a comparison operator; e.g. "in" or "=".
-     */
-    public static enum Operator implements BinaryOperator<Expression,Formula>{
-    	/** Subset operator (in). */
-        SUBSET { 
-        	public String toString() { return "in"; }
-        	/** 
-			 * Returns false.
-			 * @return false
-			 **/
-			public boolean commutative() { return false; }
-			
-        },
-        /** Equality operator (=). */
-        EQUALS { 
-        	public String toString() { return "="; }
-        	/** 
-			 * Returns true.
-			 * @return true
-			 **/
-			public boolean commutative() { return true; }
-        };
-        
-        /**
-         * @return true if two expressions with the given arities
-         * can be compared using  this operator; otherwise returns false.  This
-         * method assumes that leftArity and rightArity are positive integers.
-         */
-        boolean applicable(int leftArity, int rightArity) { return leftArity==rightArity; }
-        
-        /** 
-		 * Returns false.
-		 * @return false
-		 **/
-		public final boolean associative() { return false; }
-		
-        /**
-         * {@inheritDoc}
-         * @see kodkod.ast.BinaryOperator#apply(java.lang.Object, java.lang.Object)
-         */
-        public final Formula apply(Expression left, Expression right) { 
-        	return new ComparisonFormula(left, this, right);
-        }
     }
 
 }

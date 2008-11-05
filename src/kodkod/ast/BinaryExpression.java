@@ -21,6 +21,7 @@
  */
 package kodkod.ast;
 
+import kodkod.ast.operator.ExprOperator;
 import kodkod.ast.visitor.ReturnVisitor;
 import kodkod.ast.visitor.VoidVisitor;
 
@@ -30,17 +31,17 @@ import kodkod.ast.visitor.VoidVisitor;
  * 
  * @specfield left: Expression
  * @specfield right: Expression
- * @specfield op: Operator
- * @invariant children = left + right
+ * @specfield op: ExprOperator
+ * @specfield op.binary()
+ * @invariant children = 0->left + 1->right
  * @author Emina Torlak 
  */
 public final class BinaryExpression extends Expression {
-	
-	private final Operator op;
+	private final ExprOperator op;
 	private final Expression left;
 	private final Expression right;
 	private final int arity;
-	
+
 	/**  
 	 * Constructs a new binary expression: left op right
 	 * 
@@ -48,19 +49,31 @@ public final class BinaryExpression extends Expression {
 	 * @throws NullPointerException - left = null || right = null || op = null
 	 * @throws IllegalArgumentException - left and right cannot be combined with the specified operator.
 	 */
-	BinaryExpression(final Expression left, final Operator op, final Expression right) {
-		if (!op.applicable(left.arity(),right.arity())) {
-			throw new IllegalArgumentException(
-					"Arity mismatch: " + left + "::" + left.arity() + 
-					" and " + right + "::" + right.arity());
+	BinaryExpression(final Expression left, final ExprOperator op, final Expression right) {
+		switch(op) { 
+		case UNION : case INTERSECTION : case DIFFERENCE : case OVERRIDE :
+			this.arity = left.arity();
+			if (arity!=right.arity())
+				throw new IllegalArgumentException("Incompatible arities: " + left + " and " + right);
+			break;
+		case JOIN : 
+			this.arity = left.arity() + right.arity() - 2;
+			if (arity < 1)
+				throw new IllegalArgumentException("Incompatible arities: " + left + " and " + right);
+			break;
+		case PRODUCT : 
+			this.arity = left.arity() + right.arity();
+			break;
+		default : 
+			throw new IllegalArgumentException("Not a binary operator: " + op);
 		}
 		
 		this.op = op;
 		this.left = left;
 		this.right = right;
-		this.arity = op.arity(left.arity(),right.arity());
+		
 	}
-	
+
 	/**
 	 * Returns the arity of this binary expression.
 	 * @return this.arity
@@ -69,175 +82,45 @@ public final class BinaryExpression extends Expression {
 	public int arity() {
 		return arity;
 	}
-	
+
+	/**
+	 * Returns this.op.
+	 * @return this.op
+	 */
+	public ExprOperator op() { return op ; }
 	/**
 	 * Returns the left child of this.
 	 * @return this.left
 	 */
 	public Expression left() {return left;}
-	
+
 	/**
 	 * Returns the right child of this.
 	 * @return this.right
 	 */
 	public Expression right() {return right;}
-	
+
 	/**
-	 * Returns the operator of this.
-	 * @return this.op
-	 */
-	public Operator op() {return op;}
-	
-	/**
-	 * Accepts the given visitor and returns the result.
-	 * @see kodkod.ast.Node#accept(kodkod.ast.visitor.ReturnVisitor)
+	 * {@inheritDoc}
+	 * @see kodkod.ast.Expression#accept(kodkod.ast.visitor.ReturnVisitor)
 	 */
 	public <E, F, D, I> E accept(ReturnVisitor<E, F, D, I> visitor) {
 		return visitor.visit(this);
 	}
-	
-	
+
 	/**
-	 * Accepts the given visitor.
+	 * {@inheritDoc}
 	 * @see kodkod.ast.Node#accept(kodkod.ast.visitor.VoidVisitor)
 	 */
 	public void accept(VoidVisitor visitor) {
 		visitor.visit(this);
 	}
-	
+
 	/**
-	 * Returns the string representation of this expression.
-	 * @return string representation of this expression
+	 * {@inheritDoc}
+	 * @see kodkod.ast.Node#toString()
 	 */
 	public String toString() {
 		return "(" + left + " " + op + " " + right + ")";
-	}
-	
-	/**
-	 * A binary expression operator: union, difference, intersection, override, join, and product.
-	 */
-	public static enum Operator implements BinaryOperator<Expression,Expression> {
-		/** Relational difference (-) operator. */
-		DIFFERENCE { 
-			/** 
-			 * Returns false.
-			 * @return false 
-			 **/
-			public boolean commutative() { return false; }
-			/** 
-			 * Returns false.
-			 * @return false
-			 **/
-			public boolean associative() { return false; }
-			public String toString() { return "-"; }
-		},
-		
-		/** Relational union (+) operator. */
-		UNION {
-			/** 
-			 * Returns true.
-			 * @return true 
-			 **/
-			public boolean commutative() { return true; }
-			/** 
-			 * Returns true.
-			 * @return true 
-			 **/
-			public boolean associative() { return true; }
-			public String toString() { return "+"; }
-		},
-		
-		/** Relational intersection (&) operator. */
-		INTERSECTION { 
-			/** 
-			 * Returns true.
-			 * @return true 
-			 **/
-			public boolean commutative() { return true; }
-			/** 
-			 * Returns true.
-			 * @return true 
-			 **/
-			public boolean associative() { return true; }
-			public String toString() { return "&"; }
-		},
-		
-		/** Relational override (++) operator. */
-		OVERRIDE { 
-			/** 
-			 * Returns false.
-			 * @return false 
-			 **/
-			public boolean commutative() { return false; }
-			/** 
-			 * Returns true.
-			 * @return true 
-			 **/
-			public boolean associative() { return true; }
-			public String toString() { return "++"; }
-		},
-		
-		/** Relational join (.) operator. */
-		JOIN {
-			/** 
-			 * Returns false.
-			 * @return false 
-			 **/
-			public boolean commutative() { return false; }
-			/** 
-			 * Returns false.
-			 * @return false
-			 **/
-			public boolean associative() { return false; }
-			public String toString() { return "."; }
-			boolean applicable(int leftArity, int rightArity) { return leftArity + rightArity > 2; }
-			int arity(int leftArity, int rightArity) { return leftArity + rightArity - 2; }
-		},
-		
-		/** Relational product (->) operator. */
-		PRODUCT {
-			/** 
-			 * Returns false.
-			 * @return false 
-			 **/
-			public boolean commutative() { return false; }
-			/** 
-			 * Returns true.
-			 * @return true 
-			 **/
-			public boolean associative() { return true; }
-			
-			/**
-			 * {@inheritDoc}
-			 * @see java.lang.Enum#toString()
-			 */
-			public String toString() { return "->"; }
-			boolean applicable(int leftArity, int rightArity) { return true; }
-			int arity(int leftArity, int rightArity) { return leftArity + rightArity; }
-		};
-		
-		/**
-		 * @return true if two expressions with the given arities
-		 * can be combined using  this operator; otherwise returns false.  This
-		 * method assumes that leftArity and rightArity are positive integers.
-		 */
-		boolean applicable(int leftArity, int rightArity) { return leftArity==rightArity; }
-		
-		/**
-		 * @return the arity of the expression that results from combining 
-		 * two expressions with the given arities using this operator. 
-		 * This method assumes that leftArity and rightArity are compatible, 
-		 * i.e. this.compatible(leftArity, rightArity).
-		 */
-		int arity(int leftArity, int rightArity) { return leftArity; }
-		
-		/**
-		 * {@inheritDoc}
-		 * @see kodkod.ast.BinaryOperator#apply(java.lang.Object, java.lang.Object)
-		 */
-		public final Expression apply(Expression left, Expression right) { 
-			return new BinaryExpression(left, this, right);
-		}
-
 	}
 }

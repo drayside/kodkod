@@ -25,6 +25,7 @@ import kodkod.engine.fol2sat.TranslationLog;
 import kodkod.engine.fol2sat.Translator;
 import kodkod.engine.satlab.ReductionStrategy;
 import kodkod.engine.satlab.ResolutionTrace;
+import kodkod.util.ints.IntCollection;
 import kodkod.util.ints.IntSet;
 import kodkod.util.ints.IntTreeSet;
 import kodkod.util.ints.Ints;
@@ -44,7 +45,8 @@ import kodkod.util.ints.Ints;
 * @see HybridStrategy
 */
 public final class NCEStrategy implements ReductionStrategy {
-	private final IntSet varsToTry, coreVars;
+	private final IntCollection varsToTry;
+	private final IntSet coreVars;
 	
 	/**
 	 * Constructs an NCE strategy that will use the given translation
@@ -53,7 +55,8 @@ public final class NCEStrategy implements ReductionStrategy {
 	 */
 	public NCEStrategy(final TranslationLog log) {
 		varsToTry = StrategyUtils.rootVars(log);
-		coreVars = new IntTreeSet(varsToTry);
+		coreVars = new IntTreeSet();//new IntTreeSet(varsToTry);
+		coreVars.addAll(varsToTry);
 	}
 	
 	/**
@@ -65,9 +68,9 @@ public final class NCEStrategy implements ReductionStrategy {
 		// if the last attempt at reduction was unsuccessful,
 		// add the unit clauses that we tried to discard back to coreVars
 		coreVars.addAll(StrategyUtils.coreTailUnits(trace));
-		final int last = varsToTry.max();
-		varsToTry.remove(last);
-		coreVars.remove(last);
+		final int first = varsToTry.iterator().next();//varsToTry.min();
+		varsToTry.remove(first);
+		coreVars.remove(first);
 		// get all axioms corresponding to the clauses that
 		// form the translations of formulas identified by coreVars
 		final IntSet relevantClauses = StrategyUtils.clausesFor(trace, coreVars); 

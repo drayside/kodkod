@@ -21,6 +21,7 @@
  */
 package kodkod.ast;
 
+import kodkod.ast.operator.FormulaOperator;
 import kodkod.ast.visitor.ReturnVisitor;
 import kodkod.ast.visitor.VoidVisitor;
 
@@ -29,15 +30,15 @@ import kodkod.ast.visitor.VoidVisitor;
  * 
  * @specfield left: Formula
  * @specfield right: Formula
- * @specfield op: AbstractOperator
- * @invariant children = left + right
+ * @specfield op: FormulaOperator
+ * @invariant children = 0->left + 1->right
  * @author Emina Torlak 
  */
 public final class BinaryFormula extends Formula {
 	
     private final Formula left;
     private final Formula right;
-    private final Operator op;
+    private final FormulaOperator op;
     
     /**  
      * Constructs a new binary formula:  left op right
@@ -45,7 +46,7 @@ public final class BinaryFormula extends Formula {
      * @effects this.left' = left && this.right' = right &&  this.op' = op
      * @throws NullPointerException - left = null || right = null || op = null
      */
-   BinaryFormula(Formula left, Operator op, Formula right) {
+   BinaryFormula(Formula left, FormulaOperator op, Formula right) {
         this.left = left;
         this.right = right;
         this.op = op;
@@ -67,19 +68,18 @@ public final class BinaryFormula extends Formula {
      * Returns the operator of this.
      * @return this.op
      */
-    public Operator op() {return op;}
+    public FormulaOperator op() {return op;}
  
-    /**
-     * Accepts the given visitor and returns the result.
-     * @see kodkod.ast.Node#accept(kodkod.ast.visitor.ReturnVisitor)
-     */
+   /**
+    * {@inheritDoc}
+    * @see kodkod.ast.Formula#accept(kodkod.ast.visitor.ReturnVisitor)
+    */
     public <E, F, D, I> F accept(ReturnVisitor<E, F, D, I> visitor) {
         return visitor.visit(this);
     }
     
-    
     /**
-     * Accepts the given visitor.
+     * {@inheritDoc}
      * @see kodkod.ast.Node#accept(kodkod.ast.visitor.VoidVisitor)
      */
     public void accept(VoidVisitor visitor) {
@@ -87,87 +87,11 @@ public final class BinaryFormula extends Formula {
     }
     
     /**
-	 * Returns the string representation of this formula.
-	 * @return string representation of this formula
-	 */
+     * {@inheritDoc}
+     * @see kodkod.ast.Node#toString()
+     */
     public String toString() {
         return "(" + left + " " + op + " " + right + ")";
     }
-    
-    /**
-     * Represents a binary formula operator. 
-     */
-    public static enum Operator implements BinaryOperator<Formula,Formula>{
-        /** Logical AND operator. */      
-        AND { 
-        	public String toString() { return "&&"; }
-        	/** 
-			 * Returns true.
-			 * @return true 
-			 **/
-			public boolean commutative() { return true; }
-			/** 
-			 * Returns true.
-			 * @return true 
-			 **/
-			public boolean associative() { return true; }
-        },
-        
-        /** Logical OR operator. */      
-        OR { 
-        	public String toString() { return "||"; }
-        	/** 
-			 * Returns true.
-			 * @return true 
-			 **/
-			public boolean commutative() { return true; }
-			/** 
-			 * Returns true.
-			 * @return true 
-			 **/
-			public boolean associative() { return true; }
-        },
-     
-        /** Logical implication operator. */      
-        IMPLIES { 
-        	public String toString() { return "=>"; }
-        	/** 
-			 * Returns false.
-			 * @return false
-			 **/
-			public boolean commutative() { return false; }
-			/** 
-			 * Returns false.
-			 * @return false
-			 **/
-			public boolean associative() { return false; }
-        },
-        
-        /** Logical bi-implication operator. */
-        IFF { 
-        	public String toString() { return "<=>"; }
-        	/** 
-			 * Returns true.
-			 * @return true 
-			 **/
-			public boolean commutative() { return true; }
-			/** 
-			 * Returns true.
-			 * @return true 
-			 **/
-			public boolean associative() { return true; }
-        };
-        
-        
-        /**
-         * {@inheritDoc}
-         * @see kodkod.ast.BinaryOperator#apply(java.lang.Object, java.lang.Object)
-         */
-        public final Formula apply(Formula left, Formula right) { 
-        	return new BinaryFormula(left, this, right);
-        }
-    }
-
-   
 
 }

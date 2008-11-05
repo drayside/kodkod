@@ -317,13 +317,12 @@ public abstract class MED001 {
 	 * @return conjunction of all  axioms.
 	 */
 	public final Formula axioms() { 
-		return decls().and(irreflexivity_gt()).and(transitivity_gt()).
-			and(xorcapacity1_4()).and(xorcondition1_4()).and(insulin_effect()).
-			and(liver_glucose()).and(sulfonylurea_effect()).and(biguanide_effect()).
-			and(sn_cure_1()).and(sn_cure_2()).and(ne_cure()).and(ex_cure()).
-			and(xorstep1_7()).and(normo()).and(step1_4()).and(comp()).and(insulin_completion()).
-			and(uptake_completion()).and(su_completion()).and(bg_completion()).
-			and(trans_ax1()).and(trans_ax2()).and(trans_ax3());
+		return Formula.and(trans_ax2(), trans_ax3(), transitivity_gt(), decls(), irreflexivity_gt(), 
+			normo(), xorcapacity1_4(), xorcondition1_4(), insulin_effect(),
+			liver_glucose(), sulfonylurea_effect(), biguanide_effect(), bg_completion(),
+			sn_cure_1(), sn_cure_2(), ne_cure(), ex_cure(), su_completion(), 
+			xorstep1_7(),  step1_4(), comp(), insulin_completion(),
+			uptake_completion(), trans_ax1());
 	}
 
 	/**

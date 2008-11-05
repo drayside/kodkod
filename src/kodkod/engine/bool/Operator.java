@@ -24,7 +24,7 @@ package kodkod.engine.bool;
 import java.util.Iterator;
 
 /**
- * Operator associated with a {@link kodkod.engine.bool.BooleanValue boolean value}.
+ * ExprOperator associated with a {@link kodkod.engine.bool.BooleanValue boolean value}.
  * 
  * @specfield ordinal: [0..5]
  * @invariant AND.ordinal = 0 && OR.ordinal = 1 && ITE.ordinal = 2 &&

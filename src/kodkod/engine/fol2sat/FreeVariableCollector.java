@@ -143,7 +143,7 @@ abstract class FreeVariableCollector extends AbstractCollector<Variable> {
 	 */
 	@Override
 	public Set<Variable> visit(Comprehension comprehension) {
-		return visit(comprehension, comprehension.declarations(), comprehension.formula());
+		return visit(comprehension, comprehension.decls(), comprehension.formula());
 	}
 	
 	/** 
@@ -159,7 +159,7 @@ abstract class FreeVariableCollector extends AbstractCollector<Variable> {
 	 */
 	@Override
 	public Set<Variable> visit(SumExpression intExpr) {
-		return visit(intExpr, intExpr.declarations(), intExpr.intExpr());
+		return visit(intExpr, intExpr.decls(), intExpr.intExpr());
 	}
 	
 	/** 
@@ -175,6 +175,6 @@ abstract class FreeVariableCollector extends AbstractCollector<Variable> {
 	 */
 	@Override
 	public Set<Variable> visit(QuantifiedFormula quantFormula) {
-		return visit(quantFormula, quantFormula.declarations(), quantFormula.formula());
+		return visit(quantFormula, quantFormula.decls(), quantFormula.formula());
 	}
 }

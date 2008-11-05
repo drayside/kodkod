@@ -21,12 +21,12 @@
  */
 package kodkod.engine.fol2sat;
 
-import static kodkod.ast.BinaryFormula.Operator.AND;
-import static kodkod.ast.BinaryFormula.Operator.IFF;
-import static kodkod.ast.BinaryFormula.Operator.IMPLIES;
-import static kodkod.ast.BinaryFormula.Operator.OR;
-import static kodkod.ast.QuantifiedFormula.Quantifier.ALL;
-import static kodkod.ast.QuantifiedFormula.Quantifier.SOME;
+import static kodkod.ast.operator.FormulaOperator.AND;
+import static kodkod.ast.operator.FormulaOperator.IFF;
+import static kodkod.ast.operator.FormulaOperator.IMPLIES;
+import static kodkod.ast.operator.FormulaOperator.OR;
+import static kodkod.ast.operator.Quantifier.ALL;
+import static kodkod.ast.operator.Quantifier.SOME;
 
 import java.util.AbstractList;
 import java.util.ArrayList;
@@ -34,7 +34,6 @@ import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 
 import kodkod.ast.BinaryFormula;
@@ -46,8 +45,8 @@ import kodkod.ast.Expression;
 import kodkod.ast.Formula;
 import kodkod.ast.IntComparisonFormula;
 import kodkod.ast.IntExpression;
-import kodkod.ast.Multiplicity;
 import kodkod.ast.MultiplicityFormula;
+import kodkod.ast.NaryFormula;
 import kodkod.ast.Node;
 import kodkod.ast.NotFormula;
 import kodkod.ast.QuantifiedFormula;
@@ -55,6 +54,9 @@ import kodkod.ast.Relation;
 import kodkod.ast.RelationPredicate;
 import kodkod.ast.SumExpression;
 import kodkod.ast.Variable;
+import kodkod.ast.operator.FormulaOperator;
+import kodkod.ast.operator.Multiplicity;
+import kodkod.ast.operator.Quantifier;
 import kodkod.ast.visitor.AbstractDetector;
 import kodkod.ast.visitor.AbstractReplacer;
 import kodkod.engine.bool.BooleanMatrix;
@@ -289,9 +291,9 @@ abstract class Skolemizer extends AbstractReplacer {
 		Expression ret = lookup(expr);
 		if (ret!=null) return ret;
 		final Environment<Expression> oldRepEnv = repEnv; // skolemDepth < 0 at this point
-		final Decls decls = visit((Decls)expr.declarations());
+		final Decls decls = visit((Decls)expr.decls());
 		final Formula formula = expr.formula().accept(this);
-		ret = (decls==expr.declarations() && formula==expr.formula()) ? expr : formula.comprehension(decls);
+		ret = (decls==expr.decls() && formula==expr.formula()) ? expr : formula.comprehension(decls);
 		repEnv = oldRepEnv;		
 		return cache(expr,ret);
 	}
@@ -303,9 +305,9 @@ abstract class Skolemizer extends AbstractReplacer {
 		IntExpression ret = lookup(intExpr);
 		if (ret!=null) return ret;	
 		final Environment<Expression> oldRepEnv = repEnv; // skolemDepth < 0 at this point
-		final Decls decls  = visit((Decls)intExpr.declarations());
+		final Decls decls  = visit((Decls)intExpr.decls());
 		final IntExpression expr = intExpr.intExpr().accept(this);
-		ret =  (decls==intExpr.declarations() && expr==intExpr.intExpr()) ? intExpr : expr.sum(decls);
+		ret =  (decls==intExpr.decls() && expr==intExpr.intExpr()) ? intExpr : expr.sum(decls);
 		repEnv = oldRepEnv;
 		return cache(intExpr,ret);
 	}
@@ -357,8 +359,8 @@ abstract class Skolemizer extends AbstractReplacer {
 	 * Returns a formula that properly constrains the given skolem's domain.
 	 * @requires !nonSkolems.isEmpty()
 	 * @return a formula that properly constrains the given skolem's domain.
-	 */
-	private Formula domConstraint(Decl skolemDecl, Relation skolem) { 
+	 */ 
+	private Formula domainConstraint(Decl skolemDecl, Relation skolem) { 
 		final Iterator<DeclInfo> itr = nonSkolems.iterator();
 		Decls rangeDecls = itr.next().decl;
 		while(itr.hasNext()) {
@@ -373,25 +375,6 @@ abstract class Skolemizer extends AbstractReplacer {
 	}
 	
 	/**
-	 * Conjoins the given formulas and makes the given node the source of every subformula of the returned formula. 
-	 * @return a conjunction of the given formulas
-	 * @effects makes the given node the source of every subformula of the returned formula, empties the given list 
-	 */
-	private Formula conjoin(List<Formula> declConstraints, Node node) { 
-		while(declConstraints.size()>1) { 
-			final ListIterator<Formula> itr = declConstraints.listIterator();
-			final int pairs = declConstraints.size() & (-1<<1);
-			for(int i = 0; i < pairs; i+=2) { 
-				final Formula left = itr.next();
-				itr.remove();
-				final Formula right = itr.next();
-				itr.set(source(left.and(right), node));
-			}
-		}
-		return source(declConstraints.remove(0), node);
-	}
-	
-	/**
 	 * Skolemizes the given formula, if possible, otherwise returns the result
 	 * of replacing its free variables according to the current replacement environment.
 	 * @see kodkod.ast.visitor.AbstractReplacer#visit(kodkod.ast.QuantifiedFormula)
@@ -401,8 +384,8 @@ abstract class Skolemizer extends AbstractReplacer {
 		if (ret!=null) return ret;
 		
 		final Environment<Expression> oldRepEnv = repEnv;	
-		final QuantifiedFormula.Quantifier quant = qf.quantifier();
-		final Decls decls = qf.declarations();
+		final Quantifier quant = qf.quantifier();
+		final Decls decls = qf.decls();
 		
 		if (skolemDepth>=0 && (negated && quant==ALL || !negated && quant==SOME)) { // skolemizable formula
 			final List<Formula> rangeConstraints = new LinkedList<Formula>();
@@ -421,20 +404,21 @@ abstract class Skolemizer extends AbstractReplacer {
 				if (mult!=Multiplicity.SET) { 
 					rangeConstraints.add(source(skolemExpr.apply(mult), decl));
 				}
+
 				if (!nonSkolems.isEmpty())
-					domConstraints.add(source(domConstraint(skolemDecl, skolem), decl));
+					domConstraints.add(source(domainConstraint(skolemDecl, skolem), decl));
 				
 				repEnv = repEnv.extend(decl.variable(), skolemExpr);
 			}
-			
-			ret = conjoin(rangeConstraints, decls).compose(negated ? IMPLIES : AND, qf.formula().accept(this));
+		
+			ret = source(Formula.and(rangeConstraints), decls).compose(negated ? IMPLIES : AND, qf.formula().accept(this));
 			
 			if (!domConstraints.isEmpty()) 
-				topSkolemConstraints.add(conjoin(domConstraints, decls));
+				topSkolemConstraints.add(source(Formula.and(domConstraints), decls));
 			
 		} else { // non-skolemizable formula
 		
-			final Decls newDecls = visit((Decls)qf.declarations());
+			final Decls newDecls = visit((Decls)qf.decls());
 			if (skolemDepth>=nonSkolems.size()+newDecls.size()) { // could skolemize below
 				for(Decl d: newDecls) { nonSkolems.add(new DeclInfo(d)); }
 				final Formula formula = qf.formula().accept(this);
@@ -451,7 +435,7 @@ abstract class Skolemizer extends AbstractReplacer {
 		
 		repEnv = oldRepEnv;
 		if (repEnv.isEmpty() && !topSkolemConstraints.isEmpty()) { 
-			ret = conjoin(topSkolemConstraints, qf).compose(negated ? IMPLIES : AND, ret);
+			ret = source(Formula.and(topSkolemConstraints), qf).compose(negated ? IMPLIES : AND, ret);
 		}
 		return source(cache(qf,ret), qf);
 	}
@@ -477,7 +461,7 @@ abstract class Skolemizer extends AbstractReplacer {
 	public final Formula visit(BinaryFormula bf) {
 		Formula ret = lookup(bf);
 		if (ret!=null) return ret;			
-		final BinaryFormula.Operator op = bf.op();
+		final FormulaOperator op = bf.op();
 		final int oldDepth = skolemDepth;
 		if (op==IFF || (negated && op==AND) || (!negated && (op==OR || op==IMPLIES))) { // cannot skolemize in these cases
 			skolemDepth = -1;
@@ -497,6 +481,37 @@ abstract class Skolemizer extends AbstractReplacer {
 		return source(cache(bf,ret),bf);
 	}
 
+	/**
+	 * If not cached, visits the formula's children with appropriate settings
+	 * for the negated flag and the skolemDepth parameter.
+	 * @see kodkod.ast.visitor.AbstractReplacer#visit(kodkod.ast.NaryFormula)
+	 */
+	public final Formula visit(NaryFormula bf) {
+		Formula ret = lookup(bf);
+		if (ret!=null) return ret;			
+		
+		final int oldDepth = skolemDepth;
+		final FormulaOperator op = bf.op();
+		
+		switch(op) { 
+		case AND : if (negated)  skolemDepth = -1; break;
+		case OR  : if (!negated) skolemDepth = -1; break;
+		default  : throw new IllegalArgumentException("Unknown nary operator: " + op);
+		}
+		
+		final Formula[] visited = new Formula[bf.size()];
+		boolean allSame = true;
+		for(int i = 0; i < visited.length; i++) { 
+			final Formula child = bf.child(i);
+			visited[i] = child.accept(this);
+			allSame = allSame && (child==visited[i]);
+		}
+		ret = allSame ? bf : Formula.compose(op, visited);
+		
+		skolemDepth = oldDepth;
+		
+		return source(cache(bf,ret),bf);
+	}
 
 	/** 
 	 * Calls super.visit(icf) after disabling skolemization and returns the result. 

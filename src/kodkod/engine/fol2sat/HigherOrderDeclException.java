@@ -22,7 +22,7 @@
 package kodkod.engine.fol2sat;
 
 import kodkod.ast.Decl;
-import kodkod.ast.Multiplicity;
+import kodkod.ast.operator.Multiplicity;
 
 /**
  * Thrown when a node contains a higher order declaration that cannot

@@ -23,19 +23,21 @@ package kodkod.engine.config;
 
 
 import java.util.List;
+import java.util.Set;
 
 import kodkod.ast.Decl;
 import kodkod.ast.Formula;
 import kodkod.ast.Relation;
 import kodkod.engine.bool.BooleanFormula;
 import kodkod.instance.Bounds;
+import kodkod.util.ints.IntSet;
 
 /**
  * Enables passing of messages between the kodkod engine
  * and the client about the following stages of the analysis:
  * <ol>
- * <li>bounds optimization (symmetry detection and breaking of predicate symmetries)</li>
- * <li>formula optimization (predicate inlining and skolemization)</li>
+ * <li>symmetry detection
+ * <li>bounds and formula optimization (breaking of predicate symmetries, predicate inlining and skolemization)</li>
  * <li>translation to a boolean circuit</li>
  * <li>symmetry breaking predicate (SBP) generation</li>
  * <li>circuit flattening</li>
@@ -49,15 +51,22 @@ import kodkod.instance.Bounds;
 public interface Reporter {
 
 	/**
-	 * Reports that bounds optimization is in progress (stage 1).
+	 * Reports that symmetry detection started on the given bounds.
+	 * The given bounds must not be mutated.
 	 */
-	public void optimizingBounds();
+	public void detectingSymmetries(Bounds bounds);
 	
 	/**
-	 * Reports that formula optimization is in progress (stage 2).
+	 * Reports the symmetry partitions that were detected.
+	 * The given partitions must not be mutated.
 	 */
-	public void optimizingFormula();
+	public void detectedSymmetries(Set<IntSet> parts);
 	
+	/**
+	 * Reports that bounds optimization is in progress (stage 2).
+	 */
+	public void optimizingBoundsAndFormula();
+		
 	/**
 	 * Reports that the given declaration is being skolemized using the 
 	 * given skolem relation.  The context list contains non-skolemizable 
@@ -68,7 +77,7 @@ public interface Reporter {
 	
 	/**
 	 * Reports that the analysis of the given (optimized) formula
-	 * and bounds is in stage 3.  The given bounds are not mutated.
+	 * and bounds is in stage 3.  The given bounds must not be mutated.
 	 * @effects bounds' = bounds
 	 */
 	public void translatingToBoolean(Formula formula, Bounds bounds);

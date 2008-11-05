@@ -39,7 +39,7 @@ public final class MED009 extends MED001 {
 	 * @return axioms() && !transsls2_qige27()
 	 */
 	public final Formula checkTranssls2_qige27() { 
-		return axioms().and(transsls2_qige27().not());
+		return  axioms().and(transsls2_qige27().not());
 	}
 	
 	private static void usage() {

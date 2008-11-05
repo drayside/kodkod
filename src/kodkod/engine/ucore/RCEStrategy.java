@@ -21,13 +21,12 @@
  */
 package kodkod.engine.ucore;
 
-import java.util.Iterator;
-
 import kodkod.engine.fol2sat.TranslationLog;
 import kodkod.engine.fol2sat.Translator;
-import kodkod.engine.satlab.Clause;
 import kodkod.engine.satlab.ReductionStrategy;
 import kodkod.engine.satlab.ResolutionTrace;
+import kodkod.util.ints.IntCollection;
+import kodkod.util.ints.IntIterator;
 import kodkod.util.ints.IntSet;
 import kodkod.util.ints.Ints;
 
@@ -46,7 +45,7 @@ import kodkod.util.ints.Ints;
  * @see HybridStrategy
  */
 public class RCEStrategy implements ReductionStrategy {
-	private final IntSet varsToTry;
+	private final IntCollection varsToTry;
 	private final int dist;
 	
 	/**
@@ -81,19 +80,16 @@ public class RCEStrategy implements ReductionStrategy {
 	 */
 	public IntSet next(ResolutionTrace trace) {
 		if (varsToTry.isEmpty()) return Ints.EMPTY_SET; // tried everything
-		final IntSet core = trace.core();
 		final IntSet relevantVars = StrategyUtils.coreTailUnits(trace);
 		
-		for(Iterator<Clause> iter = trace.reverseIterator(core); iter.hasNext();) {
-			Clause clause = iter.next();
-			int maxVar = clause.maxVariable();
-			if (varsToTry.remove(maxVar)) {
-				// remove maxVar from the set of relevant variables
-				relevantVars.remove(maxVar);
+		for(IntIterator varItr = varsToTry.iterator(); varItr.hasNext();) {
+			final int var = varItr.next();
+			varItr.remove();
+			if (relevantVars.remove(var)) { // remove maxVar from the set of relevant variables
 				if (relevantVars.isEmpty()) break; // there was only root formula left
 				// get all axioms and resolvents corresponding to the clauses that
 				// form the translations of formulas identified by relevant vars
-				IntSet relevantClauses = clausesFor(trace, relevantVars); 
+				final IntSet relevantClauses = clausesFor(trace, relevantVars); 
 				assert !relevantClauses.isEmpty() && !relevantClauses.contains(trace.size()-1);
 				return relevantClauses;
 			}
@@ -119,7 +115,7 @@ public class RCEStrategy implements ReductionStrategy {
 	private IntSet clausesFor(ResolutionTrace trace, IntSet relevantVars) { 
 
 		final IntSet relevantAxioms = StrategyUtils.clausesFor(trace, relevantVars);
-		
+
 		if (dist<trace.resolvents().size()) { 
 			IntSet relevant = relevantAxioms;
 			for(int i = 0, lastSize = 0; lastSize < relevant.size() && i < dist; i++) { 

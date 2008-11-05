@@ -60,7 +60,7 @@ import java.util.Set;
  * 
  * @specfield keys: set K
  * @specfield map: keys -> one V
- * @specfield indices: keys lone->one int  
+ * @specfield indices: keys lone->one [0..#keys) 
  * @author Emina Torlak
  */
 public final class FixedMap<K, V> extends AbstractMap<K, V> implements Indexer<K> {

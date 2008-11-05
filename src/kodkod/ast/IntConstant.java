@@ -28,6 +28,7 @@ import kodkod.ast.visitor.VoidVisitor;
 /**
  * An integer constant (literal).
  * @specfield value: int
+ * @invariant no children
  * @author Emina Torlak
  */
 public final class IntConstant extends IntExpression {
@@ -79,14 +80,6 @@ public final class IntConstant extends IntExpression {
 	}
 	
 	/**
-	 * Returns the string representation of this int constant.
-	 * @return string representation of this int constant.
-	 */
-	public String toString() {
-		return String.valueOf(value);
-	}
-	
-	/**
 	 * {@inheritDoc}
 	 * @see kodkod.ast.IntExpression#accept(kodkod.ast.visitor.ReturnVisitor)
 	 */
@@ -94,7 +87,6 @@ public final class IntConstant extends IntExpression {
 	public <E, F, D, I> I accept(ReturnVisitor<E, F, D, I> visitor) {
 		return visitor.visit(this);
 	}
-	
 
 	/**
 	 * {@inheritDoc}
@@ -104,5 +96,13 @@ public final class IntConstant extends IntExpression {
 	public void accept(VoidVisitor visitor) {
 		visitor.visit(this);
 	}
-
+	
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.ast.Node#toString()
+	 */
+	public String toString() {
+		return String.valueOf(value);
+	}
+	
 }

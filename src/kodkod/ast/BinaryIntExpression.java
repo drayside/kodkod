@@ -22,6 +22,7 @@
 package kodkod.ast;
 
 
+import kodkod.ast.operator.IntOperator;
 import kodkod.ast.visitor.ReturnVisitor;
 import kodkod.ast.visitor.VoidVisitor;
 
@@ -29,12 +30,13 @@ import kodkod.ast.visitor.VoidVisitor;
  * A binary integer expression, e.g. x + y.
  * @specfield left: IntExpression
  * @specfield right: IntExpression
- * @specfield op: Operator
- * @invariant children = left + right
+ * @specfield op: IntOperator
+ * @specfield op.binary()
+ * @invariant children = 0->left + 1->right
  * @author Emina Torlak
  */
 public final class BinaryIntExpression extends IntExpression  {
-	private final Operator op;
+	private final IntOperator op;
 	private final IntExpression left, right;
 	
 	/**  
@@ -43,7 +45,8 @@ public final class BinaryIntExpression extends IntExpression  {
 	 * @effects this.left' = left && this.right' = right && this.op' = op
 	 * @throws NullPointerException - left = null || right = null || op = null
 	 */
-	public BinaryIntExpression(final IntExpression left, final Operator op, final IntExpression right) {
+	public BinaryIntExpression(final IntExpression left, final IntOperator op, final IntExpression right) {
+		if (!op.binary()) throw new IllegalArgumentException("Not a binary operator: " + op);
 		this.left = left;
 		this.right = right;
 		this.op = op;
@@ -65,16 +68,7 @@ public final class BinaryIntExpression extends IntExpression  {
 	 * Returns the operator of this.
 	 * @return this.op
 	 */
-	public Operator op() {return op;}
-	
-	
-	/**
-	 * Returns the string representation of this int expression.
-	 * @return string representation of this int expression
-	 */
-	public String toString() {
-		return "(" + left + " " + op + " " + right + ")";
-	}
+	public IntOperator op() {return op;}
 	
 	/**
 	 * {@inheritDoc}
@@ -95,193 +89,10 @@ public final class BinaryIntExpression extends IntExpression  {
 	}
 
 	/**
-	 * Binary operators on integer expressions.
-	 */
-	public static enum Operator implements BinaryOperator<IntExpression,IntExpression>{
-		/** `+' operator */
-		PLUS {
-			public String toString() {
-				return "+";
-			}
-			/** 
-			 * Returns true.
-			 * @return true 
-			 **/
-			public boolean commutative() { return true; }
-			/** 
-			 * Returns true.
-			 * @return true 
-			 **/
-			public boolean associative() { return true; }
-		},
-		/** `-' operator */
-		MINUS {
-			public String toString() {
-				return "-";
-			}
-			/** 
-			 * Returns false.
-			 * @return false 
-			 **/
-			public boolean commutative() { return false; }
-			/** 
-			 * Returns false.
-			 * @return false 
-			 **/
-			public boolean associative() { return false; }
-		},
-		/** `*' operator */
-		MULTIPLY {
-			public String toString() {
-				return "*";
-			}
-			/** 
-			 * Returns true.
-			 * @return true 
-			 **/
-			public boolean commutative() { return true; }
-			/** 
-			 * Returns true.
-			 * @return true 
-			 **/
-			public boolean associative() { return true; }
-		}, 
-		/** `/' operator */
-		DIVIDE {
-			public String toString() {
-				return "/";
-			}
-			/** 
-			 * Returns false.
-			 * @return false
-			 **/
-			public boolean commutative() { return false; }
-			/** 
-			 * Returns false.
-			 * @return false
-			 **/
-			public boolean associative() { return false; }
-		},
-		/** `%' operator */
-		MODULO {
-			public String toString() {
-				return "%";
-			}
-			/** 
-			 * Returns false.
-			 * @return false
-			 **/
-			public boolean commutative() { return false; }
-			/** 
-			 * Returns false.
-			 * @return false
-			 **/
-			public boolean associative() { return false; }
-		},
-		/** Bitwise AND operator */
-		AND {
-			public String toString() {
-				return "&";
-			}
-			/** 
-			 * Returns true.
-			 * @return true 
-			 **/
-			public boolean commutative() { return true; }
-			/** 
-			 * Returns true.
-			 * @return true 
-			 **/
-			public boolean associative() { return true; }
-		},
-		/** Bitwise OR operator */
-		OR {
-			public String toString() {
-				return "|";
-			}			
-			/** 
-			 * Returns true.
-			 * @return true 
-			 **/
-			public boolean commutative() { return true; }
-			/** 
-			 * Returns true.
-			 * @return true 
-			 **/
-			public boolean associative() { return true; }
-			
-		}, 
-		/** Bitwise XOR operator */
-		XOR {
-			public String toString() {
-				return "^";
-			}
-			/** 
-			 * Returns true.
-			 * @return true 
-			 **/
-			public boolean commutative() { return true; }
-			/** 
-			 * Returns true.
-			 * @return true 
-			 **/
-			public boolean associative() { return true; }
-		}, 
-		/** Left shift operator */
-		SHL {
-			public String toString() {
-				return "<<";
-			}
-			/** 
-			 * Returns false.
-			 * @return false
-			 **/
-			public boolean commutative() { return false; }
-			/** 
-			 * Returns false.
-			 * @return false
-			 **/
-			public boolean associative() { return false; }
-		}, 
-		/** Right shift operator with zero extension */
-		SHR {
-			public String toString() {
-				return ">>>";
-			}
-			/** 
-			 * Returns false.
-			 * @return false
-			 **/
-			public boolean commutative() { return false; }
-			/** 
-			 * Returns false.
-			 * @return false
-			 **/
-			public boolean associative() { return false; }
-		}, 
-		/** Right shift operator with sign extension */
-		SHA {
-			public String toString() {
-				return ">>";
-			}
-			/** 
-			 * Returns false.
-			 * @return false
-			 **/
-			public boolean commutative() { return false; }
-			/** 
-			 * Returns false.
-			 * @return false
-			 **/
-			public boolean associative() { return false; }
-		};
-		
-		/**
-		 * {@inheritDoc}
-		 * @see kodkod.ast.BinaryOperator#apply(java.lang.Object, java.lang.Object)
-		 */
-		public final IntExpression apply(IntExpression left, IntExpression right) { 
-			return new BinaryIntExpression(left, this, right);
-		}
- 	}
+     * {@inheritDoc}
+     * @see kodkod.ast.Node#toString()
+     */
+	public String toString() {
+		return "(" + left + " " + op + " " + right + ")";
+	}
 }

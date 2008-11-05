@@ -23,12 +23,14 @@ package kodkod.engine.config;
 
 
 import java.util.List;
+import java.util.Set;
 
 import kodkod.ast.Decl;
 import kodkod.ast.Formula;
 import kodkod.ast.Relation;
 import kodkod.engine.bool.BooleanFormula;
 import kodkod.instance.Bounds;
+import kodkod.util.ints.IntSet;
 
 /**
  * A skeleton implementation of the {@link Reporter} interface.
@@ -41,6 +43,18 @@ public abstract class AbstractReporter implements Reporter {
 	 * Constructs a new abstract reporter.
 	 */
 	protected AbstractReporter() {}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.engine.config.Reporter#detectingSymmetries(kodkod.instance.Bounds)
+	 */
+	public void detectingSymmetries(Bounds bounds){}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.engine.config.Reporter#detectedSymmetries(java.util.Set)
+	 */
+	public void detectedSymmetries(Set<IntSet> parts) {}
 	
 	/**
 	 * @see kodkod.engine.config.Reporter#generatingSBP()
@@ -64,14 +78,9 @@ public abstract class AbstractReporter implements Reporter {
 	public void solvingCNF(int primaryVars, int vars, int clauses) {}
 
 	/**
-	 * @see kodkod.engine.config.Reporter#optimizingFormula()
+	 * @see kodkod.engine.config.Reporter#optimizingBoundsAndFormula()
 	 */
-	public void optimizingFormula() {}
-
-	/**
-	 * @see kodkod.engine.config.Reporter#optimizingBounds()
-	 */
-	public void optimizingBounds() {}
+	public void optimizingBoundsAndFormula() {}
 
 	/**
 	 * @see kodkod.engine.config.Reporter#translatingToBoolean(kodkod.ast.Formula, kodkod.instance.Bounds)

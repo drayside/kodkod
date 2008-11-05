@@ -42,7 +42,8 @@ import kodkod.util.ints.TreeSequence;
 public final class BooleanAccumulator extends BooleanValue implements Iterable<BooleanValue>{
 	final Operator.Nary op;
 	private final SparseSequence<BooleanValue> inputs;
-	
+//	private final List<BooleanValue> inputs;
+
 	/**
 	 * Constructs a new accumulator with the given
 	 * operator.
@@ -52,6 +53,7 @@ public final class BooleanAccumulator extends BooleanValue implements Iterable<B
 	private BooleanAccumulator(Operator.Nary op) {
 		this.op = op;
 		inputs = new TreeSequence<BooleanValue>();
+//		inputs = new ArrayList<BooleanValue>();
 	}
 	
 	/**
@@ -71,7 +73,7 @@ public final class BooleanAccumulator extends BooleanValue implements Iterable<B
 	 * @return a tree based BooleanAccumulator with the given operator, initialized with the given inputs 
 	 * @throws NullPointerException - op = null || inputs = null
 	 */
-	public static BooleanAccumulator treeGate(Operator.Nary op, BooleanValue[] inputs) {
+	public static BooleanAccumulator treeGate(Operator.Nary op, BooleanValue... inputs) {
 		if (op==null) throw new NullPointerException();
 		final BooleanAccumulator ret = new BooleanAccumulator(op);
 		for(BooleanValue v : inputs) {
@@ -111,6 +113,12 @@ public final class BooleanAccumulator extends BooleanValue implements Iterable<B
 				return op.shortCircuit();
 			} 
 			if (v!=op.identity() && !inputs.containsIndex(lit)) { inputs.put(lit, (BooleanValue) v);	}
+//			if (v==op.shortCircuit()) {
+//				inputs.clear();
+//				inputs.add(op.shortCircuit());
+//				return op.shortCircuit();
+//			} 
+//			if (v!=op.identity()) { inputs.add(v);	}
 			return this;
 		}
 	}
@@ -122,6 +130,7 @@ public final class BooleanAccumulator extends BooleanValue implements Iterable<B
 	 */
 	public boolean isShortCircuited() {
 		return inputs.size()==1 && inputs.first().value()==op.shortCircuit();
+//		return inputs.size()==1 && inputs.get(0)==op.shortCircuit();
 	}
 
 	/**
@@ -173,6 +182,7 @@ public final class BooleanAccumulator extends BooleanValue implements Iterable<B
 				}
 				
 			};
+//			return inputs.iterator();
 		}
 
 		

@@ -21,12 +21,12 @@
  */
 package kodkod.util.nodes;
 
-import static kodkod.ast.BinaryFormula.Operator.AND;
-import static kodkod.ast.BinaryFormula.Operator.IMPLIES;
-import static kodkod.ast.BinaryFormula.Operator.OR;
 import static kodkod.ast.RelationPredicate.Name.ACYCLIC;
 import static kodkod.ast.RelationPredicate.Name.FUNCTION;
 import static kodkod.ast.RelationPredicate.Name.TOTAL_ORDERING;
+import static kodkod.ast.operator.FormulaOperator.AND;
+import static kodkod.ast.operator.FormulaOperator.IMPLIES;
+import static kodkod.ast.operator.FormulaOperator.OR;
 
 import java.util.Collections;
 import java.util.EnumMap;
@@ -52,6 +52,7 @@ import kodkod.ast.IfIntExpression;
 import kodkod.ast.IntComparisonFormula;
 import kodkod.ast.IntToExprCast;
 import kodkod.ast.MultiplicityFormula;
+import kodkod.ast.NaryFormula;
 import kodkod.ast.Node;
 import kodkod.ast.NotFormula;
 import kodkod.ast.QuantifiedFormula;
@@ -59,6 +60,8 @@ import kodkod.ast.Relation;
 import kodkod.ast.RelationPredicate;
 import kodkod.ast.SumExpression;
 import kodkod.ast.Variable;
+import kodkod.ast.operator.ExprCastOperator;
+import kodkod.ast.operator.FormulaOperator;
 import kodkod.ast.visitor.AbstractDetector;
 import kodkod.ast.visitor.AbstractVoidVisitor;
 import kodkod.util.collections.ArrayStack;
@@ -151,10 +154,18 @@ public final class AnnotatedNode<N extends Node> {
 				Formula f = itr.next();
 				if (f instanceof BinaryFormula) {
 					BinaryFormula bin = (BinaryFormula) f;
-					if (bin.op()==BinaryFormula.Operator.AND && !untransformedRoots.contains(sourceOf(bin))) {
+					if (bin.op()==FormulaOperator.AND && !untransformedRoots.contains(sourceOf(bin))) {
 						itr.remove();
 						itr.add(bin.left());
 						itr.add(bin.right());
+					}
+				} else if (f instanceof NaryFormula) { 
+					NaryFormula nf = (NaryFormula) f;
+					if (nf.op()==FormulaOperator.AND) { 
+						itr.remove();
+						for(Formula child : nf) { 
+							itr.add(child);
+						}
 					}
 				}
 			}
@@ -203,7 +214,7 @@ public final class AnnotatedNode<N extends Node> {
 				return cache(expr, Boolean.TRUE);
 			}
 			public Boolean visit(ExprToIntCast intExpr) {
-				if (intExpr.op()==ExprToIntCast.Operator.CARDINALITY)
+				if (intExpr.op()==ExprCastOperator.CARDINALITY)
 					super.visit(intExpr);
 				return cache(intExpr, Boolean.TRUE);
 			}
@@ -373,13 +384,13 @@ public final class AnnotatedNode<N extends Node> {
 			return cache(decl, decl.expression().accept(this));
 		}	
 		public Boolean visit(Comprehension comprehension) {
-			return visit(comprehension, comprehension.declarations(), comprehension.formula());
+			return visit(comprehension, comprehension.decls(), comprehension.formula());
 		}		
 		public Boolean visit(SumExpression intExpr) {
-			return visit(intExpr, intExpr.declarations(), intExpr.intExpr());
+			return visit(intExpr, intExpr.decls(), intExpr.intExpr());
 		}
 		public Boolean visit(QuantifiedFormula qformula) {
-			return visit(qformula, qformula.declarations(), qformula.formula());
+			return visit(qformula, qformula.decls(), qformula.formula());
 		}
 	}
 	
@@ -480,7 +491,7 @@ public final class AnnotatedNode<N extends Node> {
 		 */
 		public void visit(BinaryFormula binFormula) {
 			if (visited(binFormula)) return;
-			final BinaryFormula.Operator op = binFormula.op();
+			final FormulaOperator op = binFormula.op();
 		
 			if ((!negated && op==AND) || (negated && op==OR)) { // op==AND || op==OR
 				binFormula.left().accept(this);
@@ -492,6 +503,22 @@ public final class AnnotatedNode<N extends Node> {
 				binFormula.right().accept(this);
 			} 
 		}
+		/**
+		 * Visits the children of the given formula if it has not been visited already with
+		 * the given value of the negated flag and if formula.op==OR && negated or
+		 * formula.op==AND && !negated. Otherwise does nothing.
+		 * @see kodkod.ast.visitor.AbstractVoidVisitor#visit(kodkod.ast.NaryFormula)
+		 */
+		public void visit(NaryFormula formula) { 
+			if (visited(formula)) return;
+			final FormulaOperator op = formula.op();
+			if ((!negated && op==AND) || (negated && op==OR)) { // op==AND || op==OR
+				for(Formula child : formula) { 
+					child.accept(this);
+				}
+			}
+		}
+		
 		/**
 		 * Visits the children of the child of the child formula, with
 		 * the negation of the current value of the negated flag, 

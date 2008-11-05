@@ -30,6 +30,8 @@ import java.util.AbstractList;
 import java.util.Arrays;
 import java.util.List;
 
+import kodkod.util.collections.Containers;
+
 /**
  * Two's complement integer representation.  Supports comparisons, addition and subtraction.  
  * Integers are represented in little-endian (least significant bit first) order.
@@ -212,6 +214,7 @@ final class TwosComplementInt extends Int {
 		return new TwosComplementInt(factory, plus);
 	}
 
+	
 	/**
 	 * {@inheritDoc}
 	 * @see kodkod.engine.bool.Int#minus(kodkod.engine.bool.Int)
@@ -585,5 +588,76 @@ final class TwosComplementInt extends Int {
 		return "b" + Arrays.toString(bits);
 	}
 
+	/**
+	 * If the plus flag is true, returns a sum of this and other ints,
+	 * with a cascade of adders or logarithmic depth.  If the plus flag
+	 * is false, returns a product of this and other ints, with a cascade
+	 * of multipliers of logarithmic depth.
+	 * @return plus => PLUS(this, others) else MULTIPLY(this, others)
+	 */
+	private Int apply(boolean plus, Int...others) { 
+		final Int[] ints = Containers.copy(others, 0, new Int[others.length+1], 1, others.length);
+		ints[0] = this;
+		for(int part = ints.length; part > 1; part -= part/2) { 
+			final int max = part-1;
+			for(int i = 0; i < max; i += 2) { 
+				ints[i/2] = plus ? ints[i].plus(ints[i+1]) : ints[i].multiply(ints[i+1]);
+			}
+			if (max%2==0) { // even max => odd number of entries
+				ints[max/2] = ints[max];
+			}
+		}
+		return ints[0];
+	}
 	
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.engine.bool.Int#plus(kodkod.engine.bool.Int[])
+	 */
+	@Override
+	public Int plus(Int... others) { return apply(true, others); }
+	
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.engine.bool.Int#multiply(kodkod.engine.bool.Int[])
+	 */
+	@Override
+	public Int multiply(Int... others) { return apply(false, others); }
+
+	/**
+	 * Applies the given nary operator to this and the given ints.
+	 * @return op(this, others)
+	 */
+	private Int apply(Operator.Nary op, Int...others) { 
+		int width = width();
+		for(Int other : others) { 
+			validate(other);
+			width = Math.max(width, other.width()); 
+		}
+		final BooleanValue[] bits = new BooleanValue[width];
+		final BooleanValue shortCircuit = op.shortCircuit();
+		for(int i = 0; i < width; i++) { 
+			final BooleanAccumulator acc = BooleanAccumulator.treeGate(op, bit(i));
+			for(Int other : others) { 
+				if (acc.add(other.bit(i))==shortCircuit) break;
+			}
+			bits[i] = factory.accumulate(acc);
+		}
+		return new TwosComplementInt(factory, bits);
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.engine.bool.Int#and(kodkod.engine.bool.Int[])
+	 */
+	@Override
+	public Int and(Int... others) { return apply(AND, others); }
+	
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.engine.bool.Int#or(kodkod.engine.bool.Int[])
+	 */
+	@Override
+	public Int or(Int... others) { return apply(OR, others); }
+
 }

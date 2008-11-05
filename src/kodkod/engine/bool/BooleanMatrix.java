@@ -28,6 +28,8 @@ import static kodkod.engine.bool.Operator.OR;
 
 import java.util.Iterator;
 
+import kodkod.util.collections.Containers;
+import kodkod.util.ints.ArraySequence;
 import kodkod.util.ints.HomogenousSequence;
 import kodkod.util.ints.IndexedEntry;
 import kodkod.util.ints.IntIterator;
@@ -100,6 +102,43 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 			this.cells = new TreeSequence<BooleanValue>();	
 	}
 	
+	/**
+	 * Constructs a new matrix with the given dimensions and factory, 
+	 * backed by a sparse sequence which can most efficiently hold
+	 * the elements storable in the matrices m and rest.
+	 * @requires null !in d + m + rest[int]
+	 * @requires m.factory = rest[int].factory
+	 * @requires d.equals(m.dims) => d.equals(rest[int].dims)
+	 * @effects this.dimensions' = dimensions && this.factory' = m.factory && 
+	 *          this.elements' = [0..dimensions.capacity)->one FALSE 
+	 * @throws IllegalArgumentException m.factory != rest[int].factory
+	 * @throws IllegalArgumentException !(d.equals(m.dims) => d.equals(rest[int].dims))
+	 */
+	private BooleanMatrix(Dimensions d, BooleanMatrix m, BooleanMatrix...rest) {
+		this.dims = d;
+		this.factory = m.factory;
+		
+		final Class<?> h = HomogenousSequence.class, t = TreeSequence.class;
+		final boolean sameDim = d.equals(m);
+		
+		Class<?> c = m.cells.getClass();
+		int cId = c==h ? 1 : c==t ? 2 : 4;
+		
+		for(BooleanMatrix other : rest) { 
+			checkFactory(factory, other.factory);
+			if (sameDim) checkDimensions(d, other.dims);
+			
+			c = other.cells.getClass();
+			cId |= c==h ? 1 : c==t ? 2 : 4;
+		}
+		
+		switch(cId) { 
+		case 1 : this.cells = new HomogenousSequence<BooleanValue>(TRUE, Ints.bestSet(d.capacity())); break;
+		case 2 : this.cells = new TreeSequence<BooleanValue>(); break;
+		default : this.cells = new RangeSequence<BooleanValue>(); 
+		}
+	}
+	
 	/**  
 	 * Constructs a new matrix with the given dimensions and factory.
 	 * The constructed matrix can store any kind of BooleanValue.
@@ -135,10 +174,8 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 		final int tsize = trueIndices.size(), asize = allIndices.size();
 		if (tsize==asize)
 			this.cells = new HomogenousSequence<BooleanValue>(TRUE, trueIndices);
-		else if (tsize==0)
-			this.cells = new TreeSequence<BooleanValue>();
 		else {
-			this.cells = new  RangeSequence<BooleanValue>();
+			this.cells = tsize==0 || asize/tsize >= 2 ? new  ArraySequence<BooleanValue>(allIndices) : new RangeSequence<BooleanValue>();
 			for(IntIterator iter = trueIndices.iterator(); iter.hasNext(); ) {
 				cells.put(iter.next(), TRUE);
 			}
@@ -238,21 +275,21 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	/**
 	 * @throws IllegalArgumentException - f != this.factory
 	 */
-	private final void checkFactory(BooleanFactory f) {
-		if (factory != f) throw new IllegalArgumentException();
+	private static final void checkFactory(BooleanFactory f0, BooleanFactory f1) {
+		if (f0 != f1) throw new IllegalArgumentException("Incompatible factories: " + f0 + " and " + f1);
 	}
 	
 	/**
-	 * @throws IllegalArgumentException - d != this.dimensions
+	 * @throws IllegalArgumentException - !d0.equals(d1)
 	 */
-	private final void checkDimensions(Dimensions d) {
-		if (!dims.equals(d)) throw new IllegalArgumentException();
+	private static final void checkDimensions(Dimensions d0, Dimensions d1) {
+		if (!d0.equals(d1)) throw new IllegalArgumentException("Incompatible dimensions: " + d0 + " and " + d1);
 	}
 	
 	/**
 	 * Returns a new matrix such that an entry in the returned matrix represents a 
 	 * conjunction of the corresponding entries in this and other matrix.  The effect 
-	 * of this method is the same as calling this.compose(Operator.Binary.AND, other).
+	 * of this method is the same as calling this.compose(ExprOperator.Binary.AND, other).
 	 * 
 	 * @return { m: BooleanMatrix | m.dimensions = this.dimensions && m.factory = this.factory &&
 	 *                              all i: [0..m.dimensions.capacity) | 
@@ -261,7 +298,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	 * @throws IllegalArgumentException - !other.dimensions.equals(this.dimensions) || this.factory != other.factory
 	 */
 	public final BooleanMatrix and(BooleanMatrix  other) {
-		checkFactory(other.factory); checkDimensions(other.dims);
+		checkFactory(this.factory, other.factory); checkDimensions(this.dims, other.dims);
 		final BooleanMatrix ret = new BooleanMatrix(dims, factory, cells, other.cells);
 		final  SparseSequence<BooleanValue> s1 = other.cells;
 		for(IndexedEntry<BooleanValue> e0 : cells) {
@@ -274,8 +311,33 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	
 	/**
 	 * Returns a new matrix such that an entry in the returned matrix represents a 
+	 * conjunction of the corresponding entries in this and other matrices.  
+	 * 
+	 * @requires all i: [0..others.length) | others[i].dimensions = this.dimensions && others[i].factory = this.factory
+	 * @return others.length = 0 => m else 
+	 * 		   { m: BooleanMatrix | m.dimensions = this.dimensions && m.factory = this.factory &&
+	 *            all i: [0..m.dimensions.capacity) | m.elements[i] = AND(this.elements[i], others[int].elements[i]) }
+	 * @throws NullPointerException - others = null
+	 * @throws IllegalArgumentException - some m: others[int] | !m.dimensions.equals(this.dimensions) || m.factory != this.factory
+	 */
+	public final BooleanMatrix and(final BooleanMatrix...others) {
+		final BooleanMatrix ret = new BooleanMatrix(dims, this, others);
+		
+		for(IndexedEntry<BooleanValue> cell : cells) {
+			final BooleanAccumulator acc = BooleanAccumulator.treeGate(AND, cell.value());
+			for(BooleanMatrix other : others) { 
+				if (acc.add(other.fastGet(cell.index()))==BooleanConstant.FALSE)
+					break;
+			}
+			if (!acc.isShortCircuited()) { ret.fastSet(cell.index(), factory.accumulate(acc)); }
+		}
+		return ret;
+	}
+	
+	/**
+	 * Returns a new matrix such that an entry in the returned matrix represents a 
 	 * combination of the corresponding entries in this and other matrix.  The effect 
-	 * of this method is the same as calling this.compose(Operator.Binary.OR, other).
+	 * of this method is the same as calling this.compose(ExprOperator.Binary.OR, other).
 	 * 
 	 * @return { m: BooleanMatrix | m.dimensions = this.dimensions && m.factory = this.factory &&
 	 *                              all i: [0..m.dimensions.capacity) | 
@@ -284,7 +346,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	 * @throws IllegalArgumentException - !other.dimensions.equals(this.dimensions) || this.factory != other.factory
 	 */
 	public final BooleanMatrix or(BooleanMatrix  other) {
-		checkFactory(other.factory); checkDimensions(other.dims);
+		checkFactory(this.factory, other.factory); checkDimensions(this.dims, other.dims);
 		final BooleanMatrix ret = new BooleanMatrix(dims, factory, cells, other.cells);
 		final SparseSequence<BooleanValue> retSeq = ret.cells;
 		for(IndexedEntry<BooleanValue> e0 : cells) {
@@ -303,6 +365,44 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	}
 	
 	/**
+	 * Returns a new matrix such that an entry in the returned matrix represents a 
+	 * disjunction of the corresponding entries in this and other matrices. 
+	 * 
+	 * @requires all i: [0..others.length) | others[i].dimensions = this.dimensions && others[i].factory = this.factory
+	 * @return others.length = 0 => m else 
+	 * 		   { m: BooleanMatrix | m.dimensions = this.dimensions && m.factory = this.factory &&
+	 *            all i: [0..m.dimensions.capacity) | m.elements[i] = OR(this.elements[i], others[int].elements[i]) }
+	 * @throws NullPointerException - others = null
+	 * @throws IllegalArgumentException - some m: others[int] | !m.dimensions.equals(this.dimensions) || m.factory != this.factory
+	 */
+	public final BooleanMatrix or(final BooleanMatrix... others) {
+		final BooleanMatrix ret = new BooleanMatrix(dims, this, others);
+			
+		for(IndexedEntry<BooleanValue> cell : cells) {
+			final BooleanAccumulator acc = BooleanAccumulator.treeGate(OR, cell.value());
+			for(BooleanMatrix other : others) { 
+				if (acc.add(other.fastGet(cell.index()))==BooleanConstant.TRUE)
+					break;
+			}
+			ret.fastSet(cell.index(), factory.accumulate(acc)); 
+		}
+		
+		for(int i = 0, length = others.length; i < length; i++) { 
+			for(IndexedEntry<BooleanValue> cell : others[i].cells) {
+				if (ret.cells.containsIndex(cell.index())) continue;
+				final BooleanAccumulator acc = BooleanAccumulator.treeGate(OR, cell.value());
+				for(int j = i+1; j < length; j++) { 
+					if (acc.add(others[j].fastGet(cell.index()))==BooleanConstant.TRUE)
+						break;
+				}
+				ret.fastSet(cell.index(), factory.accumulate(acc)); 
+			}
+		}
+		
+		return ret;
+	}
+	
+	/**
      * Returns the cross product of this and other matrix, using conjunction instead of 
      * multiplication.
      * 
@@ -311,7 +411,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
      * @throws IllegalArgumentException - this.factory != other.factory
      */
 	public final BooleanMatrix cross(final BooleanMatrix other) {
-		checkFactory(other.factory);
+		checkFactory(this.factory, other.factory);
 		
 		final BooleanMatrix ret =  new BooleanMatrix(dims.cross(other.dims), factory, cells, other.cells);
 		if (cells.isEmpty() || other.cells.isEmpty()) return ret;
@@ -325,6 +425,96 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 					ret.cells.put(i + e1.index(), conjunction);
 			}
 		}
+		return ret;
+	}
+	
+	/**
+	 * Updates the itrs and idxs arrays for the next step of the cross-product computation and returns a partial
+	 * index based on the updated idxs values.
+	 * @requires matrices.length = itrs.length = idxs.length
+	 * @requires all m: matrices[int] | m.density() > 0
+	 * @requires currentIdx is a partial index based on the current value of idxs
+	 * @effects  updates the itrs and idxs arrays for the next step cross-product computation
+	 * @return a partial index based on the freshly updated idxs values.
+	 */
+	private static int nextCross(final BooleanMatrix[] matrices, final IntIterator[] itrs, final int[] idxs, int currentIdx) { 
+	
+		int mult = 1;
+		for(int i = itrs.length-1; i >= 0; i--) {
+			if (itrs[i].hasNext()) { 
+				final int old = idxs[i];
+				idxs[i] = itrs[i].next();
+				return currentIdx - mult*old + mult*idxs[i];
+			} else {
+				itrs[i] = matrices[i].cells.indices().iterator();
+				final int old = idxs[i];
+				idxs[i] = itrs[i].next();
+				currentIdx = currentIdx - mult*old + mult*idxs[i];
+				mult *= matrices[i].dims.capacity();
+			}
+		}
+		
+		return -1;
+	}
+	
+	/**
+	 * Initializes the itrs and idxs arrays for cross-product computation and returns a partial
+	 * index based on the freshly computed idxs values.
+	 * @requires matrices.length = itrs.length = idxs.length
+	 * @requires all m: matrices[int] | m.density() > 0
+	 * @effects  initializes the itrs and idxs arrays for cross-product computation
+	 * @return a partial index based on the freshly computed idxs values.
+	 */
+	private static int initCross(final BooleanMatrix[] matrices, final IntIterator[] itrs, final int[] idxs) { 
+		int mult = 1, idx = 0;
+		for(int i = matrices.length-1; i >= 0; i--) { 
+			itrs[i] = matrices[i].cells.indices().iterator();
+			idxs[i] = itrs[i].next();
+			idx += mult*idxs[i];
+			mult *= matrices[i].dims.capacity();
+		}
+		return idx;
+	}
+	
+	/**
+     * Returns the cross product of this and other matrices, using conjunction instead of 
+     * multiplication.
+     * @requires this.factory = others[int].factory
+     * @return others.length=0 => { m: BooleanMatrix | m.dimensions = this.dimensions && no m.elements } else
+     *           { m: BooleanMatrix | m = this x others[0] x ... x others[others.length-1] }
+     * @throws NullPointerException - others = null
+     * @throws IllegalArgumentException - this.factory != others[int].factory
+     */
+	@SuppressWarnings("unchecked")
+	public final BooleanMatrix cross(final BooleanMatrix...others) {
+		Dimensions retDims = dims;
+		boolean empty = cells.isEmpty();
+		for(BooleanMatrix other : others) { 
+			retDims = retDims.cross(other.dims);
+			empty = empty || other.cells.isEmpty();
+		}
+		
+		final BooleanMatrix ret = new BooleanMatrix(retDims, this, others);
+		if (empty) return ret;
+		
+		final IntIterator[] itrs = new IntIterator[others.length];
+		final int[] otherIdxs = new int[others.length];
+		
+		final int ocap = retDims.capacity() / dims.capacity();
+		
+		for(IndexedEntry<BooleanValue> cell : cells) {
+			final int idx = ocap * cell.index();
+			for(int restIdx = initCross(others, itrs, otherIdxs); restIdx >= 0; restIdx = nextCross(others, itrs, otherIdxs, restIdx)) { 
+				final BooleanAccumulator acc = BooleanAccumulator.treeGate(AND, cell.value());
+				for(int i = others.length-1; i >= 0; i--) {
+					if (acc.add(others[i].fastGet(otherIdxs[i]))==BooleanConstant.FALSE) 
+						break;
+				}
+				if (!acc.isShortCircuited()) {	ret.fastSet(idx + restIdx, factory.accumulate(acc)); }
+			}
+			
+		}
+		
 		return ret;
 	}
 	
@@ -350,7 +540,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
      * @throws IllegalArgumentException - dimensions incompatible for multiplication
      */
 	public final BooleanMatrix dot(final BooleanMatrix other) {  
-		checkFactory(other.factory);
+		checkFactory(this.factory, other.factory);
 		
 		final BooleanMatrix ret =  new BooleanMatrix(dims.dot(other.dims), factory, cells, other.cells);
 		if (cells.isEmpty() || other.cells.isEmpty()) return ret;
@@ -402,7 +592,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	 * @throws IllegalArgumentException - !other.dimensions.equals(this.dimensions) || this.factory != other.factory           
 	 */
 	public final BooleanValue subset(BooleanMatrix other) {
-		checkFactory(other.factory); checkDimensions(other.dims);
+		checkFactory(this.factory, other.factory); checkDimensions(this.dims, other.dims);
 		final BooleanAccumulator a = BooleanAccumulator.treeGate(AND);
 		for(IndexedEntry<BooleanValue> e0: cells) {
 			if (a.add(factory.or(e0.value().negation(), other.fastGet(e0.index())))==FALSE)
@@ -423,21 +613,6 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	 * @throws IllegalArgumentException - !other.dimensions.equals(this.dimensions) || this.factory != other.factory           
 	 */
 	public final BooleanValue eq(BooleanMatrix other) {
-		/* the following encoding usually generates smaller cnfs that are harder to solve than
-		 * simply conjoining the mutual subset constraint. */
-//		checkFactory(other.factory); checkDimensions(other.dims);
-//		final BooleanAccumulator a = BooleanAccumulator.treeGate(AND);
-//		for(IndexedEntry<BooleanValue> e0: cells) {
-//			BooleanValue v1 = other.fastGet(e0.index());
-//			if (a.add(factory.fastITE(e0.value(), v1, v1.negation()))==FALSE)
-//				return FALSE;
-//		}
-//		for(IndexedEntry<BooleanValue> e1: cells) {
-//			if (!cells.containsIndex(e1.index()))
-//				if (a.add(e1.value().negation())==FALSE)
-//					return FALSE;
-//		}
-//		return factory.fastAdopt(a);
 		return factory.and(this.subset(other), other.subset(this));
 	}
 	
@@ -454,7 +629,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	 * @throws IllegalArgumentException - !other.dimensions.equals(this.dimensions) || this.factory != other.factory
 	 */
 	public final BooleanMatrix difference(BooleanMatrix other) {
-		checkFactory(other.factory); checkDimensions(other.dims);
+		checkFactory(this.factory, other.factory); checkDimensions(this.dims, other.dims);
 		final BooleanMatrix ret = new BooleanMatrix(dims, factory, cells, other.cells);
 		for(IndexedEntry<BooleanValue> e0 : cells) {
 			ret.fastSet(e0.index(), factory.and(e0.value(), other.fastGet(e0.index()).negation()));
@@ -520,7 +695,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
      * @throws IllegalArgumentException - !other.dimensions.equals(this.dimensions) || this.factory != other.factory
 	 */
 	public final BooleanMatrix choice(BooleanValue condition, BooleanMatrix other) {
-		checkFactory(other.factory); checkDimensions(other.dims);
+		checkFactory(this.factory, other.factory); checkDimensions(this.dims, other.dims);
 		if (condition==TRUE) return this.clone();
 		else if (condition==FALSE) return other.clone();
 	
@@ -647,7 +822,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	 * @throws IllegalArgumentException - other.dimensions != this.dimensions
 	 */
 	public final BooleanMatrix override(BooleanMatrix other) {
-		checkFactory(other.factory); checkDimensions(other.dims);
+		checkFactory(this.factory, other.factory); checkDimensions(this.dims, other.dims);
 		if (other.cells.isEmpty()) return this.clone();
 		final BooleanMatrix ret = new BooleanMatrix(dims, factory, cells, other.cells);
 		ret.cells.putAll(other.cells);
@@ -664,6 +839,32 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 					   factory.and(e0.value(), rowVal)));
 		}
 		return ret;
+	}
+	
+	/**
+	 * Overrides the values in this matrix with those in <code>other</code>.
+	 * @return others.length = 0 => { m: BooleanMatrix | m.dimensions = this.dimensions && m.elements = this.elements) else
+	 * 		   others.length = 1 => {m: BooleanMatrix | m.dimensions = this.dimensions &&
+	 *                               all i: [0..m.capacity()) | m.elements[i] = 
+	 *                                other.elements[i] || this.elements[i] && !OR(other.elements[rowOf(i)]) } else
+	 *                              this.override(others[0).override(others[1..others.length))
+	 * @throws NullPointerException - others = null
+	 * @throws IllegalArgumentException - others[int].factory != this.factory or others[int].dimensions != this.dimensions
+	 */
+	public final BooleanMatrix override(BooleanMatrix... others) {
+		if (others.length==0) return clone();
+		final BooleanMatrix[] matrices = Containers.copy(others, 0, new BooleanMatrix[others.length+1], 1, others.length);
+		matrices[0] = this;
+		for(int part = matrices.length; part > 1; part -= part/2) { 
+			final int max = part-1;
+			for(int i = 0; i < max; i += 2) { 
+				matrices[i/2] = matrices[i].override(matrices[i+1]);
+			}
+			if (max%2==0) { // even max => odd number of entries
+				matrices[max/2] = matrices[max];
+			}
+		}
+		return matrices[0];
 	}
 	
 	/**
@@ -734,7 +935,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	
 	/**
 	 * Returns a BooleanValue that constraints all values in this.elements to be false.
-	 * The effect of this method is the same as calling this.factory.not(this.orFold()).
+	 * The effect of this method is the same as calling this.factory.not(this.some()).
 	 * @return { f: BooleanValue | f <=> !(this.elements[0] || ... || !this.elements[this.dimensions.capacity-1]) }
 	 */
 	public final BooleanValue none() {

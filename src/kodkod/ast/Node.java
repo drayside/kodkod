@@ -27,12 +27,14 @@ import kodkod.ast.visitor.VoidVisitor;
 
 /**
  * A node in the abstract syntax tree (DAG).  A node
- * can accept a ReturnVisitor and have zero or more children.
+ * can accept a ReturnVisitor and have a sequence of
+ * zero or more children.
  * 
- * @specfield children: set Node
+ * @specfield children: int ->lone Node
+ * @invariant children.Node = { i: int | 0 <= i < #children }
  * @author Emina Torlak
  */
-public interface Node {
+public abstract class Node {
     
     /**
      * Accepts the given visitor and returns the result
@@ -40,12 +42,19 @@ public interface Node {
      * @return the result of being visited by the given visitor
      * @throws NullPointerException visitor = null
      */
-    public <E, F, D, I> Object accept(ReturnVisitor<E, F, D, I> visitor);
+    public abstract <E, F, D, I> Object accept(ReturnVisitor<E, F, D, I> visitor);
    
     /**
      * Accepts the given void visitor by calling visitor.visit(this).
      * @throws NullPointerException visitor = null
      */
-    public void accept(VoidVisitor visitor);
+    public abstract void accept(VoidVisitor visitor);
 
+    /**
+     * Returns a string representation of this node. 
+     * For a pretty-printed string, use {@linkplain kodkod.util.nodes.PrettyPrinter}.
+     * @return a string representation of this node
+     * @see kodkod.util.nodes.PrettyPrinter
+     */
+    public abstract String toString();
 }

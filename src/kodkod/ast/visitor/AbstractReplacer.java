@@ -43,8 +43,10 @@ import kodkod.ast.IntComparisonFormula;
 import kodkod.ast.IntConstant;
 import kodkod.ast.IntExpression;
 import kodkod.ast.IntToExprCast;
-import kodkod.ast.Multiplicity;
 import kodkod.ast.MultiplicityFormula;
+import kodkod.ast.NaryExpression;
+import kodkod.ast.NaryFormula;
+import kodkod.ast.NaryIntExpression;
 import kodkod.ast.Node;
 import kodkod.ast.NotFormula;
 import kodkod.ast.ProjectExpression;
@@ -55,6 +57,7 @@ import kodkod.ast.SumExpression;
 import kodkod.ast.UnaryExpression;
 import kodkod.ast.UnaryIntExpression;
 import kodkod.ast.Variable;
+import kodkod.ast.operator.Multiplicity;
 
 /** 
  * A depth first replacer.  The default implementation
@@ -196,6 +199,29 @@ public abstract class AbstractReplacer implements ReturnVisitor<Expression, Form
 	}
 	
 	/** 
+	 * Calls lookup(expr) and returns the cached value, if any.  
+	 * If a replacement has not been cached, visits the expr's 
+	 * children.  If nothing changes, the argument is cached and
+	 * returned, otherwise a replacement expr is cached and returned.
+	 * @return { e: Expression | e.op = expr.op && #e.children = #expr.children && all i: [0..expr.children) | e.child(i) = expr.child(i).accept(this) }
+	 */
+	public Expression visit(NaryExpression expr) {
+		Expression ret = lookup(expr);
+		if (ret!=null) return ret;
+		
+		final Expression[] visited = new Expression[expr.size()];
+		boolean allSame = true;
+		for(int i = 0 ; i < visited.length; i++) { 
+			final Expression child = expr.child(i);
+			visited[i] = child.accept(this);
+			allSame = allSame && visited[i]==child;
+		}
+		
+		ret = allSame ? expr : Expression.compose(expr.op(), visited);
+		return cache(expr,ret);
+	}
+	
+	/** 
 	 * Calls lookup(binExpr) and returns the cached value, if any.  
 	 * If a replacement has not been cached, visits the expression's 
 	 * children.  If nothing changes, the argument is cached and
@@ -243,9 +269,9 @@ public abstract class AbstractReplacer implements ReturnVisitor<Expression, Form
 		Expression ret = lookup(comprehension);
 		if (ret!=null) return ret;
 		
-		final Decls decls = (Decls)comprehension.declarations().accept(this);
+		final Decls decls = (Decls)comprehension.decls().accept(this);
 		final Formula formula = comprehension.formula().accept(this);
-		ret = (decls==comprehension.declarations() && formula==comprehension.formula()) ? 
+		ret = (decls==comprehension.decls() && formula==comprehension.formula()) ? 
 			  comprehension : formula.comprehension(decls); 
 		return cache(comprehension,ret);
 	}
@@ -288,11 +314,9 @@ public abstract class AbstractReplacer implements ReturnVisitor<Expression, Form
 		final Expression expr = project.expression().accept(this);
 		final IntExpression[] cols = new IntExpression[project.arity()];
 		boolean allSame = expr==project.expression();
-		int i = 0;
-		for(IntExpression col : project.columns()) {
-			IntExpression newCol = col.accept(this);
-			cols[i++] = newCol;
-			allSame = allSame && (newCol==col);
+		for(int i = 0, arity = project.arity(); i < arity; i++) {
+			cols[i] = project.column(i).accept(this);
+			allSame = allSame && (cols[i]==project.column(i));
 		}
 		ret = allSame ? project : expr.project(cols);
 		return cache(project, ret);
@@ -362,6 +386,28 @@ public abstract class AbstractReplacer implements ReturnVisitor<Expression, Form
  
     /** 
 	 * Calls lookup(intExpr) and returns the cached value, if any.  
+	 * If a replacement has not been cached, visits the intExpr's 
+	 * children.  If nothing changes, the argument is cached and
+	 * returned, otherwise a replacement intExpr is cached and returned.
+	 * @return { e: IntExpression | e.op = intExpr.op && #e.children = #intExpr.children && all i: [0..intExpr.children) | e.child(i) = intExpr.child(i).accept(this) }
+	 */
+    public IntExpression visit(NaryIntExpression intExpr) {
+		IntExpression ret = lookup(intExpr);
+		if (ret!=null) return ret;
+	
+		final IntExpression[] visited = new IntExpression[intExpr.size()];
+		boolean allSame = true;
+		for(int i = 0 ; i < visited.length; i++) { 
+			final IntExpression child = intExpr.child(i);
+			visited[i] = child.accept(this);
+			allSame = allSame && visited[i]==child;
+		}
+		
+		ret = allSame ? intExpr : IntExpression.compose(intExpr.op(), visited);
+		return cache(intExpr,ret);
+    }
+    /** 
+	 * Calls lookup(intExpr) and returns the cached value, if any.  
 	 * If a replacement has not been cached, visits the expression's 
 	 * children.  If nothing changes, the argument is cached and
 	 * returned, otherwise a replacement expression is cached and returned.
@@ -389,8 +435,8 @@ public abstract class AbstractReplacer implements ReturnVisitor<Expression, Form
 		IntExpression ret = lookup(intExpr);
 		if (ret!=null) return ret;
 
-		final IntExpression child = intExpr.expression().accept(this);
-		ret = (child==intExpr.expression()) ?  intExpr : child.apply(intExpr.op());
+		final IntExpression child = intExpr.intExpr().accept(this);
+		ret = (child==intExpr.intExpr()) ?  intExpr : child.apply(intExpr.op());
 		return cache(intExpr,ret);
 	}
 	
@@ -405,9 +451,9 @@ public abstract class AbstractReplacer implements ReturnVisitor<Expression, Form
 		IntExpression ret = lookup(intExpr);
 		if (ret!=null) return ret;
 	
-		final Decls decls  = intExpr.declarations().accept(this);
+		final Decls decls  = intExpr.decls().accept(this);
 		final IntExpression expr = intExpr.intExpr().accept(this);
-		ret =  (decls==intExpr.declarations() && expr==intExpr.intExpr()) ? 
+		ret =  (decls==intExpr.decls() && expr==intExpr.intExpr()) ? 
 				intExpr : expr.sum(decls);
 		return cache(intExpr,ret);
     }
@@ -453,11 +499,34 @@ public abstract class AbstractReplacer implements ReturnVisitor<Expression, Form
 		Formula ret = lookup(quantFormula);
 		if (ret!=null) return ret;
 		
-		final Decls decls = (Decls)quantFormula.declarations().accept(this);
+		final Decls decls = (Decls)quantFormula.decls().accept(this);
 		final Formula formula = quantFormula.formula().accept(this);
-		ret = (decls==quantFormula.declarations() && formula==quantFormula.formula()) ? 
+		ret = (decls==quantFormula.decls() && formula==quantFormula.formula()) ? 
 			  quantFormula : formula.quantify(quantFormula.quantifier(), decls);
 		return cache(quantFormula,ret);
+	}
+	
+	/** 
+	 * Calls lookup(formula) and returns the cached value, if any.  
+	 * If a replacement has not been cached, visits the formula's 
+	 * children.  If nothing changes, the argument is cached and
+	 * returned, otherwise a replacement formula is cached and returned.
+	 * @return { e: Expression | e.op = formula.op && #e.children = #formula.children && all i: [0..formula.children) | e.child(i) = formula.child(i).accept(this) }
+	 */
+	public Formula visit(NaryFormula formula) {
+		Formula ret = lookup(formula);
+		if (ret!=null) return ret;
+		
+		final Formula[] visited = new Formula[formula.size()];
+		boolean allSame = true;
+		for(int i = 0 ; i < visited.length; i++) { 
+			final Formula child = formula.child(i);
+			visited[i] = child.accept(this);
+			allSame = allSame && visited[i]==child;
+		}
+		
+		ret = allSame ? formula : Formula.compose(formula.op(), visited);
+		return cache(formula,ret);
 	}
 	
 	/** 
@@ -511,7 +580,7 @@ public abstract class AbstractReplacer implements ReturnVisitor<Expression, Form
 		final Expression left  = compFormula.left().accept(this);
 		final Expression right = compFormula.right().accept(this);
 		ret =  (left==compFormula.left() && right==compFormula.right()) ? 
-			   compFormula : left.compose(compFormula.op(), right);	
+			   compFormula : left.compare(compFormula.op(), right);	
 		return cache(compFormula,ret);
 	}
 	

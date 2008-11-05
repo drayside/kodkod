@@ -37,6 +37,9 @@ import kodkod.ast.IntComparisonFormula;
 import kodkod.ast.IntConstant;
 import kodkod.ast.IntToExprCast;
 import kodkod.ast.MultiplicityFormula;
+import kodkod.ast.NaryExpression;
+import kodkod.ast.NaryFormula;
+import kodkod.ast.NaryIntExpression;
 import kodkod.ast.NotFormula;
 import kodkod.ast.ProjectExpression;
 import kodkod.ast.QuantifiedFormula;
@@ -77,13 +80,21 @@ public interface VoidVisitor {
     public void visit(ConstantExpression constExpr);
     
     /** 
-	 * Visits the given binary expression. 
-	 **/
-    public void visit(BinaryExpression binExpr);
-    /** 
 	 * Visits the given unary expression. 
 	 **/
     public void visit(UnaryExpression unaryExpr);   
+    
+    /** 
+	 * Visits the given binary expression. 
+	 **/
+    public void visit(BinaryExpression binExpr);
+    
+    /** 
+	 * Visits the given nary expression.
+	 **/
+    public void visit(NaryExpression expr);
+    
+  
     /** 
 	 * Visits the given comprehension. 
 	 **/
@@ -114,6 +125,10 @@ public interface VoidVisitor {
      * Visits the given if-int-expression.
      */
     public void visit(IfIntExpression intExpr);
+    /** 
+	 * Visits the given nary int expression.
+	 **/
+    public void visit(NaryIntExpression intExpr);
     /**
      * Visits the given binary integer expression.
      */
@@ -135,6 +150,10 @@ public interface VoidVisitor {
 	 * Visits the given quantified formula. 
 	 **/
     public void visit(QuantifiedFormula quantFormula);
+    /** 
+	 * Visits the given nary formula.
+	 **/
+    public void visit(NaryFormula formula);
     /** 
 	 * Visits the given binary formula.
 	 **/

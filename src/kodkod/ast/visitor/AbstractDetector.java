@@ -35,6 +35,8 @@ import kodkod.ast.ConstantFormula;
 import kodkod.ast.Decl;
 import kodkod.ast.Decls;
 import kodkod.ast.ExprToIntCast;
+import kodkod.ast.Expression;
+import kodkod.ast.Formula;
 import kodkod.ast.IfExpression;
 import kodkod.ast.IfIntExpression;
 import kodkod.ast.IntComparisonFormula;
@@ -42,6 +44,9 @@ import kodkod.ast.IntConstant;
 import kodkod.ast.IntExpression;
 import kodkod.ast.IntToExprCast;
 import kodkod.ast.MultiplicityFormula;
+import kodkod.ast.NaryExpression;
+import kodkod.ast.NaryFormula;
+import kodkod.ast.NaryIntExpression;
 import kodkod.ast.Node;
 import kodkod.ast.NotFormula;
 import kodkod.ast.ProjectExpression;
@@ -123,15 +128,12 @@ public abstract class AbstractDetector implements ReturnVisitor<Boolean, Boolean
 	 */
 	public Boolean visit(Decls decls) {
 		final Boolean ret = lookup(decls);
-		if (ret==null) {
-			for(Decl d : decls) {
-				if (visit(d))
-					return cache(decls, true);
-			}
-			return cache(decls, false);
-		} else {
-			return ret;
+		if (ret!=null) return ret;
+		for(Decl d : decls) {
+			if (visit(d))
+				return cache(decls, true);
 		}
+		return cache(decls, false);
 	}
 	
 	/** 
@@ -144,35 +146,43 @@ public abstract class AbstractDetector implements ReturnVisitor<Boolean, Boolean
 	 */
 	public Boolean visit(Decl decl) {
 		final Boolean ret = lookup(decl);
-		if (ret==null) {
-			return cache(decl, decl.variable().accept(this) || decl.expression().accept(this));
-		} else {
-			return ret;
+		return (ret!=null) ? ret : cache(decl, decl.variable().accept(this) || decl.expression().accept(this));
+	}
+	
+	/**
+	 * Returns FALSE.
+	 * @return FALSE
+	 */
+	public Boolean visit(Relation relation) { return Boolean.FALSE; }
+	
+	/**
+	 * Returns FALSE.
+	 * @return FALSE
+	 */
+	public Boolean visit(Variable variable) { return Boolean.FALSE; }
+	
+	/**
+	 * Returns FALSE.
+	 * @return FALSE
+	 */
+	public Boolean visit(ConstantExpression expr) { return Boolean.FALSE; }
+	
+	/** 
+	 * Calls lookup(expr) and returns the cached value, if any.  
+	 * If no cached value exists, visits each child, caches the
+	 * disjunction of the children's return values and returns it. 
+	 * @return let x = lookup(expr) | 
+	 *          x != null => x,  
+	 *          cache(expr, expr.child(0).accept(this) || ... || expr.child(expr.size()-1).accept(this)) 
+	 */
+	public Boolean visit(NaryExpression expr) {
+		final Boolean ret = lookup(expr);
+		if (ret!=null) return ret;
+		for(Expression child : expr) { 
+			if (child.accept(this))
+				return cache(expr, true);
 		}
-	}
-	
-	/**
-	 * Returns FALSE.
-	 * @return FALSE
-	 */
-	public Boolean visit(Relation relation) {
-		return Boolean.FALSE;
-	}
-	
-	/**
-	 * Returns FALSE.
-	 * @return FALSE
-	 */
-	public Boolean visit(Variable variable) {
-		return Boolean.FALSE;
-	}
-	
-	/**
-	 * Returns FALSE.
-	 * @return FALSE
-	 */
-	public Boolean visit(ConstantExpression constExpr) {
-		return Boolean.FALSE;
+		return cache(expr, false);
 	}
 	
 	/** 
@@ -185,62 +195,45 @@ public abstract class AbstractDetector implements ReturnVisitor<Boolean, Boolean
 	 */
 	public Boolean visit(BinaryExpression binExpr) {
 		final Boolean ret = lookup(binExpr);
-		if (ret==null) {
-			return cache(binExpr, binExpr.left().accept(this) || binExpr.right().accept(this));
-		} else {
-			return ret;
-		}
+		return (ret!=null) ? ret : cache(binExpr, binExpr.left().accept(this) || binExpr.right().accept(this));
 	}
 	
 	/** 
-	 * Calls lookup(unaryExpr) and returns the cached value, if any.  
+	 * Calls lookup(expr) and returns the cached value, if any.  
 	 * If no cached value exists, visits the child, caches its return value and returns it. 
-	 * @return let x = lookup(unaryExpr) | 
+	 * @return let x = lookup(expr) | 
 	 *          x != null => x,  
-	 *          cache(unaryExpr, unaryExpr.expression.accept(this)) 
+	 *          cache(expr, expr.expression.accept(this)) 
 	 */
-	public Boolean visit(UnaryExpression unaryExpr) {
-		final Boolean ret = lookup(unaryExpr);
-		if (ret==null)
-			return cache(unaryExpr, unaryExpr.expression().accept(this));
-		else 
-			return ret;
+	public Boolean visit(UnaryExpression expr) {
+		final Boolean ret = lookup(expr);
+		return (ret!=null) ? ret : cache(expr, expr.expression().accept(this));
 	}
 	
 	/** 
-	 * Calls lookup(comprehension) and returns the cached value, if any.  
+	 * Calls lookup(expr) and returns the cached value, if any.  
 	 * If no cached value exists, visits each child, caches the
 	 * disjunction of the children's return values and returns it. 
-	 * @return let x = lookup(comprehension) | 
+	 * @return let x = lookup(expr) | 
 	 *          x != null => x,  
-	 *          cache(comprehension, comprehension.declarations.accept(this) || comprehension.formula.accept(this)) 
+	 *          cache(expr, expr.decls.accept(this) || expr.formula.accept(this)) 
 	 */
-	public Boolean visit(Comprehension comprehension) {
-		final Boolean ret = lookup(comprehension);
-		if (ret==null) {
-			return cache(comprehension, comprehension.declarations().accept(this) || 
-					comprehension.formula().accept(this));
-		} else {
-			return ret;
-		}
+	public Boolean visit(Comprehension expr) {
+		final Boolean ret = lookup(expr);
+		return (ret!=null) ? ret : cache(expr, expr.decls().accept(this) || expr.formula().accept(this));
 	}
 	
 	/** 
-	 * Calls lookup(ifExpr) and returns the cached value, if any.  
+	 * Calls lookup(expr) and returns the cached value, if any.  
 	 * If no cached value exists, visits each child, caches the
 	 * disjunction of the children's return values and returns it. 
-	 * @return let x = lookup(ifExpr) | 
+	 * @return let x = lookup(expr) | 
 	 *          x != null => x,  
-	 *          cache(ifExpr, ifExpr.condition.accept(this) || ifExpr.thenExpr.accept(this) || ifExpr.elseExpr.accept(this)) 
+	 *          cache(expr, expr.condition.accept(this) || expr.thenExpr.accept(this) || expr.elseExpr.accept(this)) 
 	 */
-	public Boolean visit(IfExpression ifExpr) {
-		final Boolean ret = lookup(ifExpr);
-		if (ret==null) {
-			return cache(ifExpr, ifExpr.condition().accept(this) || 
-					ifExpr.thenExpr().accept(this) || ifExpr.elseExpr().accept(this));
-		} else {
-			return ret;
-		}
+	public Boolean visit(IfExpression expr) {
+		final Boolean ret = lookup(expr);
+		return (ret!=null) ? ret : cache(expr, expr.condition().accept(this) || expr.thenExpr().accept(this) || expr.elseExpr().accept(this));
 	}
 	
 	/**
@@ -252,18 +245,15 @@ public abstract class AbstractDetector implements ReturnVisitor<Boolean, Boolean
 	 *          cache(project, project.expression.accept(this) || project.columns[int].accept(this)) 
 	 */
 	public Boolean visit(ProjectExpression project) {
-		Boolean ret = lookup(project);
-		if (ret==null) {
-			if (project.expression().accept(this))
+		final Boolean ret = lookup(project);
+		if (ret!=null) return ret;
+		if (project.expression().accept(this))
+			return cache(project, true);
+		for(int i = 0, arity = project.arity(); i < arity; i++) {
+			if (project.column(i).accept(this))
 				return cache(project, true);
-			for(IntExpression col : project.columns()) {
-				if (col.accept(this))
-					return cache(project, true);
-			}
-			return cache(project, false);
-		} else {
-			return ret;
 		}
+		return cache(project, false);
 	}
 	
 	/** 
@@ -275,19 +265,14 @@ public abstract class AbstractDetector implements ReturnVisitor<Boolean, Boolean
 	 */
 	public Boolean visit(IntToExprCast castExpr) {
 		final Boolean ret = lookup(castExpr);
-		if (ret==null)
-			return cache(castExpr, castExpr.intExpr().accept(this));
-		else 
-			return ret;
+		return (ret!=null) ? ret : cache(castExpr, castExpr.intExpr().accept(this));
 	}
 	
 	/**
 	 * Returns FALSE.
 	 * @return FALSE
 	 */
-	public Boolean visit(IntConstant intConst) {
-		return Boolean.FALSE;
-	}
+	public Boolean visit(IntConstant intConst) { return Boolean.FALSE; }
 	
 	/** 
 	 * Calls lookup(intExpr) and returns the cached value, if any.  
@@ -299,12 +284,7 @@ public abstract class AbstractDetector implements ReturnVisitor<Boolean, Boolean
 	 */
 	public Boolean visit(IfIntExpression intExpr) {
 		final Boolean ret = lookup(intExpr);
-		if (ret==null) {
-			return cache(intExpr, intExpr.condition().accept(this) || 
-					intExpr.thenExpr().accept(this) || intExpr.elseExpr().accept(this));
-		} else {
-			return ret;
-		}
+		return (ret!=null) ? ret :  cache(intExpr, intExpr.condition().accept(this) || intExpr.thenExpr().accept(this) || intExpr.elseExpr().accept(this));
 	}
 	
 	/** 
@@ -316,10 +296,25 @@ public abstract class AbstractDetector implements ReturnVisitor<Boolean, Boolean
 	 */
 	public Boolean visit(ExprToIntCast intExpr) {
 		final Boolean ret = lookup(intExpr);
-		if (ret==null)
-			return cache(intExpr, intExpr.expression().accept(this));
-		else 
-			return ret;
+		return (ret!=null) ? ret : cache(intExpr, intExpr.expression().accept(this));
+	}	
+	
+	/** 
+	 * Calls lookup(intExpr) and returns the cached value, if any.  
+	 * If no cached value exists, visits each child, caches the
+	 * disjunction of the children's return values and returns it. 
+	 * @return let x = lookup(intExpr) | 
+	 *          x != null => x,  
+	 *          cache(intExpr, intExpr.child(0).accept(this) || ... || intExpr.child(intExpr.size()-1).accept(this)) 
+	 */
+	public Boolean visit(NaryIntExpression intExpr) {
+		final Boolean ret = lookup(intExpr);
+		if (ret!=null) return ret;
+		for(IntExpression child : intExpr) { 
+			if (child.accept(this))
+				return cache(intExpr, true);
+		}
+		return cache(intExpr, false);
 	}
 	
 	/** 
@@ -332,11 +327,7 @@ public abstract class AbstractDetector implements ReturnVisitor<Boolean, Boolean
 	 */
 	public Boolean visit(BinaryIntExpression intExpr) {
 		final Boolean ret = lookup(intExpr);
-		if (ret==null) {
-			return cache(intExpr, intExpr.left().accept(this) || intExpr.right().accept(this));
-		} else {
-			return ret;
-		}
+		return (ret!=null) ? ret : cache(intExpr, intExpr.left().accept(this) || intExpr.right().accept(this));
 	}
 	
 	/** 
@@ -348,10 +339,7 @@ public abstract class AbstractDetector implements ReturnVisitor<Boolean, Boolean
 	 */
 	public Boolean visit(UnaryIntExpression intExpr) {
 		final Boolean ret = lookup(intExpr);
-		if (ret==null)
-			return cache(intExpr, intExpr.expression().accept(this));
-		else 
-			return ret;
+		return (ret!=null) ? ret : cache(intExpr, intExpr.intExpr().accept(this));
 	}
 	
 	/** 
@@ -364,11 +352,7 @@ public abstract class AbstractDetector implements ReturnVisitor<Boolean, Boolean
 	 */
 	public Boolean visit(SumExpression intExpr) {
 		final Boolean ret = lookup(intExpr);
-		if (ret==null) {
-			return cache(intExpr, intExpr.declarations().accept(this) || intExpr.intExpr().accept(this));
-		} else {
-			return ret;
-		}
+		return (ret!=null) ? ret : cache(intExpr, intExpr.decls().accept(this) || intExpr.intExpr().accept(this));
 	}
 	
 	/** 
@@ -381,11 +365,7 @@ public abstract class AbstractDetector implements ReturnVisitor<Boolean, Boolean
 	 */
 	public Boolean visit(IntComparisonFormula intComp) {
 		final Boolean ret = lookup(intComp);
-		if (ret==null) {
-			return cache(intComp, intComp.left().accept(this) || intComp.right().accept(this));
-		} else {
-			return ret;
-		}
+		return (ret!=null) ? ret : cache(intComp, intComp.left().accept(this) || intComp.right().accept(this));
 	}
 	
 	/** 
@@ -398,12 +378,25 @@ public abstract class AbstractDetector implements ReturnVisitor<Boolean, Boolean
 	 */
 	public Boolean visit(QuantifiedFormula quantFormula) {
 		final Boolean ret = lookup(quantFormula);
-		if (ret==null) {
-			return cache(quantFormula, quantFormula.declarations().accept(this) || 
-					quantFormula.formula().accept(this));
-		} else {
-			return ret;
+		return (ret!=null) ? ret : cache(quantFormula, quantFormula.decls().accept(this) || quantFormula.formula().accept(this));
+	}
+	
+	/** 
+	 * Calls lookup(formula) and returns the cached value, if any.  
+	 * If no cached value exists, visits each child, caches the
+	 * disjunction of the children's return values and returns it. 
+	 * @return let x = lookup(formula) | 
+	 *          x != null => x,  
+	 *          cache(formula, formula.child(0).accept(this) || ... || formula.child(formula.size()-1).accept(this)) 
+	 */
+	public Boolean visit(NaryFormula formula) {
+		final Boolean ret = lookup(formula);
+		if (ret!=null) return ret;
+		for(Formula child : formula) { 
+			if (child.accept(this))
+				return cache(formula, true);
 		}
+		return cache(formula, false);
 	}
 	
 	/** 
@@ -416,11 +409,7 @@ public abstract class AbstractDetector implements ReturnVisitor<Boolean, Boolean
 	 */
 	public Boolean visit(BinaryFormula binFormula) {
 		final Boolean ret = lookup(binFormula);
-		if (ret==null) {
-			return cache(binFormula, binFormula.left().accept(this) || binFormula.right().accept(this));
-		} else {
-			return ret;
-		}
+		return (ret!=null) ? ret : cache(binFormula, binFormula.left().accept(this) || binFormula.right().accept(this));
 	}
 	
 	/** 
@@ -432,35 +421,26 @@ public abstract class AbstractDetector implements ReturnVisitor<Boolean, Boolean
 	 */
 	public Boolean visit(NotFormula not) {
 		final Boolean ret = lookup(not);
-		if (ret==null)
-			return cache(not, not.formula().accept(this));
-		else 
-			return ret;
+		return (ret!=null) ? ret : cache(not, not.formula().accept(this));
 	}
 	
 	/**
 	 * Returns FALSE.
 	 * @return FALSE
 	 */
-	public Boolean visit(ConstantFormula constant) {
-		return Boolean.FALSE;
-	}
+	public Boolean visit(ConstantFormula constant) { return Boolean.FALSE; }
 	
 	/** 
-	 * Calls lookup(compFormula) and returns the cached value, if any.  
+	 * Calls lookup(exprComp) and returns the cached value, if any.  
 	 * If no cached value exists, visits each child, caches the
 	 * disjunction of the children's return values and returns it. 
-	 * @return let x = lookup(compFormula) | 
+	 * @return let x = lookup(exprComp) | 
 	 *          x != null => x,  
-	 *          cache(compFormula,compFormula.left.accept(this) || compFormula.right.accept(this)) 
+	 *          cache(exprComp,exprComp.left.accept(this) || exprComp.right.accept(this)) 
 	 */
-	public Boolean visit(ComparisonFormula compFormula) {
-		final Boolean ret = lookup(compFormula);
-		if (ret==null) {
-			return cache(compFormula, compFormula.left().accept(this) || compFormula.right().accept(this));
-		} else {
-			return ret;
-		}
+	public Boolean visit(ComparisonFormula exprComp) {
+		final Boolean ret = lookup(exprComp);
+		return (ret!=null) ? ret :  cache(exprComp, exprComp.left().accept(this) || exprComp.right().accept(this));
 	}
 	
 	/** 
@@ -472,10 +452,7 @@ public abstract class AbstractDetector implements ReturnVisitor<Boolean, Boolean
 	 */
 	public Boolean visit(MultiplicityFormula multFormula) {
 		final Boolean ret = lookup(multFormula);
-		if (ret==null)
-			return cache(multFormula, multFormula.expression().accept(this));
-		else 
-			return ret;
+		return (ret!=null) ? ret : cache(multFormula, multFormula.expression().accept(this));
 	}
 	
 	/** 
@@ -488,19 +465,16 @@ public abstract class AbstractDetector implements ReturnVisitor<Boolean, Boolean
 	 */
 	public Boolean visit(RelationPredicate predicate) {
 		final Boolean ret = lookup(predicate);
-		if (ret==null) {
-			boolean r = predicate.relation().accept(this);
-			if (predicate.name()==RelationPredicate.Name.FUNCTION) {
-				final RelationPredicate.Function fp = (RelationPredicate.Function) predicate;
-				r = r || fp.domain().accept(this) || fp.range().accept(this);
-			} else if (predicate.name()==RelationPredicate.Name.TOTAL_ORDERING) {
-				final RelationPredicate.TotalOrdering tp = (RelationPredicate.TotalOrdering) predicate;
-				r = r || tp.ordered().accept(this) || tp.first().accept(this) || tp.last().accept(this);
-			}
-			return cache(predicate, r);
-		} else { 
-			return ret;
+		if (ret!=null) return ret;
+		if (predicate.relation().accept(this)) 
+			return cache(predicate, true);
+		if (predicate.name()==RelationPredicate.Name.FUNCTION) {
+			final RelationPredicate.Function fp = (RelationPredicate.Function) predicate;
+			return cache(predicate, fp.domain().accept(this) || fp.range().accept(this));
+		} else if (predicate.name()==RelationPredicate.Name.TOTAL_ORDERING) {
+			final RelationPredicate.TotalOrdering tp = (RelationPredicate.TotalOrdering) predicate;
+			return cache(predicate, tp.ordered().accept(this) || tp.first().accept(this) || tp.last().accept(this));
 		}
+		return cache(predicate, false);
 	}
-	
 }

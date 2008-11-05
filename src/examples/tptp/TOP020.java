@@ -19,7 +19,6 @@ import kodkod.engine.satlab.SATFactory;
 import kodkod.instance.Bounds;
 import kodkod.instance.TupleFactory;
 import kodkod.instance.Universe;
-import kodkod.util.nodes.Nodes;
 
 /**
  * A KK encoding of TOP020+1.p from http://www.cs.miami.edu/~tptp/
@@ -135,7 +134,7 @@ public final class TOP020 {
 		decls.add( the_product_of(a, b).one().forAll(a.oneOf(UNIV).and(b.oneOf(UNIV))) );
 		decls.add( the_ordered_pair(a, b).one().forAll(a.oneOf(UNIV).and(b.oneOf(UNIV))) );
 		
-		return Nodes.and(decls);
+		return Formula.and(decls);
 	}
 	
 	/**

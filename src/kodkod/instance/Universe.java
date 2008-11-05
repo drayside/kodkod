@@ -21,13 +21,13 @@
  */
 package kodkod.instance;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
+
+import kodkod.util.collections.Containers;
 
 /** 
  * <p>Represents an ordered set of unique atoms.  Objects used as atoms <b>must</b> properly  
@@ -55,8 +55,8 @@ import java.util.Map;
  * @author Emina Torlak 
  */
 public final class Universe implements Iterable<Object> {
-	private final List<Object> atoms;
-	private final Map<Object,Integer> atomIndex;
+	private final Object[] atoms;
+	private final Map<Object,Integer> indices;
 	private final TupleFactory factory;
 	
 	/**  
@@ -69,17 +69,59 @@ public final class Universe implements Iterable<Object> {
 	 * @throws IllegalArgumentException - atoms is empty
 	 */
 	public Universe(Collection<?> atoms) {
-		if (atoms.isEmpty()) 
-			throw new IllegalArgumentException("cannot create an empty universe");
-		this.atoms = new ArrayList<Object>(atoms.size());
-		this.atomIndex = new HashMap<Object, Integer>();
+		if (atoms.isEmpty()) throw new IllegalArgumentException("Cannot create an empty universe.");
+		this.atoms = new Object[atoms.size()];
+		this.indices = new HashMap<Object, Integer>();
+		int i = 0;
 		for (Object atom : atoms) {
-			if (atomIndex.put(atom, this.atoms.size()) == null) this.atoms.add(atom);
-			else throw new IllegalArgumentException(atom + " appears multiple times.");               	
+			if (indices.containsKey(atom))
+				throw new IllegalArgumentException(atom + " appears multiple times."); 
+			indices.put(atom, i); 
+			this.atoms[i] = atom;
+			i++;
 		}
 		this.factory = new TupleFactory(this);
 	}
 	
+	/**  
+	 * Constructs a new Universe consisting of the given atoms, in the order that they appear 
+	 * in the specified array
+	 * 
+	 * @effects this.size' = atoms.length && this.atoms' = atoms
+	 * @throws NullPointerException - atoms = null 
+	 * @throws IllegalArgumentException - atoms contains duplicates
+	 * @throws IllegalArgumentException - atoms is empty
+	 */
+	public Universe(Object...atoms) { 
+		if (atoms.length==0) throw new IllegalArgumentException("Cannot create an empty universe.");
+		this.atoms = Containers.copy(atoms, new Object[atoms.length]);
+		this.indices = new HashMap<Object, Integer>();
+		for (int i = 0; i < atoms.length; i++) {
+			if (indices.containsKey(atoms[i]))
+				throw new IllegalArgumentException(atoms[i] + " appears multiple times."); 
+			indices.put(atoms[i], i);	              	
+		}
+		this.factory = new TupleFactory(this);
+	}
+	
+	/**
+//	 * Returns a universe that stores the given atoms explicitly, in the specified order.
+//	 * The returned universe provides constant time index and atom lookup.
+//	 * @effects { u: Universe | u.size = atoms.length && u.atoms = atoms }
+//	 * @throws IllegalArgumentException - atoms contains duplicates
+//	 * @throws IllegalArgumentException - atoms is empty  
+//	 */
+//	public static Universe universe(Object...atoms) { return new ExplicitUniverse(atoms); }
+//	
+//	/**
+//	 * Returns a universe that stores the given atoms explicitly, in the order in which they 
+//	 * are returned by the collection's iterator.  The returned universe provides constant 
+//	 * time index and atom lookup.
+//	 * @effects { u: Universe | u.size = atoms.size() && u.atoms[int] = atoms }
+//	 * @throws IllegalArgumentException - atoms contains duplicates
+//	 * @throws IllegalArgumentException - atoms is empty  
+//	 */
+//	public static Universe universe(Collection<?> atoms) { return new ExplicitUniverse(atoms); }
 	
 	/**
 	 * Returns a TupleFactory that can be used to construct tuples and sets
@@ -93,18 +135,14 @@ public final class Universe implements Iterable<Object> {
 	 *
 	 * @return #this.atoms
 	 */
-	public int size() {
-		return atoms.size();
-	}
+	public int size() { return atoms.length; }
 	
 	/**
 	 * Returns true if atom is in this universe, otherwise returns false.
 	 *
 	 * @return atom in this.atoms[int]
 	 */
-	public boolean contains(Object atom) {
-		return atomIndex.containsKey(atom);
-	}
+	public boolean contains(Object atom) { return indices.containsKey(atom); }
 	
 	/**
 	 * Returns the i_th atom in this universe
@@ -112,8 +150,9 @@ public final class Universe implements Iterable<Object> {
 	 * @return this.atoms[i]
 	 * @throws IndexOutOfBoundsException - i < 0 || i >= this.size
 	 */
-	public Object atom(int i) {
-		return atoms.get(i);
+	public Object atom(int index) { 
+		if (index<0||index>=atoms.length) throw new IndexOutOfBoundsException();
+		return atoms[index];
 	}
 	
 	/**
@@ -123,8 +162,8 @@ public final class Universe implements Iterable<Object> {
 	 * @return this.atoms.atom
 	 * @throws IllegalArgumentException - no this.atoms.atom
 	 */
-	public int index(Object atom) {
-		if (atomIndex.containsKey(atom)) return atomIndex.get(atom);
+	public int index(Object atom) { 
+		if (indices.containsKey(atom)) return indices.get(atom);
 		else throw new IllegalArgumentException("no this.atoms." + atom);
 	}
 	
@@ -135,15 +174,15 @@ public final class Universe implements Iterable<Object> {
 	 * order in the universe
 	 */
 	public Iterator<Object> iterator() {
-		return Collections.unmodifiableList(atoms).iterator();
+		return Containers.iterate(atoms);
 	}
 	
 	/**
 	 * Returns a string representation of this universe.
 	 * @return string representation of this universe.
 	 */
-	public String toString() {
-		return atoms.toString();
+	public String toString() { 
+		return Arrays.toString(atoms);
 	}
 	
 }

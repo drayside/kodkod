@@ -22,6 +22,7 @@
 package kodkod.ast;
 
 
+import kodkod.ast.operator.Multiplicity;
 import kodkod.ast.visitor.ReturnVisitor;
 import kodkod.ast.visitor.VoidVisitor;
 
@@ -31,7 +32,7 @@ import kodkod.ast.visitor.VoidVisitor;
  * 
  * @specfield expression: Expression
  * @specfield multiplicity: (ONE + LONE + SOME + NO)
- * @invariant children = expression
+ * @invariant children = 0->expression
  * @author Emina Torlak 
  */
 public final class MultiplicityFormula extends Formula {
@@ -65,26 +66,25 @@ public final class MultiplicityFormula extends Formula {
     public Expression expression() { return expression; }
     
     /**
-     * Accepts the given visitor and returns the result.
-     * @see kodkod.ast.Node#accept(kodkod.ast.visitor.ReturnVisitor)
+     * {@inheritDoc}
+     * @see kodkod.ast.Formula#accept(kodkod.ast.visitor.ReturnVisitor)
      */
-    public <E, F, D, I> F accept(ReturnVisitor<E, F, D, I> visitor) {
-        return visitor.visit(this);
-    }
-
-    
-    /**
-     * Accepts the given visitor.
-     * @see kodkod.ast.Node#accept(kodkod.ast.visitor.VoidVisitor)
-     */
-    public void accept(VoidVisitor visitor) {
-        visitor.visit(this);
-    }
-    
-    /**
-	 * Returns the string representation of this formula.
-	 * @return string representation of this formula
-	 */
+     public <E, F, D, I> F accept(ReturnVisitor<E, F, D, I> visitor) {
+         return visitor.visit(this);
+     }
+     
+     /**
+      * {@inheritDoc}
+      * @see kodkod.ast.Node#accept(kodkod.ast.visitor.VoidVisitor)
+      */
+     public void accept(VoidVisitor visitor) {
+         visitor.visit(this);
+     }
+     
+     /**
+      * {@inheritDoc}
+      * @see kodkod.ast.Node#toString()
+      */
     public String toString() {
         return multiplicity + " " + expression;
     }

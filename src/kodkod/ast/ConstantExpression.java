@@ -32,7 +32,7 @@ import kodkod.ast.visitor.VoidVisitor;
  * @author Emina Torlak
  */
 public final class ConstantExpression extends LeafExpression {
-	
+
 	/**
 	 * Constructs a constant expression with the given arity.
 	 */
@@ -41,21 +41,21 @@ public final class ConstantExpression extends LeafExpression {
 	}
 
 	/**
-     * Accepts the given visitor and returns the result.
-     * @see kodkod.ast.Node#accept(kodkod.ast.visitor.ReturnVisitor)
-     */
-	@Override
+	 * {@inheritDoc}
+	 * @see kodkod.ast.Expression#accept(kodkod.ast.visitor.ReturnVisitor)
+	 */
 	public <E, F, D, I> E accept(ReturnVisitor<E, F, D, I> visitor) {
 		return visitor.visit(this);
 	}
-	
-	
+
 	/**
-     * Accepts the given visitor.
-     * @see kodkod.ast.Node#accept(kodkod.ast.visitor.VoidVisitor)
-     */
-    public void accept(VoidVisitor visitor) {
-        visitor.visit(this);
-    }
-    
+	 * {@inheritDoc}
+	 * @see kodkod.ast.Node#accept(kodkod.ast.visitor.VoidVisitor)
+	 */
+	public void accept(VoidVisitor visitor) {
+		visitor.visit(this);
+	}
+
+
+
 }

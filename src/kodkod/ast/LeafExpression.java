@@ -37,46 +37,46 @@ package kodkod.ast;
  */
 public abstract class LeafExpression extends Expression {
 
-    private final int arity;
-    private final String name;
-    
-    /**
-     * Constructs a leaf with the specified name and arity
-     * 
-     * @effects  this.name' = name && this.arity' = arity 
-     * @throws IllegalArgumentException - arity < 1
-     */
-    LeafExpression(String name, int arity) {
-        if (arity < 1) {
-            throw new IllegalArgumentException("Arity must be at least 1: " + arity);
-        }
-        this.name = name;
-        this.arity = arity;
-    }
-    
+	private final int arity;
+	private final String name;
 
-    /**
-     * Returns the arity of this leaf.
-     * @return this.arity
-     */
-    public final int arity() {
-        return arity;
-    }
-    
-    /**
-     * Returns the name of this leaf.
-     * @return this.name
-     */
-    public final String name() {
-        return name;
-    }
-    
-    /**
-	 * Returns the string representation of this expression.
-	 * @return string representation of this expression
+	/**
+	 * Constructs a leaf with the specified name and arity
+	 * 
+	 * @effects  this.name' = name && this.arity' = arity 
+	 * @throws IllegalArgumentException - arity < 1
 	 */
-    public String toString() {
-        return name;
-    }
-    
+	LeafExpression(String name, int arity) {
+		if (arity < 1) {
+			throw new IllegalArgumentException("Arity must be at least 1: " + arity);
+		}
+		this.name = name;
+		this.arity = arity;
+	}
+
+
+	/**
+	 * Returns the arity of this leaf.
+	 * @return this.arity
+	 */
+	public final int arity() {
+		return arity;
+	}
+
+	/**
+	 * Returns the name of this leaf.
+	 * @return this.name
+	 */
+	public final String name() {
+		return name;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.ast.Node#toString()
+	 */
+	public String toString() {
+		return name;
+	}
+
 }

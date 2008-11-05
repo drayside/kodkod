@@ -3,6 +3,7 @@
  */
 package examples.tptp;
 
+import static kodkod.ast.Formula.*;
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
 import kodkod.ast.Relation;
@@ -54,7 +55,7 @@ public final class ALG195 extends Quasigroups7 {
 		final Formula f4 = e[4].eq(expr2);
 		// e6 = op(op(op(op(e5,op(e5,e5)),op(e5,op(e5,e5))),e5),op(e5,op(e5,e5)))
 		final Formula f6 = e[6].eq(expr2.join(expr4.join(op)));
-		return f0.and(f2).and(f3).and(f4).and(f6);
+		return and(f0, f2, f3, f4, f6);
 	}
 	
 	
@@ -83,7 +84,7 @@ public final class ALG195 extends Quasigroups7 {
 		// h(e16) = op2(op2(op2(op2(e,op2(e,e)),op2(e,op2(e,e))),e),op2(e,op2(e,e)))
 		final Formula f6 = e1[6].join(h).eq(expr2.join(expr4.join(op2)));
 		
-		return f0.and(f1).and(f2).and(f3).and(f4).and(f6);
+		return and(f0, f1, f2, f3, f4, f6);
 	}
 
 	/**
@@ -153,7 +154,7 @@ public final class ALG195 extends Quasigroups7 {
 			solver.options().setSolver(SATFactory.MiniSat);
 			final Formula f = model.checkCO1();
 			final Bounds b = model.bounds();
-			System.out.println(model.decls());
+//			System.out.println(model.decls());
 //			System.out.println(model.ax2ax7());
 //			System.out.println(b);
 			final Solution sol = solver.solve(f, b);

@@ -24,13 +24,14 @@ package kodkod.util.collections;
 
 /**
  * An index generator for a set of keys.  An indexer maps each key in its keyset 
- * to a unique integer.  
+ * to a unique integer in the range [0..#keys)
  * @specfield keys: set K
- * @specfield indices: keys lone->one int
+ * @specfield indices: keys lone->one [0..#keys)
  * @author Emina Torlak
  */
 public interface Indexer<K> {
 
+	
 	/**
 	 * Returns the index of the given key, if it is in this.keys.
 	 * Otherwise returns a negative number.

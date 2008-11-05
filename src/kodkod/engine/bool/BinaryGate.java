@@ -64,7 +64,7 @@ final class BinaryGate extends MultiGate {
 			final int l = low.contains(op, f, k-1);
 			if (l > 0) return l;
 			else {
-				final int h = high.contains(op, f, k + l);
+				final int h = high.contains(op, f, k - l);
 				return h > 0 ? h - l : h + l;
 			}
 		}

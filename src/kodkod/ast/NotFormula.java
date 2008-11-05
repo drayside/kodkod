@@ -30,7 +30,7 @@ import kodkod.ast.visitor.VoidVisitor;
  * Negation of a {@link kodkod.ast.Formula formula}.
  * 
  * @specfield formula: Formula
- * @invariant children = formula
+ * @invariant children = 0->formula
  * @author Emina Torlak
  */
 public final class NotFormula extends Formula {
@@ -54,33 +54,25 @@ public final class NotFormula extends Formula {
     public Formula formula() { return formula; }
     
     /**
-     * Returns the negation of this negation, which is this.formula.
-     * @return this.formula
+     * {@inheritDoc}
+     * @see kodkod.ast.Formula#accept(kodkod.ast.visitor.ReturnVisitor)
      */
-    @Override
-//	public Formula not() { return formula; }
-
-    /**
-     * Accepts the given visitor and returns the result.
-     * @see kodkod.ast.Node#accept(kodkod.ast.visitor.ReturnVisitor)
-     */
-    public <E, F, D, I> F accept(ReturnVisitor<E, F, D, I> visitor) {
-        return visitor.visit(this);
-    }
-    
-    
-    /**
-     * Accepts the given visitor.
-     * @see kodkod.ast.Node#accept(kodkod.ast.visitor.VoidVisitor)
-     */
-    public void accept(VoidVisitor visitor) {
-        visitor.visit(this);
-    }
-    
-    /**
-	 * Returns the string representation of this formula.
-	 * @return string representation of this formula
-	 */
+     public <E, F, D, I> F accept(ReturnVisitor<E, F, D, I> visitor) {
+         return visitor.visit(this);
+     }
+     
+     /**
+      * {@inheritDoc}
+      * @see kodkod.ast.Node#accept(kodkod.ast.visitor.VoidVisitor)
+      */
+     public void accept(VoidVisitor visitor) {
+         visitor.visit(this);
+     }
+     
+     /**
+      * {@inheritDoc}
+      * @see kodkod.ast.Node#toString()
+      */
     public String toString() {
         return "!" + formula;
     }

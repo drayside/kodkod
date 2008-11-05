@@ -41,8 +41,10 @@ import kodkod.ast.IntComparisonFormula;
 import kodkod.ast.IntConstant;
 import kodkod.ast.IntExpression;
 import kodkod.ast.IntToExprCast;
-import kodkod.ast.Multiplicity;
 import kodkod.ast.MultiplicityFormula;
+import kodkod.ast.NaryExpression;
+import kodkod.ast.NaryFormula;
+import kodkod.ast.NaryIntExpression;
 import kodkod.ast.Node;
 import kodkod.ast.NotFormula;
 import kodkod.ast.ProjectExpression;
@@ -53,6 +55,10 @@ import kodkod.ast.SumExpression;
 import kodkod.ast.UnaryExpression;
 import kodkod.ast.UnaryIntExpression;
 import kodkod.ast.Variable;
+import kodkod.ast.operator.ExprOperator;
+import kodkod.ast.operator.FormulaOperator;
+import kodkod.ast.operator.IntOperator;
+import kodkod.ast.operator.Multiplicity;
 import kodkod.ast.visitor.VoidVisitor;
 
 /**
@@ -255,10 +261,10 @@ public final class PrettyPrinter {
 		/** @effects appends the given op and child to this.tokens; the child is 
 		 * parenthesized if it's not an instance of unary int expression or int constant. **/
 		public void visit(UnaryIntExpression node)  { 
-			final IntExpression child = node.expression();
-			final UnaryIntExpression.Operator op = node.op();
+			final IntExpression child = node.intExpr();
+			final IntOperator op = node.op();
 			final boolean parens = 
-				(op==UnaryIntExpression.Operator.ABS) || (op==UnaryIntExpression.Operator.SGN) || 
+				(op==IntOperator.ABS) || (op==IntOperator.SGN) || 
 				parenthesize(child);
 			append(node.op());
 			visitChild(child, parens);
@@ -286,23 +292,26 @@ public final class PrettyPrinter {
 		
 		/** @return true if the given  expression needs to be parenthesized if a 
 		 * child of a binary  expression with the given operator */
-		private boolean parenthesize(BinaryExpression.Operator op, Expression child) { 
-			return child instanceof IfExpression || 
+		private boolean parenthesize(ExprOperator op, Expression child) { 
+			return child instanceof IfExpression ||
+				   child instanceof NaryExpression ||
 			       (child instanceof BinaryExpression && 
-			        (op==BinaryExpression.Operator.JOIN || 
+			        (op==ExprOperator.JOIN || 
 			         ((BinaryExpression)child).op()!=op));
 		}
 		
 		/** @effects appends the tokenization of the given node to this.tokens */
 		public void visit(BinaryExpression node) {
-			final BinaryExpression.Operator op = node.op();
+			final ExprOperator op = node.op();
 			visitChild(node.left(), parenthesize(op, node.left()));
 			infix(op);
 			visitChild(node.right(), parenthesize(op, node.right()));
 		}
+		
+		
 
 		/** @return true if the given operator is assocative */
-		private boolean associative(BinaryIntExpression.Operator op) { 
+		private boolean associative(IntOperator op) { 
 			switch(op) { 
 			case DIVIDE : case MODULO : case SHA : case SHL : case SHR : return false;
 			default : return true;
@@ -311,16 +320,17 @@ public final class PrettyPrinter {
 		
 		/** @return true if the given int expression needs to be parenthesized if a 
 		 * child of a binary int expression with the given operator */
-		private boolean parenthesize(BinaryIntExpression.Operator op, IntExpression child) { 
+		private boolean parenthesize(IntOperator op, IntExpression child) { 
 			return child instanceof SumExpression ||
 				   child instanceof IfIntExpression || 
+				   child instanceof NaryIntExpression ||
 			       (child instanceof BinaryIntExpression && 
 			        (!associative(op) || ((BinaryIntExpression)child).op()!=op));
 		}
 		
 		/** @effects appends the tokenization of the given node to this.tokens */
 		public void visit(BinaryIntExpression node) {
-			final BinaryIntExpression.Operator op = node.op();
+			final IntOperator op = node.op();
 			visitChild(node.left(), parenthesize(op, node.left()));
 			infix(op);
 			visitChild(node.right(), parenthesize(op, node.right()));
@@ -328,16 +338,17 @@ public final class PrettyPrinter {
 		
 		/** @return true if the given formula needs to be parenthesized if a 
 		 * child of a binary formula with the given operator */
-		private boolean parenthesize(BinaryFormula.Operator op, Formula child) { 
+		private boolean parenthesize(FormulaOperator op, Formula child) { 
 			return child instanceof QuantifiedFormula || 
+				   //child instanceof NaryFormula ||
 			       (child instanceof BinaryFormula && 
-			        (op==BinaryFormula.Operator.IMPLIES || 
+			        (op==FormulaOperator.IMPLIES || 
 			         ((BinaryFormula)child).op()!=op));
 		}
 	
 		/** @effects appends the tokenization of the given node to this.tokens */
 		public void visit(BinaryFormula node) {
-			final BinaryFormula.Operator op = node.op();
+			final FormulaOperator op = node.op();
 			final boolean pleft = parenthesize(op, node.left());
 			if (pleft) indent++;
 			visitChild(node.left(), pleft);
@@ -397,7 +408,7 @@ public final class PrettyPrinter {
 		 *   "{", tokenize[node.decls], "|", tokenize[ node.formula ], "}" ]*/
 		public void visit(Comprehension node) {
 			append("{");
-			node.declarations().accept(this);
+			node.decls().accept(this);
 			infix("|");
 			node.formula().accept(this);
 			append("}");	
@@ -407,7 +418,7 @@ public final class PrettyPrinter {
 		 *   tokenize[node.decls], "|", tokenize[ node.intExpr ],  ]*/
 		public void visit(SumExpression node) {
 			keyword("sum");
-			node.declarations().accept(this);
+			node.decls().accept(this);
 			infix("|");
 			node.intExpr().accept(this);
 		}
@@ -416,7 +427,7 @@ public final class PrettyPrinter {
 		 *   tokenize[node.decls], "|", tokenize[ node.formula ] ]*/
 		public void visit(QuantifiedFormula node) {
 			keyword(node.quantifier());
-			node.declarations().accept(this);
+			node.decls().accept(this);
 			infix("|");
 			indent++;
 			newline();
@@ -424,7 +435,42 @@ public final class PrettyPrinter {
 			indent--;
 		}
 		
+		/*--------------NARY NODES---------------*/
 		
+		/** @effects appends the tokenization of the given node to this.tokens */
+		public void visit(NaryExpression node) {
+			final ExprOperator op = node.op();
+			visitChild(node.child(0), parenthesize(op, node.child(0)));
+			for(int i = 1, size = node.size(); i < size; i++) {
+				infix(op);
+				visitChild(node.child(i), parenthesize(op, node.child(i)));
+			}
+		}
+		/** @effects appends the tokenization of the given node to this.tokens */
+		public void visit(NaryIntExpression node) {
+			final IntOperator op = node.op();
+			visitChild(node.child(0), parenthesize(op, node.child(0)));
+			for(int i = 1, size = node.size(); i < size; i++) {
+				infix(op);
+				visitChild(node.child(i), parenthesize(op, node.child(i)));
+			}
+		}
+		/** @effects appends the tokenization of the given node to this.tokens */
+		public void visit(NaryFormula node) {
+			final FormulaOperator op = node.op();
+			boolean parens = parenthesize(op, node.child(0));
+			if (parens) indent++;
+			visitChild(node.child(0), parens);
+			if (parens) indent--;
+			for(int i = 1, size = node.size(); i < size; i++) { 
+				infix(op);
+				newline();
+				parens = parenthesize(op, node.child(i));
+				if (parens) indent++;
+				visitChild(node.child(i), parens);
+				if (parens) indent--;
+			}
+		}
 		/*--------------OTHER NODES---------------*/
 		
 		/** @effects appends the tokenization of the given node to this.tokens */
@@ -434,7 +480,7 @@ public final class PrettyPrinter {
 			node.expression().accept(this);
 			comma();
 			append("<");
-			final Iterator<IntExpression> cols = node.columns().iterator();
+			final Iterator<IntExpression> cols = node.columns();
 			cols.next().accept(this);
 			while(cols.hasNext()) { 
 				comma();

@@ -36,16 +36,13 @@ import java.util.Set;
  */
 public abstract class BooleanFormula extends BooleanValue implements Iterable<BooleanFormula> {
 	private BooleanFormula negation;
-		
+	
 	/**
-	 * Constructs a new boolean formula that has the specified booelan
-	 * formula as its negation.
+	 * Constructs a boolean formula with the given negation.
 	 */
-	BooleanFormula(BooleanFormula negation) {	
+	BooleanFormula(BooleanFormula negation) { 
 		this.negation = negation;
 	}
-
-	
 	/**
 	 * Returns an integer hash of this formula, used
 	 * to compute the hash of the composition of this and
@@ -87,17 +84,24 @@ public abstract class BooleanFormula extends BooleanValue implements Iterable<Bo
 	
 	
 	/**
-	 * Returns the negation of this formula
+	 * Returns the negation of this formula if it has already been computed.
+	 * Otherwise, computes, caches and returns the negation of this formula.
 	 * @return !this
 	 * @see kodkod.engine.bool.BooleanValue#negation()
 	 */
-	@Override
 	final BooleanFormula negation() {
 		if (negation==null) {
 			negation = new NotGate(this);
 		}
 		return negation;
 	}
+	
+	/**
+	 * Returns true if the negation of this formula 
+	 * has already been computed.
+	 * @return true if the negation of this formula has already been computed.
+	 */
+	final boolean hasNegation()  { return negation != null; }
 
 	/**
 	 * Passes this value and the given

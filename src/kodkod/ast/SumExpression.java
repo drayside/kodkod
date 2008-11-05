@@ -21,6 +21,7 @@
  */
 package kodkod.ast;
 
+import kodkod.ast.operator.Multiplicity;
 import kodkod.ast.visitor.ReturnVisitor;
 import kodkod.ast.visitor.VoidVisitor;
 
@@ -29,8 +30,8 @@ import kodkod.ast.visitor.VoidVisitor;
  * for all values of a scalar <i>x</i> drawn from a set <i>e</i>.
  * @specfield intExpr: IntExpression
  * @specfield decls: Decls
- * @specfield children = intExpr + decls
- * @invariant  all d: decls.children | d.multiplicity = 1
+ * @specfield children = 0->decls + 1->intExpr
+ * @invariant  all d: decls.children[int] | d.multiplicity = 1
  * @author Emina Torlak
  */
 public final class SumExpression extends IntExpression {
@@ -55,7 +56,7 @@ public final class SumExpression extends IntExpression {
 	 * Returns this.decls.
 	 * @return this.decls
 	 */
-	public final Decls declarations() { 
+	public final Decls decls() { 
 		return decls;
 	}
 	
@@ -86,8 +87,8 @@ public final class SumExpression extends IntExpression {
 	}
 	
 	/**
-	 * Returns the string representation of this int expression.
-	 * @return string representation of this int expression
+	 * {@inheritDoc}
+	 * @see kodkod.ast.Node#toString()
 	 */
 	public String toString() { 
 		return "(sum " + decls + " | " + intExpr + ")";

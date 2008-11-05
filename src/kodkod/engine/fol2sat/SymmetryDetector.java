@@ -21,6 +21,9 @@
  */
 package kodkod.engine.fol2sat;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -71,13 +74,14 @@ final class SymmetryDetector {
 	 * @return a sound partitioning of bounds.universe
 	 * into symmetry classes
 	 */
-	static Set<IntSet> partition(Bounds bounds) {
+	static Set<IntSet> partition(Bounds bounds) {		
 		final SymmetryDetector detector = new SymmetryDetector(bounds);
 		detector.computePartitions();
 		final Set<IntSet> parts = new LinkedHashSet<IntSet>(detector.parts);
 		assert parts.size()==detector.parts.size(); // sanity check
 		return parts;
 	}
+
 	
 	/**
 	 * Partitions this.bounds.universe into sets of equivalent atoms.
@@ -92,23 +96,44 @@ final class SymmetryDetector {
 	 */
 	private final void computePartitions() {
 		if (usize==1) return; // nothing more to do 
-		
-		// refine the partitions based on the upper/lower bounds for each relation
+	
 		final Map<IntSet, IntSet> range2domain = new HashMap<IntSet, IntSet>((usize*2) / 3);
-		for(Relation r : bounds.relations()) {
-			TupleSet lower = bounds.lowerBound(r);
-			TupleSet upper = bounds.upperBound(r);
-			refinePartitions(lower.indexView(), lower.arity(), range2domain);
-			if (!lower.equals(upper))
-				refinePartitions(upper.indexView(), upper.arity(), range2domain);
-		
-		}
 		
 		// refine the partitions based on the bounds for each integer
 		for(IntIterator iter = bounds.ints().iterator(); iter.hasNext();) {
 			TupleSet exact = bounds.exactBound(iter.next());
 			refinePartitions(exact.indexView(), 1, range2domain);
 		}
+		
+		// refine the partitions based on the upper/lower bounds for each relation
+		for(TupleSet s : sort(bounds)) {
+			if (parts.size()==usize) return;
+			refinePartitions(s.indexView(), s.arity(), range2domain);			
+		}
+		
+	}
+	
+	/**
+	 * Returns an array that contains unique non-empty tuplesets in the given bounds, 
+	 * sorted in the order of increasing size.
+	 * @return unique non-empty tuplesets in the given bounds, 
+	 * sorted in the order of increasing size.
+	 */
+	private static TupleSet[] sort(Bounds bounds) { 
+		final List<TupleSet> sets = new ArrayList<TupleSet>(bounds.relations().size());
+		for(Relation r : bounds.relations()) { 
+			final TupleSet lower = bounds.lowerBound(r);
+			final TupleSet upper = bounds.upperBound(r);
+			if (!lower.isEmpty() && lower.size()<upper.size()) { sets.add(lower); }
+			if (!upper.isEmpty()) {	sets.add(upper); }
+		}
+		final TupleSet[] sorted = sets.toArray(new TupleSet[sets.size()]);
+		Arrays.sort(sorted, new Comparator<TupleSet>(){
+			public int compare(TupleSet o1, TupleSet o2) {
+				return o1.size() - o2.size();
+			}
+		});
+		return sorted;
 	}
 	
 	/**

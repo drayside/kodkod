@@ -3,6 +3,9 @@
  */
 package examples.tptp;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
 import kodkod.ast.Relation;
@@ -31,14 +34,14 @@ public final class ALG197 extends Quasigroups7 {
 	 * @requires e's are unary, op is ternary
 	 */
 	Formula ax12and13(Relation[] e, Relation op) {
-		Formula f0 = Formula.FALSE;
-		Formula f1 = Formula.FALSE;
+		final List<Formula> f0 = new ArrayList<Formula>();
+		final List<Formula> f1 = new ArrayList<Formula>();
 		for(int i = 0; i < 7; i++) {
 			Formula f = e[i].join(e[i].join(op)).eq(e[i]);
-			f0 = f0.or(f);
-			f1 = f1.or(f.not());
+			f0.add(f);
+			f1.add(f.not());
 		}
-		return f0.and(f1);
+		return Formula.or(f0).and(Formula.or(f1));
 	}
 	
 	
@@ -53,16 +56,16 @@ public final class ALG197 extends Quasigroups7 {
 		final Expression expr2 = expr1.join(expr1.join(op)); // op(op(e6,e6),op(e6,e6))
 		final Expression expr3 = expr2.join(expr0); // op(e6,op(op(e6,e6),op(e6,e6)))
 		// e0 = op(e6,op(e6,e6))
-		final Formula f0 = e[0].in(expr1.join(expr0));
+		final Formula f0 = e[0].eq(expr1.join(expr0));
 		// e1 = op(op(e6,e6),op(e6,e6))
-		final Formula f1 = e[1].in(expr2);
+		final Formula f1 = e[1].eq(expr2);
 		// e2 = op(op(op(e6,e6),op(e6,e6)),op(e6,e6))
-		final Formula f2 = e[2].in(expr1.join(expr2.join(op)));
+		final Formula f2 = e[2].eq(expr1.join(expr2.join(op)));
 		// e3 = op(e6,op(op(e6,e6),op(e6,e6)))
-		final Formula f3 = e[3].in(expr3);
+		final Formula f3 = e[3].eq(expr3);
 		// e4 = op(e6,op(e6,op(op(e6,e6),op(e6,e6))))
-		final Formula f4 = e[4].in(expr3.join(expr0));
-		return f0.and(f1).and(f2).and(f3).and(f4);
+		final Formula f4 = e[4].eq(expr3.join(expr0));
+		return Formula.and(f0,f1,f2,f3,f4);
 	}
 	
 	/**
@@ -86,7 +89,7 @@ public final class ALG197 extends Quasigroups7 {
 		final Formula f4 = e1[4].join(h).eq(expr3.join(expr0));
 		//  h(e15) = op2(e,e)
 		final Formula f5 = e1[5].join(h).eq(expr1);
-		return f0.and(f1).and(f2).and(f3).and(f4).and(f5);
+		return Formula.and(f0, f1, f2, f3, f4, f5);
 	}
 	/**
 	 * Returns the conjunction of the axioms and the negation of the hypothesis.

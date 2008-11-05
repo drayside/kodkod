@@ -83,6 +83,27 @@ public final class Containers {
 	}
 	
 	/**
+	 * Calls System.arraycopy(src, srcPos, dest, destPos, length) and returns the destination array.
+	 * @effects System.arraycopy(src, srcPos, dest, destPos, length)
+	 * @return dest
+	 */
+	public static final <T> T[] copy(T[] src, int srcPos, T[] dest, int destPos, int length) { 
+		System.arraycopy(src, srcPos, dest, destPos, length);
+		return dest;
+	}
+	
+	/**
+	 * Calls System.arraycopy(src, 0, dest, 0, src.length) and returns the destination array.
+	 * @requires dest.length >= src.length
+	 * @effects System.arraycopy(src, 0, dest, 0, src.length) 
+	 * @return dest
+	 */
+	public static final <T> T[] copy(T[] src, T[] dest) { 
+		System.arraycopy(src, 0, dest, 0, src.length);
+		return dest;
+	}
+	
+	/**
 	 * Returns a comparator that compares objects according to their
 	 * {@link System#identityHashCode(Object) identity hashcodes}.
 	 * @return a comparator that compares objects according to their 

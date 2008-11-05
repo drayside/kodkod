@@ -42,8 +42,10 @@ import kodkod.ast.IntComparisonFormula;
 import kodkod.ast.IntConstant;
 import kodkod.ast.IntExpression;
 import kodkod.ast.IntToExprCast;
-import kodkod.ast.Multiplicity;
 import kodkod.ast.MultiplicityFormula;
+import kodkod.ast.NaryExpression;
+import kodkod.ast.NaryFormula;
+import kodkod.ast.NaryIntExpression;
 import kodkod.ast.Node;
 import kodkod.ast.NotFormula;
 import kodkod.ast.ProjectExpression;
@@ -54,6 +56,11 @@ import kodkod.ast.SumExpression;
 import kodkod.ast.UnaryExpression;
 import kodkod.ast.UnaryIntExpression;
 import kodkod.ast.Variable;
+import kodkod.ast.operator.ExprCompOperator;
+import kodkod.ast.operator.ExprOperator;
+import kodkod.ast.operator.FormulaOperator;
+import kodkod.ast.operator.Multiplicity;
+import kodkod.ast.operator.Quantifier;
 import kodkod.ast.visitor.ReturnVisitor;
 import kodkod.engine.bool.BooleanAccumulator;
 import kodkod.engine.bool.BooleanConstant;
@@ -136,7 +143,7 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 	static final BooleanMatrix approximate(AnnotatedNode<Expression> annotated, LeafInterpreter interpreter, Environment<BooleanMatrix> env) {
 		final FOL2BoolTranslator approximator = new FOL2BoolTranslator(new FOL2BoolCache(annotated), interpreter, env) {
 			public final BooleanMatrix visit(BinaryExpression binExpr) {
-				if (binExpr.op().equals(BinaryExpression.Operator.DIFFERENCE)) {
+				if (binExpr.op().equals(ExprOperator.DIFFERENCE)) {
 					final BooleanMatrix ret = lookup(binExpr);
 					return ret!=null ? ret : cache(binExpr, binExpr.left().accept(this));
 				} else {
@@ -145,7 +152,7 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 			}
 			public final BooleanMatrix visit(Comprehension cexpr) {
 				final BooleanMatrix ret = lookup(cexpr);
-				return ret!=null ? ret : cache(cexpr, super.visit((Comprehension)Formula.TRUE.comprehension(cexpr.declarations())));
+				return ret!=null ? ret : cache(cexpr, super.visit((Comprehension)Formula.TRUE.comprehension(cexpr.decls())));
 			}
 			public BooleanMatrix visit(IfExpression ifExpr) {
 				final BooleanMatrix ret = lookup(ifExpr);
@@ -294,7 +301,7 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 
 		final BooleanMatrix left = binExpr.left().accept(this);
 		final BooleanMatrix right = binExpr.right().accept(this);
-		final BinaryExpression.Operator op = binExpr.op();
+		final ExprOperator op = binExpr.op();
 
 		switch(op) {
 		case UNION        	: ret = left.or(right); break;
@@ -309,6 +316,36 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 
 		return cache(binExpr, ret);
 	}
+	
+	/**
+	 * Calls lookup(expr) and returns the cached value, if any.  
+	 * If a translation has not been cached, translates the expression,
+	 * calls cache(...) on it and returns it.
+	 * @return let t = lookup(expr) | some t => t, 
+	 *      let op = (expr.op).(UNION->or + INTERSECTION->and + DIFFERENCE->difference + OVERRIDE->override + JOIN->dot + PRODUCT->cross) | 
+	 *       cache(expr, op(expr.left.accept(this), expr.right.accept(this)))
+	 */
+	public BooleanMatrix visit(NaryExpression expr) {
+		BooleanMatrix ret = lookup(expr);
+		if (ret!=null) return ret;
+
+		final ExprOperator op = expr.op();
+		final BooleanMatrix first = expr.child(0).accept(this);		
+		final BooleanMatrix[] rest = new BooleanMatrix[expr.size()-1];
+		for(int i = 0; i < rest.length; i++) { 	rest[i] = expr.child(i+1).accept(this); }
+		
+		switch(op) {
+		case UNION        	: ret = first.or(rest); break;
+		case INTERSECTION	: ret = first.and(rest); break;
+		case OVERRIDE 		: ret = first.override(rest); break;
+		case PRODUCT		: ret = first.cross(rest); break;
+		default : 
+			throw new IllegalArgumentException("Unknown associative operator: " + op);
+		}
+
+		return cache(expr, ret);
+	}
+	
 	/**
 	 * Calls lookup(unaryExpr) and returns the cached value, if any.  
 	 * If a translation has not been cached, translates the expression,
@@ -322,7 +359,7 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 		if (ret!=null) return ret;
 
 		final BooleanMatrix child = unaryExpr.expression().accept(this);
-		final UnaryExpression.Operator op = unaryExpr.op();
+		final ExprOperator op = unaryExpr.op();
 
 		switch(op) {
 		case TRANSPOSE         	: ret = child.transpose(); break;
@@ -382,8 +419,8 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 		BooleanMatrix ret = lookup(cexpr);
 		if (ret!=null) return ret;
 
-		ret = interpreter.factory().matrix(Dimensions.square(interpreter.universe().size(), cexpr.declarations().size()));
-		comprehension(cexpr.declarations(), cexpr.formula(), 0, BooleanConstant.TRUE, 0, ret);
+		ret = interpreter.factory().matrix(Dimensions.square(interpreter.universe().size(), cexpr.decls().size()));
+		comprehension(cexpr.decls(), cexpr.formula(), 0, BooleanConstant.TRUE, 0, ret);
 
 		return cache(cexpr,ret);
 	}
@@ -419,9 +456,8 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 		if (ret!=null) return ret;
 
 		final Int[] cols = new Int[project.arity()];
-		int i = 0;
-		for(IntExpression col : project.columns()) {
-			cols[i++] = col.accept(this);
+		for(int i = 0, arity = project.arity(); i < arity; i++) {
+			cols[i] = project.column(i).accept(this);
 		}
 
 		return cache(project, project.expression().accept(this).project(cols));
@@ -468,7 +504,7 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 			groundValue.set(entry.index(), BooleanConstant.FALSE);	
 		}
 		env = env.parent();
-
+		
 	}
 
 	/**
@@ -518,17 +554,17 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 		BooleanValue ret = lookup(quantFormula);
 		if (ret!=null) return ret;
 
-		final QuantifiedFormula.Quantifier quantifier = quantFormula.quantifier();
+		final Quantifier quantifier = quantFormula.quantifier();
 
 		switch(quantifier) {
 		case ALL		: 
 			final BooleanAccumulator and = BooleanAccumulator.treeGate(Operator.AND);
-			all(quantFormula.declarations(), quantFormula.formula(), 0, BooleanConstant.FALSE, and); 
+			all(quantFormula.decls(), quantFormula.formula(), 0, BooleanConstant.FALSE, and); 
 			ret = interpreter.factory().accumulate(and);
 			break;
 		case SOME	: 
 			final BooleanAccumulator or = BooleanAccumulator.treeGate(Operator.OR);
-			some(quantFormula.declarations(), quantFormula.formula(), 0, BooleanConstant.TRUE, or); 
+			some(quantFormula.decls(), quantFormula.formula(), 0, BooleanConstant.TRUE, or); 
 			ret = interpreter.factory().accumulate(or);
 			break;
 		default :
@@ -537,6 +573,38 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 
 		return cache(quantFormula,ret);
 	}
+	
+	/** 
+	 * Calls lookup(formula) and returns the cached value, if any.  
+	 * If a translation has not been cached, translates the formula,
+	 * calls cache(...) on it and returns it.
+	 * @return let t = lookup(formula) | some t => t, 
+	 * 	cache(formula, formula.op(formula.left.accept(this), formula.right.accept(this))
+	 */
+	public final BooleanValue visit(NaryFormula formula) {
+		final BooleanValue ret = lookup(formula);
+		if (ret!=null) return ret;
+
+		final FormulaOperator op = formula.op();		
+		final Operator.Nary boolOp;
+		
+		switch(op) { 
+		case AND : boolOp = Operator.AND; break;
+		case OR  : boolOp = Operator.OR;  break;
+		default	 : throw new IllegalArgumentException("Unknown nary operator: " + op);
+		}
+		
+		final BooleanAccumulator acc = BooleanAccumulator.treeGate(boolOp);
+		final BooleanValue shortCircuit = boolOp.shortCircuit();
+		for(Formula child : formula) { 
+			if (acc.add(child.accept(this))==shortCircuit)
+				break;
+		}
+		
+		return cache(formula, interpreter.factory().accumulate(acc));
+	}
+
+	
 
 	/** 
 	 * Calls lookup(binFormula) and returns the cached value, if any.  
@@ -551,7 +619,7 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 
 		final BooleanValue left = binFormula.left().accept(this);
 		final BooleanValue right = binFormula.right().accept(this);
-		final BinaryFormula.Operator op = binFormula.op();
+		final FormulaOperator op = binFormula.op();
 		final BooleanFactory f = interpreter.factory();
 
 		switch(op) {
@@ -562,7 +630,6 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 		default : 
 			throw new IllegalArgumentException("Unknown operator: " + op);
 		}
-
 		return cache(binFormula, ret);
 	}
 
@@ -593,7 +660,7 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 
 		final BooleanMatrix left = compFormula.left().accept(this);
 		final BooleanMatrix right = compFormula.right().accept(this);
-		final ComparisonFormula.Operator op = compFormula.op();
+		final ExprCompOperator op = compFormula.op();
 
 		switch(op) {
 		case SUBSET	: ret = left.subset(right); break;
@@ -601,7 +668,6 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 		default : 
 			throw new IllegalArgumentException("Unknown operator: " + compFormula.op());
 		}
-
 		return cache(compFormula,ret);
 	}
 
@@ -798,14 +864,38 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 	 * If a translation has not been cached, translates the expression,
 	 * calls cache(...) on it and returns it.
 	 * @return let t = lookup(intExpr) | some t => t, 
+	 * 	cache(intExpr, intExpr.left.accept(this) intExpr.op intExpr.right.accept(this))
+	 */
+	public final Int visit(NaryIntExpression intExpr) {
+		Int ret = lookup(intExpr);
+		if (ret!=null) return ret;
+		final Int first = intExpr.child(0).accept(this);
+		final Int[] rest = new Int[intExpr.size()-1];
+		for(int i = 0; i < rest.length; i++) { 	rest[i] = intExpr.child(i+1).accept(this); }
+		switch(intExpr.op()) { 
+		case PLUS  		: ret = first.plus(rest); break;
+		case MULTIPLY 	: ret = first.multiply(rest); break;
+		case AND		: ret = first.and(rest); break;
+		case OR			: ret = first.or(rest); break;
+		default    :
+			throw new IllegalArgumentException("Unknown nary operator: " + intExpr.op());
+		}
+		return cache(intExpr, ret);
+	}
+	
+	/** 
+	 * Calls lookup(intExpr) and returns the cached value, if any.  
+	 * If a translation has not been cached, translates the expression,
+	 * calls cache(...) on it and returns it.
+	 * @return let t = lookup(intExpr) | some t => t, 
 	 * 	cache(intExpr, intExpr.op(intExpr.expression.accept(this)))
 	 */
 	public final Int visit(UnaryIntExpression intExpr) {
 		Int ret = lookup(intExpr);
 		if (ret!=null) return ret;
-		final Int child = intExpr.expression().accept(this);
+		final Int child = intExpr.intExpr().accept(this);
 		switch(intExpr.op()) {
-		case MINUS 	: ret = child.negate(); break;
+		case NEG 	: ret = child.negate(); break;
 		case NOT 	: ret = child.not(); break;
 		case ABS 	: ret = child.abs(); break;
 		case SGN 	: ret = child.sgn(); break;
@@ -858,7 +948,7 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 		final Int ret = lookup(intExpr);
 		if (ret!=null) return ret;
 		final List<Int> values = new ArrayList<Int>();
-		sum(intExpr.declarations(), intExpr.intExpr(), 0, BooleanConstant.TRUE, values);
+		sum(intExpr.decls(), intExpr.intExpr(), 0, BooleanConstant.TRUE, values);
 		for(int sums = values.size(); sums > 1; sums -= sums/2) { 
 			final int max = sums-1;
 			for(int i = 0; i < max; i += 2) { 

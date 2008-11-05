@@ -21,6 +21,7 @@
  */
 package kodkod.ast;
 
+import kodkod.ast.operator.Multiplicity;
 import kodkod.ast.visitor.ReturnVisitor;
 import kodkod.ast.visitor.VoidVisitor;
 
@@ -132,16 +133,15 @@ public final class Variable extends LeafExpression {
 	}
 
 	/**
-	 * Returns true of o is a BinaryFormula with the
-	 * same tree structure as this.
-	 * @return o.op.equals(this.op) && o.left.equals(this.left) && o.right.equals(this.right) 
+	 * {@inheritDoc}
+	 * @see kodkod.ast.Expression#accept(kodkod.ast.visitor.ReturnVisitor)
 	 */
 	public <E, F, D, I> E accept(ReturnVisitor<E, F, D, I> visitor) {
 		return visitor.visit(this);
 	}
 
 	/**
-	 * Accepts the given visitor.
+	 * {@inheritDoc}
 	 * @see kodkod.ast.Node#accept(kodkod.ast.visitor.VoidVisitor)
 	 */
 	public void accept(VoidVisitor visitor) {

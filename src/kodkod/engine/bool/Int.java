@@ -179,12 +179,12 @@ public abstract class Int {
 	public abstract Int plus(Int other);
 	
 	/**
-	 * Returns an Int that represents the difference between this and the given Int.
-	 * @requires this.factory = other.factory
-	 * @return an Int that represents the difference between this and the given Int
-	 * @throws UnsupportedOperationException - this.encoding does not support subtraction
+	 * Returns an Int that represents the sum of this and the given Ints.
+	 * @requires this.factory = others[int].factory 
+	 * @return an Int that represents the sum of this and the given Ints
+	 * @throws IllegalArgumentException - this.factory != others[int].factory
 	 */
-	public abstract Int minus(Int other);
+	public abstract Int plus(Int... others);
 	
 	/**
 	 * Returns an Int that represents the product between this and the given Int.
@@ -193,6 +193,22 @@ public abstract class Int {
 	 * @throws UnsupportedOperationException - this.encoding does not support multiplication
 	 */
 	public abstract Int multiply(Int other);
+	
+	/**
+	 * Returns an Int that represents the product between this and the given Ints.
+	 * @requires this.factory = others[int].factory
+	 * @return an Int that represents the product between this and the given Ints
+	 * @throws UnsupportedOperationException - this.encoding does not support multiplication
+	 */
+	public abstract Int multiply(Int... others);
+	
+	/**
+	 * Returns an Int that represents the difference between this and the given Int.
+	 * @requires this.factory = other.factory
+	 * @return an Int that represents the difference between this and the given Int
+	 * @throws UnsupportedOperationException - this.encoding does not support subtraction
+	 */
+	public abstract Int minus(Int other);
 	
 	/**
 	 * Returns an Int that represents the quotient of the division between this and the given Int.
@@ -227,11 +243,25 @@ public abstract class Int {
 	public abstract Int and(Int other);
 	
 	/**
+	 * Returns an Int that represents the bitwise conjunction of this and the given Ints.
+	 * @requires this.factory = others[int].factory
+	 * @return an Int that represents the bitwise conjunction of this and the given Ints.
+	 */
+	public abstract Int and(Int... others);
+	
+	/**
 	 * Returns an Int that represents the bitwise disjunction of this and the given Int.
 	 * @requires this.factory = other.factory
 	 * @return an Int that represents the bitwise disjunction of this and the given Int.
 	 */
 	public abstract Int or(Int other);
+	
+	/**
+	 * Returns an Int that represents the bitwise disjunction of this and the given Ints.
+	 * @requires this.factory = others[int].factory
+	 * @return an Int that represents the bitwise disjunction of this and the given Ints.
+	 */
+	public abstract Int or(Int... others);
 	
 	/**
 	 * Returns an Int that represents the bitwise XOR of this and the given Int.

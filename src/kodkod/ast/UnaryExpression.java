@@ -22,6 +22,7 @@
 package kodkod.ast;
 
 
+import kodkod.ast.operator.ExprOperator;
 import kodkod.ast.visitor.ReturnVisitor;
 import kodkod.ast.visitor.VoidVisitor;
 
@@ -29,13 +30,14 @@ import kodkod.ast.visitor.VoidVisitor;
  * An {@link kodkod.ast.Expression expression} with one child.
  * 
  * @specfield expression: Expression
- * @specfield op: Operator
- * @invariant children = expression
+ * @specfield op: ExprOperator
+ * @invariant op.unary()
+ * @invariant children = 0->Expression
  * @author Emina Torlak 
  */
 public final class UnaryExpression extends Expression {
     private final Expression expression;
-    private final Operator op;
+    private final ExprOperator op;
     private final int arity;
     
     /**  
@@ -45,13 +47,16 @@ public final class UnaryExpression extends Expression {
      * @throws NullPointerException - expression = null || op = null
      * @throws IllegalArgumentException - op in {TRANSPOSE, CLOSURE, REFLEXIVE_CLOSURE} && child.arity != 2
      */
-    UnaryExpression(Operator op, Expression child) {
-        if (!op.applicable(child.arity())) {
+    UnaryExpression(ExprOperator op, Expression child) {
+        if (!op.unary()) {
+            throw new IllegalArgumentException("Not a unary operator: " + op);
+        }
+        if (child.arity()!=2) {
             throw new IllegalArgumentException("Invalid arity: " + child + "::" + child.arity());
         }
         this.expression = child;
         this.op = op;
-        this.arity = op.arity(child.arity());
+        this.arity = 2;
     }
 
     /**
@@ -73,57 +78,31 @@ public final class UnaryExpression extends Expression {
      * Returns this.op.
      * @return this.op
      */
-    public Operator op() {return op;}
+    public ExprOperator op() {return op;}
     
     
-    /**
-     * Accepts the given visitor and returns the result.
-     * @see kodkod.ast.Node#accept(kodkod.ast.visitor.ReturnVisitor)
-     */
-    public <E, F, D, I> E accept(ReturnVisitor<E, F, D, I> visitor) {
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.ast.Expression#accept(kodkod.ast.visitor.ReturnVisitor)
+	 */
+	public <E, F, D, I> E accept(ReturnVisitor<E, F, D, I> visitor) {
 		return visitor.visit(this);
 	}
-   
-    
-    /**
-     * Accepts the given visitor.
-     * @see kodkod.ast.Node#accept(kodkod.ast.visitor.VoidVisitor)
-     */
-    public void accept(VoidVisitor visitor) {
-        visitor.visit(this);
-    }
-    
-    /**
-	 * Returns the string representation of this expression.
-	 * @return string representation of this expression
-	 */    
+
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.ast.Node#accept(kodkod.ast.visitor.VoidVisitor)
+	 */
+	public void accept(VoidVisitor visitor) {
+		visitor.visit(this);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see kodkod.ast.Node#toString()
+	 */ 
     public String toString() {
         return op.toString() + expression.toString();
-    }
-
-    /**
-     * Represents a unary expression operator.
-     */
-    public static enum Operator  {
-        /** Transpose (~) operator. */
-        TRANSPOSE { public String toString() { return "~";}},
-        /** Transitive closure (^) operator. */
-        CLOSURE { public String toString() { return "^";}},
-        /** Reflexive transitive closure (*) operator. */
-        REFLEXIVE_CLOSURE { public String toString() { return "*";}};
-        
-        /**
-         * @return true if this operator can be applied to an expression with the given arity.
-         */
-        boolean applicable(int childArity) { return childArity == 2; }
-        
-        /**
-         * @return the arity of the expression that results from applying
-         * this operator to an expression with the given arity.
-         */
-        int arity(int childArity) { return 2; }
-        
-    }
-    
+    }    
 
 }

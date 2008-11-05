@@ -45,7 +45,6 @@ import kodkod.instance.Instance;
 import kodkod.instance.TupleSet;
 import kodkod.util.ints.IntIterator;
 import kodkod.util.ints.IntSet;
-import kodkod.util.nodes.Nodes;
 
 
 /** 
@@ -275,6 +274,17 @@ public final class Solver {
 	}
 	
 	/**
+	 * @return the number of primary variables needed to encode the unknown tuples in the given bounds.
+	 */
+	private static int trivialPrimaries(Bounds bounds) { 
+		int prim = 0;
+		for(Relation r : bounds.relations()) { 
+			prim += bounds.upperBound(r).size() - bounds.lowerBound(r).size();
+		}
+		return prim;
+	}
+	
+	/**
 	 * Returns the result of solving a trivially (un)sat formula.
 	 * @param bounds Bounds with which solve()  was called
 	 * @param desc TrivialFormulaException thrown as the result of the formula simplifying to a constant
@@ -282,7 +292,7 @@ public final class Solver {
 	 * @return the result of solving a trivially (un)sat formula.
 	 */
 	private static Solution trivial(Bounds bounds, TrivialFormulaException desc, long translTime) {
-		final Statistics stats = new Statistics(0, 0, 0, translTime, 0);
+		final Statistics stats = new Statistics(trivialPrimaries(desc.bounds()), 0, 0, translTime, 0);
 		if (desc.value().booleanValue()) {
 			return Solution.triviallySatisfiable(stats, padInstance(toInstance(desc.bounds()), bounds));
 		} else {
@@ -447,7 +457,7 @@ public final class Solver {
 				bounds = translBounds;
 				
 				// no changes => there can be no more solutions (besides the current trivial one)
-				formula = changes.isEmpty() ? Formula.FALSE : tfe.formula().and(Nodes.or(changes));
+				formula = changes.isEmpty() ? Formula.FALSE : tfe.formula().and(Formula.or(changes));
 				
 				return sol;
 			} else {

@@ -22,6 +22,7 @@
 package kodkod.ast;
 
 
+import kodkod.ast.operator.Multiplicity;
 import kodkod.ast.visitor.ReturnVisitor;
 import kodkod.ast.visitor.VoidVisitor;
 
@@ -36,7 +37,7 @@ import kodkod.ast.visitor.VoidVisitor;
  * @specfield expression: Expression
  * @specfield multiplicity: LONE + ONE + SOME + SET
  * @invariant variable.arity = expression.arity
- * @invariant children = variable + expression
+ * @invariant children = 0->variable + 1->expression
  * @author Emina Torlak 
  */
 public final class Decl extends Decls {
@@ -84,26 +85,25 @@ public final class Decl extends Decls {
     public Expression expression() { return expression;  }
     
     /**
-     * Accepts the given visitor and returns the result.
+     * {@inheritDoc}
      * @see kodkod.ast.Node#accept(kodkod.ast.visitor.ReturnVisitor)
      */
-    public final <E, F, D, I> D accept(ReturnVisitor<E, F, D, I> visitor) {
+    public <E, F, D, I> D accept(ReturnVisitor<E, F, D, I> visitor) {
         return visitor.visit(this);
     }
-  
-    
+   
     /**
-     * Accepts the given visitor.
+     * {@inheritDoc}
      * @see kodkod.ast.Node#accept(kodkod.ast.visitor.VoidVisitor)
      */
     public void accept(VoidVisitor visitor) {
         visitor.visit(this);
     }
-      
+    
     /**
-	 * Returns the string representation of this decl.
-	 * @return string representation of this decl
-	 */
+     * {@inheritDoc}
+     * @see kodkod.ast.Node#toString()
+     */
     public String toString() { return variable + ": " + mult + " " + expression; }
    
 }

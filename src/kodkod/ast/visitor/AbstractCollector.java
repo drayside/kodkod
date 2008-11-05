@@ -36,6 +36,8 @@ import kodkod.ast.ConstantFormula;
 import kodkod.ast.Decl;
 import kodkod.ast.Decls;
 import kodkod.ast.ExprToIntCast;
+import kodkod.ast.Expression;
+import kodkod.ast.Formula;
 import kodkod.ast.IfExpression;
 import kodkod.ast.IfIntExpression;
 import kodkod.ast.IntComparisonFormula;
@@ -43,6 +45,9 @@ import kodkod.ast.IntConstant;
 import kodkod.ast.IntExpression;
 import kodkod.ast.IntToExprCast;
 import kodkod.ast.MultiplicityFormula;
+import kodkod.ast.NaryExpression;
+import kodkod.ast.NaryFormula;
+import kodkod.ast.NaryIntExpression;
 import kodkod.ast.Node;
 import kodkod.ast.NotFormula;
 import kodkod.ast.ProjectExpression;
@@ -197,6 +202,24 @@ public abstract class AbstractCollector<T> implements
 	public Set<T> visit(ConstantExpression constExpr) {
 		return Collections.EMPTY_SET;
 	}
+	
+	/** 
+	 * Calls lookup(expr) and returns the cached value, if any.  
+	 * If no cached value exists, visits each child, caches the
+	 * union of the children's return values and returns it. 
+	 * @return let x = lookup(expr) | 
+	 *          x != null => x,  
+	 *          cache(expr, expr.child(0).accept(this) + .. + expr.child(expr.size()-1).accept(this)) 
+	 */
+	public Set<T> visit(NaryExpression expr) {
+		Set<T> ret = lookup(expr);
+		if (ret!=null) return ret;		
+		ret = newSet();
+		for(Expression child : expr) { 
+			ret.addAll(child.accept(this));
+		}
+		return cache(expr, ret);
+	}
 
 	/** 
 	 * Calls lookup(binExpr) and returns the cached value, if any.  
@@ -242,7 +265,7 @@ public abstract class AbstractCollector<T> implements
 		Set<T> ret = lookup(comprehension);
 		if (ret!=null) return ret;
 		ret = newSet();
-		ret.addAll(comprehension.declarations().accept(this));
+		ret.addAll(comprehension.decls().accept(this));
 		ret.addAll(comprehension.formula().accept(this));
 		return cache(comprehension, ret);
 	}
@@ -278,8 +301,8 @@ public abstract class AbstractCollector<T> implements
 		if (ret!=null) return ret;
 		ret = newSet();
 		ret.addAll(project.expression().accept(this));
-		for(IntExpression col: project.columns()) {
-			ret.addAll(col.accept(this));
+		for(int i = 0, arity = project.arity(); i < arity; i++) {
+			ret.addAll(project.column(i).accept(this));
 		}
 		return cache(project,ret);
 	}
@@ -347,6 +370,24 @@ public abstract class AbstractCollector<T> implements
 	 * union of the children's return values and returns it. 
 	 * @return let x = lookup(intExpr) | 
 	 *          x != null => x,  
+	 *          cache(intExpr, intExpr.child(0).accept(this) + .. + intExpr.child(intExpr.size()-1).accept(this)) 
+	 */
+	public Set<T> visit(NaryIntExpression intExpr) {
+		Set<T> ret = lookup(intExpr);
+		if (ret!=null) return ret;		
+		ret = newSet();
+		for(IntExpression child : intExpr) { 
+			ret.addAll(child.accept(this));
+		}
+		return cache(intExpr, ret);
+	}
+	
+	/** 
+	 * Calls lookup(intExpr) and returns the cached value, if any.  
+	 * If no cached value exists, visits each child, caches the
+	 * union of the children's return values and returns it. 
+	 * @return let x = lookup(intExpr) | 
+	 *          x != null => x,  
 	 *          cache(intExpr, intExpr.left.accept(this) + intExpr.right.accept(this)) 
 	 */
 	public Set<T> visit(BinaryIntExpression intExpr) {
@@ -369,7 +410,7 @@ public abstract class AbstractCollector<T> implements
 		Set<T> ret = lookup(intExpr);
 		if (ret!=null) return ret;
 		ret = newSet();
-		ret.addAll(intExpr.expression().accept(this));
+		ret.addAll(intExpr.intExpr().accept(this));
 		return cache(intExpr,ret);
 	}
 	
@@ -385,7 +426,7 @@ public abstract class AbstractCollector<T> implements
 		Set<T> ret = lookup(intExpr);
 		if (ret!=null) return ret;		
 		ret = newSet();
-		ret.addAll(intExpr.declarations().accept(this));
+		ret.addAll(intExpr.decls().accept(this));
 		ret.addAll(intExpr.intExpr().accept(this));
 		return cache(intExpr, ret);
 	}
@@ -419,11 +460,29 @@ public abstract class AbstractCollector<T> implements
 		Set<T> ret = lookup(quantFormula);
 		if (ret!=null) return ret;		
 		ret = newSet();
-		ret.addAll(quantFormula.declarations().accept(this));
+		ret.addAll(quantFormula.decls().accept(this));
 		ret.addAll(quantFormula.formula().accept(this));
 		return cache(quantFormula, ret);
 	}
 
+	/** 
+	 * Calls lookup(formula) and returns the cached value, if any.  
+	 * If no cached value exists, visits each child, caches the
+	 * union of the children's return values and returns it. 
+	 * @return let x = lookup(formula) | 
+	 *          x != null => x,  
+	 *          cache(formula, formula.child(0).accept(this) + .. + formula.child(formula.size()-1).accept(this)) 
+	 */
+	public Set<T> visit(NaryFormula formula) {
+		Set<T> ret = lookup(formula);
+		if (ret!=null) return ret;		
+		ret = newSet();
+		for(Formula child : formula) { 
+			ret.addAll(child.accept(this));
+		}
+		return cache(formula, ret);
+	}
+	
 	/** 
 	 * Calls lookup(binFormula) and returns the cached value, if any.  
 	 * If no cached value exists, visits each child, caches the

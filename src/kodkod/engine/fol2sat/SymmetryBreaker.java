@@ -44,6 +44,7 @@ import kodkod.engine.bool.BooleanFactory;
 import kodkod.engine.bool.BooleanMatrix;
 import kodkod.engine.bool.BooleanValue;
 import kodkod.engine.bool.Operator;
+import kodkod.engine.config.Reporter;
 import kodkod.instance.Bounds;
 import kodkod.instance.TupleFactory;
 import kodkod.util.ints.IndexedEntry;
@@ -74,10 +75,13 @@ final class SymmetryBreaker {
 	 * @effects this.bounds' = bounds && this.symmetries' = SymmetryDetector.partition(bounds) &&
 	 * no this.broken'
 	 **/
-	SymmetryBreaker(Bounds bounds) {
+	SymmetryBreaker(Bounds bounds, Reporter reporter) {
 		this.bounds = bounds;
 		this.usize = bounds.universe().size();
+		reporter.detectingSymmetries(bounds);
 		this.symmetries = SymmetryDetector.partition(bounds);
+		reporter.detectedSymmetries(symmetries);
+//		System.out.println(symmetries);
 	}
 	
 	/**

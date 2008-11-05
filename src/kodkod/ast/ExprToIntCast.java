@@ -22,6 +22,7 @@
 package kodkod.ast;
 
 
+import kodkod.ast.operator.ExprCastOperator;
 import kodkod.ast.visitor.ReturnVisitor;
 import kodkod.ast.visitor.VoidVisitor;
 
@@ -30,13 +31,13 @@ import kodkod.ast.visitor.VoidVisitor;
  * cardinality of an {@link kodkod.ast.Expression} or the 
  * sum of all the integer atoms contained in the expression.
  * @specfield expression: Expression
- * @specfield op: Operator
- * @invariant children = expression
+ * @specfield op: ExprCastOperator
+ * @invariant children = 0->expression
  * @author Emina Torlak
  */
 public final class ExprToIntCast extends IntExpression {
 	private final Expression expression;
-	private final Operator op; 
+	private final ExprCastOperator op; 
 	/**  
 	 * Constructs a new cardinality expression.
 	 * 
@@ -44,8 +45,8 @@ public final class ExprToIntCast extends IntExpression {
 	 * @throws NullPointerException - expression = null || op = null
 	 * @throws IllegalArgumentException - op = SUM && child.arity != 1
 	 */
-	ExprToIntCast(Expression child, Operator op) {
-		if (!op.applicable(child.arity())) 
+	ExprToIntCast(Expression child, ExprCastOperator op) {
+		if (child.arity()>1 && op==ExprCastOperator.SUM) 
 			throw new IllegalArgumentException("cannot apply " + op + " to " + child);
 		this.expression = child;
 		this.op = op;
@@ -61,15 +62,8 @@ public final class ExprToIntCast extends IntExpression {
 	 * Returns this.op.
 	 * @return this.op
 	 */
-	public Operator op() { return op; } 
+	public ExprCastOperator op() { return op; } 
 	
-	/**
-	 * Returns the string representation of this int expression.
-	 * @return string representation of this int expression
-	 */
-	public String toString() {
-		return op + "("+expression.toString()+")";
-	}
 		
 	/**
 	 * {@inheritDoc}
@@ -79,8 +73,7 @@ public final class ExprToIntCast extends IntExpression {
 	public <E, F, D, I> I accept(ReturnVisitor<E, F, D, I> visitor) {
 		return visitor.visit(this);
 	}
-	
-    
+
 	/**
 	 * {@inheritDoc}
 	 * @see kodkod.ast.IntExpression#accept(kodkod.ast.visitor.VoidVisitor)
@@ -91,43 +84,11 @@ public final class ExprToIntCast extends IntExpression {
 	}
 	
 	/**
-	 * Represents an expression 'cast' operator.
+	 * {@inheritDoc}
+	 * @see kodkod.ast.Node#toString()
 	 */
-	public static enum Operator {
-		/** The cardinality operator (#). */
-		CARDINALITY {
-			/**
-			 * {@inheritDoc}
-			 * @see java.lang.Object#toString()
-			 */
-			public String toString() { 
-				return "#";
-			}
-		}, 
-		/** The sum operator. */
-		SUM {
-			/**
-			 * {@inheritDoc}
-			 * @see java.lang.Object#toString()
-			 */
-			public String toString() { 
-				return "sum";
-			}
-			
-			/** 
-			 * Returns true if arity = 1.
-			 * @return arity = 1
-			 */
-			boolean applicable(int arity) { return arity==1; }
-		};
-		
-		/**
-		 * Returns true if this operator is applicable to an
-		 * expression of the given arity.
-		 * @return true if this operator is applicable to an
-		 * expression of the given arity.
-		 */
-		boolean applicable(int arity) { return true; }
+	public String toString() {
+		return op + "("+expression.toString()+")";
 	}
 	
 }

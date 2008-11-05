@@ -21,6 +21,7 @@
  */
 package kodkod.ast;
 
+import kodkod.ast.operator.IntCastOperator;
 import kodkod.ast.visitor.ReturnVisitor;
 import kodkod.ast.visitor.VoidVisitor;
 
@@ -31,21 +32,20 @@ import kodkod.ast.visitor.VoidVisitor;
  * given by the wrapped int expression, if the conversion operator is INTCAST.  
  * Otherwise, the meaning is the set of powers of 2 that make up the given integer expression.
  * @specfield intExpr: IntExpression
- * @specfield op: Operator
- * @invariant children = expression
- * @invariant children = intExpr
+ * @specfield op: IntCastOperator
+ * @invariant children = 0->intExpr
  * @invariant arity = 1
  * @author Emina Torlak
  */
 public final class IntToExprCast extends Expression {
 	private final IntExpression intExpr;
-	private final Operator op;
+	private final IntCastOperator op;
 	/**
 	 * Constructs a new IntToExprCast.
 	 * @requires intExpr != null && op != null
 	 * @effects this.intexpr' = intExpr
 	 */
-	IntToExprCast(IntExpression intExpr, Operator op) {
+	IntToExprCast(IntExpression intExpr, IntCastOperator op) {
 		this.intExpr = intExpr;
 		this.op = op;
 	}
@@ -71,7 +71,7 @@ public final class IntToExprCast extends Expression {
 	 * Returns this.op
 	 * @return this.op
 	 */
-	public final Operator op() { 
+	public final IntCastOperator op() { 
 		return op;
 	}
 	
@@ -79,7 +79,6 @@ public final class IntToExprCast extends Expression {
 	 * {@inheritDoc}
 	 * @see kodkod.ast.Expression#accept(kodkod.ast.visitor.ReturnVisitor)
 	 */
-	@Override
 	public <E, F, D, I> E accept(ReturnVisitor<E, F, D, I> visitor) {
 		return visitor.visit(this);
 	}
@@ -93,37 +92,10 @@ public final class IntToExprCast extends Expression {
 	}
 
 	/**
-	 * Returns the string representation of this expression.
-	 * @return string representation of this expression
-	 */
-	public String toString() { 
+	 * {@inheritDoc}
+	 * @see kodkod.ast.Node#toString()
+	 */	public String toString() { 
 		return op + "[" + intExpr + "]";
-	}
-	
-	/**
-	 * Represents an intexpression 'cast' operator.
-	 */
-	public static enum Operator {
-		/** The Int cast operator Int[intExpr]. */
-		INTCAST {
-			/**
-			 * {@inheritDoc}
-			 * @see java.lang.Object#toString()
-			 */
-			public String toString() { 
-				return "Int";
-			}
-		}, 
-		/** The Bitset cast operator Bits[intExpr]. */
-		BITSETCAST {
-			/**
-			 * {@inheritDoc}
-			 * @see java.lang.Object#toString()
-			 */
-			public String toString() { 
-				return "Bits";
-			}
-		};
 	}
 	
 }

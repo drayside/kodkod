@@ -39,10 +39,10 @@ public final class Statistics {
 	/**
 	 * Constructs a new Statistics object using the provided values.
 	 */
-	Statistics(int variables, int primaryVariables, int clauses, 
+	Statistics(int primaryVariables, int variables, int clauses, 
 			   long translationTime, long solvingTime) {
-		this.vars = variables;
 		this.pVars = primaryVariables;
+		this.vars = variables;
 		this.clauses = clauses;
 		this.translation = translationTime;
 		this.solving = solvingTime;
@@ -52,7 +52,7 @@ public final class Statistics {
 	 * Constructs a new Statistics object using the provided values.
 	 */
 	Statistics(Translation translation, long translationTime, long solvingTime) { 
-		this(translation.cnf().numberOfVariables(), translation.numPrimaryVariables(), 
+		this(translation.numPrimaryVariables(), translation.cnf().numberOfVariables(), 
 				translation.cnf().numberOfClauses(), translationTime, solvingTime);
 	}
 	

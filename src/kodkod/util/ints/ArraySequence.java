@@ -31,9 +31,10 @@ import java.util.NoSuchElementException;
  * of the sequence are known in advance.  The indices with
  * which an ArraySequence is construct remain fixed throughout.
  * The put operation fails whenever its index argument is not one
- * of the sequence's pre-set indices, and iteration is proportional
- * to the number of the pre-set indices.  This sequence does not
- * allow null values.
+ * of the sequence's pre-set indices, and iteration time is proportional
+ * to the number of  pre-set indices.  This sequence does not
+ * allow null values.  The lookup and put operations are logarithmic in 
+ * the number of pre-set indices.
  * 
  * @specfield indeces: set int
  * @specfield entries: indeces -> lone (V - null)

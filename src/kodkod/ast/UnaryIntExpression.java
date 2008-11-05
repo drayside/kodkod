@@ -21,48 +21,43 @@
  */
 package kodkod.ast;
 
+import kodkod.ast.operator.IntOperator;
 import kodkod.ast.visitor.ReturnVisitor;
 import kodkod.ast.visitor.VoidVisitor;
 
 /**
- * A unary integer expression, e.g. -x.
- * @specfield expression: IntExpression
- * @specfield op: Operator
- * @invariant children = expression
+ * A unary integer intExpr, e.g. -x.
+ * @specfield intExpr: IntExpression
+ * @specfield op: IntOperator
+ * @invariant op.unary()
+ * @invariant children = 0->intExpr
  * @author Emina Torlak
  */
 public final class UnaryIntExpression extends IntExpression {
-	private final Operator op;
-	private final IntExpression expression;
+	private final IntOperator op;
+	private final IntExpression intExpr;
 	
 	/**
-	 * Constructs a new unary int formula: op expression
-	 * @effects this.op' = op && this.expression' = expression
+	 * Constructs a new unary int formula: op intExpr
+	 * @effects this.op' = op && this.intExpr' = intExpr
 	 */
-	UnaryIntExpression(Operator op, IntExpression expression) {
+	UnaryIntExpression(IntOperator op, IntExpression intExpr) {
+		if (!op.unary()) throw new IllegalArgumentException("Not a unary operator: " + op);
 		this.op = op;
-		this.expression = expression;
+		this.intExpr = intExpr;
 	}
 
 	/**
 	 * Returns the operator of this.
 	 * @return this.op
 	 */
-	public Operator op() {return op;}
+	public IntOperator op() {return op;}
 	
 	/**
-	 * Returns this.expression.
-	 * @return this.expression
+	 * Returns this.intExpr.
+	 * @return this.intExpr
 	 */
-	public IntExpression expression() {return expression;}
-	
-	/**
-	 * Returns the string representation of this int expression.
-	 * @return string representation of this int expression
-	 */
-	public String toString() {
-		return op.prefix() ? "(" + op + expression + ")" : op + "(" + expression + ")" ;
-	}
+	public IntExpression intExpr() {return intExpr;}
 	
 	/**
 	 * {@inheritDoc}
@@ -83,41 +78,10 @@ public final class UnaryIntExpression extends IntExpression {
 	}
 
 	/**
-	 * Unary operators on integer expressions.
-	 */
-	public static enum Operator {
-		/** unary negation (`-') operator */
-		MINUS {
-			public String toString() {
-				return "-";
-			}
-		},
-		/** bit negation (`~') operator */
-		NOT {
-			public String toString() {
-				return "~";
-			}
-		}, 
-		/** absolute value function */
-		ABS {
-			public String toString() {
-				return "abs";
-			}
-			boolean prefix() { return false; } 
-		}, 
-		/** signum function */
-		SGN {
-			public String toString() {
-				return "sgn";
-			}
-			boolean prefix() { return false; }
-		};
-		/**
-		 * Returns true if this is a prefix operator.
-		 * Otherwise returns false (i.e. if the application
-		 * of the operator should be displayed as a function application)
-		 * @return true if this is a prefix operator.
-		 */
-		boolean prefix() { return true; }
+     * {@inheritDoc}
+     * @see kodkod.ast.Node#toString()
+     */
+	public String toString() {
+		return (op==IntOperator.NEG||op==IntOperator.NOT) ? "(" + op + intExpr + ")" : op + "(" + intExpr + ")" ;
 	}
 }

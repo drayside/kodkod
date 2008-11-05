@@ -22,6 +22,7 @@
 package kodkod.ast;
 
 
+import kodkod.ast.operator.Quantifier;
 import kodkod.ast.visitor.ReturnVisitor;
 import kodkod.ast.visitor.VoidVisitor;
 
@@ -29,30 +30,30 @@ import kodkod.ast.visitor.VoidVisitor;
 /** 
  * A quantified formula.
  * 
- * @specfield declarations: Declarations
+ * @specfield decls: Declarations
  * @specfield formula: Formula
  * @specfield quantifier: Quantifier
- * @invariant children = declarations + formula
+ * @invariant children = 0->decls + 1->formula
  * @author Emina Torlak 
  */
 public final class QuantifiedFormula extends Formula  {
     private final Quantifier quantifier;
-    private final Decls declarations;
+    private final Decls decls;
     private final Formula formula;
    
     /**  
-     * Constructs a new quantified formula: quantifier declarations | formula
+     * Constructs a new quantified formula: quantifier decls | formula
      * 
-     * @effects this.quantifier' = quantifier && this.declarations' = declarations &&
+     * @effects this.quantifier' = quantifier && this.decls' = decls &&
      *          this.formula' = formula
-     * @throws NullPointerException - quantifier = null || declarations = null || formula = null
+     * @throws NullPointerException - quantifier = null || decls = null || formula = null
      */
     QuantifiedFormula(Quantifier quantifier, Decls declarations, Formula formula) {
         if (quantifier == null || declarations == null || formula == null) {
             throw new NullPointerException("null arg");
         }
         this.quantifier = quantifier;
-        this.declarations = declarations;
+        this.decls = declarations;
         this.formula = formula;
     }
     
@@ -63,10 +64,10 @@ public final class QuantifiedFormula extends Formula  {
     public Formula formula() { return formula; }
     
     /**
-     * Returns this.declarations.
-     * @return this.declarations
+     * Returns this.decls.
+     * @return this.decls
      */
-    public Decls declarations() { return declarations;}
+    public Decls decls() { return decls;}
     
     /**
      * Returns this.quantifier.
@@ -75,38 +76,27 @@ public final class QuantifiedFormula extends Formula  {
     public Quantifier quantifier() { return quantifier; }
     
     /**
-     * Accepts the given visitor and returns the result.
-     * @see kodkod.ast.Node#accept(kodkod.ast.visitor.ReturnVisitor)
+     * {@inheritDoc}
+     * @see kodkod.ast.Formula#accept(kodkod.ast.visitor.ReturnVisitor)
      */
-    public <E, F, D, I> F accept(ReturnVisitor<E, F, D, I> visitor) {
-        return visitor.visit(this);
-    }
-   
-    
-    /**
-     * Accepts the given visitor.
-     * @see kodkod.ast.Node#accept(kodkod.ast.visitor.VoidVisitor)
-     */
-    public void accept(VoidVisitor visitor) {
-        visitor.visit(this);
-    }
-    
-    /**
-	 * Returns the string representation of this formula.
-	 * @return string representation of this formula
-	 */
+     public <E, F, D, I> F accept(ReturnVisitor<E, F, D, I> visitor) {
+         return visitor.visit(this);
+     }
+     
+     /**
+      * {@inheritDoc}
+      * @see kodkod.ast.Node#accept(kodkod.ast.visitor.VoidVisitor)
+      */
+     public void accept(VoidVisitor visitor) {
+         visitor.visit(this);
+     }
+     
+     /**
+      * {@inheritDoc}
+      * @see kodkod.ast.Node#toString()
+      */
     public String toString() {
-        return "(" + quantifier + " " + declarations + " | " + formula + ")";
-    }
-
-    /**
-     * Represents a logical quantifier.
-     */
-    public static enum Quantifier {
-    	/** Universal quantifier. */
-        ALL  { public String toString() { return "all"; }},
-        /** Existential quantifier. */
-        SOME { public String toString() { return "some"; }}
+        return "(" + quantifier + " " + decls + " | " + formula + ")";
     }
 
 }

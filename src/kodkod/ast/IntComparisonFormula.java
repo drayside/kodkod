@@ -23,6 +23,7 @@ package kodkod.ast;
 
 
 
+import kodkod.ast.operator.IntCompOperator;
 import kodkod.ast.visitor.ReturnVisitor;
 import kodkod.ast.visitor.VoidVisitor;
 
@@ -31,21 +32,21 @@ import kodkod.ast.visitor.VoidVisitor;
  * 
  * @specfield left: IntExpression
  * @specfield right: IntExpression
- * @specfield op: Operator
- * @invariant children = left + right
+ * @specfield op: IntCompOperator
+ * @invariant children = 0->left + 1->right
  * @author Emina Torlak 
  */
 public final class IntComparisonFormula extends Formula {
-	private final Operator op;
+	private final IntCompOperator op;
 	private final IntExpression left, right;
-	
+
 	/**  
 	 * Constructs a new int comparison formula: left op right
 	 * 
 	 * @effects this.left' = left && this.right' = right && this.op' = op
 	 * @throws NullPointerException - left = null || right = null || op = null
 	 */
-	IntComparisonFormula(final IntExpression left, final Operator op, final IntExpression right) {
+	IntComparisonFormula(final IntExpression left, final IntCompOperator op, final IntExpression right) {
 		this.left = left;
 		this.right = right;
 		this.op = op;
@@ -56,35 +57,26 @@ public final class IntComparisonFormula extends Formula {
 	 * @return this.left
 	 */
 	public IntExpression left() {return left;}
-	
+
 	/**
 	 * Returns the right child of this.
 	 * @return this.right
 	 */
 	public IntExpression right() {return right;}
-	
+
 	/**
 	 * Returns the operator of this.
 	 * @return this.op
 	 */
-	public Operator op() {return op;}
-	
-	/**
-	 * Returns the string representation of this formula.
-	 * @return string representation of this formula
-	 */
-	public String toString() {
-		return "(" + left + " " + op + " " + right + ")";
-	}
-	
+	public IntCompOperator op() {return op;}
+
 	/**
 	 * {@inheritDoc}
 	 * @see kodkod.ast.Formula#accept(kodkod.ast.visitor.ReturnVisitor)
 	 */
-	@Override
-	 public <E, F, D, I> F accept(ReturnVisitor<E, F, D, I> visitor) {
-        return visitor.visit(this);
-    }
+	public <E, F, D, I> F accept(ReturnVisitor<E, F, D, I> visitor) {
+		return visitor.visit(this);
+	}
 
 	/**
 	 * {@inheritDoc}
@@ -95,70 +87,11 @@ public final class IntComparisonFormula extends Formula {
 	}
 
 	/**
-	 * Represents a binary comarison operator:  =, < , >, <=, >=.
+	 * {@inheritDoc}
+	 * @see kodkod.ast.Node#toString()
 	 */
-	public static enum Operator implements BinaryOperator<IntExpression,Formula> {
-		/** `=' operator */
-		EQ { 
-			public String toString() { return "="; }
-			/** 
-			 * Returns true.
-			 * @return true
-			 **/
-			public boolean commutative() { return true; }
-		},
-		/** `<' operator */
-		LT {
-			public String toString() { return "<"; }
-			/** 
-			 * Returns false.
-			 * @return false
-			 **/
-			public boolean commutative() { return false; }
-		},
-		/** `<=' operator */
-		LTE { 
-			public String toString() { return "<="; }
-			/** 
-			 * Returns false.
-			 * @return false
-			 **/
-			public boolean commutative() { return false; }
-		
-		},
-		/** `>' operator */
-		GT { 
-			public String toString() { return ">"; }
-			/** 
-			 * Returns false.
-			 * @return false
-			 **/
-			public boolean commutative() { return false; }
-		},
-		/** `>=' operator */
-		GTE { 
-			public String toString() { return ">="; }
-			/** 
-			 * Returns false.
-			 * @return false
-			 **/
-			public boolean commutative() { return false; }
-		};
-
-		
-		/**
-		 * {@inheritDoc}
-		 * @see kodkod.ast.BinaryOperator#apply(java.lang.Object, java.lang.Object)
-		 */
-		public final Formula apply(IntExpression left, IntExpression right) { 
-			return new IntComparisonFormula(left, this, right);
-		}
-		
-		/** 
-		 * Returns false.
-		 * @return false
-		 **/
-		public final boolean associative() { return false; }
+	public String toString() {
+		return "(" + left + " " + op + " " + right + ")";
 	}
-	
+
 }

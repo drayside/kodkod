@@ -21,9 +21,35 @@
  */
 package kodkod.ast;
 
+import static kodkod.ast.operator.ExprCastOperator.CARDINALITY;
+import static kodkod.ast.operator.ExprCastOperator.SUM;
+import static kodkod.ast.operator.ExprCompOperator.EQUALS;
+import static kodkod.ast.operator.ExprCompOperator.SUBSET;
+import static kodkod.ast.operator.ExprOperator.CLOSURE;
+import static kodkod.ast.operator.ExprOperator.DIFFERENCE;
+import static kodkod.ast.operator.ExprOperator.INTERSECTION;
+import static kodkod.ast.operator.ExprOperator.JOIN;
+import static kodkod.ast.operator.ExprOperator.OVERRIDE;
+import static kodkod.ast.operator.ExprOperator.PRODUCT;
+import static kodkod.ast.operator.ExprOperator.REFLEXIVE_CLOSURE;
+import static kodkod.ast.operator.ExprOperator.TRANSPOSE;
+import static kodkod.ast.operator.ExprOperator.UNION;
+import static kodkod.ast.operator.Multiplicity.LONE;
+import static kodkod.ast.operator.Multiplicity.NO;
+import static kodkod.ast.operator.Multiplicity.ONE;
+import static kodkod.ast.operator.Multiplicity.SOME;
+
+
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
+
+import kodkod.ast.operator.ExprCastOperator;
+import kodkod.ast.operator.ExprCompOperator;
+import kodkod.ast.operator.ExprOperator;
+import kodkod.ast.operator.Multiplicity;
 import kodkod.ast.visitor.ReturnVisitor;
-
-
+import kodkod.util.collections.Containers;
 
 /** 
  * A relational expression.  Unless otherwise noted,
@@ -35,7 +61,7 @@ import kodkod.ast.visitor.ReturnVisitor;
  *
  * @author Emina Torlak 
  */
-public abstract class Expression implements Node {
+public abstract class Expression extends Node {
 	
 	/** The universal relation:  contains all atoms in a {@link kodkod.instance.Universe universe of discourse}. */
 	public static final Expression UNIV = new ConstantExpression("univ", 1);
@@ -57,104 +83,209 @@ public abstract class Expression implements Node {
 
     /**
      * Returns the join of this and the specified expression.  The effect
-     * of this method is the same as calling this.compose(BinaryExpression.Operator.JOIN, expr).
-     * @return {e : Expression | e = this.expr}
+     * of this method is the same as calling this.compose(JOIN, expr).
+     * @return this.compose(JOIN, expr)
      */
     public final Expression join(Expression expr) {
-        return compose(BinaryExpression.Operator.JOIN,expr);
+        return compose(JOIN,expr);
     }
     
     /**
      * Returns the product of this and the specified expression.  The effect
-     * of this method is the same as calling this.compose(BinaryExpression.Operator.PRODUCT, expr).
-     * @return {e : Expression | e = this->expr}
+     * of this method is the same as calling this.compose(PRODUCT, expr).
+     * @return this.compose(PRODUCT, expr)
      */
     public final Expression product(Expression expr) {
-        return compose(BinaryExpression.Operator.PRODUCT,expr);
+        return compose(PRODUCT,expr);
     }
     
     /**
      * Returns the union of this and the specified expression.  The effect
-     * of this method is the same as calling this.compose(BinaryExpression.Operator.UNION, expr).
-     * @return {e : Expression | e = this + expr}
+     * of this method is the same as calling this.compose(UNION, expr).
+     * @return this.compose(UNION, expr)
      */
     public final Expression union(Expression expr) {
-    	return compose(BinaryExpression.Operator.UNION,expr);
+    	return compose(UNION,expr);
     }
     
     /**
      * Returns the difference of this and the specified expression.  The effect
-     * of this method is the same as calling this.compose(BinaryExpression.Operator.DIFFERENCE, expr).
-     * @return {e : Expression | e = this - expr}
+     * of this method is the same as calling this.compose(DIFFERENCE, expr).
+     * @return this.compose(DIFFERENCE, expr)
      */
     public final Expression difference(Expression expr) {
-    	return compose(BinaryExpression.Operator.DIFFERENCE,expr);
+    	return compose(DIFFERENCE,expr);
     }
     
     /**
      * Returns the intersection of this and the specified expression.  The effect
-     * of this method is the same as calling this.compose(BinaryExpression.Operator.INTERSECTION, expr).
-     * @return {e : Expression | e = this & expr}
+     * of this method is the same as calling this.compose(INTERSECTION, expr).
+     * @return this.compose(INTERSECTION, expr)
      */
     public final Expression intersection(Expression expr) {
-    	return compose(BinaryExpression.Operator.INTERSECTION,expr);
+    	return compose(INTERSECTION,expr);
     }
     
     /**
      * Returns the relational override of this with the specified expression.  The effect
-     * of this method is the same as calling this.compose(BinaryExpression.Operator.OVERRIDE, expr).
-     * @return {e : Expression | e = this ++ expr}
+     * of this method is the same as calling this.compose(OVERRIDE, expr).
+     * @return this.compose(OVERRIDE, expr)
      */
     public final Expression override(Expression expr) {
-    	return compose(BinaryExpression.Operator.OVERRIDE,expr);
+    	return compose(OVERRIDE,expr);
     }
     
     /**
      * Returns the composition of this and the specified expression, using the
      * given binary operator.
-     * @return {e: Expression | e = this op expr }
+     * @requires op in ExprOperator.BINARY
+     * @return {e: Expression | e.left = this and e.right = expr and e.op = this }
      */
-    public final Expression compose(BinaryExpression.Operator op, Expression expr) {
+    public final Expression compose(ExprOperator op, Expression expr) {
     	return new BinaryExpression(this, op, expr);
     }
     
     /**
+     * Returns the union of the given expressions.  The effect of this method is the
+     * same as calling compose(UNION, exprs).
+     * @return compose(UNION, exprs)
+     */
+    public static Expression union(Expression...exprs) { 
+    	return compose(UNION, exprs);
+    }
+    
+    /**
+     * Returns the union of the given expressions.  The effect of this method is the
+     * same as calling compose(UNION, exprs).
+     * @return compose(UNION, exprs)
+     */
+    public static Expression union(Collection<? extends Expression> exprs) { 
+    	return compose(UNION, exprs);
+    }
+       
+    /**
+     * Returns the intersection of the given expressions.  The effect of this method is the
+     * same as calling compose(INTERSECTION, exprs).
+     * @return compose(INTERSECTION, exprs)
+     */
+    public static Expression intersection(Expression...exprs) { 
+    	return compose(INTERSECTION, exprs);
+    }
+    
+    /**
+     * Returns the intersection of the given expressions.  The effect of this method is the
+     * same as calling compose(INTERSECTION, exprs).
+     * @return compose(INTERSECTION, exprs)
+     */
+    public static Expression intersection(Collection<? extends Expression> exprs) { 
+    	return compose(INTERSECTION, exprs);
+    }
+    
+    /**
+     * Returns the product of the given expressions.  The effect of this method is the
+     * same as calling compose(PRODUCT, exprs).
+     * @return compose(PRODUCT, exprs)
+     */
+    public static Expression product(Expression...exprs) { 
+    	return compose(PRODUCT, exprs);
+    }
+    
+    /**
+     * Returns the product of the given expressions.  The effect of this method is the
+     * same as calling compose(PRODUCT, exprs).
+     * @return compose(PRODUCT, exprs)
+     */
+    public static Expression product(Collection<? extends Expression> exprs) { 
+    	return compose(PRODUCT, exprs);
+    }
+    
+    /**
+     * Returns the override of the given expressions.  The effect of this method is the
+     * same as calling compose(OVERRIDE, exprs).
+     * @return compose(OVERRIDE, exprs)
+     */
+    public static Expression override(Expression...exprs) { 
+    	return compose(OVERRIDE, exprs);
+    }
+    
+    /**
+     * Returns the override of the given expressions.  The effect of this method is the
+     * same as calling compose(OVERRIDE, exprs).
+     * @return compose(OVERRIDE, exprs)
+     */
+    public static Expression override(Collection<? extends Expression> exprs) { 
+    	return compose(OVERRIDE, exprs);
+    }
+    
+    /**
+     * Returns the composition of the given expressions using the given operator. 
+     * @requires exprs.length = 2 => op.binary(), exprs.length > 2 => op.nary()
+     * @return exprs.length=1 => exprs[0] else {e: Expression | e.children = exprs and e.op = this }
+     */
+    public static Expression compose(ExprOperator op, Expression...exprs) { 
+    	switch(exprs.length) { 
+    	case 0 : 	throw new IllegalArgumentException("Expected at least one argument: " + Arrays.toString(exprs));
+    	case 1 : 	return exprs[0];
+    	case 2 : 	return new BinaryExpression(exprs[0], op, exprs[1]);
+    	default : 	return new NaryExpression(op, Containers.copy(exprs, new Expression[exprs.length]));
+    	}
+    }
+    
+    /**
+     * Returns the composition of the given expressions using the given operator. 
+     * @requires exprs.size() = 2 => op.binary(), exprs.size() > 2 => op.nary()
+     * @return exprs.size()=1 => exprs.iterator().next() else {e: Expression | e.children = exprs.toArray() and e.op = this }
+     */
+    public static Expression compose(ExprOperator op, Collection<? extends Expression> exprs) { 
+    	switch(exprs.size()) { 
+    	case 0 : 	throw new IllegalArgumentException("Expected at least one argument: " + exprs);
+    	case 1 : 	return exprs.iterator().next();
+    	case 2 :
+    		final Iterator<? extends Expression> itr = exprs.iterator();
+    		return new BinaryExpression(itr.next(), op, itr.next());
+    	default : 			
+    		return new NaryExpression(op, exprs.toArray(new Expression[exprs.size()]));
+    	}
+    }
+    
+    
+    
+    /**
      * Returns the transpose of this.  The effect of this method is the same
-     * as calling this.apply(UnaryExpression.Operator.TRANSPOSE).
-     * @return {e : Expression | e = ~this}
+     * as calling this.apply(TRANSPOSE).
+     * @return this.apply(TRANSPOSE)
      */
     public final Expression transpose() {
-        return apply(UnaryExpression.Operator.TRANSPOSE);
+        return apply(TRANSPOSE);
     }
     
     /**
      * Returns the transitive closure of this.  The effect of this  method is the same
-     * as calling this.apply(UnaryExpression.Operator.CLOSURE).
-     * @return {e : Expression | e = ^this}
-     * @throws IllegalArgumentException - this.arity != 2
+     * as calling this.apply(CLOSURE).
+     * @return this.apply(CLOSURE)
      */
     public final Expression closure() {
-        return apply(UnaryExpression.Operator.CLOSURE);
+        return apply(CLOSURE);
     }
     
     /**
      * Returns the reflexive transitive closure of this.  The effect of this 
      * method is the same
-     * as calling this.apply(UnaryExpression.Operator.REFLEXIVE_CLOSURE).
-     * @return {e : Expression | e = *this}
-     * @throws IllegalArgumentException - this.arity != 2
+     * as calling this.apply(REFLEXIVE_CLOSURE).
+     * @return this.apply(REFLEXIVE_CLOSURE)
      */
     public final Expression reflexiveClosure() {
-    	return apply(UnaryExpression.Operator.REFLEXIVE_CLOSURE);
+    	return apply(REFLEXIVE_CLOSURE);
     }
     
     /**
      * Returns the expression that results from applying the given unary operator
      * to this.  
-     * @return {e: Expression | e = op this }
+     * @requires op.unary()
+     * @return {e: Expression | e.expression = this && e.op = this }
      * @throws IllegalArgumentException - this.arity != 2
      */
-    public final Expression apply(UnaryExpression.Operator op) {
+    public final Expression apply(ExprOperator op) {
     	return new UnaryExpression(op, this);
     }
     
@@ -169,20 +300,20 @@ public abstract class Expression implements Node {
     
     /**
      * Returns the cardinality of this expression.  The effect of this method is the
-     * same as calling this.apply(ExprToIntCast.Operator.CARDINALITY).  
-     * @return {e: IntExpression | e = #this }
+     * same as calling this.apply(CARDINALITY).  
+     * @return this.apply(CARDINALITY)
      */
     public final IntExpression count() {
-    	return apply(ExprToIntCast.Operator.CARDINALITY);
+    	return apply(CARDINALITY);
     }
     
     /**
      * Returns the sum of the integer atoms in this expression.  The effect of this method is the
-     * same as calling this.apply(ExprToIntCast.Operator.SUM).  
-     * @return {e: IntExpression | e = sum(this) }
+     * same as calling this.apply(SUM).  
+     * @return this.apply(SUM)
      */
     public final IntExpression sum() {
-    	return apply(ExprToIntCast.Operator.SUM);
+    	return apply(SUM);
     }
     
     /**
@@ -191,78 +322,78 @@ public abstract class Expression implements Node {
      * or the sum of the integer atoms it contains (if op is SUM).
      * @return {e: IntExpression | e.op = op && e.expression = this} 
      */
-    public final IntExpression apply(ExprToIntCast.Operator op) { 
+    public final IntExpression apply(ExprCastOperator op) { 
     	return new ExprToIntCast(this, op);
     }
     
     /**
      * Returns the formula 'this = expr'. The effect of this method is the same 
-     * as calling this.compose(ComparisonFormula.Operator.EQUALS, expr).
-     * @return {f : Formula | f <=> this = expr}
+     * as calling this.compare(EQUALS, expr).
+     * @return this.compare(EQUALS, expr)
      */
     public final Formula eq(Expression expr) {
-    	return compose(ComparisonFormula.Operator.EQUALS, expr);
+    	return compare(EQUALS, expr);
     }
     
     /**
      * Returns the formula 'this in expr'.  The effect of this method is the same 
-     * as calling this.compose(ComparisonFormula.Operator.SUBSET, expr).
-     * @return {f : Formula | f <=> this in expr}
+     * as calling this.compare(SUBSET, expr).
+     * @return this.compare(SUBSET, expr)
      */
     public final Formula in(Expression expr) {
-    	return compose(ComparisonFormula.Operator.SUBSET, expr);
+    	return compare(SUBSET, expr);
     }
     
     /**
-     * Returns the formula that represents the composition of this and the
-     * given expression with the given comparison operator.
-     * @return {f: Formula | f <=> this op expr }
+     * Returns the formula that represents the comparison of this and the
+     * given expression using the given comparison operator.
+     * @return {f: Formula | f.left = this && f.right = expr  && f.op = op}
      */
-    public final Formula compose(ComparisonFormula.Operator op, Expression expr) {
+    public final Formula compare(ExprCompOperator op, Expression expr) {
     	return new ComparisonFormula(this, op, expr);
     }
     
     /**
      * Returns the formula 'some this'.  The effect of this method is the same as calling
-     * this.apply(MultiplicityFormula.Multiplicity.SOME).
-     * @return {f : Formula | f <=> some this}
+     * this.apply(SOME).
+     * @return this.apply(SOME)
      */
     public final Formula some() {
-        return apply(Multiplicity.SOME);
+        return apply(SOME);
     }
     
     /**
      * Returns the formula 'no this'.  The effect of this method is the same as calling
-     * this.apply(MultiplicityFormula.Multiplicity.NO).
-     * @return {f : Formula | f <=> no this}
+     * this.apply(NO).
+     * @return this.apply(NO)
      */
     public final Formula no() {
-        return apply(Multiplicity.NO);
+        return apply(NO);
     }
     
     /**
      * Returns the formula 'one this'.  The effect of this method is the same as calling
-     * this.apply(MultiplicityFormula.Multiplicity.ONE).
-     * @return {f : Formula | f <=> one this}
+     * this.apply(ONE).
+     * @return this.apply(ONE)
      */
     public final Formula one() {
-        return apply(Multiplicity.ONE);
+        return apply(ONE);
     }
     
     /**
      * Returns the formula 'lone this'.  The effect of this method is the same as calling
-     * this.apply(MultiplicityFormula.Multiplicity.LONE).
-     * @return {f : Formula | f <=> lone this}
+     * this.apply(LONE).
+     * @return this.apply(LONE)
      */
     public final Formula lone() {
-        return apply(Multiplicity.LONE);
+        return apply(LONE);
     }
     
     /**
      * Returns the formula that results from applying the specified multiplicity to
      * this expression.  The SET multiplicity is not allowed.
-     * @return {f: Formula | f <=> mult this}
-     * @throws IllegalArgumentException - mult = Multiplicity.SET
+     * @return {f: Formula | f.multiplicity = mult && f.expression = this}
+     * @throws IllegalArgumentException - mult = SET
      */
     public final Formula apply(Multiplicity mult) {
     	return new MultiplicityFormula(mult, this);

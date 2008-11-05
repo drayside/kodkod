@@ -17,6 +17,7 @@ import kodkod.ast.Decl;
 import kodkod.ast.Formula;
 import kodkod.ast.IntComparisonFormula;
 import kodkod.ast.MultiplicityFormula;
+import kodkod.ast.NaryFormula;
 import kodkod.ast.Node;
 import kodkod.ast.NotFormula;
 import kodkod.ast.QuantifiedFormula;
@@ -224,19 +225,7 @@ final class TrivialProof extends Proof {
 		 * @return some r: this.log.records | r.node = node && no r.env && r.literal = BooleanConstant.TRUE.label
 		 */
 		final boolean isTrue(Node node) { return constNodes.get(node)==Boolean.TRUE; }
-		
-		/**
-		 * Returns true if the node was simplified to FALSE during translation.
-		 * @return some r: this.log.records | r.node = node && no r.env && r.literal = BooleanConstant.FALSE.label
-		 */
-		final boolean isFalse(Node node) { return constNodes.get(node)==Boolean.FALSE; }
-		
-		/**
-		 * Returns true if the node was simplified to a constant during translation. 
-		 * @return isFalse(node) or isTrue(node)
-		 */
-		final boolean isConstant(Node node) { return constNodes.containsKey(node);	}
-		
+				
 		public void visit(Decl decl) { 
 			if (visited(decl)) return;
 			relevant.add(decl);
@@ -290,47 +279,70 @@ final class TrivialProof extends Proof {
 			relevant.add(binFormula);
 			
 			final Formula l = binFormula.left(), r = binFormula.right();
-			final boolean ltrue = isTrue(l), lfalse = isFalse(l);
-			final boolean rtrue = isTrue(r), rfalse = isFalse(r);
-			
-			boolean lrelevant = true, rrelevant = true;
+			final Boolean lval = constNodes.get(l), rval = constNodes.get(r);
+			final boolean lvisit, rvisit;
 			
 			switch(binFormula.op()) {
 			case AND : 
-				if (isFalse(binFormula)) {
-					lrelevant = !ltrue && (lfalse || !rfalse);
-					rrelevant = !rtrue && (rfalse || !lfalse);
-				} else if (!isTrue(binFormula)) {
-					lrelevant = !ltrue;
-					rrelevant = !rtrue;
-				}
+				lvisit = (lval==Boolean.FALSE || (lval==null && rval!=Boolean.FALSE));
+				rvisit = (rval!=Boolean.TRUE && lval!=Boolean.FALSE);
 				break;
 			case OR :
-				if (isTrue(binFormula)) {
-					lrelevant = !lfalse && (ltrue || !rtrue);
-					rrelevant = !rfalse && (rtrue || !ltrue);
-				} else if (!isFalse(binFormula)) {
-					lrelevant = !lfalse;
-					rrelevant = !rfalse;
-				}
+				lvisit = (lval==Boolean.TRUE || (lval==null && rval!=Boolean.TRUE));
+				rvisit = (rval!=Boolean.FALSE && lval!=Boolean.TRUE);
 				break;
 			case IMPLIES: // !l || r
-				if (isTrue(binFormula)) {
-					lrelevant = !ltrue && (lfalse || !rtrue);
-					rrelevant = !rfalse && (rtrue || !lfalse);
-				} else if (!isFalse(binFormula)) {
-					lrelevant = !ltrue;
-					rrelevant = !rfalse;
-				}
+				lvisit = (lval==Boolean.FALSE || (lval==null && rval!=Boolean.TRUE));
+				rvisit = (rval!=Boolean.FALSE && lval!=Boolean.FALSE);
 				break;
 			case IFF: // (!l || r) && (l || !r) 
+				lvisit = rvisit = true;
 				break;
 			default :
 				throw new IllegalArgumentException("Unknown operator: " + binFormula.op());
 			}	
 			
-			if (lrelevant) { l.accept(this); }
-			if (rrelevant) { r.accept(this); }
+			if (lvisit) { l.accept(this); }
+			if (rvisit) { r.accept(this); }
+		}
+		
+		/**
+		 * If this formula should be visited, then we visit its children only
+		 * if they could have contributed to the unsatisfiability of the top-level
+		 * formula.  For example, let binFormula = "p && q", binFormula simplified
+		 * to FALSE, p simplified to FALSE and q was not simplified, then only p 
+		 * should be visited since p caused binFormula's reduction to FALSE.
+		 */
+		public void visit(NaryFormula formula) {
+			if (visited(formula)) return;
+			relevant.add(formula);
+			
+			final Boolean val = constNodes.get(formula);
+			final Boolean cancel;
+			
+			switch(formula.op()) { 
+			case AND : cancel = Boolean.FALSE; break;
+			case OR  : cancel = Boolean.TRUE; break;
+			default  : throw new IllegalArgumentException("Unknown nary operator: " + formula.op());
+			}
+			
+			final Boolean iden = Boolean.valueOf(!cancel);
+			if (val!=iden) {
+				for(Formula child : formula) { 
+					if (constNodes.get(child)==cancel) {
+						child.accept(this);
+						return;
+					}
+				}
+				for(Formula child : formula) { 
+					if (constNodes.get(child)!=iden)	{ 
+						child.accept(this); 
+					} 
+				}
+				return;
+			} 
+				
+			for(Formula child : formula) { child.accept(this); }
 		}
 	}
 	

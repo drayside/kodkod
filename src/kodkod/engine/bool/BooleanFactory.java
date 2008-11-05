@@ -47,11 +47,11 @@ public abstract class BooleanFactory {
 	/**
 	 * IMPLEMENTATION NOTE:  BooleanFactory is the facade and a mediator for this package.
 	 */
-	private static CircuitFactory CONSTANT_FACTORY;
+	private static CBCFactory CONSTANT_FACTORY;
 	/**
 	 * A circuit factory used internally to assemble circuits.
 	 */
-	private final CircuitFactory circuits;
+	private final CBCFactory circuits;
 	
 	/** The bitwidth used for integer computations */
 	final int bitwidth;
@@ -70,10 +70,10 @@ public abstract class BooleanFactory {
 	private BooleanFactory(int numVars, int comparisonDepth, int bitwidth) {
 		if (numVars==0) {
 			if (CONSTANT_FACTORY==null)
-				CONSTANT_FACTORY = new CircuitFactory(0, 1);
+				CONSTANT_FACTORY = new CBCFactory(0, 1);
 			this.circuits = CONSTANT_FACTORY;
 		} else {
-			this.circuits = new CircuitFactory(numVars, 1<<comparisonDepth);
+			this.circuits = new CBCFactory(numVars, 1<<comparisonDepth);
 		}
 		this.bitwidth = bitwidth;
 	}
@@ -157,6 +157,8 @@ public abstract class BooleanFactory {
 	public final boolean contains(BooleanValue v) {
 		return circuits.canAssemble(v);
 	}
+	
+	
 	
 	/**
 	 * Returns the number of variables in this.components

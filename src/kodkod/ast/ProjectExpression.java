@@ -22,11 +22,11 @@
 package kodkod.ast;
 
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.Iterator;
 
 import kodkod.ast.visitor.ReturnVisitor;
 import kodkod.ast.visitor.VoidVisitor;
+import kodkod.util.collections.Containers;
 
 /**
  * A general projection expression.  For example,
@@ -34,14 +34,13 @@ import kodkod.ast.visitor.VoidVisitor;
  * project(e, 1, 3) = {&lt;a, c&gt;, &lt;d, f&gt;} and project(e, 1, 1, 2) = {&lt;a, a, b&gt;, &lt;d, d, e&gt;, &lt;d, d, g&gt;}.
  * 
  * @specfield expression: Expression 
- * @specfield arity: [1..)
  * @specfield columns: [0..arity) -> one IntExpression
- * @invariant children = expression + columns[int]
+ * @invariant children = 0->expression + { i: int, e: IntExpression | columns[i-1] = e }
  * @author Emina Torlak
  */
 public final class ProjectExpression extends Expression {
 	private final Expression expr;
-	private final List<IntExpression> columns;
+	private final IntExpression[] columns;
 
 	/**
 	 * Constructs a new projection expression using the given
@@ -50,37 +49,38 @@ public final class ProjectExpression extends Expression {
 	 */
 	ProjectExpression(Expression expr, IntExpression... columns) {
 		if (columns.length==0)
-			throw new IllegalArgumentException("no columns specified for projection");
+			throw new IllegalArgumentException("No columns specified for projection.");
 		this.expr = expr;
-		final IntExpression[] temp = new IntExpression[columns.length];
-		System.arraycopy(columns, 0, temp, 0, columns.length);
-		this.columns = Collections.unmodifiableList(Arrays.asList(temp));
+		this.columns = new IntExpression[columns.length];
+		System.arraycopy(columns, 0, this.columns, 0, columns.length);
 	}
 
 	/**
-	 * Returns this.arity.
-	 * @return this.arity
+	 * {@inheritDoc}
+	 * @see kodkod.ast.Expression#arity()
 	 */
-	@Override
-	public int arity() {
-		return columns.size();
-	}
+	public int arity() { return columns.length; }
 
 	/**
 	 * Returns this.expression.
-	 * @return this.expressioin 
+	 * @return this.expression 
 	 */
-	public Expression expression() {
-		return expr;
+	public Expression expression() { return expr; }
+	
+	/**
+	 * Returns an iterator over this.columns, in proper sequence.
+	 * @return an iterator over this.columns, in proper sequence
+	 */
+	public Iterator<IntExpression> columns() {
+		return Containers.iterate(columns);
 	}
 	
 	/**
-	 * Returns this.columns.
-	 * @return this.columns
+	 * Returns the ith column.
+	 * @requires 0 <= i < this.arity
+	 * @return this.columns[i]
 	 */
-	public List<IntExpression> columns() {
-		return columns;
-	}
+	public IntExpression column(int i) { return columns[i]; }
 	
 	/**
 	 * {@inheritDoc}
@@ -100,11 +100,11 @@ public final class ProjectExpression extends Expression {
 	}
 
 	/**
-	 * Returns the string representation of this expression.
-	 * @return string representation of this expression
+	 * {@inheritDoc}
+	 * @see kodkod.ast.Node#toString()
 	 */
 	public String toString() {
-		return expr.toString() + columns.toString();
+		return expr.toString() + Arrays.toString(columns);
 	}
 		
 }

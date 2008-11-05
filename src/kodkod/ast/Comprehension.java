@@ -22,6 +22,7 @@
 package kodkod.ast;
 
 
+import kodkod.ast.operator.Multiplicity;
 import kodkod.ast.visitor.ReturnVisitor;
 import kodkod.ast.visitor.VoidVisitor;
 
@@ -30,24 +31,24 @@ import kodkod.ast.visitor.VoidVisitor;
 /** 
  * A comprehension expression, e.g. { a: A, b: B | a.r = b }
  *  
- * @specfield declarations: Declarations
+ * @specfield decls: Declarations
  * @specfield formula: Formula
- * @invariant arity = sum(declarations.declarations().arity)
- * @invariant children = declarations + formula
+ * @invariant arity = sum(decls.declarations().arity)
+ * @invariant children = 0->decls + 1->formula
  * @author Emina Torlak 
  */
 public final class Comprehension extends Expression  {
 
-    private final Decls declarations;
+    private final Decls decls;
     private final Formula formula;
 
     
     /**  
-     * Constructs a comprehension expression with the specified declarations
+     * Constructs a comprehension expression with the specified decls
      * and formula
      * 
-     * @effects this.declarations' = declarations && this.formula' = formula
-     * @throws NullPointerException - declarations = null || formula = null
+     * @effects this.decls' = decls && this.formula' = formula
+     * @throws NullPointerException - decls = null || formula = null
      */
     Comprehension(Decls declarations, Formula formula) {
         if (formula == null) throw new NullPointerException("null formula");
@@ -55,7 +56,7 @@ public final class Comprehension extends Expression  {
         	if (decl.variable().arity()>1 || decl.multiplicity()!=Multiplicity.ONE)
         		throw new IllegalArgumentException("Cannot have a higher order declaration in a comprehension: "+decl);
         }
-        this.declarations = declarations;
+        this.decls = declarations;
         this.formula = formula;
     }
 
@@ -65,42 +66,42 @@ public final class Comprehension extends Expression  {
     public Formula formula() {return formula; }
     
     /**
-     * @return this.declarations
+     * @return this.decls
      */
-    public Decls declarations() {return declarations;}
+    public Decls decls() {return decls;}
     
     /**
      * Returns the arity of this comprehension expression, which is the sum
      * of the arities of declared variables
      * 
-     * @return sum(this.declarations.declarations().arity)
+     * @return #this.decls
      */
     public int arity() {
-        return declarations.size();
+        return decls.size();
     }
     
-    /**
-     * Accepts the given visitor and returns the result.
-     * @see kodkod.ast.Node#accept(kodkod.ast.visitor.ReturnVisitor)
-     */
+   /**
+    * {@inheritDoc}
+    * @see kodkod.ast.Expression#accept(kodkod.ast.visitor.ReturnVisitor)
+    */
     public <E, F, D, I> E accept(ReturnVisitor<E, F, D, I> visitor) {
 		return visitor.visit(this);
 	}
    
-    /**
-     * Accepts the given visitor.
-     * @see kodkod.ast.Node#accept(kodkod.ast.visitor.VoidVisitor)
-     */
+   /**
+    * {@inheritDoc}
+    * @see kodkod.ast.Node#accept(kodkod.ast.visitor.VoidVisitor)
+    */
     public void accept(VoidVisitor visitor) {
         visitor.visit(this);
     }
    
     /**
-	 * Returns the string representation of this expression.
-	 * @return string representation of this expression
-	 */
+     * {@inheritDoc}
+     * @see kodkod.ast.Node#toString()
+     */
     public String toString() {
-        return "{ " + declarations().toString() + " | " + formula().toString() + " }";
+        return "{ " + decls().toString() + " | " + formula().toString() + " }";
     }
 
 }

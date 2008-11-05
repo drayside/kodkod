@@ -31,6 +31,8 @@ import kodkod.ast.ConstantFormula;
 import kodkod.ast.Decl;
 import kodkod.ast.Decls;
 import kodkod.ast.ExprToIntCast;
+import kodkod.ast.Expression;
+import kodkod.ast.Formula;
 import kodkod.ast.IfExpression;
 import kodkod.ast.IfIntExpression;
 import kodkod.ast.IntComparisonFormula;
@@ -38,6 +40,9 @@ import kodkod.ast.IntConstant;
 import kodkod.ast.IntExpression;
 import kodkod.ast.IntToExprCast;
 import kodkod.ast.MultiplicityFormula;
+import kodkod.ast.NaryExpression;
+import kodkod.ast.NaryFormula;
+import kodkod.ast.NaryIntExpression;
 import kodkod.ast.Node;
 import kodkod.ast.NotFormula;
 import kodkod.ast.ProjectExpression;
@@ -104,6 +109,17 @@ public abstract class AbstractVoidVisitor implements VoidVisitor {
 	public void visit(ConstantExpression constExpr) {}
 	
 	/**
+	 * Visits the children if this.visited(expr) returns false.  Otherwise does nothing.
+	 * @effects all i: [0..#expr.children) | expr.child(i).accept(this)
+	 */
+	public void visit(NaryExpression expr) { 
+		if (visited(expr)) return;
+		for(Expression child : expr) { 
+			child.accept(this);
+		}
+	}
+	
+	/**
 	 * Visits the left and right subexpressions  if
 	 * this.visited(binExpr) returns false.  Otherwise does nothing.
 	 * @effects binExpr.left.accept(this) && binExpr.right.accept(this)
@@ -131,7 +147,7 @@ public abstract class AbstractVoidVisitor implements VoidVisitor {
 	 */
 	public void visit(Comprehension comprehension) {
 		if (visited(comprehension)) return;
-		comprehension.declarations().accept(this);
+		comprehension.decls().accept(this);
 		comprehension.formula().accept(this);
 	}
 	
@@ -156,8 +172,8 @@ public abstract class AbstractVoidVisitor implements VoidVisitor {
 	public void visit(ProjectExpression project) {
 		if (visited(project)) return;
 		project.expression().accept(this);
-		for(IntExpression column : project.columns()) {
-			column.accept(this);
+		for(int i = 0, arity = project.arity(); i < arity; i++) {
+			project.column(i).accept(this);
 		}
 	}
 	
@@ -200,6 +216,17 @@ public abstract class AbstractVoidVisitor implements VoidVisitor {
 	}
 	
 	/**
+	 * Visits the children if this.visited(intExpr) returns false.  Otherwise does nothing.
+	 * @effects all i: [0..#intExpr.children) | intExpr.child(i).accept(this)
+	 */
+	public void visit(NaryIntExpression intExpr) {
+		if (visited(intExpr)) return;
+		for(IntExpression child : intExpr) { 
+			child.accept(this);
+		}
+	}
+	
+	/**
 	 * Visits the children of the given integer expression  if
 	 * this.visited(intExpr) returns false.  Otherwise does nothing.
 	 * @effects intExpr.left.accept(this) && intExpr.right.accept(this)
@@ -217,7 +244,7 @@ public abstract class AbstractVoidVisitor implements VoidVisitor {
 	 */
 	public void visit(UnaryIntExpression intExpr) {
 		if (visited(intExpr)) return;
-		intExpr.expression().accept(this);
+		intExpr.intExpr().accept(this);
 	}
 	
 	/**
@@ -227,7 +254,7 @@ public abstract class AbstractVoidVisitor implements VoidVisitor {
 	 */
 	public void visit(SumExpression intExpr) {
 		if (visited(intExpr)) return;
-		intExpr.declarations().accept(this);
+		intExpr.decls().accept(this);
 		intExpr.intExpr().accept(this);
 	}
 	
@@ -249,8 +276,19 @@ public abstract class AbstractVoidVisitor implements VoidVisitor {
 	 */
 	public void visit(QuantifiedFormula quantFormula) {
 		if (visited(quantFormula)) return;
-		quantFormula.declarations().accept(this);
+		quantFormula.decls().accept(this);
 		quantFormula.formula().accept(this);
+	}
+	
+	/**
+	 * Visits the children if this.visited(formula) returns false.  Otherwise does nothing.
+	 * @effects all i: [0..#formula.children) | formula.child(i).accept(this)
+	 */
+	public void visit(NaryFormula formula) {
+		if (visited(formula)) return;
+		for(Formula child : formula) { 
+			child.accept(this);
+		}
 	}
 	
 	/**

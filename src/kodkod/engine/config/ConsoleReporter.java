@@ -23,12 +23,14 @@ package kodkod.engine.config;
 
 
 import java.util.List;
+import java.util.Set;
 
 import kodkod.ast.Decl;
 import kodkod.ast.Formula;
 import kodkod.ast.Relation;
 import kodkod.engine.bool.BooleanFormula;
 import kodkod.instance.Bounds;
+import kodkod.util.ints.IntSet;
 
 /**
  * An implementation of the reporter interface that prints messages
@@ -73,18 +75,26 @@ public final class ConsoleReporter implements Reporter {
 
 
 	/**
-	 * @see kodkod.engine.config.Reporter#optimizingBounds()
+	 * {@inheritDoc}
+	 * @see kodkod.engine.config.Reporter#detectingSymmetries(kodkod.instance.Bounds)
 	 */
-	public void optimizingBounds() {
-		System.out.println("optimizing bounds (breaking predicate symmetries) ...");
+	public void detectingSymmetries(Bounds bounds){
+		System.out.println("detecting symmetries ...");
 	}
-
+	
 	/**
 	 * {@inheritDoc}
-	 * @see kodkod.engine.config.Reporter#optimizingFormula()
+	 * @see kodkod.engine.config.Reporter#detectedSymmetries(java.util.Set)
 	 */
-	public void optimizingFormula() {
-		System.out.println("optimizaing formula (inlining predicates and skolemizing) ...");
+	public void detectedSymmetries(Set<IntSet> parts) {
+//		System.out.println("detected symmetries: " + parts);
+	}
+	
+	/**
+	 * @see kodkod.engine.config.Reporter#optimizingBoundsAndFormula()
+	 */
+	public void optimizingBoundsAndFormula() {
+		System.out.println("optimizing bounds and formula (breaking predicate symmetries, inlining, skolemizing) ...");
 	}
 	
 	/**
