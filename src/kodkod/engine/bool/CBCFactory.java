@@ -174,8 +174,8 @@ final class CBCFactory {
 		if (i==TRUE || t==e) return t;
 		else if (i==FALSE) return e;
 		else if (t==TRUE || i==t) return assemble(OR, i, e);
-		else if (t==FALSE || i.negation()==t) return assemble(AND, i.negation(), e);
-		else if (e==TRUE || i.negation()==e) return assemble(OR, i.negation(), t);
+		else if (t==FALSE || i.label()==-t.label()) return assemble(AND, i.negation(), e);
+		else if (e==TRUE || i.label()==-e.label()) return assemble(OR, i.negation(), t);
 		else if (e==FALSE || i==e) return assemble(AND, i, t);
 		else {
 			final BooleanFormula f0 = (BooleanFormula) i, f1 = (BooleanFormula) t, f2 = (BooleanFormula) e;
@@ -356,9 +356,10 @@ final class CBCFactory {
 		 */
 		BooleanValue assemble(Nary op, BooleanFormula f0, BooleanFormula f1) {
 			assert f0.op().ordinal < 2;
-			if (f0.contains(f0.op(), f1, cmpMax) > 0) 
+			final int label = f1.label();
+			if (f0.contains(f0.op(), label, cmpMax) > 0) 
 				return op==f0.op() ? f0 : f1;
-			else if (op==f0.op() && f0.contains(op, f1.negation(), cmpMax)>0) 
+			else if (op==f0.op() && f0.contains(op, -label, cmpMax)>0) 
 				return op.shortCircuit();
 			else 
 				return cache(op, f0, f1);
@@ -504,8 +505,9 @@ final class CBCFactory {
 		 */
 		BooleanValue assemble(Nary op, BooleanFormula f0, BooleanFormula f1) {
 			assert f0.op() == NOT ;
-			if (f0.input(0).contains(op.complement(), f1, cmpMax)>0) return op.shortCircuit();
-			else if (f0.input(0).contains(op.complement(), f1.negation(), cmpMax)>0) return f0;
+			final int label = f1.label();
+			if (f0.input(0).contains(op.complement(), label, cmpMax)>0) return op.shortCircuit();
+			else if (f0.input(0).contains(op.complement(), -label, cmpMax)>0) return f0;
 			else return cache(op, f0, f1);
 		}
 	};

@@ -68,9 +68,10 @@ final class NaryGate extends MultiGate {
 		return Containers.iterate(inputs);
 	}
 	
-	/**
+	 /** 
 	 * Returns an integer k' such that 0 < |k'| < k and |k'| is the number of flattening
-	 * steps that need to be taken to determine that f is (not) an input to this circuit.
+	 * steps that need to be taken to determine that this circuit has (or does not have)
+	 * an input with the given label.
 	 * A positive k' indicates that f is found to be an input to this circuit in k' steps.
 	 * A negative k' indicates that f is not an input to this circuit, when it is flattened
 	 * using at most k steps.  
@@ -79,20 +80,19 @@ final class NaryGate extends MultiGate {
 	 * steps that need to be taken to determine that f is (not) an input to this circuit
 	 */
 	@Override
-	int contains(Operator op, BooleanFormula f, int k) {
+	int contains(Operator op, int f, int k) {
 		assert k > 0;
-		if (f==this) return 1;
-		else if (this.op != op) return -1;
+		if (f==label()) return 1;
+		else if (this.op != op || f>label() || -f>label()) return -1;
 		else {
 			int low = 0, high = inputs.length-1, step = 1;
-			final int key = f.label();
 			while (low <= high && step <= k) {
 				int mid = (low + high) >>> 1;
 				int midVal = inputs[mid].label();
 				
-				if (midVal < key)
+				if (midVal < f)
 					low = mid + 1;
-				else if (midVal > key)
+				else if (midVal > f)
 					high = mid - 1;
 				else
 					return step; // key found in the given number of steps

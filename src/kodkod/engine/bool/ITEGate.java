@@ -151,22 +151,22 @@ public final class ITEGate extends BooleanFormula {
 		return inputs[i];
 	}
 	
-	/**
+	 /**
 	 * Returns an integer k' such that 0 < |k'| < k and |k'| is the number of flattening
-	 * steps that need to be taken to determine that f is (not) an input to this circuit.
+	 * steps that need to be taken to determine that this circuit has (or does not have)
+	 * an input with the given label.
 	 * A positive k' indicates that f is found to be an input to this circuit in k' steps.
-	 * A negative k' indicatets that f is not an input to this circuit, when it is flattened
+	 * A negative k' indicates that f is not an input to this circuit, when it is flattened
 	 * using at most k steps.  
 	 * @requires k > 0
-	 * @return this=f => 1, k>2 && f in this.inputs[int] => 3, -3
+	 * @return this=f => 1 else op=ITE && k>2 && f in this.inputs[int].label => 3 else -3
 	 */
 	@Override
-	int contains(Operator op, BooleanFormula f, int k) {
+	int contains(Operator op, int f, int k) {
 		assert k > 0;
-		if (f==this) return 1;
-		else if (op != Operator.ITE || k < 3) return -1;
-		else 
-			return (inputs[0]==f || inputs[1]==f || inputs[2]==f) ? 3 : -3;
+		if (f==label) return 1;
+		else if (op != Operator.ITE || k < 3 || f>label || -f>label) return -1;
+		else return (inputs[0].label()==f || inputs[1].label()==f || inputs[2].label()==f) ? 3 : -3;
 	}
 		
 	/**
