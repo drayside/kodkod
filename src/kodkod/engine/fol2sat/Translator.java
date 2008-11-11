@@ -281,7 +281,16 @@ public final class Translator {
 				return cache(pred, ret);
 			}
 		};
-		return new AnnotatedNode<Formula>(annotated.node().accept(inliner), sources);	
+
+		return new AnnotatedNode<Formula>(annotated.node().accept(inliner), sources);
+//		final AnnotatedNode<Formula> ret = new AnnotatedNode<Formula>(annotated.node().accept(inliner), sources);
+//		System.out.println("SOURCES: ");
+//		for(Map.Entry<Node, Node> entry : sources.entrySet()) { 
+//			System.out.println("KEY: " + entry.getKey());
+//			System.out.println("VALUE: " + entry.getValue());
+//			System.out.println("-----");
+//		}
+//		return ret;
 	}
 	
 	/**

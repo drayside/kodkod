@@ -326,7 +326,7 @@ public abstract class RelationPredicate extends Formula {
 			final Variable e = Variable.unary("e"+relation().name());
 			final Formula f3 = e.join(relation()).one().forAll(e.oneOf(ordered.difference(last)));
 
-			return f0.and(f1).and(f2).and(f3);
+			return and(f0, f1, f2, f3);
 		}
 
 		   

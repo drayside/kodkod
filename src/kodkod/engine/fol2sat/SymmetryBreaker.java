@@ -316,7 +316,7 @@ final class SymmetryBreaker {
 	 * @return null if symmetry cannot be broken on acyclic; otherwise returns a formula
 	 * f such that the meaning of acyclic with respect to this.bounds is equivalent to the
 	 * meaning of f with respect to this.bounds' 
-	 * @effects this.symmetries and this.bounds are modified as desribed in {@linkplain #breakMatrixSymmetries(Map, boolean)} iff this.bounds.upperBound[acyclic.relation] is the 
+	 * @effects this.symmetries and this.bounds are modified as described in {@linkplain #breakMatrixSymmetries(Map, boolean)} iff this.bounds.upperBound[acyclic.relation] is the 
 	 * cross product of some partition in this.symmetries with itself
 	 * 
 	 * @see #breakMatrixSymmetries(Map,boolean)
@@ -408,17 +408,17 @@ final class SymmetryBreaker {
 					return Formula.TRUE;
 					
 				} else {
-					final Relation firstConst = Relation.unary("SYM_BREAKING_CONST"+first.name());
-					final Relation lastConst = Relation.unary("SYM_BREAKING_CONST"+last.name());
-					final Relation ordConst = Relation.unary("SYM_BREAKING_CONST"+ordered.name());
-					final Relation relConst = Relation.binary("SYM_BREAKING_CONST"+relation.name());
+					final Relation firstConst = Relation.unary("SYM_BREAK_CONST_"+first.name());
+					final Relation lastConst = Relation.unary("SYM_BREAK_CONST_"+last.name());
+					final Relation ordConst = Relation.unary("SYM_BREAK_CONST_"+ordered.name());
+					final Relation relConst = Relation.binary("SYM_BREAK_CONST_"+relation.name());
 					bounds.boundExactly(firstConst, f.setOf(f.tuple(1, domain.min())));
 					bounds.boundExactly(lastConst, f.setOf(f.tuple(1, domain.max())));
 					bounds.boundExactly(ordConst, bounds.upperBound(total.ordered()));
 					bounds.boundExactly(relConst, f.setOf(2, ordering));
 					
-					return first.eq(firstConst).and(last.eq(lastConst)).and(ordered.eq(ordConst)).and(relation.eq(relConst));
-
+					return Formula.and(first.eq(firstConst), last.eq(lastConst), ordered.eq(ordConst), relation.eq(relConst));
+//					return first.eq(firstConst).and(last.eq(lastConst)).and( ordered.eq(ordConst)).and( relation.eq(relConst));
 				}
 
 			}

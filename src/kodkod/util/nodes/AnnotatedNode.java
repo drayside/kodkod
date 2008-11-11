@@ -161,7 +161,7 @@ public final class AnnotatedNode<N extends Node> {
 					}
 				} else if (f instanceof NaryFormula) { 
 					NaryFormula nf = (NaryFormula) f;
-					if (nf.op()==FormulaOperator.AND) { 
+					if (nf.op()==FormulaOperator.AND && !untransformedRoots.contains(sourceOf(nf))) { 
 						itr.remove();
 						for(Formula child : nf) { 
 							itr.add(child);

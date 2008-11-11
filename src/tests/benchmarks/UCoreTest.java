@@ -8,7 +8,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-
 import junit.framework.TestCase;
 import kodkod.ast.Formula;
 import kodkod.engine.Proof;
@@ -59,7 +58,8 @@ public final class UCoreTest extends TestCase {
 	
 	// scopes 1-5
 	private static final Class<?>[] MEDIUM = {
-		Lists.class, Trees.class, Hotel.class, RingElection.class, 
+		Lists.class, Trees.class, Hotel.class, 
+		RingElection.class, 
 		COM008.class, TOP020.class, 
 		GEO091.class, GEO092.class, GEO115.class, 
 		GEO158.class, GEO159.class, LAT258.class, 
@@ -85,6 +85,11 @@ public final class UCoreTest extends TestCase {
 		proof.minimize(strategy);
 		final Set<Formula> core = proof.highLevelCore();
 	
+//		System.out.println(PrettyPrinter.print(Formula.and(proof.log().roots()), 2));
+//		System.out.println("-------");
+//		System.out.println(PrettyPrinter.print(Formula.and(core), 2));
+//		System.out.println("-----");
+		
 		// check that the conjunction of the high-level core formulas is false
 		assertNull(solver.solve(Formula.and(core), bounds).instance());
 		
@@ -149,7 +154,7 @@ public final class UCoreTest extends TestCase {
 				for(int scope = 1; scope <= maxScope; scope++ ) { 
 					Bounds bounds = UCoreStats.bounds(instance, scope);
 					Solution sol = solver.solve(check, bounds);
-					if (sol.outcome()==Solution.Outcome.UNSATISFIABLE) { 
+					if (sol.outcome()==Solution.Outcome.UNSATISFIABLE) {
 						minimizeAndVerify(bounds, sol.proof(), UCoreStats.instance(strategy, sol.proof().log()));
 					} 
 				}
