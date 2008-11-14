@@ -41,6 +41,7 @@ import kodkod.ast.ConstantFormula;
 import kodkod.ast.Formula;
 import kodkod.ast.Node;
 import kodkod.ast.Variable;
+import kodkod.engine.Solver;
 import kodkod.engine.bool.BooleanMatrix;
 import kodkod.engine.bool.BooleanValue;
 import kodkod.instance.Bounds;
@@ -55,10 +56,12 @@ import kodkod.util.nodes.Nodes;
 /**
  * A file-based translation logger that logs translation events
  * to a temporary file.
- * @specfield formula: Formula
- * @specfield transforms: formula.*children lone-> Formula
- * @specfield bounds: Bounds
- * @specfield records: (iden ++ transforms).Formula -> BooleanValue -> Environment<BooleanMatrix>
+ * @specfield originalFormula: Formula // the {@linkplain Solver#solve(Formula, kodkod.instance.Bounds) original} formula, provided by the user
+ * @specfield originalBounds: Bounds // the {@linkplain Solver#solve(Formula, kodkod.instance.Bounds) original} bounds, provided by the user
+ * @specfield formula: Formula // desugaring of this.formula that was translated
+ * @specfield bounds: Bounds // translation bounds
+ * @specfield records: (formula.*children & Formula) -> BooleanValue -> Environment<BooleanMatrix>
+ * @invariant Solver.solve(formula, bounds).instance() == null iff Solver.solve(originalFormula, originalBounds).instance() == null
  * @author Emina Torlak
  */
 final class FileLogger extends TranslationLogger {
@@ -67,20 +70,18 @@ final class FileLogger extends TranslationLogger {
 	private final AnnotatedNode<Formula> annotated;
 	private final File file;
 	private DataOutputStream out;
-	private final TupleFactory factory;
-	
+	private final Bounds bounds;
 	/**
 	 * Constructs a new file logger from the given annotated formula.
-	 * @requires broken in annotated.source[annotated.node].*children
-	 * @effects this.formula' = annotated.source[annotated.node]  
-	 * @effects this.transforms' = ~(annotated.source) 
+	 * @effects this.formula' = annotated.node
+	 * @effects this.originalFormula' = annotated.source[annotated.node]
 	 * @effects this.bounds' = bounds
+	 * @effects this.log().roots() = Nodes.conjuncts(annotated)
 	 * @effects no this.records' 
 	 */
 	@SuppressWarnings("unchecked")
 	FileLogger(final AnnotatedNode<Formula> annotated, Bounds bounds) {
 		this.annotated = annotated;
-		this.factory = bounds.universe().factory();
 		try {
 			this.file = File.createTempFile("kodkod", ".log");
 			this.out = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(file)));
@@ -104,6 +105,7 @@ final class FileLogger extends TranslationLogger {
 			}
 			index++;
 		}
+		this.bounds = bounds.unmodifiableView();
 	}
 	
 	/**
@@ -175,7 +177,7 @@ final class FileLogger extends TranslationLogger {
 	 */
 	@Override
 	TranslationLog log() {
-		return new FileLog(annotated, logMap, file, factory);
+		return new FileLog(annotated, logMap, file, bounds);
 	}
 	
 	/**
@@ -191,10 +193,11 @@ final class FileLogger extends TranslationLogger {
 	 */
 	private static final class FileLog extends TranslationLog {
 	    private final Set<Formula> roots;
-		private final Node[] indexedNodes;
-	    private final Variable[][] indexedVars;
+		private final Node[] original;
+		private final Formula[] translated;
+	    private final Variable[][] freeVars;
 	    private final File file;
-	    private final TupleFactory factory;
+	    private final Bounds bounds;
 	   
 	    /**
 	     * Constructs a new file log for the sources of the given annotated formula,
@@ -202,19 +205,20 @@ final class FileLogger extends TranslationLogger {
 	     * @requires all f: annotated.node.*children & Formula | logMap.get(f) = freeVariables(f)
 	     * @requires the file was written by a FileLogger using the given map
 	     */
-	    FileLog(AnnotatedNode<Formula> annotated, FixedMap<Formula, Variable[]> logMap, File file, TupleFactory factory) {
+	    FileLog(AnnotatedNode<Formula> annotated, FixedMap<Formula, Variable[]> logMap, File file, Bounds bounds) {
 	    	this.file = file;
-	    	this.factory = factory;
-	    	this.roots = Nodes.roots((Formula) annotated.sourceOf(annotated.node()));
-	    	assert roots.size() == annotated.sourceSensitiveRoots().size() ;
+	    	this.bounds = bounds;
+	    	this.roots = Nodes.conjuncts(annotated.node());
 	    	
 	    	final int size = logMap.entrySet().size();
-	    	this.indexedNodes = new Node[size];
-	    	this.indexedVars = new Variable[size][];
+	    	this.original = new Node[size];
+	    	this.translated = new Formula[size];
+	    	this.freeVars = new Variable[size][];
 	    	int index = 0;
 	    	for(Map.Entry<Formula, Variable[]> e : logMap.entrySet()) {
-	    		indexedNodes[index] = annotated.sourceOf(e.getKey());
-	    		indexedVars[index] = e.getValue();
+	    		translated[index] = e.getKey();
+	    		original[index] = annotated.sourceOf(e.getKey());
+	    		freeVars[index] = e.getValue();
 	    		index++;
 	    	}
 	    }
@@ -232,7 +236,13 @@ final class FileLogger extends TranslationLogger {
 		 * @see kodkod.engine.fol2sat.TranslationLog#roots()
 		 */
 	    public Set<Formula> roots() { return roots; } 
-	    	
+	    
+	    /**
+	     * {@inheritDoc}
+	     * @see kodkod.engine.fol2sat.TranslationLog#bounds()
+	     */
+	    public Bounds bounds() { return bounds; }
+	    
 		/**
 		 * {@inheritDoc}
 		 * @see kodkod.engine.fol2sat.TranslationLog#replay(kodkod.engine.fol2sat.RecordFilter)
@@ -240,6 +250,7 @@ final class FileLogger extends TranslationLogger {
 		public Iterator<TranslationRecord> replay(final RecordFilter filter) {
 			try {	
 				return new Iterator<TranslationRecord>() {
+					final TupleFactory factory = bounds.universe().factory();
 					final DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(file)));
 					final MutableRecord current = new MutableRecord(), next = new MutableRecord();
 					long remaining = file.length();
@@ -250,7 +261,7 @@ final class FileLogger extends TranslationLogger {
 								final long indexLiteral = in.readLong();
 								final int literal = (int) (indexLiteral);
 								final int index = (int) (indexLiteral>>>32);
-								final Variable[] freeVars = indexedVars[index];
+								final Variable[] freeVars = FileLog.this.freeVars[index];
 								final Map<Variable,TupleSet> env;
 								if (freeVars.length==0) {
 									env = Collections.emptyMap();
@@ -260,8 +271,8 @@ final class FileLogger extends TranslationLogger {
 										env.put(freeVars[i], factory.setOf(1, Ints.singleton(in.readInt())));
 									}
 								}
-								if (filter.accept(indexedNodes[index], literal, env)) {
-									next.setAll(indexedNodes[index], literal, env);
+								if (filter.accept(original[index], translated[index], literal, env)) {
+									next.setAll(original[index], translated[index], literal, env);
 								}
 								remaining -= (8 + (freeVars.length << 2));
 								
@@ -269,7 +280,16 @@ final class FileLogger extends TranslationLogger {
 								throw new RuntimeException(e);
 							}
 						}
-						return next.node != null;
+						if (next.node==null) {
+							try {
+								in.close();
+							} catch (IOException e) {
+								throw new RuntimeException(e);
+							}
+							return false;
+						} else {
+							return true;
+						}
 					}
 
 					public TranslationRecord next() {
@@ -295,22 +315,25 @@ final class FileLogger extends TranslationLogger {
 	 */
 	private static final class MutableRecord extends TranslationRecord {
 		Node node = null; 
+		Formula translated = null;
 		int literal = 0;
 		Map<Variable,TupleSet> env = null;
 		
 		public Map<Variable, TupleSet> env() { return env;	}
 		public int literal() { return literal;	}
 		public Node node() { return node; }
-		void setAll(Node node, int literal, Map<Variable,TupleSet> env) {
+		void setAll(Node node, Formula translated, int literal, Map<Variable,TupleSet> env) {
 			this.node = node;
+			this.translated = translated;
 			this.literal = literal;
 			this.env = env;
 		}
 		TranslationRecord setAll(MutableRecord other) {
-			setAll(other.node, other.literal, other.env);
-			other.setAll(null,0,null);
+			setAll(other.node, other.translated, other.literal, other.env);
+			other.setAll(null,null,0,null);
 			return this;
 		}
+		public Formula translated() { return translated;}
 	}
 
 }

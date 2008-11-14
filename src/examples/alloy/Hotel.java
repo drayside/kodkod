@@ -39,6 +39,7 @@ import kodkod.engine.ucore.RCEStrategy;
 import kodkod.instance.Bounds;
 import kodkod.instance.TupleFactory;
 import kodkod.instance.Universe;
+import kodkod.util.nodes.Nodes;
 import kodkod.util.nodes.PrettyPrinter;
 
 /**
@@ -629,7 +630,7 @@ public final class Hotel {
 				System.out.print("\nminimizing core ... ");
 				final long start = System.currentTimeMillis();
 				proof.minimize(new RCEStrategy(proof.log()));
-				final Set<Formula> core = proof.highLevelCore();
+				final Set<Formula> core = Nodes.minRoots(f, proof.highLevelCore().values());
 				final long end = System.currentTimeMillis();
 				System.out.println("done (" + (end-start) + " ms).");
 				System.out.println("minimal core: " + core.size());

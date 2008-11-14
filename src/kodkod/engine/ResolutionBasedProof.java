@@ -2,7 +2,7 @@ package kodkod.engine;
 
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -31,7 +31,7 @@ import kodkod.util.ints.IntTreeSet;
 final class ResolutionBasedProof extends Proof {
 	private SATProver solver;
 	private RecordFilter coreFilter;
-	private Set<Formula> coreRoots;
+	private Map<Formula,Node> coreRoots;
 	
 	/**
 	 * Constructs a new ResolutionRefutation that will extract the 
@@ -52,21 +52,20 @@ final class ResolutionBasedProof extends Proof {
 	 * Returns the connected core based on the given set of 
 	 * core variables.  
 	 * @requires coreVar = StrategyUtils.coreVars(solver.proof());
-	 * @return let coreNodes = (this.log.records & literal.{i: int | abs(i) in coreVars}).node | 
-	 *  {n: coreNodes  | some s: set coreNodes | 
-	 *   n + this.log.formula in s and (s - this.log.formula).~children in s }
+	 * @return let formulas = (this.log.records[int] & literal.{i: int | abs(i) in coreVars}).formula |
+	 *  	   connected = {f: formulas  | some s: set coreNodes | f + this.log.formula in s and (s - this.log.formula).~components in s } 
 	 */
-	private Set<Node> connectedCore(final IntSet coreVars) {
-		final Set<Node> coreNodes = new IdentityHashSet<Node>();
+	private Set<Formula>  connectedCore(final IntSet coreVars) {
+		final Set<Formula> coreNodes = new IdentityHashSet<Formula>();
 		final RecordFilter filter = new RecordFilter() {
-			public boolean accept(Node node, int literal, Map<Variable,TupleSet> env) {
+			public boolean accept(Node node, Formula translated, int literal, Map<Variable,TupleSet> env) {
 				return coreVars.contains(StrictMath.abs(literal));
 			}
 		};
-		for(Iterator<TranslationRecord> iter = log().replay(filter); iter.hasNext(); ) {
-			coreNodes.add(iter.next().node());
+		for(Iterator<TranslationRecord> itr = log().replay(filter); itr.hasNext(); ) {
+			coreNodes.add(itr.next().translated());
 		}
-		final Set<Node> connected = new IdentityHashSet<Node>();
+		final Set<Formula> connected = new IdentityHashSet<Formula>();
 		final AbstractVoidVisitor traverser = new AbstractVoidVisitor() {
 			final Set<Node> visited = new IdentityHashSet<Node>();
 			/**
@@ -80,7 +79,7 @@ final class ResolutionBasedProof extends Proof {
 			 */
 			protected boolean visited(Node n) {
 				if (visited.add(n) && coreNodes.contains(n)) {
-					connected.add(n);
+					connected.add((Formula)n);
 					return false;
 				}
 				return true;
@@ -100,9 +99,9 @@ final class ResolutionBasedProof extends Proof {
 		if (coreFilter == null) {
 			coreFilter = new RecordFilter() {
 				final IntSet coreVariables = StrategyUtils.coreVars(solver.proof());
-				final Set<Node> coreNodes = connectedCore(coreVariables);
-				public boolean accept(Node node, int literal, Map<Variable,TupleSet> env) {
-					return coreNodes.contains(node) && coreVariables.contains(StrictMath.abs(literal));
+				final Set<Formula> coreNodes = connectedCore(coreVariables);
+				public boolean accept(Node node, Formula translated, int literal, Map<Variable,TupleSet> env) {
+					return coreNodes.contains(translated) && coreVariables.contains(StrictMath.abs(literal));
 				}
 			};
 		}
@@ -110,22 +109,20 @@ final class ResolutionBasedProof extends Proof {
 	}
 	
 	/**
-	 * Returns the unsatisfiable subset of the top-level conjunctions of this.formula
-	 * as given by {@linkplain #core() this.core()}.
-	 * @return the unsatisfiable subset of the top-level conjunctions of this.formula,
-	 * as given by {@linkplain #core() this.core()}.
+	 * {@inheritDoc}
+	 * @see kodkod.engine.Proof#highLevelCore()
 	 */
-	public final Set<Formula> highLevelCore() {
+	public final Map<Formula, Node> highLevelCore() {
 		if (coreRoots == null) { 
 			final RecordFilter unitFilter = new RecordFilter() {
 				final IntSet coreUnits = StrategyUtils.coreUnits(solver.proof());
 				final Set<Formula> roots = log().roots();
-				public boolean accept(Node node, int literal, Map<Variable, TupleSet> env) {
-					return roots.contains(node) && coreUnits.contains(Math.abs(literal));
+				public boolean accept(Node node, Formula translated, int literal, Map<Variable, TupleSet> env) {
+					return roots.contains(translated) && coreUnits.contains(Math.abs(literal));
 				}
 				
 			};
-			coreRoots = new LinkedHashSet<Formula>();
+			coreRoots = new LinkedHashMap<Formula, Node>();
 			final IntSet seenUnits = new IntTreeSet();
 			for(Iterator<TranslationRecord> itr = log().replay(unitFilter); itr.hasNext(); ) {
 				// it is possible that two top-level formulas have identical meaning,
@@ -133,10 +130,10 @@ final class ResolutionBasedProof extends Proof {
 				// one of them in the core.
 				final TranslationRecord rec = itr.next();
 				if (seenUnits.add(rec.literal())) {
-					coreRoots.add((Formula)rec.node());
-				}
+					coreRoots.put(rec.translated(), rec.node());
+				}  
 			}
-			coreRoots = Collections.unmodifiableSet(coreRoots);
+			coreRoots = Collections.unmodifiableMap(coreRoots);
 		}
 		return coreRoots;
 	}

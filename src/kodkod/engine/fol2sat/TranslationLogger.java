@@ -22,16 +22,19 @@
 package kodkod.engine.fol2sat;
 
 import kodkod.ast.Formula;
+import kodkod.engine.Solver;
 import kodkod.engine.bool.BooleanMatrix;
 import kodkod.engine.bool.BooleanValue;
 
 /**
- * Logs the translations of all descendants of a given formula that 
+ * Logs the translations of all descendants of a user-provided formula that 
  * are either formulas or that desugar to formulas.  
- * @specfield formula: Formula
- * @specfield bounds: Bounds
- * @specfield transforms: formula.*children lone-> Formula 
- * @specfield records: (iden ++ transforms).Formula -> BooleanValue -> Environment<BooleanMatrix>
+ * @specfield originalFormula: Formula // the {@linkplain Solver#solve(Formula, kodkod.instance.Bounds) original} formula, provided by the user
+ * @specfield originalBounds: Bounds // the {@linkplain Solver#solve(Formula, kodkod.instance.Bounds) original} bounds, provided by the user
+ * @specfield formula: Formula // desugaring of this.formula that was translated
+ * @specfield bounds: Bounds // translation bounds
+ * @specfield records: (formula.*children & Formula) -> BooleanValue -> Environment<BooleanMatrix>
+ * @invariant Solver.solve(formula, bounds).instance() == null iff Solver.solve(originalFormula, originalBounds).instance() == null
  * @author Emina Torlak
  */
 abstract class TranslationLogger {
@@ -40,9 +43,8 @@ abstract class TranslationLogger {
 	 * Optionally records the translation of the source of the 
 	 * given transformed formula to the given boolean value 
 	 * in the specified environment.
-	 * @requires some this.transforms.f
-	 * @effects this.records' = this.records or 
-	 * this.records' = this.records + this.transforms.f -> translation -> freeVariables(f)<:env
+	 * @requires f in this.formula.*children
+	 * @effects this.records' = this.records or this.records' = this.records + f -> translation -> freeVariables(f)<:env
 	 * @throws IllegalArgumentException - some aspect of the given translation event prevents it from being logged
 	 * @throws IllegalStateException - this log has been closed
 	 */

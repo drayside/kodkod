@@ -1,6 +1,5 @@
 package tests.basic;
 
-import tests.benchmarks.UCoreTest;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 

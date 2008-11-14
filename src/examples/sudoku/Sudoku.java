@@ -34,6 +34,7 @@ import java.util.Map;
 import kodkod.ast.Decls;
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
+import kodkod.ast.Node;
 import kodkod.ast.Relation;
 import kodkod.ast.Variable;
 import kodkod.engine.Proof;
@@ -237,8 +238,8 @@ public final class Sudoku {
 			final Proof proof = sol.proof();
 			final long[] coreData = extractor.extract(proof);
 			System.out.println("Core (strategy="+extractor.name().toLowerCase()+", size="+coreData[0]+", ms="+coreData[1]+"):");
-			for(Formula f : proof.highLevelCore()) { 
-				System.out.println(f);
+			for(Node n : proof.highLevelCore().values()) { 
+				System.out.println(n);
 			}
 		}
 	}

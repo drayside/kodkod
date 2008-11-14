@@ -23,6 +23,7 @@ package examples.alloy;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
@@ -35,6 +36,7 @@ import kodkod.engine.ucore.RCEStrategy;
 import kodkod.instance.Bounds;
 import kodkod.instance.TupleFactory;
 import kodkod.instance.Universe;
+import kodkod.util.nodes.Nodes;
 
 /**
  * A toy list specification.
@@ -234,13 +236,14 @@ public final class ToyLists {
 				
 				System.out.println("Minimal core: " + sol.proof().highLevelCore().size());
 				
+				final Set<Formula> core = Nodes.minRoots(f, sol.proof().highLevelCore().values());
 				
-				for(Formula c : sol.proof().highLevelCore() ) { 
+				for(Formula c : core ) { 
 					System.out.println(c);
 				}
 				
 				System.out.print("checking the core ... ");
-				if (solver.solve(Formula.and(sol.proof().highLevelCore()), b).instance()==null) { 
+				if (solver.solve(Formula.and(core), b).instance()==null) { 
 					System.out.println("correct.");
 				} else {
 					System.out.println("incorrect!");

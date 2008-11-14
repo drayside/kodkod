@@ -27,6 +27,7 @@ import static kodkod.ast.operator.FormulaOperator.IMPLIES;
 import static kodkod.ast.operator.FormulaOperator.OR;
 import static kodkod.ast.operator.Quantifier.ALL;
 import static kodkod.ast.operator.Quantifier.SOME;
+import static kodkod.util.nodes.AnnotatedNode.annotate;
 
 import java.util.AbstractList;
 import java.util.ArrayList;
@@ -77,10 +78,10 @@ abstract class Skolemizer extends AbstractReplacer {
 	 * Skolemizes the given annotated formula using the given bounds and options.  If 
 	 * Options.trackFormulas is set and the formula is skolemizable, the resulting annotated
 	 * formula will contain transitive source information for each of its subformulas. 
-	 * Specifically, let f be the returned annotated formula, t be a descendent of f.node, and
-	 * s a descendent of annotated.node from which t was derived.  Then, 
+	 * Specifically, let f be the returned annotated formula, t be a descendeant of f.node, and
+	 * s a descendant of annotated.node from which t was derived.  Then, 
 	 * f.source[t] = annotated.source[s].  If options.trackFormulas is false, no source 
-	 * information will be recorded (i.e. f.source[t] = t for all descendents t of f).
+	 * information will be recorded (i.e. f.source[t] = t for all descendants t of f).
 	 * @effects upper bound mappings for skolem constants, if any, are added to the bounds
 	 * @return the skolemized version of the given formula
 	 * @throws NullPointerException - any of the arguments are null
@@ -100,11 +101,11 @@ abstract class Skolemizer extends AbstractReplacer {
 				}
 			};
 			final Formula f = annotated.node().accept(r);
-			return f==annotated.node() ? annotated : new AnnotatedNode<Formula>(f, source);
+			return f==annotated.node() ? annotated : annotate(f, source);
 		} else {
 			final Skolemizer r = new Skolemizer(annotated, bounds, options) {};
 			final Formula f = annotated.node().accept(r);
-			return f==annotated.node() ? annotated : new AnnotatedNode<Formula>(f);
+			return f==annotated.node() ? annotated : annotate(f);
 		}
 	}
 
@@ -318,7 +319,7 @@ abstract class Skolemizer extends AbstractReplacer {
 	 * @return the least sound upper bound on the value of expr
 	 */
 	private final BooleanMatrix upperBound(Expression expr, Environment<BooleanMatrix> env) {
-		return FOL2BoolTranslator.approximate(new AnnotatedNode<Expression>(expr), interpreter, env);
+		return FOL2BoolTranslator.approximate(annotate(expr), interpreter, env);
 	}
 	
 	/**

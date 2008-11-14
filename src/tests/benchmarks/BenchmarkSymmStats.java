@@ -21,6 +21,7 @@
  */
 package tests.benchmarks;
 
+import static tests.util.Reflection.*;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -45,7 +46,6 @@ import kodkod.instance.TupleSet;
 import kodkod.util.ints.ArrayIntVector;
 import kodkod.util.ints.IntSet;
 import kodkod.util.ints.IntVector;
-import tests.util.ObjectCreator;
 import tests.util.ProcessRunner;
 
 /**
@@ -282,9 +282,9 @@ public class BenchmarkSymmStats {
 
 		try {
 			
-			final Object instance = ObjectCreator.construct(args[0].contains("(") ? args[0] : args[0]+"()");
-			final Formula formula = ObjectCreator.create(instance, args[1].contains("(") ? args[1] : args[1]+"()");
-			final Bounds bounds = ObjectCreator.create(instance, args.length==3 ? args[2] : "bounds()");
+			final Object instance = construct(args[0].contains("(") ? args[0] : args[0]+"()");
+			final Formula formula = create(instance, args[1].contains("(") ? args[1] : args[1]+"()");
+			final Bounds bounds = create(instance, args.length==3 ? args[2] : "bounds()");
 
 			// <class name> <method name> 
 			System.out.print(args[0]+"\t");

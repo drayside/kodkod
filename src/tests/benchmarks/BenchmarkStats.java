@@ -21,6 +21,7 @@
  */
 package tests.benchmarks;
 
+import static tests.util.Reflection.*;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -38,7 +39,6 @@ import kodkod.engine.satlab.SATFactory;
 import kodkod.instance.Bounds;
 import kodkod.util.ints.IntSet;
 import kodkod.util.ints.IntTreeSet;
-import tests.util.ObjectCreator;
 
 
 /**
@@ -135,9 +135,9 @@ public final class BenchmarkStats {
 		try {
 			final Map<String,String> opts = options(args);
 
-			final Object instance = ObjectCreator.construct(args[0].contains("(") ? args[0] : args[0]+"()");
-			final Formula formula = ObjectCreator.create(instance, args[1].contains("(") ? args[1] : args[1]+"()");
-			final Bounds bounds = ObjectCreator.create(instance, opts.containsKey("-scope") ? opts.get("-scope") : "bounds()");
+			final Object instance = construct(args[0].contains("(") ? args[0] : args[0]+"()");
+			final Formula formula = create(instance, args[1].contains("(") ? args[1] : args[1]+"()");
+			final Bounds bounds = create(instance, opts.containsKey("-scope") ? opts.get("-scope") : "bounds()");
 			
 
 			final GateReporter reporter = new GateReporter();

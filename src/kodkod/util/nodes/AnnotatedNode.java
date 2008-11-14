@@ -31,10 +31,6 @@ import static kodkod.ast.operator.FormulaOperator.OR;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.IdentityHashMap;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 
@@ -75,21 +71,21 @@ import kodkod.util.collections.Stack;
  * various information about annotated nodes.
  * 
  * @specfield node: N // annotated node
- * @specfield source: N.*children ->one Node // maps the subnodes of this.node to nodes from 
- *                                           // which they were derived by some transformation process
- *                                           // (e.g. skolemization, predicate inlining)  
+ * @specfield source: node.*components ->one Node // maps the subnodes of this.node to nodes from 
+ *                                            // which they were derived by some transformation process
+ *                                            // (e.g. skolemization, predicate inlining)                                     
  * @author Emina Torlak
  */ 
 public final class AnnotatedNode<N extends Node> {
 	private final N node;
 	private final Set<Node> sharedNodes;
-	private final Map<Node, Node> source;
+	private final Map<? extends Node, ? extends Node> source;
 	
 	/**
 	 * Constructs a new annotator for the given node.
-	 * @effects this.node' = node && this.source' = ((node.*children -> node.*children) & iden)
+	 * @effects this.node' = node && this.source' = node.*components<:iden
 	 */
-	public AnnotatedNode(N node) {
+	private AnnotatedNode(N node) {
 		this.node = node;
 		final SharingDetector detector = new SharingDetector();
 		node.accept(detector);
@@ -100,14 +96,40 @@ public final class AnnotatedNode<N extends Node> {
 	
 	/**
 	 * Constructs a new annotator for the given node and source map.
-	 * @effects this.node' = node && this.source' = ((node.*children -> node.*children) & iden) ++ source
+	 * @effects this.node' = node && this.source' = node.*components<:iden ++ source
 	 */
-	public AnnotatedNode(N node, Map<Node,Node> source) {
+	private AnnotatedNode(N node, Map<? extends Node, ? extends Node> source) {
 		this.node = node;
 		final SharingDetector detector = new SharingDetector();
 		node.accept(detector);
 		this.sharedNodes = Collections.unmodifiableSet(detector.sharedNodes());
 		this.source = source;
+	}
+	
+	/**
+	 * Returns an annotation for the given node.  The source map of the returned annotation object
+	 * maps each descendant of the node to itself.
+	 * @return { a: AnnotatedNode<N> | a.node = node && a.source = node.*components<:iden }
+	 */
+	public static <N extends Node> AnnotatedNode<N> annotate(N node) { return new AnnotatedNode<N>(node); }
+	
+	/**
+	 * Returns an annotation for the given node.  The source map of the returned annotation object
+	 * maps each descendant of the node to its value in the given source map, or to itself
+	 * if the given source map has no value for that descendant.
+	 * @return { a: AnnotatedNode<N> | a.node = node && a.source = (node.*components<:iden) ++ source }
+	 */
+	public static <N extends Node> AnnotatedNode<N> annotate(N node, Map<? extends Node, ? extends Node> source) { return new AnnotatedNode<N>(node,source); }
+	
+	/**
+	 * Returns an annotation for an n-ary conjunctions of  {@linkplain Nodes#roots(Formula) roots} of the given formula. 
+	 * The source map of the returned annotation object maps each descendant of the node to itself.  
+	 * The root conjunction itself is mapped to the input formula.
+	 * @return { a: AnnotatedNode<Formula> | a.node = Formula.and(Nodes.roots(formula)) && a.source = (node.^components<:iden) + a.node->formula }
+	 */
+	public static AnnotatedNode<Formula> annotateRoots(Formula formula) { 
+		final Formula flat = Formula.and(Nodes.roots(formula));
+		return new AnnotatedNode<Formula>(flat, Collections.singletonMap(flat, formula));
 	}
 	
 	/**
@@ -119,65 +141,19 @@ public final class AnnotatedNode<N extends Node> {
 	}
 	
 	/**
-	 * Returns the source of the the given descendent
-	 * of this.node.
-	 * @requires n in this.node.*children
+	 * Returns the source of the the given descendant of this.node.
+	 * @requires n in this.node.*components
 	 * @return this.source[n]
 	 */
 	public final Node sourceOf(Node n) {
 		final Node d = source.get(n);
 		return d==null ? n : d;
 	}
+
 	
 	/**
-     * If this.node is a formula, breaks it up into subformulas that correspond
-     * to the roots of this.sourceOf(this.node).  Otherwise returns the empty set. 
-     * @return subformulas, {f0, ..., fk}, of this.node such that [[f0 && ... && fk]] <=> [[this.node]]
-     * and, for all 0<=i<=k, f<sub>i</sub> is a conjunction only if sourceOf(f<sub>i</sub>) is a member 
-     * of Nodes.roots(sourceOf(this.node)).  
-     * @see Nodes#roots(Formula)   
-     */
-	public final Set<Formula> sourceSensitiveRoots() {
-		if (!(node instanceof Formula && sourceOf(node) instanceof Formula)) 
-			return Collections.emptySet();
-		
-		final Set<Formula> untransformedRoots = Nodes.roots((Formula)sourceOf(node));
-		
-		final List<Formula> formulas = new LinkedList<Formula>();
-		formulas.add((Formula)node);
-		
-		int size;
-		do {
-			size = formulas.size();
-			ListIterator<Formula> itr = formulas.listIterator();
-			while(itr.hasNext()) {
-				Formula f = itr.next();
-				if (f instanceof BinaryFormula) {
-					BinaryFormula bin = (BinaryFormula) f;
-					if (bin.op()==FormulaOperator.AND && !untransformedRoots.contains(sourceOf(bin))) {
-						itr.remove();
-						itr.add(bin.left());
-						itr.add(bin.right());
-					}
-				} else if (f instanceof NaryFormula) { 
-					NaryFormula nf = (NaryFormula) f;
-					if (nf.op()==FormulaOperator.AND && !untransformedRoots.contains(sourceOf(nf))) { 
-						itr.remove();
-						for(Formula child : nf) { 
-							itr.add(child);
-						}
-					}
-				}
-			}
-		} while (formulas.size() > size);
-		
-		return new LinkedHashSet<Formula>(formulas);
-	}
-	
-	/**
-	 * Returns the set of all non-leaf descendents
-	 * of this.node that have more than one parent.
-	 * @return {n: Node | some n.children && #(n.~children & this.node.*children) > 1 }
+	 * Returns the set of all non-leaf descendants of this.node that have more than one parent.
+	 * @return {n: Node | some n.children && #(n.~components & this.node.*components) > 1 }
 	 */
 	public final Set<Node> sharedNodes() { 
 		return sharedNodes;
@@ -185,7 +161,7 @@ public final class AnnotatedNode<N extends Node> {
 	
 	/**
 	 * Returns the set of all relations at the leaves of this annotated node.
-	 * @return Relation & this.node.*children
+	 * @return Relation & this.node.*components
 	 */
 	public final Set<Relation> relations() {
 		final Set<Relation> relations = new IdentityHashSet<Relation>();

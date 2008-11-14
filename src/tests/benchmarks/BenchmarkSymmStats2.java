@@ -21,6 +21,7 @@
  */
 package tests.benchmarks;
 
+import static tests.util.Reflection.*;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -49,7 +50,6 @@ import kodkod.util.ints.IntSet;
 import kodkod.util.ints.IntTreeSet;
 import kodkod.util.ints.IntVector;
 import kodkod.util.ints.Ints;
-import tests.util.ObjectCreator;
 import tests.util.ProcessRunner;
 
 /**
@@ -375,9 +375,9 @@ class BenchmarkSymmStats2 {
 				usage();
 			}
 			
-			final Object instance = ObjectCreator.construct(args[1].contains("(") ? args[1] : args[1]+"()");
-			final Formula formula = ObjectCreator.create(instance, args[2].contains("(") ? args[2] : args[2]+"()");
-			final Bounds bounds = ObjectCreator.create(instance, "bounds"+ (args.length==4 ? args[3] : "()"));
+			final Object instance = construct(args[1].contains("(") ? args[1] : args[1]+"()");
+			final Formula formula = create(instance, args[2].contains("(") ? args[2] : args[2]+"()");
+			final Bounds bounds = create(instance, "bounds"+ (args.length==4 ? args[3] : "()"));
 
 			// <class name> <method name> <partial model bits> 
 			System.out.print(args[0].split("\\(")[0]+"\t");

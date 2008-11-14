@@ -47,6 +47,7 @@ import kodkod.instance.Instance;
 import kodkod.util.ints.IntSet;
 import kodkod.util.nodes.AnnotatedNode;
 
+import static kodkod.util.nodes.AnnotatedNode.*;
 
 /** 
  * Translates, evaluates, and approximates {@link Node nodes} with
@@ -67,8 +68,7 @@ public final class Translator {
 	 */
 	@SuppressWarnings("unchecked")
 	public static BooleanMatrix approximate(Expression expression, Bounds bounds, Options options) {
-		return FOL2BoolTranslator.approximate(new AnnotatedNode<Expression>(expression), 
-				LeafInterpreter.overapproximating(bounds, options), Environment.EMPTY);
+		return FOL2BoolTranslator.approximate(annotate(expression), LeafInterpreter.overapproximating(bounds, options), Environment.EMPTY);
 	}
 	
 	/**
@@ -80,9 +80,7 @@ public final class Translator {
 	 * @throws HigherOrderDeclException - the formula contains a higher order declaration
 	 */
 	public static BooleanConstant evaluate(Formula formula, Instance instance, Options options) {
-		return (BooleanConstant) 
-		 FOL2BoolTranslator.translate(new AnnotatedNode<Formula>(formula), 
-				 LeafInterpreter.exact(instance, options));
+		return (BooleanConstant) FOL2BoolTranslator.translate(annotate(formula), LeafInterpreter.exact(instance, options));
 	}
 	
 	/**
@@ -94,9 +92,7 @@ public final class Translator {
 	 * @throws HigherOrderDeclException - the expression contains a higher order declaration
 	 */
 	public static BooleanMatrix evaluate(Expression expression,Instance instance, Options options) {
-		return (BooleanMatrix) 
-		 FOL2BoolTranslator.translate(new AnnotatedNode<Expression>(expression),
-				 LeafInterpreter.exact(instance, options));
+		return (BooleanMatrix) FOL2BoolTranslator.translate(annotate(expression), LeafInterpreter.exact(instance, options));
 	}
 
 	/**
@@ -108,9 +104,7 @@ public final class Translator {
 	 * @throws HigherOrderDeclException - the expression contains a higher order declaration
 	 */
 	public static Int evaluate(IntExpression intExpr, Instance instance, Options options) {
-		return (Int)
-		 FOL2BoolTranslator.translate(new AnnotatedNode<IntExpression>(intExpr),
-				 LeafInterpreter.exact(instance,options));
+		return (Int) FOL2BoolTranslator.translate(annotate(intExpr), LeafInterpreter.exact(instance,options));
 	}
 	
 	/**
@@ -159,12 +153,12 @@ public final class Translator {
 	}
 	
 	/**
-	 * Translates this.formula with respet to this.bounds and this.options.
-	 * @return a Translation whose solver is a SATSolver instance initalized with the 
+	 * Translates this.formula with respect to this.bounds and this.options.
+	 * @return a Translation whose solver is a SATSolver instance initialized with the 
 	 * CNF representation of the given formula, with respect to the given bounds.  The CNF
-	 * is generated in such a way that the magnitutude of a literal representing the truth
+	 * is generated in such a way that the magnitude of a literal representing the truth
 	 * value of a given formula is strictly larger than the magnitudes of the literals representing
-	 * the truth values of the formula's descendents.  
+	 * the truth values of the formula's descendants.  
 	 * @throws TrivialFormulaException - this.formula is reduced to a constant during translation
 	 * (i.e. the formula is trivially (un)satisfiable).
 	 * @throws UnboundLeafException - this.formula refers to an undeclared variable or a relation not mapped by this.bounds.
@@ -172,7 +166,7 @@ public final class Translator {
 	 * be skolemized, or it can be skolemized but this.options.skolemDepth < 0
 	 */
 	private Translation translate() throws TrivialFormulaException  {
-		final AnnotatedNode<Formula> annotated = new AnnotatedNode<Formula>(formula);
+		final AnnotatedNode<Formula> annotated = options.logTranslation()>0 ? annotateRoots(formula) : annotate(formula);
 		final SymmetryBreaker breaker = optimizeBounds(annotated);
 		return toBoolean(optimizeFormula(annotated, breaker), breaker);
 	}
@@ -205,13 +199,22 @@ public final class Translator {
 	 */
 	private AnnotatedNode<Formula> optimizeFormula(AnnotatedNode<Formula> annotated, SymmetryBreaker breaker) {	
 		options.reporter().optimizingBoundsAndFormula();
-		final Map<RelationPredicate.Name, Set<RelationPredicate>> preds = annotated.predicates();
+
 		if (options.logTranslation()==0) { // no logging
-			annotated = inlinePredicates(annotated, breaker.breakMatrixSymmetries(preds, true).keySet());
-		} else {
-			annotated = inlinePredicates(annotated, breaker.breakMatrixSymmetries(preds, false));
+			annotated = inlinePredicates(annotated, breaker.breakMatrixSymmetries(annotated.predicates(), true).keySet());
+			return options.skolemDepth()>=0 ? Skolemizer.skolemize(annotated, bounds, options) : annotated;
+		} else { // logging; inlining of predicates *must* happen last when logging is enabled
+			if (options.coreGranularity()==1) { 
+				annotated = FormulaFlattener.flatten(annotated, false);
+			}
+			if (options.skolemDepth()>=0) {
+				annotated = Skolemizer.skolemize(annotated, bounds, options);
+			}
+			if (options.coreGranularity()>1) { 
+				annotated = FormulaFlattener.flatten(annotated, options.coreGranularity()==3);
+			}
+			return inlinePredicates(annotated, breaker.breakMatrixSymmetries(annotated.predicates(), false));
 		}
-		return options.skolemDepth()>=0 ? Skolemizer.skolemize(annotated, bounds, options) : annotated;
 	}
 	
 	/**
@@ -233,7 +236,7 @@ public final class Translator {
 				return truePreds.contains(pred) ? cache(pred, Formula.TRUE) : cache(pred, pred.toConstraints());
 			}
 		};
-		return new AnnotatedNode<Formula>(annotated.node().accept(inliner));	
+		return annotate(annotated.node().accept(inliner));	
 	}
 	
 	/**
@@ -282,15 +285,7 @@ public final class Translator {
 			}
 		};
 
-		return new AnnotatedNode<Formula>(annotated.node().accept(inliner), sources);
-//		final AnnotatedNode<Formula> ret = new AnnotatedNode<Formula>(annotated.node().accept(inliner), sources);
-//		System.out.println("SOURCES: ");
-//		for(Map.Entry<Node, Node> entry : sources.entrySet()) { 
-//			System.out.println("KEY: " + entry.getKey());
-//			System.out.println("VALUE: " + entry.getValue());
-//			System.out.println("-----");
-//		}
-//		return ret;
+		return annotate(annotated.node().accept(inliner), sources);
 	}
 	
 	/**
@@ -311,7 +306,7 @@ public final class Translator {
 		final LeafInterpreter interpreter = LeafInterpreter.exact(bounds, options);
 		
 		if (options.logTranslation()>0) {
-			final TranslationLogger logger = options.logTranslation()==1 ? new MemoryLogger(annotated) : new FileLogger(annotated, bounds);
+			final TranslationLogger logger = options.logTranslation()==1 ? new MemoryLogger(annotated, bounds) : new FileLogger(annotated, bounds);
 			final BooleanAccumulator circuit = FOL2BoolTranslator.translate(annotated, interpreter, logger);
 			log = logger.log();
 			if (circuit.isShortCircuited()) {

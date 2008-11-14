@@ -1,12 +1,8 @@
 package kodkod.engine;
 
-import java.util.AbstractSet;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -29,7 +25,6 @@ import kodkod.engine.fol2sat.TranslationLog;
 import kodkod.engine.fol2sat.TranslationRecord;
 import kodkod.engine.satlab.ReductionStrategy;
 import kodkod.instance.TupleSet;
-import kodkod.util.collections.Containers;
 import kodkod.util.collections.IdentityHashSet;
 import kodkod.util.ints.SparseSequence;
 import kodkod.util.ints.TreeSequence;
@@ -42,7 +37,7 @@ import kodkod.util.ints.TreeSequence;
  * @author Emina Torlak
  */
 final class TrivialProof extends Proof {
-	private Set<Formula> coreRoots;
+	private Map<Formula,Node> coreRoots;
 	private RecordFilter coreFilter;
 	
 	/**
@@ -64,9 +59,9 @@ final class TrivialProof extends Proof {
 	public final Iterator<TranslationRecord> core() { 
 		if (coreFilter==null) {
 			coreFilter = new RecordFilter() {
-				final Set<Node> coreNodes = NodePruner.relevantNodes(log(),  coreRoots==null ? log().roots() : coreRoots);
-				public boolean accept(Node node, int literal, Map<Variable, TupleSet> env) {
-					return coreNodes.contains(node) ;
+				final Set<Node> coreNodes = NodePruner.relevantNodes(log(),  coreRoots==null ? log().roots() : coreRoots.keySet());
+				public boolean accept(Node node, Formula translated, int literal, Map<Variable, TupleSet> env) {
+					return coreNodes.contains(translated) ;
 				}
 			};
 		}
@@ -77,17 +72,17 @@ final class TrivialProof extends Proof {
 	 * {@inheritDoc}
 	 * @see kodkod.engine.Proof#highLevelCore()
 	 */
-	public final Set<Formula> highLevelCore() {
+	public final Map<Formula,Node> highLevelCore() {
 		if (coreRoots==null) { 
-			final Iterator<TranslationRecord> iter = core();
+			final Iterator<TranslationRecord> itr = core();
 			final Set<Formula> roots = log().roots();
-			coreRoots = new LinkedHashSet<Formula>();
-			while( iter.hasNext() ) {
-				Node next = iter.next().node();
-				if (roots.contains(next))
-					coreRoots.add((Formula)next);
+			coreRoots = new LinkedHashMap<Formula,Node>();
+			while( itr.hasNext() ) {
+				TranslationRecord rec = itr.next();
+				if (roots.contains(rec.translated()))
+					coreRoots.put(rec.translated(), rec.node());
 			}
-			coreRoots = Collections.unmodifiableSet(coreRoots);
+			coreRoots = Collections.unmodifiableMap(coreRoots);
 		}
 		return coreRoots;
 	}
@@ -104,53 +99,49 @@ final class TrivialProof extends Proof {
 	 */
 	@Override
 	public void minimize(ReductionStrategy strategy) {	
-		final Map<Formula, int[]> outputs = new LinkedHashMap<Formula,int[]>();
+		final Map<Formula, int[]> rootLits = new LinkedHashMap<Formula,int[]>();
+		final Map<Formula, Node> rootNodes = new LinkedHashMap<Formula, Node>();
 		final Set<Formula> roots = log().roots();
 		
-		for(Iterator<TranslationRecord> iter = core(); iter.hasNext();) { 
-			TranslationRecord rec = iter.next();
-			if (roots.contains(rec.node())) { 
+		for(Iterator<TranslationRecord> itr = core(); itr.hasNext();) { 
+			final TranslationRecord rec = itr.next();
+			if (roots.contains(rec.translated())) { 
 				// simply record the most recent output value for each formula:
 				// this is guaranteed to be the final output value for that 
 				// formula because of the translation log guarantee that the
 				// log is replayed in the order of translation:  i.e. a child's
 				// output value is always recorded before the parent's
-				int[] val = outputs.get(rec.node());
+				int[] val = rootLits.get(rec.translated());
 				if (val==null) { 
 					val = new int[1]; 
-					outputs.put((Formula)rec.node(), val);
+					rootLits.put(rec.translated(), val);
 				}
 				val[0] = rec.literal();
+				rootNodes.put(rec.translated(), rec.node());
 			}
 		}
 		
-		final SparseSequence<Collection<Formula>> lits = new TreeSequence<Collection<Formula>>();
-		for(Map.Entry<Formula,int[]> entry : outputs.entrySet()) { 
+		final SparseSequence<Formula> lits = new TreeSequence<Formula>();
+		for(Map.Entry<Formula,int[]> entry : rootLits.entrySet()) { 
 			final int lit = entry.getValue()[0];
 			if (lit==-Integer.MAX_VALUE) { 
-				coreRoots = Collections.singleton(entry.getKey());
+				coreRoots = Collections.singletonMap(entry.getKey(), rootNodes.get(entry.getKey()));
 				break;
-			}
-			if (lits.containsIndex(-lit)) { 
-				final Formula f0 = lits.get(-lit).iterator().next();
+			} else if (lits.containsIndex(-lit)) { 
+				final Formula f0 = lits.get(-lit);
 				final Formula f1 = entry.getKey();
-				coreRoots = new AbstractSet<Formula>() {					
-					public Iterator<Formula> iterator() { return Containers.iterate(f0, f1); }
-					public int size() { return 2; }
-				};
+				coreRoots = new LinkedHashMap<Formula, Node>(3);
+				coreRoots.put(f0, rootNodes.get(f0));
+				coreRoots.put(f1, rootNodes.get(f1));
+				coreRoots = Collections.unmodifiableMap(coreRoots);
 				break;
 			} else {
-				Collection<Formula> litFormulas = lits.get(lit);
-				if (litFormulas==null) { 
-					litFormulas = new ArrayList<Formula>(2);
-					lits.put(lit, litFormulas);
-				}
-				litFormulas.add(entry.getKey());
+				lits.put(lit, entry.getKey());
 			}
 		}
 		
 		coreFilter = null;
-		assert coreRoots.size()==1 && outputs.get(coreRoots.iterator().next())[0]==-Integer.MAX_VALUE || coreRoots.size()==2;
+		assert coreRoots.size()==1 && rootLits.get(coreRoots.keySet().iterator().next())[0]==-Integer.MAX_VALUE || coreRoots.size()==2;
 	}
 
 	/**
@@ -163,7 +154,7 @@ final class TrivialProof extends Proof {
 	 */
 	private static final class NodePruner extends AbstractVoidVisitor {
 		private final Set<Node> visited, relevant;
-		private final Map<Node,Boolean> constNodes;
+		private final Map<Formula,Boolean> constNodes;
 		
 		/**
 		 * Constructs a proof finder for the given log.
@@ -175,21 +166,21 @@ final class TrivialProof extends Proof {
 			relevant = new IdentityHashSet<Node>();
 						
 			final RecordFilter filter = new RecordFilter() {
-				public boolean accept(Node node, int literal, Map<Variable, TupleSet> env) {
+				public boolean accept(Node node, Formula translated, int literal, Map<Variable, TupleSet> env) {
 					return env.isEmpty();
 				}	
 			};
 			
-			constNodes = new LinkedHashMap<Node,Boolean>();
+			constNodes = new LinkedHashMap<Formula,Boolean>();
 			for(Iterator<TranslationRecord> itr = log.replay(filter); itr.hasNext(); ) { 
 				TranslationRecord rec = itr.next();
 				int lit = rec.literal();
 				if (Math.abs(lit) != Integer.MAX_VALUE) { 
-					constNodes.remove(rec.node());
+					constNodes.remove(rec.translated());
 				} else if (lit==Integer.MAX_VALUE) { 
-					constNodes.put(rec.node(), Boolean.TRUE);
+					constNodes.put(rec.translated(), Boolean.TRUE);
 				} else {
-					constNodes.put(rec.node(), Boolean.FALSE);
+					constNodes.put(rec.translated(), Boolean.FALSE);
 				}
 			}
 		}

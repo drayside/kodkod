@@ -2,6 +2,7 @@ package kodkod.engine.fol2sat;
 
 import java.util.Map;
 
+import kodkod.ast.Formula;
 import kodkod.ast.Node;
 import kodkod.ast.Variable;
 import kodkod.instance.TupleSet;
@@ -11,12 +12,12 @@ import kodkod.instance.TupleSet;
  **/
 public interface RecordFilter {
 	/**
-	 * Returns true if the records with the given node, literal, and environment
+	 * Returns true if the records with the given node,  formula derived from the node, literal, and environment
 	 * should be returned by iterators produced by the {@linkplain TranslationLog#replay()} method.
-	 * @return true if the records with the given node, literal, and environment
+	 * @return true if the records with the given node,  formula derived from the node, literal, and environment
 	 * should be returned by iterators produced by {@linkplain TranslationLog#replay()}.
 	 */
-	public abstract boolean accept(Node node, int literal, Map<Variable,TupleSet> env);
+	public abstract boolean accept(Node node, Formula translated, int literal, Map<Variable,TupleSet> env);
 	
 	/**
 	 * A record filter that accepts all records.
@@ -25,9 +26,8 @@ public interface RecordFilter {
 		/**
 		 * Returns true.
 		 * @return true
-		 * @see kodkod.engine.fol2sat.RecordFilter#accept(kodkod.ast.Node, int, Map)
 		 */
-		public boolean accept(Node node, int literal, Map<Variable,TupleSet> env) {
+		public boolean accept(Node node, Formula translated, int literal, Map<Variable,TupleSet> env) {
 			return true;
 		}
 	};

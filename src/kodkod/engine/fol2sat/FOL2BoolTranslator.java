@@ -74,6 +74,7 @@ import kodkod.util.ints.IndexedEntry;
 import kodkod.util.ints.IntIterator;
 import kodkod.util.ints.IntSet;
 import kodkod.util.nodes.AnnotatedNode;
+import kodkod.util.nodes.Nodes;
 
 /**
  * Translates an annotated node to boolean representation.
@@ -122,7 +123,7 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 		};
 		final BooleanAccumulator acc = BooleanAccumulator.treeGate(Operator.AND);
 		
-		for(Formula root : annotated.sourceSensitiveRoots()) { 	
+		for(Formula root : Nodes.conjuncts(annotated.node())) { 	
 			acc.add(root.accept(translator));
 		}
 		logger.close();

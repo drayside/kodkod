@@ -31,7 +31,9 @@ import kodkod.ast.visitor.VoidVisitor;
  * zero or more children.
  * 
  * @specfield children: int ->lone Node
+ * @specfield components: set Node
  * @invariant children.Node = { i: int | 0 <= i < #children }
+ * @invariant components= children[int]
  * @author Emina Torlak
  */
 public abstract class Node {

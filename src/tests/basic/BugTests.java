@@ -39,6 +39,7 @@ import kodkod.util.ints.IntBitSet;
 import kodkod.util.ints.IntIterator;
 import kodkod.util.ints.IntSet;
 import kodkod.util.ints.IntTreeSet;
+import kodkod.util.nodes.Nodes;
 
 /**
  * Test cases that record reported bugs. 
@@ -1158,7 +1159,7 @@ public class BugTests extends TestCase {
 //		System.out.println(sol.toString());
 		Proof proof = sol.proof();
 		proof.minimize(new RCEStrategy(proof.log()));
-		Set<Formula> core = proof.highLevelCore();
+		Set<Formula> core = Nodes.minRoots(x10, sol.proof().highLevelCore().values());
 		
 
 //		final Set<Formula> minCore = new LinkedHashSet<Formula>(core);
@@ -1206,7 +1207,7 @@ public class BugTests extends TestCase {
 		solver.options().setIntEncoding(Options.IntEncoding.TWOSCOMPLEMENT);
 
 		Solution sol = solver.solve(c,bounds);
-		Set<Formula> core = sol.proof().highLevelCore();
+		Set<Formula> core = Nodes.minRoots(c, sol.proof().highLevelCore().values());
 		
 		assertEquals(2, core.size());
 		assertTrue(core.contains(a));
@@ -1243,7 +1244,7 @@ public class BugTests extends TestCase {
 		solver.options().setIntEncoding(Options.IntEncoding.TWOSCOMPLEMENT);
 
 		Solution sol = solver.solve(x7,bounds);
-		Set<Formula> core = sol.proof().highLevelCore();
+		Set<Formula> core = Nodes.minRoots(x7, sol.proof().highLevelCore().values());
 		assertEquals(1, core.size());
 		assertTrue(core.contains(x7));
 	}
@@ -1280,7 +1281,7 @@ public class BugTests extends TestCase {
 
 //		System.out.println("Sol="+sol);
 
-		Set<Formula> core = sol.proof().highLevelCore();
+		Set<Formula> core = Nodes.minRoots(x6, sol.proof().highLevelCore().values());
 		assertEquals(2, core.size());
 		assertTrue(core.contains(x7));
 		assertTrue(core.contains(x8));

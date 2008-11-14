@@ -31,6 +31,8 @@ import java.util.Set;
 
 import tests.util.ProcessRunner;
 
+import static tests.util.Reflection.*;
+
 /**
  * Calls UCoreUnitTest on all unsatisfiable problems in examples.tptp.* and
  * selected unsatisfiable problems in examples.*
@@ -59,7 +61,7 @@ public final class UCoreStatsDriver {
 		}
 		
 		MaxSpec(String problem, int scope, int depth) { 
-			this(problem, UCoreStats.methods(UCoreStats.problem(problem)).iterator().next().getName(), scope, depth);
+			this(problem, checks(findClass(problem)).iterator().next().getName(), scope, depth);
 		}
 	}
 	
@@ -296,7 +298,7 @@ public final class UCoreStatsDriver {
 		
 		for(int scope = min; scope <= max; scope++) {
 			for(String problem : RANGE_PROBLEMS) { 
-				for(Method m : UCoreStats.methods(UCoreStats.problem(problem))) {
+				for(Method m : checks(findClass(problem))) {
 					if (timedOut.contains(m)) { 
 						skip(problem,m.getName(),scope,"G");
 						continue;

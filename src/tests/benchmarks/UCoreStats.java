@@ -21,25 +21,28 @@
  */
 package tests.benchmarks;
 
+import static tests.util.Reflection.bounds;
+import static tests.util.Reflection.checks;
+import static tests.util.Reflection.findClass;
+import static tests.util.Reflection.formulaCreator;
+import static tests.util.Reflection.invokeAll;
+import static tests.util.Reflection.strategy;
+
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import kodkod.ast.Formula;
+import kodkod.ast.Node;
 import kodkod.engine.Solution;
 import kodkod.engine.Solver;
 import kodkod.engine.Statistics;
-import kodkod.engine.fol2sat.TranslationLog;
 import kodkod.engine.satlab.ReductionStrategy;
 import kodkod.engine.satlab.SATFactory;
 import kodkod.instance.Bounds;
@@ -89,7 +92,7 @@ public final class UCoreStats {
 	}
 	
 	/**
-	 * Checks that the given core is unsatsfiable with respect to the given bounds.
+	 * Checks that the given core is unsatisfiable with respect to the given bounds.
 	 * @return true if the core is correct; false otherwise
 	 */
 	static boolean checkCorrect(Set<Formula> core, Bounds bounds) { 
@@ -111,70 +114,10 @@ public final class UCoreStats {
 	
 	
 	/**
-	 * @return class with the given name
-	 */
-	static Class<?> problem(String className) { 
-		try {
-			return Class.forName(className);
-		} catch (ClassNotFoundException e) {
-			throw new IllegalArgumentException("Class "+className + " cannot be found.");
-		}
-	}
-	
-	/**
-	 * Returns the formulas returned by the given methods, when invoked on 
-	 * the specified instance.
-	 * @return formulas corresponding to given methods.
-	 */
-	static Map<Method,Formula> checks(Object instance, Collection<Method> checks) { 
-		final Map<Method, Formula> ret = new LinkedHashMap<Method, Formula>();
-		for(Method check : checks) { 
-			try {
-				ret.put(check, (Formula)check.invoke(instance));
-			} catch (IllegalArgumentException e) {
-			} catch (IllegalAccessException e) {
-			} catch (InvocationTargetException e) {
-			}
-		}
-		return ret;
-	}
-	
-	/**
-	 * @return all public member methods declared by the given class that take no arguments,
-	 * return a Formula, and whose name starts with the word "check".
-	 */
-	static Collection<Method> methods(Class<?> c) {
-		final List<Method> methods = new ArrayList<Method>();
-		for(Method m : c.getMethods()) { 
-			if (m.getDeclaringClass().equals(c) && m.getName().startsWith("check") && noArgs(m) && returnsFormula(m)) {
-				methods.add(m);
-			}
-		}
-		return methods;
-	}
-	
-	/**@return a public member method with the given name and no arguments that returns a formula. */
-	static Collection<Method> method(Class<?> c, String name) { 
-		try {
-			Method m = c.getMethod(name, new Class[0]);
-			if (returnsFormula(m))
-				return Collections.singletonList(m);
-			else {
-				throw new IllegalArgumentException("Wrong signature for method " + name + ".");
-			}
-		} catch (SecurityException e) {
-			throw new IllegalArgumentException("Cannot access method " + name + ".");
-		} catch (NoSuchMethodException e) {
-			throw new IllegalArgumentException("Method " + name + " does not exist.");
-		}
-		
-	}
-	
-	/**
 	 * @return strategy with the given name
 	 */
 	@SuppressWarnings("unchecked")
-	private static Class<? extends ReductionStrategy> strategy(String className) { 
+	private static Class<? extends ReductionStrategy> findStrategy(String className) { 
 		try {
 			final Class<?> c = Class.forName(className);
 			if (ReductionStrategy.class.isAssignableFrom(c)) 
@@ -202,85 +145,9 @@ public final class UCoreStats {
 		}
 		return ret;
 	}
-	
-	/** @return true if m has no arguments **/
-	private static boolean noArgs(Method m) { return m.getParameterTypes().length==0; }
-	
-	/** @return true if m returns a formula **/
-	private static boolean returnsFormula(Method m) { return Formula.class.isAssignableFrom(m.getReturnType()); }
+		
 	
 	
-	
-	/** 
-	 * Returns a fresh instance of the given problem.
-	 * @requires problem has a no-argument constructor
-	 * @return a fresh instance of the given problem */
-	static Object instance(Class<?> problem) { 
-		try {
-			return problem.newInstance();
-		} catch (InstantiationException e) {
-			throw new IllegalArgumentException(problem.getName() + " has no accessible nullary constructor.");
-		} catch (IllegalAccessException e) {
-			throw new IllegalArgumentException(problem.getName() + " has no accessible nullary constructor.");
-		}
-	}
-	
-	/** 
-	 * Returns the bounds for the given instance.
-	 * @requires instance must have a method called bounds that takes an integer argument and returns a Bounds object
-	 * @return instance.bounds(scope) */
-	static Bounds bounds(Object instance, int scope) { 
-		try {
-			final Method bounder = instance.getClass().getMethod("bounds", new Class[]{int.class});
-			return (Bounds) bounder.invoke(instance, scope);
-		} catch (SecurityException e) {
-			throw new IllegalArgumentException(instance.getClass().getName() + " has no accessible Bounds bounds(int) method.");
-		} catch (NoSuchMethodException e) {
-			throw new IllegalArgumentException(instance.getClass().getName() + " has no Bounds bounds(int) method.");
-		} catch (IllegalAccessException e) {
-			throw new IllegalArgumentException("Could not invoke Bounds bounds(int) method of " + instance.getClass().getName() + ".");
-		} catch (InvocationTargetException e) {
-			throw new IllegalArgumentException("Could not invoke Bounds bounds(int) method of " + instance.getClass().getName() + ".");
-		}
-	}
-	
-	/** 
-	 * Returns the bounds for the given instance.
-	 * @requires instance must have a method called bounds that takes a string argument and returns a Bounds object
-	 * @return instance.bounds(scope) */
-	static Bounds bounds(Object instance, String scope) { 
-		try {
-			final Method bounder = instance.getClass().getMethod("bounds", new Class[]{String.class});
-			return (Bounds) bounder.invoke(instance, scope);
-		} catch (SecurityException e) {
-			throw new IllegalArgumentException(instance.getClass().getName() + " has no accessible Bounds bounds(String) method.");
-		} catch (NoSuchMethodException e) {
-			throw new IllegalArgumentException(instance.getClass().getName() + " has no Bounds bounds(String) method.");
-		} catch (IllegalAccessException e) {
-			throw new IllegalArgumentException("Could not invoke Bounds bounds(String) method of " + instance.getClass().getName() + ".");
-		} catch (InvocationTargetException e) {
-			throw new IllegalArgumentException("Could not invoke Bounds bounds(String) method of " + instance.getClass().getName() + ".");
-		}
-	}
-	
-	/** 
-	 * Returns the bounds for the given instance.
-	 * @requires instance must have a method called bounds that takes no arguments and returns a Bounds object
-	 * @return instance.bounds() */
-	static Bounds bounds(Object instance) { 
-		try {
-			final Method bounder = instance.getClass().getMethod("bounds", new Class[]{});
-			return (Bounds) bounder.invoke(instance);
-		} catch (SecurityException e) {
-			throw new IllegalArgumentException(instance.getClass().getName() + " has no accessible Bounds bounds(int) method.");
-		} catch (NoSuchMethodException e) {
-			throw new IllegalArgumentException(instance.getClass().getName() + " has no Bounds bounds(int) method.");
-		} catch (IllegalAccessException e) {
-			throw new IllegalArgumentException("Could not invoke Bounds bounds(int) method of " + instance.getClass().getName() + ".");
-		} catch (InvocationTargetException e) {
-			throw new IllegalArgumentException("Could not invoke Bounds bounds(int) method of " + instance.getClass().getName() + ".");
-		}
-	}
 	
 	private static Map<String,String> processOptionalArgs(String[] args) { 
 		final Map<String,String> ret = new LinkedHashMap<String, String>();
@@ -300,51 +167,9 @@ public final class UCoreStats {
 		return ret;
 	}
 	
-	/**
-	 * Returns an instance of the given reduction strategy.
-	 * @requires strategy has a constructor that takes a translation log
-	 * @return an instance of the given reduction strategy.
-	 */
-	static ReductionStrategy instance(Class<? extends ReductionStrategy> strategy, TranslationLog log, int depth) { 
-		try {
-			return strategy.getConstructor(TranslationLog.class, int.class).newInstance(log, depth);
-		} catch (IllegalArgumentException e) {
-			throw e;
-		} catch (SecurityException e) {
-			throw new IllegalArgumentException(strategy.getName() + " has no accessible two-argument constructor.");
-		} catch (InstantiationException e) {
-			throw new IllegalArgumentException(strategy.getName() + " has no accessible two-argument constructor.");
-		} catch (IllegalAccessException e) {
-			throw new IllegalArgumentException(strategy.getName() + " has no accessible two-argument constructor.");
-		} catch (InvocationTargetException e) {
-			throw new IllegalArgumentException(strategy.getName() + " has no accessible two-argument constructor.");
-		} catch (NoSuchMethodException e) {
-			throw new IllegalArgumentException(strategy.getName() + " has no accessible two-argument constructor.");
-		}
-	}
 	
-	/**
-	 * Returns an instance of the given reduction strategy.
-	 * @requires strategy has a constructor that takes a translation log
-	 * @return an instance of the given reduction strategy.
-	 */
-	static ReductionStrategy instance(Class<? extends ReductionStrategy> strategy, TranslationLog log) { 
-		try {
-			return strategy.getConstructor(TranslationLog.class).newInstance(log);
-		} catch (IllegalArgumentException e) {
-			throw e;
-		} catch (SecurityException e) {
-			throw new IllegalArgumentException(strategy.getName() + " has no accessible one-argument constructor.");
-		} catch (InstantiationException e) {
-			throw new IllegalArgumentException(strategy.getName() + " has no accessible one-argument constructor.");
-		} catch (IllegalAccessException e) {
-			throw new IllegalArgumentException(strategy.getName() + " has no accessible one-argument constructor.");
-		} catch (InvocationTargetException e) {
-			throw new IllegalArgumentException(strategy.getName() + " has no accessible one-argument constructor.");
-		} catch (NoSuchMethodException e) {
-			throw new IllegalArgumentException(strategy.getName() + " has no accessible one-argument constructor.");
-		}
-	}
+	
+
 	
 	private static Solver solver() { 
 		final Solver solver = new Solver();
@@ -382,18 +207,18 @@ public final class UCoreStats {
 				if (sol.outcome()==Solution.Outcome.UNSATISFIABLE) {
 					
 					final long start = bean.getCurrentThreadUserTime()/1000000;
-					final Set<Formula> initialCore = sol.proof().highLevelCore();
+					final Set<Formula> initialCore = Nodes.minRoots(check.getValue(), sol.proof().highLevelCore().values());
 					final Set<Formula> minCore;
 										
 					if (strategy==null) { // no strategy -- one-step
 						minCore = initialCore;
 					} else {
 						if (strategy.getSimpleName().startsWith("RCE")) {
-							sol.proof().minimize(instance(strategy, sol.proof().log(), depth));
+							sol.proof().minimize(strategy(strategy, sol.proof().log(), depth));
 						} else {
-							sol.proof().minimize(instance(strategy, sol.proof().log()));
+							sol.proof().minimize(strategy(strategy, sol.proof().log()));
 						}
-						minCore = sol.proof().highLevelCore();
+						minCore = Nodes.minRoots(check.getValue(), sol.proof().highLevelCore().values());
 					}
 					final long end = bean.getCurrentThreadUserTime()/1000000;
 					
@@ -418,6 +243,19 @@ public final class UCoreStats {
 			usage();
 		}
 	}
+	/** 
+	 * Returns a fresh instance of the given class.
+	 * @requires the class has a no-argument constructor
+	 * @return a fresh instance of the given class */
+	public static Object instance(Class<?> c) { 
+		try {
+			return c.newInstance();
+		} catch (InstantiationException e) {
+			throw new IllegalArgumentException(c.getName() + " has no accessible nullary constructor.");
+		} catch (IllegalAccessException e) {
+			throw new IllegalArgumentException(c.getName() + " has no accessible nullary constructor.");
+		}
+	}
 	
 	/**
 	 * Usage: java tests.benchmarks.UCoreStats <class> <scope> [-m method] [-s strategy | oce] [-d depth] [-o (user | stats) ]
@@ -425,13 +263,13 @@ public final class UCoreStats {
 	public static void main(String[] args) { 
 		if (args.length < 2)
 			usage();
-		final Class<?> problem = problem(args[0]);
+		final Class<?> problem =  findClass(args[0]);
 		final Map<String,String> optional = processOptionalArgs(args);
 		
-		final Object instance = instance(problem);
+		final Object instance =  instance(problem);
 		final Bounds bounds = bounds(instance, scope(args[1]));
-		final Map<Method, Formula> checks = checks(instance, 
-				optional.containsKey("-m") ? method(problem,optional.get("-m")) : methods(problem));
+		final Map<Method, Formula> checks = invokeAll(instance, 
+				optional.containsKey("-m") ? Collections.singleton(formulaCreator(problem,optional.get("-m"))) : checks(problem));
 	
 		if (checks.isEmpty()) { usage(); }
 		
@@ -440,13 +278,13 @@ public final class UCoreStats {
 		if (optional.containsKey("-s")) {
 			extractor = optional.get("-s");
 			if (extractor.equals("rce")) { 
-				strategy = strategy("kodkod.engine.ucore.RCEStrategy");
+				strategy = findStrategy("kodkod.engine.ucore.RCEStrategy");
 			} else if (extractor.equals("sce")) {
-				strategy = strategy("kodkod.engine.ucore.SCEStrategy");
+				strategy = findStrategy("kodkod.engine.ucore.SCEStrategy");
 			} else if (extractor.equals("nce")) { 
-				strategy = strategy("kodkod.engine.ucore.NCEStrategy");
+				strategy = findStrategy("kodkod.engine.ucore.NCEStrategy");
 			} else if (!extractor.equals("oce")){ 
-				strategy = strategy(optional.get("-s"));
+				strategy = findStrategy(optional.get("-s"));
 			} else {
 				strategy = null;
 			}
@@ -498,7 +336,7 @@ public final class UCoreStats {
 			void printFalse(String check, Formula formula, Bounds bounds, Solution sol) {
 				print(check, formula, bounds, sol.outcome(), sol.stats());
 				System.out.println("trivial core:");
-				for(Formula f : sol.proof().highLevelCore()) { 
+				for(Node f : sol.proof().highLevelCore().values()) { 
 					System.out.println(PrettyPrinter.print(f, 2, 100));
 				}
 			}

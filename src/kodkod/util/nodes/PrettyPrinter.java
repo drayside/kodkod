@@ -22,6 +22,7 @@
 package kodkod.util.nodes;
 
 import java.util.Iterator;
+import java.util.Set;
 
 import kodkod.ast.BinaryExpression;
 import kodkod.ast.BinaryFormula;
@@ -93,6 +94,36 @@ public final class PrettyPrinter {
 	 */
 	public static String print(Node node, int offset) { 
 		return print(node,offset,80);
+	}
+	
+	/**
+	 * Returns a pretty-printed string representation of the 
+	 * given formulas, with each line offset by at least the given
+	 * number of whitespaces.  
+	 * @requires 0 <= offset < 80
+	 * @return a pretty-printed string representation of the 
+	 * given formulas
+	 */
+	public static String print(Set<Formula> formulas, int offset) { 
+		return print(formulas,offset,80);
+	}
+	
+	/**
+	 * Returns a pretty-printed string representation of the 
+	 * given formulas, with each line offset by at least the given
+	 * number of whitespaces.  The line parameter determines the
+	 * length of each pretty-printed line, including the offset.
+	 * @requires 0 <= offset < line
+	 * @return a pretty-printed string representation of the 
+	 * given formulas
+	 */
+	public static String print(Set<Formula> formulas, int offset, int line) { 
+		final Formatter formatter = new Formatter(offset,line);
+		for(Formula f : formulas) { 
+			f.accept(formatter);
+			formatter.newline();
+		}
+		return formatter.tokens.toString();
 	}
 	
 	/**

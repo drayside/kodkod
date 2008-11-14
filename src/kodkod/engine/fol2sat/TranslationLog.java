@@ -25,15 +25,21 @@ import java.util.Iterator;
 import java.util.Set;
 
 import kodkod.ast.Formula;
+import kodkod.engine.Solver;
+import kodkod.engine.config.Options;
+import kodkod.instance.Bounds;
 
 /**
  * A log of the translations of the descendants of a given formula that 
  * are either formulas or that desugar to formulas.
- * @specfield formula: Formula 
- * @specfield bounds: Bounds
+ * @specfield originalFormula: Formula // the {@linkplain Solver#solve(Formula, kodkod.instance.Bounds) original} formula, provided by the user
+ * @specfield originalBounds: Bounds // the {@linkplain Solver#solve(Formula, kodkod.instance.Bounds) original} bounds, provided by the user
+ * @specfield formula: Formula // desugaring of this.formula that was translated
+ * @specfield bounds: Bounds // translation bounds
  * @specfield records: set TranslationRecord
  * @specfield replay: [0..#records) one->one records // replay order -- i.e. the order in the which records were added to the log
  * @invariant all r: records | r.node in formula.*children
+ * @invariant Solver.solve(formula, bounds).instance() == null iff Solver.solve(originalFormula, originalBounds).instance() == null
  * @author Emina Torlak
  */
 public abstract class TranslationLog {
@@ -41,8 +47,10 @@ public abstract class TranslationLog {
 	
 	/**
 	 * Returns the roots of this.formula.  In other words, returns the subformulas, {f0, ..., fk}, 
-     * of this.formula such that, for all 0<=i<=k, f<sub>i</sub> is not a conjunction  and
-     * [[f0 && ... && fk]] <=> [[formula]]. 
+     * of this.formula such that, for all 0<=i<=k, f<sub>i</sub>  [[f0 && ... && fk]] <=> [[formula]]. 
+     * The granularity of the subdivision of this.formula into roots depends on the core granularity
+     * specified in the {@linkplain Options} that were used when translating this.formula.
+     * 
      * <p>Unless a given root translates to a constant, the highest magnitude  literal corresponding to 
      * each root (as given by this.records) is guaranteed to be present in the translation of this.formula
      * as a unit clause.  All the remaining clauses (except those comprising the symmetry 
@@ -53,10 +61,17 @@ public abstract class TranslationLog {
      * highest magnitude literal in c2.  If l2 occurs in c1 (in any polarity), then there is 
      * an edge from c1 and c2. The unit clauses are always the last clauses to be added to a SAT solver
      * during translation. </p>
+     * 
 	 * @return roots of this.formula
 	 */
 	public abstract Set<Formula> roots();
 
+	/**
+	 * Returns this.bounds.
+	 * @return this.bounds.
+	 */
+	public abstract Bounds bounds();
+	
 	/**
 	 * Returns an iterator over the translation records in this log that are accepted
 	 * by the given filter.  The iterator returns the records in the order in which

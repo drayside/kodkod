@@ -72,16 +72,16 @@ public final class StrategyUtils {
 		final Set<Formula> roots = log.roots();
 		final Map<Formula,int[]> maxRootVar = new LinkedHashMap<Formula,int[]>(roots.size());
 		final RecordFilter filter = new RecordFilter() {
-			public boolean accept(Node node, int literal, Map<Variable, TupleSet> env) {
-				return roots.contains(node) && env.isEmpty();
+			public boolean accept(Node node, Formula translated, int literal, Map<Variable, TupleSet> env) {
+				return roots.contains(translated) && env.isEmpty();
 			}
 		};
 		for(Iterator<TranslationRecord> itr = log.replay(filter); itr.hasNext();) {
 			TranslationRecord record = itr.next();
-			int[] var = maxRootVar.get(record.node());
+			int[] var = maxRootVar.get(record.translated());
 			if (var==null) {
 				var = new int[1];
-				maxRootVar.put((Formula)record.node(), var);
+				maxRootVar.put(record.translated(), var);
 			} 
 			var[0] = StrictMath.abs(record.literal());
 		}
@@ -102,21 +102,34 @@ public final class StrategyUtils {
 		return rootVars;
 	}
  
+	/**
+	 * Returns a map from  variables to the corresponding roots of log.formula.
+	 * @return
+	 * <pre> 
+	 * { v: int, f: Formula | some r: log.records | 
+	 *   r.translated in log.roots() and 
+	 *   r.translated = f and
+	 *   r.env.isEmpty() and
+	 *   abs(r.literal) != Integer.MAX_VALUE and
+	 *   v = abs(r.literal) and
+	 *   no r': log.records | r'.node = r.node && log.replay.r' > log.replay.r }
+	 * </pre>
+	 */
 	static SparseSequence<Formula> roots(TranslationLog log) { 
 		final SparseSequence<Formula> rootVars = new TreeSequence<Formula>();
 		final Set<Formula> roots = log.roots();
 		final Map<Formula,int[]> maxRootVar = new IdentityHashMap<Formula,int[]>(roots.size());
 		final RecordFilter filter = new RecordFilter() {
-			public boolean accept(Node node, int literal, Map<Variable, TupleSet> env) {
-				return roots.contains(node) && env.isEmpty();
+			public boolean accept(Node node, Formula translated, int literal, Map<Variable, TupleSet> env) {
+				return roots.contains(translated) && env.isEmpty();
 			}
 		};
 		for(Iterator<TranslationRecord> itr = log.replay(filter); itr.hasNext();) {
 			TranslationRecord record = itr.next();
-			int[] var = maxRootVar.get(record.node());
+			int[] var = maxRootVar.get(record.translated());
 			if (var==null) {
 				var = new int[1];
-				maxRootVar.put((Formula)record.node(), var);
+				maxRootVar.put(record.translated(), var);
 			} 
 			var[0] = StrictMath.abs(record.literal());
 		}

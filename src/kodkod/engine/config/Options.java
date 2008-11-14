@@ -39,6 +39,7 @@ import kodkod.util.ints.Ints;
  * @specfield skolemDepth: int // skolemization depth
  * @specfield flatten: boolean // eliminate intermediate variables when possible?  default is false.
  * @specfield logTranslation: [0..2] // log translation events, default is 0 (no logging)
+ * @specfield coreGranularity: [0..3] // unsat core granularity, default is 0 (only top-level conjuncts are considered)
  * @author Emina Torlak
  */
 public final class Options {
@@ -51,6 +52,7 @@ public final class Options {
 	private int skolemDepth = 0;
 	private boolean flatten = false;
 	private int logTranslation = 0;
+	private int coreGranularity = 0;
 	
 	/**
 	 * Constructs an Options object initalized with 
@@ -64,29 +66,9 @@ public final class Options {
 	 *          this.skolemDepth' = 0
 	 *          this.flatten' = false
 	 *          this.logTranslation' = 0
+	 *          this.coreGranularity' = 0
 	 */
 	public Options() {}
-	
-	/**
-	 * Constructs an Options object using the given
-	 * value for the solver option and default values
-	 * for other options.
-	 * @effects this.solver' = solver
-	 *          this.reporter' is silent (no messages reported)
-	 *          this.seed' = 0
-	 *          this.symmetryBreaking' = 20
-	 *          this.sharing' = 3
-	 *          this.intEncoding' = BINARY
-	 *          this.bitwidth' = 4
-	 *          this.skolemDepth' = 0
-	 *          this.flatten' = false
-	 *          this.logTranslation' = 0
-	 * @throws NullPointerException - solver = null
-	 */
-	public Options(SATFactory solver) {
-		this();
-		setSolver(solver);
-	}
 	
 	/**
 	 * Returns the value of the solver options.
@@ -315,6 +297,34 @@ public final class Options {
 	}
 	
 	/**
+	 * Returns the core granularity level.  The default is 0, which means that  top-level
+	 * conjuncts of the input formula are used as "roots" for the purposes of core minimization and extraction.  Granularity
+	 * of 1 means that the top-level conjuncts of the input formula's negation normal form (NNF) are
+	 * used as roots; granularity of 2 means that the top-level conjuncts of the formula's skolemized
+	 * NNF (SNNF) are used as roots; and, finally, a granularity of 3 means that the universal quantifiers of the formula's
+	 * SNNF are broken up and that the resulting top-level conjuncts are then used as roots for core minimization and extraction.
+	 * 
+	 * <p>Note that the finer granularity (that is, a larger value of this.coreGranularity) will provide better information at 
+	 * the cost of slower core extraction and, in particular, minimization.</p>
+	 * 
+	 * @return this.coreGranularity
+	 */
+	public int coreGranularity() { 
+		return coreGranularity;
+	}
+	
+	/**
+	 * Sets the core granularity level.  
+	 * @requires coreGranularity in [0..3]
+	 * @effects this.coreGranularity' = coreGranularity  
+	 * @throws IllegalArgumentException - coreGranularity !in [0..3]
+	 */
+	public void setCoreGranularity(int coreGranularity) { 
+		checkRange(coreGranularity, 0, 3);
+		this.coreGranularity = coreGranularity;
+	}
+	
+	/**
 	 * Returns a string representation of this Options object.
 	 * @return a string representation of this Options object.
 	 */
@@ -339,6 +349,8 @@ public final class Options {
 		b.append(skolemDepth);
 		b.append("\n logTranslation: ");
 		b.append(logTranslation);
+		b.append("\n coreGranularity: ");
+		b.append(coreGranularity);
 		return b.toString();
 	}
 	

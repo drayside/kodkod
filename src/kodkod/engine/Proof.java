@@ -22,35 +22,35 @@
 package kodkod.engine;
 
 import java.util.Iterator;
-import java.util.Set;
+import java.util.Map;
 
 import kodkod.ast.Formula;
+import kodkod.ast.Node;
+import kodkod.engine.config.Options;
 import kodkod.engine.fol2sat.TranslationLog;
 import kodkod.engine.fol2sat.TranslationRecord;
 import kodkod.engine.satlab.ReductionStrategy;
+import kodkod.util.nodes.Nodes;
 
 /**
  * Contains a proof of unsatisfiability of a
  * given FOL formula.
  * 
- * @specfield formula: Formula // the unsatisfiable formula
- * @specfield bounds: Bounds // the bounds with respect to which the formula is unsatisfiable
  * @specfield log: TranslationLog // log of the translation of this.formula with respect to this.bounds
- * @invariant log.formula = formula
  */
 public abstract class Proof {
 	private final TranslationLog log;
 	
 	/**
-	 * Constructs a new ResolutionRefutation of unsatisfiability for log.formula.
-	 * @requires formula = log.formula
+	 * Constructs a new Proof of unsatisfiability for log.formula.
+	 * @effects this.log = log
 	 */
 	Proof(TranslationLog log) {
 		this.log = log;
 	}
 	
 	/**
-	 * Minimizes the proof of this.formula's unsatisfiability
+	 * Minimizes the proof of this.log.formula's unsatisfiability
 	 * using the specified proof reduction strategy.  The strategy
 	 * argument is ignored (it can be null) if this.formula is 
 	 * trivially unsatisfiable with respect to this.bounds.  In that
@@ -60,50 +60,47 @@ public abstract class Proof {
 	 * to that root; or (2) if not, then there must be two
 	 * roots that translated to x and -x, where x is a boolean 
 	 * literal, so we pick those two as the minimal core. 
-	 * @effects minimizes the proof of this.formula's unsatisfiability
+	 * 
+	 * <p><b>Note:</b> the core minimization is performed at the level of the 
+	 * transformed formula, not the original formula if the problem was translated
+	 * with a non-zero {@linkplain Options#coreGranularity() core granularity} setting.
+	 * In other words, after this method has been called, {@linkplain #highLevelCore() highLevelCore()} 
+	 * returns a map M such that M.keySet() is a minimal core with respect to this.log.bounds. In contrast,
+	 * {@linkplain Nodes#allRoots(Formula, java.util.Collection) Nodes.roots(this.log.originalFormula, M.values())} is 
+	 * unsatisfiable with respect this.log.originalBounds.  These formulas, however, do not necessarily form a 
+	 * minimal core of this.log.originalFormula if the original problem was translated
+	 * with a non-zero {@linkplain Options#coreGranularity() core granularity} setting.  </p>
+	 * 
+	 * @effects minimizes the proof of this.log.formula's unsatisfiability
 	 * using the specified proof reduction strategy (or the trivial 
 	 * strategy if this.formula is trivially unsatisfiable with respect
 	 * to this.bounds). 
+	 * 
 	 * @see kodkod.engine.satlab.ReductionStrategy
 	 */
 	public abstract void minimize(ReductionStrategy strategy);
 	
 	/**
 	 * Returns an iterator over the {@link TranslationRecord log records} for the nodes
-	 * that are in the unsatisfiable core of this.formula.   The record objects returned by the iterator are not 
+	 * that are in the unsatisfiable core of this.log.formula.   The record objects returned by the iterator are not 
 	 * guaranteed to be immutable.  In particular, the state of a record object
 	 * returned by <tt>next()</tt> is guaranteed to remain the same only until the
 	 * subsequent call to <tt>next()</tt>.
 	 * @return  an iterator over the {@link TranslationRecord log records} for the nodes
-	 * that are in the unsatisfiable core of this.formula.
+	 * that are in the unsatisfiable core of this.log.formula.
 	 */
 	public abstract Iterator<TranslationRecord> core() ;
 	
 	/**
-	 * Returns the unsatisfiable subset of the top-level conjunctions of this.formula
-	 * as given by {@linkplain #core() this.core()}.
-	 * @return the unsatisfiable subset of the top-level conjunctions of this.formula,
-	 * as given by {@linkplain #core() this.core()}.
+	 * Returns a map whose key set is the unsatisfiable subset of the top-level conjunctions of this.log.formula
+	 * as given by {@linkplain #core() this.core()}.  Each formula in the key set is mapped to the descendant of this.log.originalFormula
+	 * from which it was derived by skolemization or by some other optimization.
+	 * @return a map whose key set is the unsatisfiable subset of the top-level conjunctions of this.log.formula,
+	 * as given by {@linkplain #core() this.core()}.  Each formula in the key set is mapped to the descendant of this.log.originalFormula
+	 * from which it was derived by skolemization or by some other optimization.
+	 * @see #minimize(ReductionStrategy)
 	 */
-	public abstract Set<Formula> highLevelCore() ;
-	
-//	/**
-//	 * Returns the unsatisfiable subset of the top-level conjunctions of this.formula
-//	 * as given by {@linkplain #core() this.core()}.
-//	 * @return the unsatisfiable subset of the top-level conjunctions of this.formula,
-//	 * as given by {@linkplain #core() this.core()}.
-//	 */
-//	public final Set<Formula> highLevelCore() {
-//		final Set<Formula> topFormulas = log.roots();
-//		final Set<Formula> topCoreFormulas = new LinkedHashSet<Formula>();
-//		for(Iterator<TranslationRecord> iter = core(); iter.hasNext(); ) {
-//			Node next = iter.next().node();
-//			if (topFormulas.contains(next))
-//				topCoreFormulas.add((Formula)next);
-//		}
-////		System.out.println("top formulas: " + topFormulas);
-//		return topCoreFormulas;
-//	}
+	public abstract Map<Formula, Node> highLevelCore() ;
 	
 	/**
 	 * Returns the log of the translation that resulted

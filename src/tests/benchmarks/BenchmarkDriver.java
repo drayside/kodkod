@@ -21,6 +21,7 @@
  */
 package tests.benchmarks;
 
+import static tests.util.Reflection.*;
 
 
 /**
@@ -56,13 +57,13 @@ abstract class BenchmarkDriver {
 		
 		Problem(String problem, int scope) { 
 			this.problem = problem;
-			this.spec = UCoreStats.methods(UCoreStats.problem(problem)).iterator().next().getName();
+			this.spec = checks(findClass(problem)).iterator().next().getName();
 			this.bounds = "bounds("+scope+")";
 		}
 		
 		Problem(String problem) { 
 			this.problem = problem;
-			this.spec = UCoreStats.methods(UCoreStats.problem(problem)).iterator().next().getName();
+			this.spec = checks(findClass(problem)).iterator().next().getName();
 			this.bounds = "bounds()";
 		}
 	}

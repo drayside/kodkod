@@ -21,21 +21,192 @@
  */
 package tests.util;
 
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import kodkod.ast.Formula;
+import kodkod.engine.fol2sat.TranslationLog;
+import kodkod.engine.satlab.ReductionStrategy;
+import kodkod.instance.Bounds;
+
 /**
- * Utility methods for creating objects via constructor or method calls.
+ * Provides a collection of utility methods for finding and executing
+ * benchmark methods and constructors reflectively.
+ * 
  * @author Emina Torlak
  */
-public final class ObjectCreator {
-	private ObjectCreator() {}
+public final class Reflection {
+	private Reflection() {}
+	
+	/**
+	 * This method invokes each method in the given set on the given instance,
+	 * and returns a map from the invoked methods to the resulting objects.
+	 * @return a map from the given methods to the objects they produced when invoked
+	 * on the given instance.
+	 */
+	@SuppressWarnings("unchecked")
+	public static <T> Map<Method,T> invokeAll(Object instance, Set<Method> methods) { 
+		final Map<Method, T> ret = new LinkedHashMap<Method, T>();
+		for(Method m : methods) { 
+			try {
+				ret.put(m, (T)m.invoke(instance));
+			} catch (IllegalArgumentException e) {
+			} catch (IllegalAccessException e) {
+			} catch (InvocationTargetException e) {
+			}
+		}
+		return ret;
+	}
+	
+	/**
+	 * Returns all public member methods declared by the given class that take no arguments,
+	 * return a Formula, and whose name starts with the word "check".
+	 * @return all public member methods declared by the given class that take no arguments,
+	 * return a Formula, and whose name starts with the word "check".
+	 */
+	public static Set<Method> checks(Class<?> c) {
+		final Set<Method> methods = new LinkedHashSet<Method>();
+		for(Method m : c.getMethods()) { 
+			if (m.getDeclaringClass().equals(c) && m.getName().startsWith("check") && noArgs(m) && returnsFormula(m)) {
+				methods.add(m);
+			}
+		}
+		return methods;
+	}
+	
+	/**
+	 * Returns the public member method with the given name and no arguments that returns a formula. 
+	 * @return  public member method with the given name and no arguments that returns a formula. 
+	 **/
+	public static Method formulaCreator(Class<?> c, String name) { 
+		try {
+			Method m = c.getMethod(name, new Class[0]);
+			if (returnsFormula(m))
+				return m;
+			else {
+				throw new IllegalArgumentException("Wrong signature for method " + name + ".");
+			}
+		} catch (SecurityException e) {
+			throw new IllegalArgumentException("Cannot access method " + name + ".");
+		} catch (NoSuchMethodException e) {
+			throw new IllegalArgumentException("Method " + name + " does not exist.");
+		}
+		
+	}
+	
+	/** 
+	 * Returns the bounds for the given instance.  This method assumes that the instance has a no-argument
+	 * method called "bounds" that returns a Bounds object.
+	 * @requires instance must have a method called bounds that takes no arguments and returns a Bounds object
+	 * @return instance.bounds() */
+	public static Bounds bounds(Object instance) { 
+		try {
+			final Method bounder = instance.getClass().getMethod("bounds", new Class[]{});
+			return (Bounds) bounder.invoke(instance);
+		} catch (SecurityException e) {
+			throw new IllegalArgumentException(instance.getClass().getName() + " has no accessible Bounds bounds(int) method.");
+		} catch (NoSuchMethodException e) {
+			throw new IllegalArgumentException(instance.getClass().getName() + " has no Bounds bounds(int) method.");
+		} catch (IllegalAccessException e) {
+			throw new IllegalArgumentException("Could not invoke Bounds bounds(int) method of " + instance.getClass().getName() + ".");
+		} catch (InvocationTargetException e) {
+			throw new IllegalArgumentException("Could not invoke Bounds bounds(int) method of " + instance.getClass().getName() + ".");
+		}
+	}
+	
+	/** 
+	 * Returns the bounds for the given instance.  This method assumes that the instance has a method called "bounds" that 
+	 * takes a single integer argument and returns a Bounds object.
+	 * @requires instance must have a method called bounds that takes an integer argument and returns a Bounds object
+	 * @return instance.bounds(scope) */
+	public static Bounds bounds(Object instance, int scope) { 
+		try {
+			final Method bounder = instance.getClass().getMethod("bounds", new Class[]{int.class});
+			return (Bounds) bounder.invoke(instance, scope);
+		} catch (SecurityException e) {
+			throw new IllegalArgumentException(instance.getClass().getName() + " has no accessible Bounds bounds(int) method.");
+		} catch (NoSuchMethodException e) {
+			throw new IllegalArgumentException(instance.getClass().getName() + " has no Bounds bounds(int) method.");
+		} catch (IllegalAccessException e) {
+			throw new IllegalArgumentException("Could not invoke Bounds bounds(int) method of " + instance.getClass().getName() + ".");
+		} catch (InvocationTargetException e) {
+			throw new IllegalArgumentException("Could not invoke Bounds bounds(int) method of " + instance.getClass().getName() + ".");
+		}
+	}
+	
+	/**
+	 * Returns an instance of the given reduction strategy.
+	 * @requires strategy has a constructor that takes a translation log
+	 * @return an instance of the given reduction strategy.
+	 */
+	public static ReductionStrategy strategy(Class<? extends ReductionStrategy> strategy, TranslationLog log) { 
+		try {
+			return strategy.getConstructor(TranslationLog.class).newInstance(log);
+		} catch (IllegalArgumentException e) {
+			throw e;
+		} catch (SecurityException e) {
+			throw new IllegalArgumentException(strategy.getName() + " has no accessible one-argument constructor.");
+		} catch (InstantiationException e) {
+			throw new IllegalArgumentException(strategy.getName() + " has no accessible one-argument constructor.");
+		} catch (IllegalAccessException e) {
+			throw new IllegalArgumentException(strategy.getName() + " has no accessible one-argument constructor.");
+		} catch (InvocationTargetException e) {
+			throw new IllegalArgumentException(strategy.getName() + " has no accessible one-argument constructor.");
+		} catch (NoSuchMethodException e) {
+			throw new IllegalArgumentException(strategy.getName() + " has no accessible one-argument constructor.");
+		}
+	}
+	
+	/**
+	 * Returns an instance of the given reduction strategy.
+	 * @requires strategy has a constructor that takes a translation log and an integer
+	 * @return an instance of the given reduction strategy.
+	 */
+	public static ReductionStrategy strategy(Class<? extends ReductionStrategy> strategy, TranslationLog log, int depth) { 
+		try {
+			return strategy.getConstructor(TranslationLog.class, int.class).newInstance(log, depth);
+		} catch (IllegalArgumentException e) {
+			throw e;
+		} catch (SecurityException e) {
+			throw new IllegalArgumentException(strategy.getName() + " has no accessible two-argument constructor.");
+		} catch (InstantiationException e) {
+			throw new IllegalArgumentException(strategy.getName() + " has no accessible two-argument constructor.");
+		} catch (IllegalAccessException e) {
+			throw new IllegalArgumentException(strategy.getName() + " has no accessible two-argument constructor.");
+		} catch (InvocationTargetException e) {
+			throw new IllegalArgumentException(strategy.getName() + " has no accessible two-argument constructor.");
+		} catch (NoSuchMethodException e) {
+			throw new IllegalArgumentException(strategy.getName() + " has no accessible two-argument constructor.");
+		}
+	}
+	
+	/**
+	 * Returns true if m takes no arguments. 
+	 * @return true if m takes no arguments 
+	 **/
+	public static boolean noArgs(Method m) { return m.getParameterTypes().length==0; }
+	
+	/** 
+	 * Returns true if m returns a formula.
+	 * @return true if m returns a formula 
+	 **/
+	public static boolean returnsFormula(Method m) { return Formula.class.isAssignableFrom(m.getReturnType()); }
+	
+	
+	
+	//-----CREATION FROM STRINGS-----//
+	
 	private static Matcher name = Pattern.compile("(.+?)\\(").matcher("");
 	private static Matcher arg = Pattern.compile("[\\(,]\\s*(.+?)\\s*[\\),]").matcher("");
 	
@@ -249,5 +420,5 @@ public final class ObjectCreator {
 			throw new IllegalArgumentException(e);
 		}
 	}
-	
+
 }
