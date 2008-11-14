@@ -105,13 +105,14 @@ public final class Nodes {
 			final BinaryFormula bin = (BinaryFormula) formula;
 			if (bin.op()==FormulaOperator.AND) {
 				final Formula left = bin.left(), right = bin.right();
-				return new AbstractSet<Formula>() {
+				if (left==right) return Collections.singleton(left);
+				else return new AbstractSet<Formula>() {
 					@Override
 					public boolean contains(Object o) { return left==o || right==o; }
 					@Override
-					public Iterator<Formula> iterator() { return left==right ? Containers.iterate(left) : Containers.iterate(left, right); }
+					public Iterator<Formula> iterator() { return Containers.iterate(left, right); }
 					@Override
-					public int size() { return left==right ? 1 : 2;	}
+					public int size() { return 2;	}
 					
 				};
 			}
