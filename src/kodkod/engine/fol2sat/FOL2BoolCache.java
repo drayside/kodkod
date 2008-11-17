@@ -21,6 +21,7 @@
  */
 package kodkod.engine.fol2sat;
 
+import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -53,15 +54,14 @@ final class FOL2BoolCache {
 		final CacheCollector collector = new CacheCollector(annotated.sharedNodes());
 		annotated.node().accept(collector);
 
-		for(Map.Entry<Node, Object> e :  ((Map<Node, Object>)((Map)collector.cache())).entrySet()) {
-			Set<Variable> freeVars = (Set<Variable>)e.getValue();
+		this.cache = new IdentityHashMap<Node, Record>(collector.cache().size());
+		for(Map.Entry<Node, Set<Variable>> e :  collector.cache().entrySet()) {
+			Set<Variable> freeVars = e.getValue();
 			if (freeVars.isEmpty())
-				e.setValue(new NoVarRecord());
+				this.cache.put(e.getKey(), new NoVarRecord());
 			else 
-				e.setValue(new MultiVarRecord(freeVars));
+				this.cache.put(e.getKey(), new MultiVarRecord(freeVars));
 		}
-		this.cache = (Map<Node, Record>)((Map) collector.cache());
-
 	}
 
 	
