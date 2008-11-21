@@ -27,7 +27,7 @@ import kodkod.ast.visitor.ReturnVisitor;
 import kodkod.ast.visitor.VoidVisitor;
 
 /**
- * A binary integer expression, e.g. x + y.
+ * A binary integer expression such as x + y.
  * @specfield left: IntExpression
  * @specfield right: IntExpression
  * @specfield op: IntOperator

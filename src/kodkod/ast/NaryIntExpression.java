@@ -30,7 +30,7 @@ import kodkod.util.collections.Containers;
 
 /**
  * A {@linkplain kodkod.ast.IntExpression int expression} with more than two children,
- * composed with an nary {@linkplain NaryOperator operator}.
+ * composed with an nary {@linkplain IntOperator operator}.
  * 
  * @specfield op: IntOperator
  * @invariant op.nary()

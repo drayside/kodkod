@@ -50,13 +50,13 @@ import kodkod.util.ints.TreeSequence;
  * first is the <tt>noRecycleRatio</tt>, which completely disables recycling if it is greater than
  * the ratio of the size of the core passed to {@linkplain #next(ResolutionTrace)} and the number of axioms in the 
  * trace.  The default value is .03; if the core makes up only 3 percent of the axioms, no recycling 
- * will happen.  The remaining two parameters are the <tt>recycleLimit</tt> and the <tt>hardnessCutOff<tt>.
- * If the hardness of the proof passed to {@linkplain #next(ResolutionTrace)} is greater than <tt>hardnessCutOff<tt>,
+ * will happen.  The remaining two parameters are the <tt>recycleLimit</tt> and the <tt>hardnessCutOff</tt>.
+ * If the hardness of the proof passed to {@linkplain #next(ResolutionTrace)} is greater than <tt>hardnessCutOff</tt>,
  * then the number of relevant axioms, |A_r|, plus the number of recycled resolvents is no greater than 
  * |A_r|*<tt>recycleLimit</tt>.  Otherwise, all valid
  * resolvents are recycled (i.e. added to the relevant axioms).  
  * Proof hardness is the ratio of the trace size to the number of axioms in the trace.
- * Default value for <tt>hardnessCutOff<tt> is 2.0, and  default value for <tt>recycleLimit</tt> is 1.2. 
+ * Default value for <tt>hardnessCutOff</tt> is 2.0, and  default value for <tt>recycleLimit</tt> is 1.2. 
  * 
  * <p>Unlike ARCE, DRCE uses proof information to determine the order in which the constraints are tested for 
  * membership in a minimal core.  ARCE, RCE, SCE and NCE all use the same (arbitrary but deterministic) ordering.</p>

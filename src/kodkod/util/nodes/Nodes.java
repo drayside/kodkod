@@ -43,8 +43,8 @@ import kodkod.util.collections.Containers;
 import kodkod.util.collections.IdentityHashSet;
 
 /**
- * Provides utility methods for constructing balanced
- * Kodkod trees using associative operators.
+ * Provides utility methods for extracting roots (top-level) conjuncts
+ * of Kodkod formulas
  * 
  * @author Emina Torlak
  */

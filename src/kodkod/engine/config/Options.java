@@ -34,7 +34,7 @@ import kodkod.util.ints.Ints;
  * @specfield reporter: Reporter // reporter to use
  * @specfield symmetryBreaking: int // the amount of symmetry breaking to perform
  * @specfield sharing: int // the depth to which circuits should be checked for equivalence during translation
- * @specfield intEncoding: IntEncoding // encoding to use for translating {@link kodkod.ast.IntExpression int expressions}
+ * @specfield intEncoding: IntEncoding // encoding to use for translating int expressions
  * @specfield bitwidth: int // the bitwidth to use for integer representation / arithmetic
  * @specfield skolemDepth: int // skolemization depth
  * @specfield flatten: boolean // eliminate intermediate variables when possible?  default is false.

@@ -1,4 +1,5 @@
 kodkod.ast
+kodkod.ast.operator
 kodkod.ast.visitor
 kodkod.engine
 kodkod.engine.bool
