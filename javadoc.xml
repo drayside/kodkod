@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project default="javadoc">
+<target name="javadoc">
+<javadoc access="public" additionalparam="-tagletpath /Users/emina/Documents/workspace/relations/bin -taglet taglet.EffectsTaglet -taglet taglet.InvariantTaglet -taglet taglet.RequiresTaglet -taglet taglet.SpecfieldTaglet -link http://java.sun.com/j2se/1.5.0/docs/api/ -stylesheetfile /Users/emina/Documents/workspace/relations/src/taglet/kodkod.css -doctitle &quot;Kodkod API&quot; -windowtitle &quot;Kodkod API&quot; -bottom &quot;&lt;br&gt;&amp;copy; Emina Torlak&lt;br&gt;&quot;" author="true" classpath="sat4j.jar:/Applications/eclipse/plugins/org.junit_3.8.2.v200706111738/junit.jar" destdir="docs" nodeprecated="true" nodeprecatedlist="true" noindex="false" nonavbar="false" notree="false" packagenames="kodkod.engine.satlab,kodkod.util.collections,kodkod.instance,kodkod.util.nodes,kodkod.ast.operator,kodkod.ast.visitor,kodkod.engine.bool,kodkod.engine.ucore,kodkod.engine.fol2sat,kodkod.ast,kodkod.engine,kodkod.util.ints,kodkod.engine.config" source="1.5" sourcepath="src" splitindex="true" use="true" version="true"/>
+</target>
+</project>

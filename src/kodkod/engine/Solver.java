@@ -160,7 +160,6 @@ public final class Solver {
 	 * iff this.options has translation logging enabled.  Translation logging also requires that 
 	 * there are no subnodes in the given formula that are both syntactically shared and contain free variables.  
 	 * 
-	 * @requires this.options.logTranslation => (all n: formula.*children | #n.~children > 1 => no freeVariables(n))
 	 * @return Solution to the formula with respect to the given bounds
 	 * @throws NullPointerException - formula = null || bounds = null
 	 * @throws kodkod.engine.fol2sat.UnboundLeafException - the formula contains an undeclared variable or
@@ -211,7 +210,6 @@ public final class Solver {
 	 * iff this.options has variable tracking enabled.  Translation logging also requires that 
 	 * there are no subnodes in the given formula that are both syntactically shared and contain free variables.  
 	 * 
-	 * @requires this.options.logTranslation => (all n: formula.*children | #n.~children > 1 => no freeVariables(n))
 	 * @return an iterator over all the Solutions to the formula with respect to the given bounds
 	 * @throws NullPointerException - formula = null || bounds = null
 	 * @throws kodkod.engine.fol2sat.UnboundLeafException - the formula contains an undeclared variable or

@@ -32,7 +32,7 @@ import kodkod.ast.Variable;
 import kodkod.engine.Solution;
 import kodkod.engine.Solver;
 import kodkod.engine.satlab.SATFactory;
-import kodkod.engine.ucore.RCEStrategy;
+import kodkod.engine.ucore.AdaptiveRCEStrategy;
 import kodkod.instance.Bounds;
 import kodkod.instance.TupleFactory;
 import kodkod.instance.Universe;
@@ -232,11 +232,11 @@ public final class ToyLists {
 				System.out.println("Top level formulas: " + sol.proof().log().roots().size());
 				System.out.println("Initial core: " + sol.proof().highLevelCore().size());
 				
-				sol.proof().minimize(new RCEStrategy(sol.proof().log()) );
+				sol.proof().minimize(new AdaptiveRCEStrategy(sol.proof().log()) );
 				
 				System.out.println("Minimal core: " + sol.proof().highLevelCore().size());
 				
-				final Set<Formula> core = Nodes.minRoots(f, sol.proof().highLevelCore().values());
+				final Set<Formula> core = Nodes.allRoots(f, sol.proof().highLevelCore().values());
 				
 				for(Formula c : core ) { 
 					System.out.println(c);

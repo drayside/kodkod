@@ -178,7 +178,7 @@ public final class StrategyUtils {
 //	}
 	
 	/**
-	 * Returns relevant  core variables -- i.e. all variables that occur both in the positive and
+	 * Returns relevant  core variables; that is, all variables that occur both in the positive and
 	 * negative phase in trace.core.
 	 * @return { v: [1..) | (some p, n: trace.core | v in trace.elts[p].literals and -v in trace.elts[n].literals) }
 	 */

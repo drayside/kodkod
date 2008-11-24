@@ -66,7 +66,6 @@ public final class ITEGate extends BooleanFormula {
 	/**
 	 * Returns a hash of this.label
 	 * @return a hash of this.label
-	 * @see kodkod.engine.bool.BooleanFormula#hash(kodkod.engine.bool.MultiGate.ExpressionOperator)
 	 */
 	@Override
 	int hash(Operator op) {
