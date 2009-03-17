@@ -26,6 +26,7 @@ import kodkod.engine.Solver;
 import kodkod.engine.config.AbstractReporter;
 import kodkod.engine.config.Options;
 import kodkod.engine.fol2sat.HigherOrderDeclException;
+import kodkod.engine.fol2sat.Translator;
 import kodkod.engine.fol2sat.UnboundLeafException;
 import kodkod.engine.satlab.SATFactory;
 import kodkod.engine.ucore.RCEStrategy;
@@ -49,6 +50,50 @@ import kodkod.util.nodes.Nodes;
 public class BugTests extends TestCase {
 	private final Solver solver = new Solver();
 	
+	public final void testFelix_03162009() {
+		Relation x = Relation.unary("X");
+		Relation y = Relation.unary("Y");
+		Relation q = Relation.unary("Q");
+		Relation f = Relation.nary("f", 2);
+
+		List<String> atomlist = Arrays.asList("X", "Y");
+
+		Universe universe = new Universe(atomlist);
+		TupleFactory factory = universe.factory();
+		Bounds bounds = new Bounds(universe);
+
+		TupleSet x_upper = factory.noneOf(1);
+		x_upper.add(factory.tuple("X"));
+		bounds.boundExactly(x, x_upper);
+
+		TupleSet y_upper = factory.noneOf(1);
+		y_upper.add(factory.tuple("Y"));
+		bounds.boundExactly(y, y_upper);
+
+		TupleSet q_upper = factory.noneOf(1);
+		q_upper.add(factory.tuple("X"));
+		q_upper.add(factory.tuple("Y"));
+		bounds.bound(q, q_upper);
+
+		TupleSet f_upper = factory.noneOf(2);
+		f_upper.add(factory.tuple("X").product(factory.tuple("X")));
+		f_upper.add(factory.tuple("X").product(factory.tuple("Y")));
+		f_upper.add(factory.tuple("Y").product(factory.tuple("X")));
+		f_upper.add(factory.tuple("Y").product(factory.tuple("Y")));
+		bounds.bound(f, f_upper);
+
+		Solver solver = new Solver();
+		solver.options().setSolver(SATFactory.DefaultSAT4J);
+		solver.options().setBitwidth(4);
+		solver.options().setFlatten(false);
+		solver.options().setIntEncoding(Options.IntEncoding.TWOSCOMPLEMENT);
+		solver.options().setSymmetryBreaking(20);
+		solver.options().setSkolemDepth(0);
+
+		Expression test = f.override(q.product(y));
+		TupleSet approx = factory.setOf(test.arity(), Translator.approximate(test, bounds, solver.options()).denseIndices());
+		assertEquals(f_upper, approx);
+	}
 	public final void testFelix_10272008() {
 		Relation x0 = Relation.unary("Int/min");
 		Relation x1 = Relation.unary("Int/zero");
