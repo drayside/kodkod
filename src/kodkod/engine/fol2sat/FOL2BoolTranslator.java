@@ -144,11 +144,12 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 	static final BooleanMatrix approximate(AnnotatedNode<Expression> annotated, LeafInterpreter interpreter, Environment<BooleanMatrix> env) {
 		final FOL2BoolTranslator approximator = new FOL2BoolTranslator(new FOL2BoolCache(annotated), interpreter, env) {
 			public final BooleanMatrix visit(BinaryExpression binExpr) {
-				if (binExpr.op().equals(ExprOperator.DIFFERENCE)) {
-					final BooleanMatrix ret = lookup(binExpr);
-					return ret!=null ? ret : cache(binExpr, binExpr.left().accept(this));
-				} else {
-					return super.visit(binExpr);
+				final BooleanMatrix ret = lookup(binExpr); 
+				if (ret!=null) return ret;
+				switch(binExpr.op()){
+				case DIFFERENCE	: return cache(binExpr, binExpr.left().accept(this));
+				case OVERRIDE  	: return cache(binExpr, binExpr.left().accept(this).or(binExpr.right().accept(this)));
+				default			: return super.visit(binExpr); 
 				}
 			}
 			public final BooleanMatrix visit(Comprehension cexpr) {
@@ -157,11 +158,33 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 			}
 			public BooleanMatrix visit(IfExpression ifExpr) {
 				final BooleanMatrix ret = lookup(ifExpr);
-				return ret!=null ? ret : cache(ifExpr, ifExpr.thenExpr().union(ifExpr.elseExpr()).accept(this));
+				return ret!=null ? ret : cache(ifExpr, ifExpr.thenExpr().accept(this).or(ifExpr.elseExpr().accept(this)));
 			}
 			public BooleanMatrix visit(IntToExprCast castExpr) {
-				final BooleanMatrix ret = lookup(castExpr);
-				return ret!=null ? ret : cache(castExpr, Expression.INTS.accept(this));
+				BooleanMatrix ret = lookup(castExpr);
+				if (ret!=null) return ret;
+				switch(castExpr.op()) {
+				case INTCAST	: return cache(castExpr, Expression.INTS.accept(this));
+				case BITSETCAST	: 
+					final BooleanFactory factory = super.interpreter.factory();
+					ret = factory.matrix(Dimensions.square(super.interpreter.universe().size(), 1));
+					final IntSet ints = super.interpreter.ints();
+					final int msb = factory.bitwidth()-1;
+					// handle all bits but the sign bit
+					for(int i = 0; i < msb; i++) { 
+						int pow2 = 1<<i;
+						if (ints.contains(pow2)) { 
+							ret.set(super.interpreter.interpret(pow2), BooleanConstant.TRUE);
+						}
+					}
+					// handle the sign bit
+					if (ints.contains(-1<<msb)) {
+						ret.set(super.interpreter.interpret(-1<<msb), BooleanConstant.TRUE);
+					}
+					return cache(castExpr, ret);
+				default : throw new IllegalArgumentException("Unknown operator: " + castExpr.op());
+				}
+
 			}	
 		};
 		return annotated.node().accept(approximator);
