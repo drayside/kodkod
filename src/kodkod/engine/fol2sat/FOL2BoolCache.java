@@ -217,7 +217,11 @@ final class FOL2BoolCache {
 		void set(Object transl, Environment<BooleanMatrix> env) {
 			translation = transl;
 			for(int i = 0; i < vars.length; i++) {
-				tuples[i] = env.lookup(vars[i]).iterator().next().index();
+				final BooleanMatrix varVal = env.lookup(vars[i]);
+				tuples[i] = varVal.iterator().next().index();
+				if (transl==varVal) { 
+					translation = varVal.clone();
+				}
 			}
 		}
 		

@@ -22,6 +22,8 @@
 package kodkod.util.nodes;
 
 import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Set;
 
 import kodkod.ast.BinaryExpression;
@@ -42,6 +44,7 @@ import kodkod.ast.IntComparisonFormula;
 import kodkod.ast.IntConstant;
 import kodkod.ast.IntExpression;
 import kodkod.ast.IntToExprCast;
+import kodkod.ast.LeafExpression;
 import kodkod.ast.MultiplicityFormula;
 import kodkod.ast.NaryExpression;
 import kodkod.ast.NaryFormula;
@@ -69,6 +72,13 @@ import kodkod.ast.visitor.VoidVisitor;
  */
 public final class PrettyPrinter {
 
+	/**
+	 * Returns a dot representation of the given node that can be visualized with GraphViz.
+	 * @return a dot representation of the given node that can be visualized with GraphViz.
+	 */
+	public static String dotify(Node node) { 
+		return Dotifier.apply(node);
+	}
 	/**
 	 * Returns a pretty-printed string representation of the 
 	 * given node, with each line offset by at least the given
@@ -126,6 +136,8 @@ public final class PrettyPrinter {
 		return formatter.tokens.toString();
 	}
 	
+	
+	
 	/**
 	 * Generates a buffer of tokens comprising the string representation
 	 * of a given node.  The buffer contains at least the parentheses 
@@ -136,7 +148,7 @@ public final class PrettyPrinter {
 	 */
 	private static class Formatter implements VoidVisitor {
 		final StringBuilder tokens ;
-		final int offset;
+		//final int offset;
 		private final int lineLength;
 		private int indent, lineStart;
 		
@@ -147,7 +159,7 @@ public final class PrettyPrinter {
 		Formatter(int offset, int line) {
 			assert offset >= 0 && offset < line;
 			this.tokens = new StringBuilder();
-			this.offset = offset;
+			//this.offset = offset;
 			this.lineLength = line;
 			this.lineStart = 0;
 			this.indent = offset;
@@ -593,5 +605,165 @@ public final class PrettyPrinter {
 		
 	}
 	
-
+	private static class Dotifier implements VoidVisitor {
+		private final StringBuilder graph = new StringBuilder();
+		private final Map<Node,Integer> ids = new LinkedHashMap<Node, Integer>();
+		
+		static String apply(Node node) { 
+			final Dotifier dot = new Dotifier();
+			dot.graph.append("digraph {\n");
+			node.accept(dot);
+			dot.graph.append("}");
+			return dot.graph.toString();
+		}
+		
+		
+		private  boolean visited(Node n)  {
+			if (ids.containsKey(n)) return true;
+			ids.put(n, ids.size());
+			return false;
+		}
+		
+		private String id(Node n) { return "N" + ids.get(n); }
+		
+		private void node(Node n, String label) { 
+			graph.append(id(n));
+			graph.append("[ label=\"" );
+			graph.append(ids.get(n));
+			graph.append("(");
+			graph.append(label);
+			graph.append(")\"];\n");
+		}
+		
+		private void edge(Node n1, Node n2) { 
+			if (n2 instanceof LeafExpression || n2 instanceof ConstantFormula || n2 instanceof IntConstant) {
+				
+			}
+			graph.append(id(n1));
+			graph.append("->");
+			graph.append(id(n2));
+			graph.append(";\n");
+		}
+		
+		private void visit(Node parent, Object label) { 
+			if (visited(parent)) return;
+			node(parent, label.toString());
+		}
+		
+		private void visit(Node parent, Object label, Node child) {
+			if (visited(parent)) return;
+			node(parent, label.toString());
+			child.accept(this);
+			edge(parent, child);	
+		}
+		
+		private void visit(Node parent, Object label, Node left, Node right) {
+			if (visited(parent)) return;
+			node(parent, label.toString());
+			left.accept(this);
+			right.accept(this);
+			edge(parent, left);	
+			edge(parent, right);
+		}
+		
+		private void visit(Node parent, Object label, Node left, Node middle, Node right) {
+			if (visited(parent)) return;
+			node(parent, label.toString());
+			left.accept(this);
+			middle.accept(this);
+			right.accept(this);
+			edge(parent, left);	
+			edge(parent, middle);	
+			edge(parent, right);
+		}
+		
+		private void visit(Node parent, Object label, Iterator<? extends Node> children) {
+			if (visited(parent)) return;
+			node(parent, label.toString());
+			while(children.hasNext()) {
+				Node child = children.next();
+				child.accept(this);
+				edge(parent, child);
+			}
+		}
+		
+		private void visit(Node parent, Object label, Node child, Iterator<? extends Node> children) {
+			if (visited(parent)) return;
+			node(parent, label.toString());
+			child.accept(this);
+			edge(parent, child);
+			while(children.hasNext()) {
+				Node other = children.next();
+				other.accept(this);
+				edge(parent, other);
+			}
+		}
+		
+		public void visit(Decls decls) { visit(decls, "decls", decls.iterator()); }
+		
+		public void visit(Decl decl) { visit(decl, "decl", decl.variable(), decl.expression()); }
+		
+		public void visit(Relation relation) { visit(relation, relation.name()); }
+		public void visit(Variable variable) { visit(variable, variable.name()); }	
+		public void visit(ConstantExpression constExpr) { visit(constExpr, constExpr.name()); }
+		
+		
+		public void visit(NaryExpression expr) { 
+			visit(expr, expr.op(), expr.iterator()); 
+		}
+		public void visit(BinaryExpression binExpr) { 
+			visit(binExpr, binExpr.op(), binExpr.left(), binExpr.right()); 
+		}
+		public void visit(UnaryExpression unaryExpr) { 
+			visit(unaryExpr, unaryExpr.op(), unaryExpr.expression()); 
+		}
+		public void visit(Comprehension comprehension) { 
+			visit(comprehension, "setcomp", comprehension.decls(), comprehension.formula());
+		}
+		public void visit(IfExpression ifExpr) {
+			visit(ifExpr, "ite", ifExpr.condition(), ifExpr.thenExpr(), ifExpr.elseExpr());
+		}
+		public void visit(ProjectExpression project) {
+			visit(project, "proj", project.expression(), project.columns());
+		}
+		
+		public void visit(IntToExprCast castExpr) { visit(castExpr, castExpr.op(), castExpr.intExpr()); }
+		public void visit(IntConstant intConst) { visit(intConst, intConst.value()); }
+		
+		public void visit(IfIntExpression intExpr) {
+			visit(intExpr, "ite", intExpr.condition(), intExpr.thenExpr(), intExpr.elseExpr());
+		}
+		public void visit(ExprToIntCast intExpr) { visit(intExpr, intExpr.op(), intExpr.expression()); }
+		public void visit(NaryIntExpression intExpr) { visit(intExpr, intExpr.op(), intExpr.iterator());}
+		public void visit(BinaryIntExpression intExpr) { visit(intExpr, intExpr.op(), intExpr.left(), intExpr.right()); }
+		public void visit(UnaryIntExpression intExpr) { visit(intExpr, intExpr.op(), intExpr.intExpr());}
+		public void visit(SumExpression intExpr) { visit(intExpr, "sum", intExpr.decls(), intExpr.intExpr()); }
+		
+		public void visit(IntComparisonFormula intComp) { visit(intComp, intComp.op(), intComp.left(), intComp.right());}
+		public void visit(QuantifiedFormula quantFormula) { 
+			visit(quantFormula, quantFormula.quantifier(), quantFormula.decls(), quantFormula.formula());
+		}
+		public void visit(NaryFormula formula) { visit(formula, formula.op(), formula.iterator()); }
+		public void visit(BinaryFormula binFormula) { visit(binFormula, binFormula.op(), binFormula.left(), binFormula.right()); }
+		public void visit(NotFormula not) { visit(not, "not", not.formula()); }
+		public void visit(ConstantFormula constant) { visit(constant, constant.booleanValue()); }
+		public void visit(ComparisonFormula compFormula) { visit(compFormula, compFormula.op(), compFormula.left(), compFormula.right());}
+		public void visit(MultiplicityFormula multFormula) { 
+			visit(multFormula, multFormula.multiplicity(), multFormula.expression());
+		}
+		public void visit(RelationPredicate pred) {
+			if (visited(pred)) return;
+			
+			if (pred.name()==RelationPredicate.Name.FUNCTION) {
+				final RelationPredicate.Function fp = (RelationPredicate.Function) pred;
+				visit(fp, fp.name(),  fp.domain(), fp.range() );
+			} else if (pred.name()==RelationPredicate.Name.TOTAL_ORDERING) {
+				final RelationPredicate.TotalOrdering tp = (RelationPredicate.TotalOrdering) pred;
+				visit(tp, tp.name(),  tp.ordered(), tp.first(), tp.last() );
+			} else {
+				throw new IllegalArgumentException("Unknown predicate: " + pred);
+			}
+		}
+		
+	}
 }
