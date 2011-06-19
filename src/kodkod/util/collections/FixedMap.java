@@ -368,16 +368,15 @@ public final class FixedMap<K, V> extends AbstractMap<K, V> implements Indexer<K
 		@SuppressWarnings("unchecked")
 		public final V getValue() { return (V)values[index]; }
 
-		@SuppressWarnings("unchecked")
 		public V setValue(V value) { throw new UnsupportedOperationException();	}
 
 		public int hashCode() {
 			return System.identityHashCode(keys[index]) ^ System.identityHashCode(values[index]);
 		}
-		@SuppressWarnings("unchecked")
+		
 		public boolean equals(Object o) {
 			if (o instanceof Map.Entry) {
-				final Map.Entry e = (Map.Entry) o;
+				final Map.Entry<?,?> e = (Map.Entry<?,?>) o;
 				return keys[index] == e.getKey() && values[index] == e.getValue();
 			} else return false;
 		}

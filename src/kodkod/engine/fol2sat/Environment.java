@@ -47,6 +47,7 @@ final class Environment<T> {
 	/**
 	 * The empty environment; EMPTY is its own parent.
 	 */
+	@SuppressWarnings("rawtypes")
 	static final Environment EMPTY = new Environment();
 	
 	/**

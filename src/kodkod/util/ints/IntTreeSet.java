@@ -63,7 +63,6 @@ public final class IntTreeSet extends AbstractIntSet implements Cloneable {
 	 * Copy constructor.
 	 * @effects constructs a deep copy of the original set.
 	 */
-	@SuppressWarnings("unchecked")
 	private IntTreeSet(IntTreeSet original) {
 		this.size = original.size;
 		try {
@@ -260,7 +259,6 @@ public final class IntTreeSet extends AbstractIntSet implements Cloneable {
 	 * @return a copy of this IntSet.
 	 * @see kodkod.util.ints.IntSet#clone()
 	 */
-	@SuppressWarnings("unchecked")
 	@Override
 	public IntTreeSet clone() {
 		// ok to use copy constructor to clone a final class

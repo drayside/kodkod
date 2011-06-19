@@ -49,7 +49,7 @@ public final class Make {
 	private static final String JNIDIR = headersDir();
 	private static final String JLIBDIR = userLibDir();
 	private static final String CC = "g++";
-	private static final String COMPILE = "$(CC) -Wall -O3 -c";
+	private static final String COMPILE = "$(CC) -Wall -O3 -c -ffriend-injection";
 	private static final String LINK = "$(CC) " + linkFlags();
 	
 	private static enum FileType {
@@ -65,7 +65,8 @@ public final class Make {
 	 */
 	private static String headersDir() {
 		final String JHOME = System.getProperty("java.home");
-		return JHOME.substring(0,1+JHOME.lastIndexOf(File.separator))+"Headers";
+		//return JHOME.substring(0,1+JHOME.lastIndexOf(File.separator))+"Headers";
+		return JHOME + "/include";
 	}
 	
 	/**

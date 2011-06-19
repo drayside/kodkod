@@ -215,7 +215,6 @@ final class IntTree<N extends IntTree.Node<N>> implements Cloneable {
 	 * @effects this.nodes' = this.nodes - o + n
 	 * @effects o.parent' = o.left' = o.right' = null
 	 */
-	@SuppressWarnings("unchecked")
 	final void replace(N o, N n) {
 		n.color = o.color;
 		n.parent = o.parent;
@@ -240,7 +239,6 @@ final class IntTree<N extends IntTree.Node<N>> implements Cloneable {
 	 * @requires no z.key & this.nodes.key
 	 * @effects this.nodes' = this.nodes + z
 	 */
-	@SuppressWarnings("unchecked")
 	final void insert(N z) {
 		N y = null;
 		for (N x = root; x != null;) {
@@ -269,7 +267,6 @@ final class IntTree<N extends IntTree.Node<N>> implements Cloneable {
 	 * @requires z in this.nodes
 	 * @effects this.nodes' = this.nodes - z
 	 */
-	@SuppressWarnings("unchecked")
 	final void delete(N z) {
 		N y = (z.left==null || z.right==null ? z : successor(z));
 		N x = (y.left != null ? y.left : y.right);
@@ -313,7 +310,7 @@ final class IntTree<N extends IntTree.Node<N>> implements Cloneable {
 	 * @throws CloneNotSupportedException - nodes contained in this tree are not cloneable
 	 */
 	@SuppressWarnings("unchecked")
-	protected IntTree clone() throws CloneNotSupportedException {
+	protected IntTree<N> clone() throws CloneNotSupportedException {
 		final IntTree<N> ret = (IntTree<N>) super.clone();
 		ret.root = clone(root, null);
 		return ret;
@@ -336,7 +333,6 @@ final class IntTree<N extends IntTree.Node<N>> implements Cloneable {
 	/**
 	 * From CLR.
 	 */
-	@SuppressWarnings("unchecked")
 	private void insertFixUp(N z) {
 		while (z != null && z != root && z.parent.color == RED) {
 			if (parentOf(z) == leftOf(parentOf(parentOf(z)))) {
@@ -381,7 +377,6 @@ final class IntTree<N extends IntTree.Node<N>> implements Cloneable {
 	/**
 	 * From CLR.
 	 */
-	@SuppressWarnings("unchecked")
 	private void deleteFixUp(N x) {
 		while (x != root && colorOf(x) == BLACK) {
 			if (x == leftOf(parentOf(x))) {
@@ -448,7 +443,6 @@ final class IntTree<N extends IntTree.Node<N>> implements Cloneable {
 	/**
 	 * From CLR.
 	 */
-	@SuppressWarnings("unchecked")
 	private void rotateLeft(N x) {
 		N y = x.right;
 		x.right = y.left;
@@ -468,7 +462,6 @@ final class IntTree<N extends IntTree.Node<N>> implements Cloneable {
 	/**
 	 * From CLR.
 	 */
-	@SuppressWarnings("unchecked")
 	private void rotateRight(N x) {
 		N y = x.left;
 		x.left = y.right;  

@@ -48,7 +48,6 @@ public final class TreeSequence<V> extends AbstractSparseSequence<V>
 	 * Copy constructor.
 	 * @effects creatres a deep copy of the original
 	 */
-	@SuppressWarnings("unchecked")
 	private TreeSequence(TreeSequence<V> original) {
 		this.size = original.size;
 		try {
@@ -173,7 +172,6 @@ public final class TreeSequence<V> extends AbstractSparseSequence<V>
 	 * @return a copy of this sparse sequence.
 	 * @see kodkod.util.ints.SparseSequence#clone()
 	 */
-	@SuppressWarnings("unchecked")
 	public TreeSequence<V> clone() {
 		// ok to use copy constructor to clone a final class
 		return new TreeSequence<V>(this);
@@ -225,7 +223,6 @@ public final class TreeSequence<V> extends AbstractSparseSequence<V>
 			return key + "=" + value;
 		}		
 		
-		@SuppressWarnings("unchecked")
 		protected Entry<V> clone() throws CloneNotSupportedException {
 			return (Entry<V>)super.clone();
 		}

@@ -339,7 +339,8 @@ public final class TupleFactory {
 		 * @throws NullPointerException - atom = null
 	     * @throws IllegalArgumentException - arity < 1 || atom !in this.universe.atoms[int]
 	     */
-	    IntTuple(final int arity, final Object atom) {
+	    @SuppressWarnings("unused")
+		IntTuple(final int arity, final Object atom) {
 	    	checkCapacity(arity);
 	    	if (arity < 1) throw new IllegalArgumentException("arity < 1");
 	    	this.arity = arity;

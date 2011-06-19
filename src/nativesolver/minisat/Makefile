@@ -1,8 +1,8 @@
 CC = g++
-COMPILE = $(CC) -Wall -O3 -c
+COMPILE = $(CC) -Wall -O3 -c -ffriend-injection
 LINK = $(CC) -dynamiclib
 
-CHEADERS = Heap.h SolverTypes.h VarOrder.h Sort.h Solver.h Global.h 
+CHEADERS = Heap.h VarOrder.h SolverTypes.h Solver.h Sort.h Global.h 
 CSRCS = Solver.C 
 COBJS = Solver.o 
 
@@ -12,7 +12,7 @@ U2=$(subst CYGWIN.*,cygwin,${U1})
 U3=$(subst Darwin,darwin,${U2})
 OS=$(subst Linux,linux,${U3})
 
-JNIDIR = /System/Library/Frameworks/JavaVM.framework/Versions/1.5.0/Headers
+JNIDIR = /System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home/include
 JLIBDIR = /Library/Java/Extensions/
 JNILIB = libminisat.jnilib
 

@@ -332,7 +332,6 @@ public final class AnnotatedNode<N extends Node> {
 		 * The method returns TRUE if the creator body contains any 
 		 * variable not bound by the decls; otherwise returns FALSE.  
 		 */
-		@SuppressWarnings("unchecked")
 		private Boolean visit(Node creator, Decls decls, Node body) {
 			Boolean ret = lookup(creator);
 			if (ret!=null) return ret;

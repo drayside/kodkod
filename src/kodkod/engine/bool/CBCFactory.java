@@ -219,7 +219,7 @@ final class CBCFactory {
 	 * @effects v in BooleanFormula - NotGate => this.values' = this.values + v, this.values' = this.values
 	 * @throws NullPointerException - any of the arguments are null
 	 */
-	@SuppressWarnings("unchecked") 
+	@SuppressWarnings({ "unchecked", "rawtypes" }) 
 	BooleanValue assemble(BooleanAccumulator acc) {
 		final int asize = acc.size();
 		final Operator.Nary op = acc.op;
