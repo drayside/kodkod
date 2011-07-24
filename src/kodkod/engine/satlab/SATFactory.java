@@ -62,26 +62,10 @@ public abstract class SATFactory {
 	};
 	
 	/**
-	 * The factory that produces instances of the zchaff solver from Princeton; 
-	 * the returned instances 
-	 * support only basic sat solver operations (adding variables/clauses,
-	 * solving, and obtaining a satisfying solution, if any).  ZChaff is not incremental.
-	 */
-	public static final SATFactory ZChaff = new SATFactory() {
-		public SATSolver instance() { 
-			return new ZChaff(); 
-		}
-		public boolean incremental() { return false; }
-		public String toString() { return "ZChaff"; }
-	};
-	
-	
-	
-	/**
 	 * The factory the produces {@link SATMinSolver cost-minimizing} 
 	 * instances of the zchaff solver from Princeton.  Note that cost minimization
 	 * can incur a time and/or memory overhead during solving,
-	 * so if you do not need this functionality, use the {@link #ZChaff} factory
+	 * so if you do not need this functionality, use the {@link #MiniSat} factory
 	 * instead.  ZChaffMincost is not incremental.
 	 */
 	public static final SATFactory ZChaffMincost = new SATFactory() {

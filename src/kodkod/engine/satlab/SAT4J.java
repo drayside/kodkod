@@ -22,6 +22,7 @@
 package kodkod.engine.satlab;
 
 import java.util.NoSuchElementException;
+
 import org.sat4j.specs.ContradictionException;
 import org.sat4j.specs.ISolver;
 import org.sat4j.specs.IVecInt;
@@ -146,6 +147,7 @@ final class SAT4J implements SATSolver {
 	 * @author Emina Torlak
 	 */
 	private static final class ReadOnlyIVecInt implements IVecInt {
+		private static final long serialVersionUID = -7689441271777278043L;
 		private int[] vec;
 		
 		/**
@@ -157,53 +159,11 @@ final class SAT4J implements SATSolver {
 			return this;
 		}
 		
-		public int size() {
-			return vec.length;
-		}
-
-		public boolean isEmpty() {
-			return size() == 0;
-	    }
-		
-		public void shrink(int arg0) {
-			throw new UnsupportedOperationException();
-		}
-
-		public void shrinkTo(int arg0) {
-			throw new UnsupportedOperationException();
-		}
-
-		public IVecInt pop() {
-			throw new UnsupportedOperationException();
-		}
-
-		public void growTo(int arg0, int arg1) {
-			throw new UnsupportedOperationException();
-		}
-
-		public void ensure(int arg0) {
-			throw new UnsupportedOperationException();
-		}
-
-		public IVecInt push(int arg0) {
-			throw new UnsupportedOperationException();
-		}
-
-		public void unsafePush(int arg0) {
-			throw new UnsupportedOperationException();
-		}
-
-		public int unsafeGet(int arg0) {
-			return vec[arg0];
-		}
-
-		public void clear() {
-			throw new UnsupportedOperationException();
-		}
-
-		public int last() {
-			return vec[vec.length - 1];
-		}
+		public int size() 				{ return vec.length; }
+		public boolean isEmpty() 		{ return size() == 0; }
+		public int unsafeGet(int arg0)	{ return vec[arg0]; }
+		public int last() 				{ return vec[vec.length - 1]; }
+		public int[] toArray() 			{ return vec; }
 
 		public int get(int arg0) {
 			if (arg0 < 0 || arg0 >= vec.length)
@@ -211,12 +171,9 @@ final class SAT4J implements SATSolver {
 			return vec[arg0];
 		}
 
-		public void set(int arg0, int arg1) {
-			throw new UnsupportedOperationException();		
-		}
-
 		public boolean contains(int arg0) {
-			for(int i : vec) {
+			final int[] workArray = vec; // faster access
+			for(int i : workArray) {
 				if (i==arg0) return true;
 			}
 			return false;
@@ -224,8 +181,9 @@ final class SAT4J implements SATSolver {
 
 		public void copyTo(IVecInt arg0) {
 			int argLength = arg0.size();
-			arg0.ensure(argLength + vec.length);
-			for(int i : vec) {
+			final int[] workArray = vec; // faster access
+			arg0.ensure(argLength + workArray.length);
+			for(int i : workArray) {
 				arg0.set(argLength++, i);
 			}
 		}
@@ -235,42 +193,6 @@ final class SAT4J implements SATSolver {
 			System.arraycopy(vec,0, arg0, 0, vec.length);
 		}
 
-		public void moveTo(IVecInt arg0) {
-			throw new UnsupportedOperationException();	
-		}
-
-		public void moveTo2(IVecInt arg0) {
-			throw new UnsupportedOperationException();	
-		}
-
-		public void moveTo(int[] arg0) {
-			throw new UnsupportedOperationException();	
-		}
-
-		public void moveTo(int arg0, int arg1) {
-			throw new UnsupportedOperationException();	
-		}
-
-		public void insertFirst(int arg0) {
-			throw new UnsupportedOperationException();
-		}
-
-		public void remove(int arg0) {
-			throw new UnsupportedOperationException();
-		}
-
-		public int delete(int arg0) {
-			throw new UnsupportedOperationException();
-		}
-
-		public void sort() {
-			throw new UnsupportedOperationException();
-		}
-
-		public void sortUnique() {
-			throw new UnsupportedOperationException();
-		}
-
 		public IteratorInt iterator() {
 			return new IteratorInt() {
 				int cursor = 0;
@@ -278,22 +200,58 @@ final class SAT4J implements SATSolver {
 					return cursor < vec.length;
 				}
 				public int next() {
-					if (!hasNext()) 
-						throw new NoSuchElementException();
+					if (!hasNext()) throw new NoSuchElementException();
 					return vec[cursor++];
 				}
 			};
 		}
 
 		public int containsAt(int e) {
-			for(int n=vec.length, i=0; i<n; i++) if (vec[i]==e) return i;
+			final int[] workArray = vec; // faster access
+			for(int n=workArray.length, i=0; i<n; i++) 
+				if (workArray[i]==e) 
+					return i;
 			return -1;
 		}
 
 		public int containsAt(int e, int from) {
-			if (from<vec.length) for(int n=vec.length, i=from+1; i<n; i++) if (vec[i]==e) return i;
+			final int[] workArray = vec; // faster access
+			if (from<workArray.length) 
+				for(int n=workArray.length, i=from+1; i<n; i++) 
+					if (workArray[i]==e) 
+						return i;
 			return -1;
 		}
+
+		public int indexOf(int e) {
+			final int[] workArray = vec; // faster access
+			for (int i = 0, n = workArray.length; i < n; i++) {
+				if (workArray[i] == e)
+					return i;
+			}
+			return -1;
+		}
+		
+		// unsupported
+		public void shrink(int arg0) 			{ throw new UnsupportedOperationException(); }
+		public void shrinkTo(int arg0) 			{ throw new UnsupportedOperationException(); }
+		public IVecInt pop() 					{ throw new UnsupportedOperationException(); }
+		public void growTo(int arg0, int arg1)	{ throw new UnsupportedOperationException(); }
+		public void ensure(int arg0) 			{ throw new UnsupportedOperationException(); }
+		public IVecInt push(int arg0) 			{ throw new UnsupportedOperationException(); }
+		public void unsafePush(int arg0) 		{ throw new UnsupportedOperationException(); }
+		public void clear() 					{ throw new UnsupportedOperationException(); }
+		public void moveTo(IVecInt arg0) 		{ throw new UnsupportedOperationException(); }
+		public void moveTo2(IVecInt arg0) 		{ throw new UnsupportedOperationException(); }
+		public void moveTo(int[] arg0) 			{ throw new UnsupportedOperationException(); }
+		public void moveTo(int arg0, int arg1)	{ throw new UnsupportedOperationException(); }
+		public void moveTo(int i, int[] arg1) 	{ throw new UnsupportedOperationException(); }
+		public void insertFirst(int arg0) 		{ throw new UnsupportedOperationException(); }
+		public void remove(int arg0) 			{ throw new UnsupportedOperationException(); }
+		public int delete(int arg0) 			{ throw new UnsupportedOperationException(); }
+		public void set(int arg0, int arg1) 	{ throw new UnsupportedOperationException(); }
+		public void sort() 						{ throw new UnsupportedOperationException(); }
+		public void sortUnique() 				{ throw new UnsupportedOperationException(); }
 		
 	}
 	
