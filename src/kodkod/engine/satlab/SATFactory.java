@@ -106,6 +106,16 @@ public abstract class SATFactory {
 	};
 	
 	/**
+	 * The factory that produces instances of the CryptoMiniSat solver by Mate Soos.
+	 */
+	public static final SATFactory CryptoMiniSat = new SATFactory() {
+		public SATSolver instance() {
+			return new CryptoMiniSat();
+		}
+		public String toString() { return "CryptoMiniSat"; }
+	};
+	
+	/**
 	 * Returns a SATFactory that produces instances of the specified
 	 * SAT4J solver.  For the list of available SAT4J solvers see
 	 * {@link org.sat4j.core.ASolverFactory#solverNames() org.sat4j.core.ASolverFactory#solverNames()}.

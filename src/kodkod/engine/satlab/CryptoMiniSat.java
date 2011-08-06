@@ -21,31 +21,31 @@
  */
 package kodkod.engine.satlab;
 
-
 /**
- * Java wrapper for the MiniSat solver by Niklas EŽn and Niklas Sšrensson.
+ * Java wrapper for the CryptoMiniSat solver by Mate Soos.
+ * 
  * @author Emina Torlak
  */
-final class MiniSat extends NativeSolver {
-	
+public final class CryptoMiniSat extends NativeSolver {
+
 	/**
 	 * Constructs a new MiniSAT wrapper.
 	 */
-	public MiniSat() {
+	CryptoMiniSat() {
 		super(make());
-	}
-	
-	static {
-		loadLibrary("minisat");
+		// TODO Auto-generated constructor stub
 	}
 
+	static {
+		loadLibrary("cryptominisat");
+	}
 	
 	/**
 	 * {@inheritDoc}
 	 * @see java.lang.Object#toString()
 	 */
 	public String toString() {
-		return "MiniSat";
+		return "CryptoMiniSat";
 	}
 	
 	/**
@@ -58,29 +58,35 @@ final class MiniSat extends NativeSolver {
 	 * {@inheritDoc}
 	 * @see kodkod.engine.satlab.NativeSolver#free(long)
 	 */
+	@Override
 	native void free(long peer);
-	
+
 	/**
 	 * {@inheritDoc}
 	 * @see kodkod.engine.satlab.NativeSolver#addVariables(long, int)
 	 */
+	@Override
 	native void addVariables(long peer, int numVariables);
 
 	/**
 	 * {@inheritDoc}
 	 * @see kodkod.engine.satlab.NativeSolver#addClause(long, int[])
 	 */
-	native boolean addClause(long peer, int[] lits);
-	
+	@Override
+	native boolean addClause(long peer, int[] lits) ;
+
 	/**
 	 * {@inheritDoc}
 	 * @see kodkod.engine.satlab.NativeSolver#solve(long)
 	 */
-	native boolean solve(long peer);
-	
+	@Override
+	native boolean solve(long peer) ;
+
 	/**
 	 * {@inheritDoc}
 	 * @see kodkod.engine.satlab.NativeSolver#valueOf(long, int)
 	 */
-	native boolean valueOf(long peer, int literal);
+	@Override
+	native boolean valueOf(long peer, int literal) ;
+
 }

@@ -39,6 +39,8 @@ import kodkod.util.ints.IntRange.TwoPointRange;
  * @author Emina Torlak
  */
 public final class Ints {
+	private static final int BITSET_CUTOFF = 1024;
+	
 	/** An immutable empty int set. The clone method returns the empty set itself. */
 	public static final IntSet EMPTY_SET = 
 		new AbstractIntSet() {
@@ -137,8 +139,7 @@ public final class Ints {
 	 * elements in [0..max).
 	 */
 	public static IntSet bestSet(int max) {
-		// cut-off for using a bit map is 512
-		return max > 512 ? new IntTreeSet() : new IntBitSet(max);
+		return max > BITSET_CUTOFF ? new IntTreeSet() : new IntBitSet(max);
 	}
 
 	/**
