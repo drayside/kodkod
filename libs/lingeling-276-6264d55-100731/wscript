@@ -1,0 +1,48 @@
+#! /usr/bin/env python
+# encoding: utf-8
+
+import datetime;
+
+top = '.'
+out = 'bin'
+
+def options(opt):
+    opt.load('compiler_c')
+    opt.load('java')
+
+def configure(conf):
+    conf.load('compiler_c')
+    conf.load('java')
+    conf.check_jni_headers()
+    
+    conf.env.DEFINES = ['NLGLOG', 'NLGLSTATS', 'NDEBUG', 'NLGLPICOSAT']
+    conf.env.INCLUDES = ['.', '..']
+    conf.env.CFLAGS = ['-Wall', '-O3']
+    conf.env.LINGELING_SRC = ['src/lglib.c', 'src/lglbnr.c']
+    conf.env.LINGELING_MAIN = 'src/lglmain.c'
+    conf.env.LINGELING_JNI = 'jni/kodkod_engine_satlab_Lingeling.c'
+    conf.env.PLINGELING_MAIN = 'src/plingeling.c'
+   
+    lglcflags = conf.path.make_node(out+'/lglcflags.h')
+    lglcflags.write('#define LGL_CC "' + conf.env.CC_NAME + '"\n')
+    lglcflags.write('#define LGL_CFLAGS "', 'a')
+    for flag in conf.env.CFLAGS :
+        lglcflags.write(flag + ' ', 'a')
+    for defines in conf.env.DEFINES :
+        lglcflags.write('-D' + defines + ' ', 'a')
+    lglcflags.write('"', 'a')
+
+    lglcfg = conf.path.make_node(out+'/lglcfg.h')
+    lglcfg.write('#define LGL_OS "' + conf.env.DEST_OS + ' ' + conf.env.DEST_CPU + '"\n')
+    lglcfg.write('#define LGL_COMPILED "'+str(datetime.datetime.now())+'"\n', 'a')
+    lglcfg.write('#define LGL_RELEASED "Sat Jul 31 11:52:29 CEST 2010"\n', 'a')
+    lglcfg.write('#define LGL_VERSION "276"\n', 'a')
+    lglcfg.write('#define LGL_ID "6264d55e84105d420ec6e7f27ad0fad15f5885a4"\n', 'a')
+    
+def build(bld):
+    bld.objects( source = bld.path.ant_glob(bld.env.LINGELING_SRC), target = 'lglib' )
+    #bld.program( source = bld.path.ant_glob(bld.env.LINGELING_MAIN), use = 'lglib', target = 'lingeling')
+    #bld.program( source = bld.path.ant_glob(bld.env.PLINGELING_MAIN), use = 'lglib', target = 'plingeling')
+    bld.shlib( source = bld.path.ant_glob(bld.env.LINGELING_JNI), uselib = 'JAVA', use = 'lglib', target = 'lingeling' )
+ 
+   

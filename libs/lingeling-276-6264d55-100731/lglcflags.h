@@ -1,0 +1,2 @@
+#define LGL_CC "gcc"
+#define LGL_CFLAGS "-Wall -O3 -DNLGLOG -DNLGLSTATS -DNDEBUG -DNLGLPICOSAT "
