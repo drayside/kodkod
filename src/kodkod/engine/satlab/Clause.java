@@ -43,7 +43,7 @@ public abstract class Clause {
 	/**
 	 * Constructs a new clause.
 	 */
-	Clause() {}
+	protected Clause() {}
 		
 	/**
 	 * Returns the size of this clause, measured in the 

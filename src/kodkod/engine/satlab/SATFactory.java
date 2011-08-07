@@ -116,6 +116,17 @@ public abstract class SATFactory {
 	};
 	
 	/**
+	 * The factory that produces instances of Armin Biere's
+	 * Lingeling solver.
+	 */
+	public static final SATFactory Lingeling = new SATFactory() {
+		public SATSolver instance() {
+			return new Lingeling();
+		}
+		public String toString() { return "Lingeling"; }
+	};
+	
+	/**
 	 * Returns a SATFactory that produces instances of the specified
 	 * SAT4J solver.  For the list of available SAT4J solvers see
 	 * {@link org.sat4j.core.ASolverFactory#solverNames() org.sat4j.core.ASolverFactory#solverNames()}.
