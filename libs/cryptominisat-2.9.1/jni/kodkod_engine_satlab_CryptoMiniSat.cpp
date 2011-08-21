@@ -2,8 +2,10 @@
 #include <jni.h>
 #include "Solver/Solver.h"
 #include "kodkod_engine_satlab_CryptoMiniSat.h"
+#include <iostream>
 
 using namespace CMSat;
+using namespace std;
 /*
  * Class:     kodkod_engine_satlab_CryptoMiniSat
  * Method:    make
@@ -11,6 +13,13 @@ using namespace CMSat;
  */
 JNIEXPORT jlong JNICALL Java_kodkod_engine_satlab_CryptoMiniSat_make
 (JNIEnv *, jclass) {
+	/*SolverConf conf;
+	conf.fixRestartType = static_restart;
+	conf.polarity_mode = polarity_false;
+	conf.doFindXors= false;
+	conf.doPartHandler = false;
+	Solver* solver = new Solver(conf);
+	return ((jlong) solver);*/
 	Solver* solver = new Solver();
 	return ((jlong) solver);
 }
@@ -33,6 +42,11 @@ JNIEXPORT void JNICALL Java_kodkod_engine_satlab_CryptoMiniSat_free
 JNIEXPORT void JNICALL Java_kodkod_engine_satlab_CryptoMiniSat_addVariables
 (JNIEnv *, jobject, jlong solver, jint  numVars) {
 	Solver* solverPtr = (Solver*) solver;
+	SolverConf conf = solverPtr->conf;
+	/*std::cout << (conf.fixRestartType == static_restart);
+	std::cout << (conf.polarity_mode == polarity_false);
+	std::cout << (conf.doFindXors);
+	std::cout << (conf.doPartHandler);*/
 	for(int i = 0; i < numVars; ++i) {
 		solverPtr->newVar();
 	}
