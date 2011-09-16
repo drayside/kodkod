@@ -56,7 +56,7 @@ public final class Translation {
 	 * from Relations to literals, and TranslationLog.
 	 * @requires maxPrimaryLit = max(varUsage[Relation].max)
 	 * @requires bounds.relations = varUsage.IntSet
-	 * @effects this.solver' = solver && this.bounds' = bounds
+	 * @ensures this.solver' = solver && this.bounds' = bounds
 	 */
 	Translation(SATSolver solver, Bounds bounds, Map<Relation, IntSet> varUsage, int maxPrimaryLit, TranslationLog log) {	
 		this.solver = solver;

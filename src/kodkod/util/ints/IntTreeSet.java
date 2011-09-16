@@ -41,7 +41,7 @@ public final class IntTreeSet extends AbstractIntSet implements Cloneable {
 
 	/**
 	 * Constructs an empty int set.
-	 * @effects no this.ints'
+	 * @ensures no this.ints'
 	 */
 	public IntTreeSet() {
 		tree = new IntTree<Range>();
@@ -51,7 +51,7 @@ public final class IntTreeSet extends AbstractIntSet implements Cloneable {
 	/**
 	 * Constructs a new int set containing the elements
 	 * in the specified set.
-	 * @effects this.ints' = s.ints
+	 * @ensures this.ints' = s.ints
 	 * @throws NullPointerException - s = null
 	 */
 	public IntTreeSet(IntSet s) {
@@ -61,7 +61,7 @@ public final class IntTreeSet extends AbstractIntSet implements Cloneable {
 	
 	/**
 	 * Copy constructor.
-	 * @effects constructs a deep copy of the original set.
+	 * @ensures constructs a deep copy of the original set.
 	 */
 	private IntTreeSet(IntTreeSet original) {
 		this.size = original.size;
@@ -160,7 +160,7 @@ public final class IntTreeSet extends AbstractIntSet implements Cloneable {
 	/**
 	 * Adds the given integer to this set if not already present
 	 * and returns true.  Otherwise does nothing and returns false.
-	 * @effects this.ints' = this.ints + i
+	 * @ensures this.ints' = this.ints + i
 	 * @return i in this.ints'
 	 * @see kodkod.util.ints.IntSet#add(int)
 	 */
@@ -194,7 +194,7 @@ public final class IntTreeSet extends AbstractIntSet implements Cloneable {
 	/**
 	 * Removes the given integer from this set if already present and
 	 * returns true.  Otherwise does nothing and returns false.
-	 * @effects this.ints' = this.ints - i
+	 * @ensures this.ints' = this.ints - i
 	 * @return i !in this.ints'
 	 * @see kodkod.util.ints.IntSet#remove(int)
 	 */
@@ -244,7 +244,7 @@ public final class IntTreeSet extends AbstractIntSet implements Cloneable {
 	
 	/**
 	 * Removes all elements from this set. 
-	 * @effects no this.ints'
+	 * @ensures no this.ints'
 	 * @see kodkod.util.ints.IntCollection#clear()
 	 */
 	@Override

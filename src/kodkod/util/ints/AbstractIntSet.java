@@ -31,7 +31,7 @@ public abstract class AbstractIntSet extends AbstractIntCollection implements In
 	
 	/**
 	 * Constructs an empty int set.
-	 * @effects no this.ints'
+	 * @ensures no this.ints'
 	 */
 	protected AbstractIntSet() {}
 	

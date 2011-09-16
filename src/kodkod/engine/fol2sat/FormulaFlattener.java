@@ -248,7 +248,7 @@ final class FormulaFlattener extends AbstractVoidVisitor {
 	/**
 	 * Adds f (resp. f.not()) to this.conjuncts if the negated flag is false (resp. true) and
 	 * the given node has not been visited; otherwise does nothing.
-	 * @effects !this.visited(f) => 
+	 * @ensures !this.visited(f) => 
 	 * 	(this.conjuncts' = conjuncts + (negated => f.not() else f)) else
 	 * 	(this.conjuncts' = this.conjuncts) 
 	 */

@@ -37,7 +37,7 @@ public abstract class AbstractIntVector extends AbstractIntCollection implements
 	
 	/**
 	 * Constructs an empty int vector.
-	 * @effects no this.elements'
+	 * @ensures no this.elements'
 	 */
 	protected AbstractIntVector() {}
 

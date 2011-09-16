@@ -44,7 +44,7 @@ public abstract class MultiGate extends BooleanFormula {
 	/**
 	 * Constructs a new MultiGate gate with the given operator and label.
 	 * @requires op != null && label >= 0
-	 * @effects this.op' = op && this.label' = label
+	 * @ensures this.op' = op && this.label' = label
 	 */
 	 MultiGate(Operator.Nary op, int label, int hashcode) {
 		super(null);

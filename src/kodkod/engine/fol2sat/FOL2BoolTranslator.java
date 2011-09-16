@@ -109,7 +109,7 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 	 * @requires interpreter.relations = AnnotatedNode.relations(annotated)
 	 * @requires annotated.source[annotated.sourceSensitiveRoots()] = Nodes.roots(annotated.source[annotated.node])
 	 * @return BooleanAccumulator that is the meaning of the given annotated formula with respect to the given interpreter
-	 * @effects log.records' contains the translation events that occurred while generating the returned value
+	 * @ensures log.records' contains the translation events that occurred while generating the returned value
 	 * @throws HigherOrderDeclException - annotated.node contains a higher order declaration
 	 * @throws UnboundLeafException - annotated.node refers to an undeclared variable 
 	 **/
@@ -201,7 +201,7 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 	/**
 	 * Constructs a new translator that will use the given translation cache
 	 * and interpreter to perform the translation.
-	 * @effects this.node' = manager.node
+	 * @ensures this.node' = manager.node
 	 */   
 	private FOL2BoolTranslator(FOL2BoolCache cache,  LeafInterpreter interpreter) {
 		this.interpreter = interpreter;
@@ -212,7 +212,7 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 	/**
 	 * Constructs a new translator that will use the given translation cache,
 	 * interpreter and environment to perform the translation.
-	 * @effects this.node' = manager.node
+	 * @ensures this.node' = manager.node
 	 */   
 	private FOL2BoolTranslator(FOL2BoolCache cache,  LeafInterpreter interpreter, Environment<BooleanMatrix> env) {
 		this.interpreter = interpreter;
@@ -234,7 +234,7 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 	/**
 	 * The translation is cached, if necessary, and returned.
 	 * @return translation
-	 * @effects the translation may be cached
+	 * @ensures the translation may be cached
 	 */
 	final <T> T cache(Node node, T translation) {
 		return cache.cache(node, translation, env);
@@ -243,7 +243,7 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 	/**
 	 * The translation is cached, if necessary, and returned.
 	 * @return translation
-	 * @effects the translation may be cached
+	 * @ensures the translation may be cached
 	 */
 	BooleanValue cache(Formula formula, BooleanValue translation) {
 		return cache.cache(formula, translation, env);
@@ -406,7 +406,7 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 	 * @param declConstraints the constraints implied by the declarations; should be Boolean.TRUE intially
 	 * @param partialIndex partial index into the provided matrix; should be 0 initially
 	 * @param matrix boolean matrix that will retain the final results; should be an empty matrix of dimensions universe.size^decls.length initially
-	 * @effects the given matrix contains the translation of the comprehension "{ decls | formula }"
+	 * @ensures the given matrix contains the translation of the comprehension "{ decls | formula }"
 	 */
 	private final void comprehension(Decls decls, Formula formula, int currentDecl, 
 			BooleanValue declConstraints, int partialIndex, BooleanMatrix matrix) {
@@ -506,7 +506,7 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 	 * @param currentDecl currently processed declaration; should be 0 initially
 	 * @param declConstraints the constraints implied by the declarations; should be Boolean.FALSE intially
 	 * @param acc the accumulator that contains the top level conjunction; should be an empty AND accumulator initially
-	 * @effects the given accumulator contains the translation of the formula "all decls | formula"
+	 * @ensures the given accumulator contains the translation of the formula "all decls | formula"
 	 */
 	private void all(Decls decls, Formula formula, int currentDecl, BooleanValue declConstraints, BooleanAccumulator acc) {
 		if (acc.isShortCircuited()) return;
@@ -542,7 +542,7 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 	 * @param currentDecl currently processed declaration; should be 0 initially
 	 * @param declConstraints the constraints implied by the declarations; should be Boolean.TRUE intially
 	 * @param acc the accumulator that contains the top level conjunction; should be an empty OR accumulator initially
-	 * @effects the given accumulator contains the translation of the formula "some decls | formula"
+	 * @ensures the given accumulator contains the translation of the formula "some decls | formula"
 	 */
 	private void some(Decls decls, Formula formula, int currentDecl, BooleanValue declConstraints, BooleanAccumulator acc) {
 		if (acc.isShortCircuited()) return;

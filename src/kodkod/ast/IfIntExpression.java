@@ -38,7 +38,7 @@ public final class IfIntExpression extends IntExpression {
 	private final IntExpression thenExpr, elseExpr;
 
 	/**
-	 * @effects this.condition' = condition && this.thenExpr' = thenExpr &&
+	 * @ensures this.condition' = condition && this.thenExpr' = thenExpr &&
 	 *          this.elseExpr' = elseExpr
 	 */
 	IfIntExpression(Formula condition, IntExpression thenExpr,

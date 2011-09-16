@@ -44,7 +44,7 @@ abstract class TranslationLogger {
 	 * given transformed formula to the given boolean value 
 	 * in the specified environment.
 	 * @requires f in this.formula.*children
-	 * @effects this.records' = this.records or this.records' = this.records + f -> translation -> freeVariables(f)<:env
+	 * @ensures this.records' = this.records or this.records' = this.records + f -> translation -> freeVariables(f)<:env
 	 * @throws IllegalArgumentException - some aspect of the given translation event prevents it from being logged
 	 * @throws IllegalStateException - this log has been closed
 	 */
@@ -53,7 +53,7 @@ abstract class TranslationLogger {
 	/**
 	 * Closes this logger and releases associated resources.  Attempts to call {@link #log(Formula, BooleanValue, Environment)}
 	 * after the log has been closed may result in an IllegalStateException.
-	 * @effects closes this logger and releases associated resources. 
+	 * @ensures closes this logger and releases associated resources. 
 	 */
 	abstract void close();
 	

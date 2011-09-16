@@ -50,7 +50,7 @@ public interface ReductionStrategy {
 	 *  else
 	 *   trace = t
 	 * </pre>
-	 * @effects 
+	 * @ensures 
 	 * <pre> 
 	 *  let next = { i: int | 0 <= i < trace.size()-1 } |
 	 *   trace.elts[next].antecedents in trace.elts[next] and 

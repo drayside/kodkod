@@ -39,7 +39,7 @@ public final class UnaryIntExpression extends IntExpression {
 	
 	/**
 	 * Constructs a new unary int formula: op intExpr
-	 * @effects this.op' = op && this.intExpr' = intExpr
+	 * @ensures this.op' = op && this.intExpr' = intExpr
 	 */
 	UnaryIntExpression(IntOperator op, IntExpression intExpr) {
 		if (!op.unary()) throw new IllegalArgumentException("Not a unary operator: " + op);

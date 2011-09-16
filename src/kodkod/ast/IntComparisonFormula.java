@@ -43,7 +43,7 @@ public final class IntComparisonFormula extends Formula {
 	/**  
 	 * Constructs a new int comparison formula: left op right
 	 * 
-	 * @effects this.left' = left && this.right' = right && this.op' = op
+	 * @ensures this.left' = left && this.right' = right && this.op' = op
 	 * @throws NullPointerException - left = null || right = null || op = null
 	 */
 	IntComparisonFormula(final IntExpression left, final IntCompOperator op, final IntExpression right) {

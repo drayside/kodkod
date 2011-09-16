@@ -77,7 +77,7 @@ public abstract class Expression extends Node {
 	
     /**
      * Constructs a leaf expression
-     * @effects no this.children'
+     * @ensures no this.children'
      */
     Expression() { }
 

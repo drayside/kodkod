@@ -46,7 +46,7 @@ public final class NaryIntExpression extends IntExpression implements Iterable<I
 	 * Constructs a new composite IntExpression: op(children)
 	 * @requires children array is not modified while in use by this composite IntExpression
 	 * @requires some op.op[children]
-	 * @effects this.children' = children && this.op' = op
+	 * @ensures this.children' = children && this.op' = op
 	 */
 	NaryIntExpression(IntOperator op, IntExpression[] children) { 
 		assert children.length>2;

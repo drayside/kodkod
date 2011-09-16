@@ -83,7 +83,7 @@ public final class Containers {
 	
 	/**
 	 * Calls System.arraycopy(src, srcPos, dest, destPos, length) and returns the destination array.
-	 * @effects System.arraycopy(src, srcPos, dest, destPos, length)
+	 * @ensures System.arraycopy(src, srcPos, dest, destPos, length)
 	 * @return dest
 	 */
 	public static final <T> T[] copy(T[] src, int srcPos, T[] dest, int destPos, int length) { 
@@ -94,7 +94,7 @@ public final class Containers {
 	/**
 	 * Calls System.arraycopy(src, 0, dest, 0, src.length) and returns the destination array.
 	 * @requires dest.length >= src.length
-	 * @effects System.arraycopy(src, 0, dest, 0, src.length) 
+	 * @ensures System.arraycopy(src, 0, dest, 0, src.length) 
 	 * @return dest
 	 */
 	public static final <T> T[] copy(T[] src, T[] dest) { 
@@ -161,7 +161,7 @@ public final class Containers {
 	 * Calls {@link java.util.Arrays#sort(Object[], Comparator)} on the 
 	 * given array and returns it.  The elements are sorted in the ascending
 	 * order of their identity hashcodes.
-	 * @effects java.util.Arrays.sort(array, {@link #identityComparator()}) 
+	 * @ensures java.util.Arrays.sort(array, {@link #identityComparator()}) 
 	 * @return the given array, with its elements sorted in the increasing order of identity hashcodes
 	 */
 	public static final <T> T[] identitySort(T[] array) {
@@ -173,7 +173,7 @@ public final class Containers {
 	 * Calls {@link java.util.Arrays#sort(Object[], Comparator)} on the 
 	 * given array and returns it.  The elements are sorted in the ascending
 	 * order of their  hashcodes.
-	 * @effects java.util.Arrays.sort(array, {@link #hashComparator()}) 
+	 * @ensures java.util.Arrays.sort(array, {@link #hashComparator()}) 
 	 * @return the given array, with its elements sorted in the increasing order of  hashcodes
 	 */
 	public static final <T> T[] hashSort(T[] array) {

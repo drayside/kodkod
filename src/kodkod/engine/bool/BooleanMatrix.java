@@ -74,7 +74,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	 * 
 	 * @requires dimensions != null && factory != null && seq != null
 	 * @requires seq.indices() in [0..dimensions.capacity)
-	 * @effects this.dimensions' = dimensions && this.factory' = factory && 
+	 * @ensures this.dimensions' = dimensions && this.factory' = factory && 
 	 *          this.elements' = [0..dimensions.capacity)->one FALSE 
 	 */
 	private BooleanMatrix(Dimensions dimensions, BooleanFactory factory, SparseSequence<BooleanValue> seq) {
@@ -87,7 +87,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	 * Constructs a new matrix with the given dimensions and factory, 
 	 * backed by a sparse sequence which can most efficiently hold
 	 * the elements storable in the sparse sequences s0 and s1.
-	 * @effects this.dimensions' = dimensions && this.factory' = factory && 
+	 * @ensures this.dimensions' = dimensions && this.factory' = factory && 
 	 *          this.elements' = [0..dimensions.capacity)->one FALSE 
 	 */
 	private BooleanMatrix(Dimensions d, BooleanFactory f, SparseSequence<BooleanValue> s0, SparseSequence<BooleanValue> s1) {
@@ -109,7 +109,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	 * @requires null !in d + m + rest[int]
 	 * @requires m.factory = rest[int].factory
 	 * @requires d.equals(m.dims) => d.equals(rest[int].dims)
-	 * @effects this.dimensions' = dimensions && this.factory' = m.factory && 
+	 * @ensures this.dimensions' = dimensions && this.factory' = m.factory && 
 	 *          this.elements' = [0..dimensions.capacity)->one FALSE 
 	 * @throws IllegalArgumentException m.factory != rest[int].factory
 	 * @throws IllegalArgumentException !(d.equals(m.dims) => d.equals(rest[int].dims))
@@ -144,7 +144,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	 * The constructed matrix can store any kind of BooleanValue.
 	 * 
 	 * @requires dimensions != null && factory != null 
-	 * @effects this.dimensions' = dimensions && this.factory' = factory && 
+	 * @ensures this.dimensions' = dimensions && this.factory' = factory && 
 	 *          this.elements' = [0..dimensions.capacity)->one FALSE 
 	 */
 	BooleanMatrix(Dimensions dims, BooleanFactory factory) {
@@ -165,7 +165,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	 * @requires trueIndices is not modifiable using an external handle
 	 * @requires dimensions != null && factory != null && trueIndices != null && allIndices != null
 	 * @requires dimensions.validate(allIndices.min()) && dimensions.validate(allIndices.max())
-	 * @effects this.dimensions' = dimensions && this.factory' = factory && 
+	 * @ensures this.dimensions' = dimensions && this.factory' = factory && 
 	 *          this.elements' = [0..dimensions.capacity)->one FALSE ++ trueIndices -> one TRUE
 	 */
 	BooleanMatrix(Dimensions dims, BooleanFactory factory, IntSet allIndices, IntSet trueIndices) {
@@ -434,7 +434,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	 * @requires matrices.length = itrs.length = idxs.length
 	 * @requires all m: matrices[int] | m.density() > 0
 	 * @requires currentIdx is a partial index based on the current value of idxs
-	 * @effects  updates the itrs and idxs arrays for the next step cross-product computation
+	 * @ensures  updates the itrs and idxs arrays for the next step cross-product computation
 	 * @return a partial index based on the freshly updated idxs values.
 	 */
 	private static int nextCross(final BooleanMatrix[] matrices, final IntIterator[] itrs, final int[] idxs, int currentIdx) { 
@@ -462,7 +462,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	 * index based on the freshly computed idxs values.
 	 * @requires matrices.length = itrs.length = idxs.length
 	 * @requires all m: matrices[int] | m.density() > 0
-	 * @effects  initializes the itrs and idxs arrays for cross-product computation
+	 * @ensures  initializes the itrs and idxs arrays for cross-product computation
 	 * @return a partial index based on the freshly computed idxs values.
 	 */
 	private static int initCross(final BooleanMatrix[] matrices, final IntIterator[] itrs, final int[] idxs) { 
@@ -522,7 +522,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
      * returns the value previously at the specified position.  
      * It performs no index or null checking.
      * 
-     * @effects this.elements'[index] = formula
+     * @ensures this.elements'[index] = formula
      */
 	private final void fastSet(final int index, final BooleanValue formula) {
 		if (formula==FALSE) cells.remove(index);
@@ -945,7 +945,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
      * Sets the specified index to the given value.
      * 
      * @requires value in this.factory.components
-     * @effects this.elements'[index] = value
+     * @ensures this.elements'[index] = value
      * @throws NullPointerException - value = null
      * @throws IllegalArgumentException - the given is a formula, and this matrix accepts only constants
      * @throws IndexOutOfBoundsException - the given index does not belong to the set of indices at which

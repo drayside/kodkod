@@ -40,7 +40,7 @@ public final class BooleanConstant extends BooleanValue {
 	/**
 	 * Constructs a BooleanConstant that represent the given boolean
 	 * value.
-	 * @effects value => this.label' = Integer.MAX_VALUE, this.label' = -Integer.MAX_VALUE
+	 * @ensures value => this.label' = Integer.MAX_VALUE, this.label' = -Integer.MAX_VALUE
 	 */
 	private BooleanConstant(boolean value) {
 		this.label = (value ? Integer.MAX_VALUE : -Integer.MAX_VALUE);

@@ -44,7 +44,7 @@ public final class ComparisonFormula extends Formula{
     /**  
      * Constructs a new comparison formula: left op  right
      * 
-     * @effects this.left' = left && this.right' = right && this.op' = op
+     * @ensures this.left' = left && this.right' = right && this.op' = op
      * * @throws NullPointerException - left = null || right = null || op = null
      * @throws IllegalArgumentException - left.arity != right.arity
      */

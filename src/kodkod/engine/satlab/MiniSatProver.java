@@ -48,7 +48,7 @@ final class MiniSatProver extends NativeSolver implements SATProver {
 	 * if the array contains no null entries, and to the specfication of
 	 * {@linkplain LazyTrace#LazyTrace(LazyTrace, IntSet, int[][])}
 	 * otherwise.
-	 * @effects modifies the trace so that it conforms to the specification
+	 * @ensures modifies the trace so that it conforms to the specification
 	 * of one of the LazyTrace constructors.
 	 * @return trace
 	 */

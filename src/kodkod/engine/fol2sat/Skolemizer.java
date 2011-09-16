@@ -82,7 +82,7 @@ abstract class Skolemizer extends AbstractReplacer {
 	 * s a descendant of annotated.node from which t was derived.  Then, 
 	 * f.source[t] = annotated.source[s].  If options.trackFormulas is false, no source 
 	 * information will be recorded (i.e. f.source[t] = t for all descendants t of f).
-	 * @effects upper bound mappings for skolem constants, if any, are added to the bounds
+	 * @ensures upper bound mappings for skolem constants, if any, are added to the bounds
 	 * @return the skolemized version of the given formula
 	 * @throws NullPointerException - any of the arguments are null
 	 * @throws IllegalArgumentException - some Relation & annotated.node.^children - bounds.relations
@@ -121,7 +121,7 @@ abstract class Skolemizer extends AbstractReplacer {
 		BooleanMatrix upperBound;
 		/**
 		 * Constructs a DeclInfo for the given decl.
-		 * @effects this.decl' = decl && this.upperBound' = null
+		 * @ensures this.decl' = decl && this.upperBound' = null
 		 */
 		DeclInfo(Decl decl) {
 			this.decl = decl;
@@ -201,7 +201,7 @@ abstract class Skolemizer extends AbstractReplacer {
 	 * This method is always called when the result of visiting a node n will result
 	 * in the creation of a formula f such that f != n.
 	 * @return f
-	 * @effects Records that the given node is the source of the 
+	 * @ensures Records that the given node is the source of the 
 	 * specified formula, if this is a tracking skolemizer.  Otherwise does nothing.
 	 */
 	protected Formula source(Formula f, Node n) { 
@@ -239,7 +239,7 @@ abstract class Skolemizer extends AbstractReplacer {
 	 * that the environment is always extended, the method should be called using the
 	 * visit((Decls) node.declarations()) syntax, since the accept syntax may dynamically
 	 * dispatch the call to the {@link #visit(Decl)} method, producing UnboundLeafExceptions.
-	 * @effects this.repEnv in this.repEnv'.^parent &&
+	 * @ensures this.repEnv in this.repEnv'.^parent &&
 	 * #(this.repEnv'.*parent - this.repEnv.*parent) = decls.size() &&
 	 * all v: decls.variable | this.repEnv'.lookup(v) = v
 	 * @requires this.skolemDepth < 0
@@ -326,7 +326,7 @@ abstract class Skolemizer extends AbstractReplacer {
 	 * this.bounds, and returns the expression that should replace skolemDecl.variable in the final formula.
 	 * @requires skolem !in this.bounds.relations
 	 * @requires skolem.arity = nonSkolems.size() + skolemDecl.variable().arity() 
-	 * @effects adds a sound upper bound for the given skolem relation to this.bounds
+	 * @ensures adds a sound upper bound for the given skolem relation to this.bounds
 	 * @return the expression that should replace skolemDecl.variable in the final formula
 	 */
 	private Expression skolemExpr(Decl skolemDecl, Relation skolem) {

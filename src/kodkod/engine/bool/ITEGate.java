@@ -47,7 +47,7 @@ public final class ITEGate extends BooleanFormula {
 	 * Constructs a new ITEGate from the given formulas and label.
 	 * @requires label >= 0 && null !in ifFormula + thenFormula + elseFormula
 	 * @requires hashcode = ITE.hash(ifFormula, thenFormula, elseFormula)
-	 * @effects this.label' = label && this.ifFormula' = ifFormula &&
+	 * @ensures this.label' = label && this.ifFormula' = ifFormula &&
 	 * this.thenFormula' = thenFormula && this.elseFormula' = elseFormula
 	 * @throws NullPointerException - owner = null
 	 */
@@ -172,7 +172,7 @@ public final class ITEGate extends BooleanFormula {
 	 * Flattens this circuit with respect to the given operator into 
 	 * the provided set.  
 	 * @requires k > 0
-	 * @effects op = Operator.ITE && k> 2 => flat.elts' = flat.elts + this.inputs[ints], 
+	 * @ensures op = Operator.ITE && k> 2 => flat.elts' = flat.elts + this.inputs[ints], 
 	 *          flat.elts' = flat.elts + this
 	 */
 	@Override

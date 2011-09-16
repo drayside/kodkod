@@ -54,7 +54,7 @@ public final class CRRStrategy implements ReductionStrategy {
 	
 	/** 
 	 * Constructs a new instance of CRRStrategy. 
-	 * @effects no this.traces' and no this.nexts'
+	 * @ensures no this.traces' and no this.nexts'
 	 **/
 	public CRRStrategy() {
 		excluded = null;
@@ -63,7 +63,7 @@ public final class CRRStrategy implements ReductionStrategy {
 	/**
 	 * Returns the next subset of clauses in the given trace to be analyzed.  
 	 * @requires {@inheritDoc} 
-	 * @effects {@inheritDoc}
+	 * @ensures {@inheritDoc}
 	 * @return  last(this.nexts')
 	 */
 	public final IntSet next(final ResolutionTrace trace) {

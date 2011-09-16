@@ -38,7 +38,7 @@ public final class HigherOrderDeclException extends RuntimeException {
 	/**
 	 * Constructs a HigherOrderDeclException for the given decl.
 	 * @requires decl.multiplicity != ONE
-	 * @effects this.decl' = decl
+	 * @ensures this.decl' = decl
 	 */
 	 HigherOrderDeclException(Decl decl) {
 		super("Higher order declaration: " + decl);

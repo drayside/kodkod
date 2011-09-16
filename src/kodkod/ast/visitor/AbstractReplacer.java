@@ -77,7 +77,7 @@ public abstract class AbstractReplacer implements ReturnVisitor<Expression, Form
 	 * Constructs a depth-first replaces which will cache
 	 * the results of visiting the given nodes and re-use them
 	 * on subsequent visits.
-	 * @effects this.cached' = cached && no this.cache'
+	 * @ensures this.cached' = cached && no this.cache'
 	 */
 	protected AbstractReplacer(Set<Node> cached) { 
 		this.cached = cached;
@@ -88,7 +88,7 @@ public abstract class AbstractReplacer implements ReturnVisitor<Expression, Form
 	 * Constructs a depth-first replacer which will cache
 	 * the results of visiting the given nodes in the given map, 
 	 * and re-use them on subsequent visits.
-	 * @effects this.cached' = cached && this.cache' = cache
+	 * @ensures this.cached' = cached && this.cache' = cache
 	 */
 	protected AbstractReplacer(Set<Node> cached, Map<Node,Node> cache) { 
 		this.cached = cached;
@@ -110,7 +110,7 @@ public abstract class AbstractReplacer implements ReturnVisitor<Expression, Form
 	 * Caches the given replacement for the specified node, if this is 
 	 * a caching visitor.  Otherwise does nothing.  The method returns
 	 * the replacement node.  
-	 * @effects node in this.cached => this.cache' = this.cache ++ node->replacement,
+	 * @ensures node in this.cached => this.cache' = this.cache ++ node->replacement,
 	 *           this.cache' = this.cache
 	 * @return replacement
 	 */

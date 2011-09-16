@@ -47,7 +47,7 @@ public final class Comprehension extends Expression  {
      * Constructs a comprehension expression with the specified decls
      * and formula
      * 
-     * @effects this.decls' = decls && this.formula' = formula
+     * @ensures this.decls' = decls && this.formula' = formula
      * @throws NullPointerException - decls = null || formula = null
      */
     Comprehension(Decls declarations, Formula formula) {

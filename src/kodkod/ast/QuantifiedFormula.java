@@ -44,7 +44,7 @@ public final class QuantifiedFormula extends Formula  {
     /**  
      * Constructs a new quantified formula: quantifier decls | formula
      * 
-     * @effects this.quantifier' = quantifier && this.decls' = decls &&
+     * @ensures this.quantifier' = quantifier && this.decls' = decls &&
      *          this.formula' = formula
      * @throws NullPointerException - quantifier = null || decls = null || formula = null
      */

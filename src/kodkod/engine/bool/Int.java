@@ -38,7 +38,7 @@ public abstract class Int {
 	
 	/**
 	 * Creates an Int with the given factory
-	 * @effects this.factory' = factory
+	 * @ensures this.factory' = factory
 	 */
 	Int(BooleanFactory factory) {
 		this.factory = factory;

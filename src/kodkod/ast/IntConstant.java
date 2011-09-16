@@ -36,7 +36,7 @@ public final class IntConstant extends IntExpression {
 	
 	/**
 	 * Constructs an int constant.
-	 * @effects this.value' = value 
+	 * @ensures this.value' = value 
 	 */
 	private IntConstant(int value) {
 		this.value = value;

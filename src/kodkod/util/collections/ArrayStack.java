@@ -37,7 +37,7 @@ public class ArrayStack<T> extends Stack<T> {
 	
 	/**
 	 * Constructs an empty stack with the inital capacity of 10.
-	 * @effects no this.elems'
+	 * @ensures no this.elems'
 	 */
 	public ArrayStack() {
 		this(10);

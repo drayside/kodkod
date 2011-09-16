@@ -67,7 +67,7 @@ public interface SATProver extends SATSolver {
 	 * }
 	 * </pre>
 	 * @requires {@link SATSolver#solve()} has been called, and it returned false
-	 * @effects modifies this.clauses and this.resolvents according to the algorithm described above 
+	 * @ensures modifies this.clauses and this.resolvents according to the algorithm described above 
 	 * @throws IllegalStateException - {@link SATSolver#solve()} has not been called, 
 	 * or the last call to {@link SATSolver#solve()} returned true
 	 * @see ReductionStrategy

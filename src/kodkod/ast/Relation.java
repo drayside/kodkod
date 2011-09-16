@@ -50,7 +50,7 @@ import kodkod.ast.visitor.VoidVisitor;
 public class Relation extends LeafExpression {
 	/**
 	 * Constructs a relation with the specified name and arity.
-	 * @effects this.name' = name && this.arity' = arity 
+	 * @ensures this.name' = name && this.arity' = arity 
 	 * @throws IllegalArgumentException - arity < 1 
 	 */
 	private Relation(String name, int arity) {

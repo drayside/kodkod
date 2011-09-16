@@ -47,7 +47,7 @@ final class FOL2BoolCache {
 	
 	/**
 	 * Constructs a new translation cache for the given annotated node.
-	 * @effects this.node' = annotated.node 
+	 * @ensures this.node' = annotated.node 
 	 */
 	FOL2BoolCache(AnnotatedNode<? extends Node> annotated) {
 		final CacheCollector collector = new CacheCollector(annotated.sharedNodes());
@@ -81,7 +81,7 @@ final class FOL2BoolCache {
 	 * Caches the given translation for the specified node, if the given node is
 	 * in this.cached.  Otherwise does nothing.  
 	 * The method returns the specified translation. 
-	 * @effects node in this.cached => 
+	 * @ensures node in this.cached => 
 	 *           this.cache' = this.cache ++ node->translation->env, 
 	 *           this.cache' = this.cache
 	 * @return translation
@@ -123,7 +123,7 @@ final class FOL2BoolCache {
 		/**
 		 * We record the set of free variables for the given node if the node is shared,
 		 * or if it has free variables, none of which is the most recently declared variable.
-		 * @effects node in sharedNodes || 
+		 * @ensures node in sharedNodes || 
 		 *          ((node.^(~children) in (QuantifiedFormula + Comprehension)) &&
 		 *           (some varsInScope.top() => !freeVars.contains(varsInScope.top()))) => 
 		 *            this.cache' = this.cache ++ node->varsInScope,
@@ -171,7 +171,7 @@ final class FOL2BoolCache {
 		 * and sets the free variable bindings to those 
 		 * given by the specified environment.
 		 * @requires all v: varBinding.int | some env.lookup(v)
-		 * @effects this.translation' = translation && 
+		 * @ensures this.translation' = translation && 
 		 *          this.varBinding' = 
 		 *           {v: this.varBinding.int, tupleIndex: int | 
 		 *             tupleIndex = env.lookup(v).iterator().next().index() }
@@ -189,7 +189,7 @@ final class FOL2BoolCache {
 		/**
 		 * Constructs a translation unit for a node which
 		 * has the given set of free variables.
-		 * @effects this.freeVariables' = vars &&
+		 * @ensures this.freeVariables' = vars &&
 		 *          no this.translation' 
 		 */
 		MultiVarRecord(Set<Variable> freeVariables) {

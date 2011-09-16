@@ -41,7 +41,7 @@ public final class ExprToIntCast extends IntExpression {
 	/**  
 	 * Constructs a new cardinality expression.
 	 * 
-	 * @effects this.expression' = expression && this.op' = op
+	 * @ensures this.expression' = expression && this.op' = op
 	 * @throws NullPointerException - expression = null || op = null
 	 * @throws IllegalArgumentException - op = SUM && child.arity != 1
 	 */

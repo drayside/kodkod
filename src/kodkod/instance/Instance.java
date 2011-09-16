@@ -60,7 +60,7 @@ public final class Instance implements Cloneable {
 	/**
 	 * Constructs an empty instance over the given universe
 	 * 
-	 * @effects this.universe' = universe && no this.tuples' 
+	 * @ensures this.universe' = universe && no this.tuples' 
 	 * @throws NullPointerException - universe = null
 	 */
 	public Instance(final Universe universe) {
@@ -119,7 +119,7 @@ public final class Instance implements Cloneable {
 	
 	/**
 	 * Maps the given relation to the given tuple set.  
-	 * @effects this.tuples' = this.tuples ++ relation->s
+	 * @ensures this.tuples' = this.tuples ++ relation->s
 	 * @throws NullPointerException - relation = null || s = null
 	 * @throws IllegalArgumentException - relation.arity != s.arity
 	 * @throws IllegalArgumentException - s.universe != this.universe
@@ -135,7 +135,7 @@ public final class Instance implements Cloneable {
 
 	/**
 	 * Maps the given integer to the given tuple set.  
-	 * @effects this.tuples' = this.tuples ++ i->s
+	 * @ensures this.tuples' = this.tuples ++ i->s
 	 * @throws NullPointerException - s = null
 	 * @throws IllegalArgumentException - s.arity != 1 || s.size() != 1
 	 * @throws IllegalArgumentException - s.universe != this.universe

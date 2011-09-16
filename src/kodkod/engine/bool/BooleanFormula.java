@@ -75,7 +75,7 @@ public abstract class BooleanFormula extends BooleanValue implements Iterable<Bo
 	 * [[this]] = op(f_0, ..., f_k').
 	 * The default implementation simply adds this to the set.
 	 * @requires k > 0
-	 * @effects 1 <= k' <= k && some f_0,..., f_k' : flat.elts' | 
+	 * @ensures 1 <= k' <= k && some f_0,..., f_k' : flat.elts' | 
 	 * [[this]] = op([[f_0]], ..., [[f_k']])
 	 */
 	void flatten(Operator op, Set<BooleanFormula> flat, int k) {

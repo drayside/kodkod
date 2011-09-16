@@ -45,7 +45,7 @@ public interface IntIterator  {
 	
 	/**
 	 * Removes the last returned element from the underlying collection.
-	 * @effects removes the last returned element from the underlying collection.
+	 * @ensures removes the last returned element from the underlying collection.
 	 * @throws UnsupportedOperationException - removal is not supported
 	 * @throws IllegalStateException - next() has not been called yet or remove()
 	 * has already been called since the last call to next().

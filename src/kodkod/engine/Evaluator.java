@@ -56,7 +56,7 @@ public final class Evaluator {
 	/**
 	 * Constructs a new Evaluator for the given instance, using a 
 	 * default Options object.
-	 * @effects this.instance' = instance && this.options' = new Options()
+	 * @ensures this.instance' = instance && this.options' = new Options()
 	 * @throws NullPointerException - instance = null
 	 */
 	public Evaluator(Instance instance) {
@@ -65,7 +65,7 @@ public final class Evaluator {
 	
 	/**
 	 * Constructs a new Evaluator for the given instance and options
-	 * @effects this.instance' = instance && this.options' = options
+	 * @ensures this.instance' = instance && this.options' = options
 	 * @throws NullPointerException - instance = null || options = null
 	 */
 	public Evaluator(Instance instance, Options options) {

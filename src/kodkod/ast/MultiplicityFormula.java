@@ -42,7 +42,7 @@ public final class MultiplicityFormula extends Formula {
     /**  
      * Constructs a new multiplicity formula:  multiplicity expression
      * 
-     * @effects this.expression' = expression && this.multiplicity' = multiplicity
+     * @ensures this.expression' = expression && this.multiplicity' = multiplicity
      * @throws NullPointerException - multiplicity = null || expression = null
      * @throws IllegalArgumentException - multiplicity = SET
      */

@@ -74,7 +74,7 @@ final class LeafInterpreter {
 	/**
 	 * Constructs a new LeafInterpreter using the given values.
 	 * @requires lowers.keySet() = uppers.keySet()
-	 * @effects this.universe' = universe && this.relations' = lowers.keySet() &&
+	 * @ensures this.universe' = universe && this.relations' = lowers.keySet() &&
 	 * this.ints' = ints.indices && this.factory' = factory && 
 	 * this.ubounds' = uppers && this.lbounds' = lowers && 
 	 * this.ibounds' = ints
@@ -93,7 +93,7 @@ final class LeafInterpreter {
 	/**
 	 * Constructs a new LeafInterpreter using the given values.
 	 * @requires lowers.keySet() = uppers.keySet()
-	 * @effects this.universe' = universe && this.relations' = lowers.keySet() &&
+	 * @ensures this.universe' = universe && this.relations' = lowers.keySet() &&
 	 * this.ints' = ints.indices && this.factory' = factory && 
 	 * this.ubounds' = uppers && this.lbounds' = lowers && 
 	 * this.ibounds' = ints

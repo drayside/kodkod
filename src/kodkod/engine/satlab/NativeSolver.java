@@ -76,7 +76,7 @@ abstract class NativeSolver implements SATSolver {
 	 * Adjusts the internal clause count so that the next call to {@linkplain #numberOfClauses()}
 	 * will return the given value.      
 	 * @requires clauseCount >= 0 
-	 * @effects adjusts the internal clause so that the next call to {@linkplain #numberOfClauses()}
+	 * @ensures adjusts the internal clause so that the next call to {@linkplain #numberOfClauses()}
 	 * will return the given value.
 	 */
 	void adjustClauseCount(int clauseCount) {
@@ -191,14 +191,14 @@ abstract class NativeSolver implements SATSolver {
 	 * This method must be called when the object holding the
 	 * given reference goes out of scope to avoid
 	 * memory leaks.
-	 * @effects releases the resources associated
+	 * @ensures releases the resources associated
 	 * with the given native peer
 	 */
 	abstract void free(long peer);
 	
 	/**
 	 * Adds the specified number of variables to the given native peer.
-	 * @effects increases the vocabulary of the given native peer by 
+	 * @ensures increases the vocabulary of the given native peer by 
 	 * the specified number of variables
 	 */
 	abstract void addVariables(long peer, int numVariables);
@@ -209,7 +209,7 @@ abstract class NativeSolver implements SATSolver {
 	 * changed as a result of the call.
 	 * @requires all i: [0..lits.length) | abs(lits[i]) in this.variables 
 	 * @requires all disj i,j: [0..lits.length) | abs(lits[i]) != abs(lits[j])
-	 * @effects ensures that the given native peer logically contains the specified clause
+	 * @ensures ensures that the given native peer logically contains the specified clause
 	 * @return true if the peer's clause database changed as a result of the call; a negative integer if not.
 	 */
 	abstract boolean addClause(long peer, int[] lits);

@@ -148,13 +148,13 @@ public abstract class SATFactory {
 	/**
 	 * Returns a SATFactory that produces SATSolver wrappers for the external
 	 * SAT solver specified by the executable parameter.  The solver's input
-	 * and output formats must conform to the SAT competition standards
-	 * (http://www.satcompetition.org/2004/format-solvers2004.html).  The solver
+	 * and output formats must conform to the 
+	 * <a href="http://www.satcompetition.org/2011/rules.pdf">SAT competition standards</a>.  The solver
 	 * will be called with the specified options, and the given tempInput file name will
 	 * be used to store the generated CNF files.  If the tempOutput string is empty,
 	 * the solver specified by the executable string is assumed to write its output 
-	 * to standard out; otherwise, the
-	 * solver is assumed to write its output to the tempOutput file.  It is the caller's responsibility to 
+	 * to standard out; otherwise, the solver is assumed to write its output to the tempOutput file.  
+	 * It is the caller's responsibility to 
 	 * delete the temporary file(s) when no longer needed.  External solvers are never incremental.
 	 * @return  SATFactory that produces interruptible SATSolver wrappers for the specified external
 	 * SAT solver

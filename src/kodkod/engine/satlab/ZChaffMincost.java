@@ -79,7 +79,7 @@ final class ZChaffMincost extends NativeSolver implements SATMinSolver {
 	 * Sets the cost of the given variable to the specified value in the 
 	 * native zchaff instance at the given address.
 	 * @requires  variable is a valid variable identifier && cost >= 0
-	 * @effects sets the cost of the given variable to the specified value in the 
+	 * @ensures sets the cost of the given variable to the specified value in the 
 	 * native zchaff instance at the given address.
 	 */
 	private native void setCost(long peer, int variable, int cost);

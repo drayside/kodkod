@@ -43,7 +43,7 @@ final class TwosComplementInt extends Int {
 	/**
 	 * Constructs a TwosComplementInt out of the given factory and bits.
 	 * @requires bits is well formed
-	 * @effects this.factory' = factory && this.bits' = bits
+	 * @ensures this.factory' = factory && this.bits' = bits
 	 */
 	private TwosComplementInt(BooleanFactory factory, BooleanValue[] bits) {
 		super(factory);
@@ -54,8 +54,8 @@ final class TwosComplementInt extends Int {
 	 * Constructs a TwosComplementInt that represents either 0 or the given number, depending on 
 	 * the value of the given bit.
 	 * @requires factory.encoding = TWOSCOMPLEMENT  && bit in factory.components 
-	 * @effects this.factory' = factory
-	 * @effects bits is a two's-complement representation of the given number
+	 * @ensures this.factory' = factory
+	 * @ensures bits is a two's-complement representation of the given number
 	 * that uses the provided bit in place of 1's
 	 */
 	TwosComplementInt(BooleanFactory factory, int number, BooleanValue bit) {
@@ -236,7 +236,7 @@ final class TwosComplementInt extends Int {
 	/**
 	 * Adds the newBit and the given carry to this.bits[index] and returns the new carry.
 	 * @requires 0 <= index < this.width
-	 * @effects this.bits'[index] = this.factory.sum(this.bits[index], newBit, cin)
+	 * @ensures this.bits'[index] = this.factory.sum(this.bits[index], newBit, cin)
 	 * @return this.factory.carry(this.bits[index], newBit, cin)
 	 */
 	private BooleanValue addAndCarry(int index, BooleanValue newBit, BooleanValue cin) {

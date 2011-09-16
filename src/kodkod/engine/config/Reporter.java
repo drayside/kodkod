@@ -78,7 +78,7 @@ public interface Reporter {
 	/**
 	 * Reports that the analysis of the given (optimized) formula
 	 * and bounds is in stage 3.  The given bounds must not be mutated.
-	 * @effects bounds' = bounds
+	 * @ensures bounds' = bounds
 	 */
 	public void translatingToBoolean(Formula formula, Bounds bounds);
 	

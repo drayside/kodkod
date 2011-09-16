@@ -22,6 +22,7 @@
 package kodkod.engine.satlab;
 
 import java.io.BufferedReader;
+import java.io.Closeable;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
@@ -29,6 +30,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.RandomAccessFile;
 import java.util.BitSet;
+
 
 /**
  * An implementation of a wrapper for an external SAT solver, 
@@ -54,29 +56,42 @@ final class ExternalSolver implements SATSolver {
 	 * it is assumed to write its output to the outTemp file.
 	 */
 	ExternalSolver(String executable, String inTemp, String outTemp, String... options) {
+		RandomAccessFile file = null;
 		try {
-			this.cnf = new RandomAccessFile(inTemp,"rw");
-			this.cnf.setLength(0);
-			// get enough space into the buffer for the cnf header, which will be written last
-			this.buffer = new StringBuilder();
-			for(int i = headerLength(); i > 0; i--) {
-				buffer.append(" ");
-			}
-			buffer.append("\n");
-			this.sat = null;
-			this.solution = new BitSet();
-			this.vars = 0;
-			this.clauses = 0;
-			this.executable = executable;
-			this.options = options;
-			this.inTemp = inTemp;
-			this.outTemp = outTemp;
+			file = new RandomAccessFile(inTemp, "rw");
+			file.setLength(0);
 		} catch (FileNotFoundException e) {
-			throw new SATAbortedException(e);
+			throw new SATAbortedException();
 		} catch (IOException e) {
-			throw new SATAbortedException(e);
-		} 
+			close(file);
+			throw new SATAbortedException();
+		}
 		
+		this.cnf = file;
+		// get enough space into the buffer for the cnf header, which will be written last
+		this.buffer = new StringBuilder();
+		for(int i = headerLength(); i > 0; i--) {
+			buffer.append(" ");
+		}
+		buffer.append("\n");
+		this.sat = null;
+		this.solution = new BitSet();
+		this.vars = 0;
+		this.clauses = 0;
+		this.executable = executable;
+		this.options = options;
+		this.inTemp = inTemp;
+		this.outTemp = outTemp;
+	}
+	
+	/**
+	 * Silently closes the given resource if it is non-null.
+	 */
+	private static void close(Closeable closeable) {
+		try {
+			if (closeable!=null)
+				closeable.close();
+		} catch (IOException e) { } // ignore
 	}
 	
 	/**
@@ -96,6 +111,7 @@ final class ExternalSolver implements SATSolver {
 		try {
 			cnf.writeBytes(buffer.toString());
 		} catch (IOException e) {
+			close(cnf);
 			throw new SATAbortedException(e);
 		}
 		buffer.setLength(0);
@@ -132,11 +148,7 @@ final class ExternalSolver implements SATSolver {
 	 * @see kodkod.engine.satlab.SATSolver#free()
 	 */
 	public synchronized void free() {
-		try {
-			cnf.close();
-		} catch (IOException e) {
-			// do nothing
-		}
+		close(cnf);
 	}
 
 	
@@ -163,7 +175,7 @@ final class ExternalSolver implements SATSolver {
 	}
 	
 	/**
-	 * @effects |lit| <= this.vars && lit != 0 => this.solution'.set(|lit|, lit>0)
+	 * @ensures |lit| <= this.vars && lit != 0 => this.solution'.set(|lit|, lit>0)
 	 * @throws RuntimeException - lit=0 || |lit|>this.vars
 	 */
 	private final void updateSolution(int lit) {
@@ -195,7 +207,31 @@ final class ExternalSolver implements SATSolver {
             try { input.close(); } catch(IOException ex) { }
         }
     }
-
+    
+    /**
+     * Returns a reader for reading the output of the given process or of the output temporary file.
+     * @return a reader for reading the output of the given process or of the output temporary file.
+     * @throws IOException
+     */
+    private BufferedReader processOutput(Process p) throws IOException {
+		if (outTemp.length()==0) { 
+			try {
+				return new BufferedReader(new InputStreamReader(p.getInputStream(), "ISO-8859-1"));
+			} catch (IOException e) {
+				close(p.getInputStream());
+				throw e;
+ 			}
+		} else {
+			FileReader fr = null;
+			try {
+				fr = new FileReader(outTemp);
+				return new BufferedReader(fr);
+			} catch (IOException e) {
+				close(fr);
+				throw e;
+			}
+		}
+    }
 	/**
 	 * @see kodkod.engine.satlab.SATSolver#solve()
 	 */
@@ -203,6 +239,7 @@ final class ExternalSolver implements SATSolver {
 		if (sat==null) {
 			flush();
 			Process p = null;
+			BufferedReader out = null;
 			try {
 				cnf.seek(0);
 				cnf.writeBytes("p cnf " + vars + " " + clauses);
@@ -214,12 +251,7 @@ final class ExternalSolver implements SATSolver {
 				command[command.length-1] = inTemp;
 				p = Runtime.getRuntime().exec(command);
 				new Thread(new Drainer(p.getErrorStream())).start();
-				final BufferedReader out;
-				if (outTemp.length()==0) {
-					out = new BufferedReader(new InputStreamReader(p.getInputStream(), "ISO-8859-1"));
-				} else {
-					out = new BufferedReader(new FileReader(outTemp));
-				}
+				out = processOutput(p);
 				String line = null;
 				while((line = out.readLine()) != null) {
 					String[] tokens = line.split("\\s");
@@ -247,7 +279,6 @@ final class ExternalSolver implements SATSolver {
 						} // not a solution line or a variable line, so ignore it.
 					}
 				}
-				try { out.close(); } catch (IOException e) { } // do nothing, we are done 
 				if (sat==null) {
 					throw new RuntimeException("invalid " + executable + " output");
 				}
@@ -255,6 +286,8 @@ final class ExternalSolver implements SATSolver {
 				throw new SATAbortedException(e);
 			} catch (NumberFormatException e) {
 				throw new RuntimeException("invalid "+ executable +" output", e);
+			} finally {
+				close(out);
 			}
 		}
 		return sat;

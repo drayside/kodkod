@@ -40,7 +40,7 @@ public final class SumExpression extends IntExpression {
 
 	/**
 	 * Constructs a sum expression
-	 * @effects this.decls' = decls && this.intExpr' = intExpr
+	 * @ensures this.decls' = decls && this.intExpr' = intExpr
 	 * @throws IllegalArgumentException - some d: decls.children | d.multiplicty != ONE
 	 */
 	SumExpression(Decls decls, IntExpression intExpr) {

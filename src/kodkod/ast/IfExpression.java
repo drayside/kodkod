@@ -43,7 +43,7 @@ public final class IfExpression extends Expression {
 	private final int arity;
 	
 	/**
-	 * @effects this.condition' = condition && this.thenExpr' = thenExpr &&
+	 * @ensures this.condition' = condition && this.thenExpr' = thenExpr &&
 	 *         this.elseExpr' = elseExpr
 	 * @throws IllegalArgumentException - thenExpr.arity != elseExpr.arity
 	 */

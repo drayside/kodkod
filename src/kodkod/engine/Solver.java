@@ -60,7 +60,7 @@ public final class Solver {
 
 	/**
 	 * Constructs a new Solver with the default options.
-	 * @effects this.options' = new Options()
+	 * @ensures this.options' = new Options()
 	 */
 	public Solver() {
 		this.options = new Options();
@@ -68,7 +68,7 @@ public final class Solver {
 
 	/**
 	 * Constructs a new Solver with the given options.
-	 * @effects this.options' = options
+	 * @ensures this.options' = options
 	 * @throws NullPointerException - options = null
 	 */
 	public Solver(Options options) {
@@ -313,7 +313,7 @@ public final class Solver {
 	 * "Pads" the argument instance with the mappings that occur in bounds.lowerBound
 	 * but not in the instance. 
 	 * @requires instance.relations in bounds.relations
-	 * @effects instance.relations' = bounds.relations' &&
+	 * @ensures instance.relations' = bounds.relations' &&
 	 *          instance.tuples' = bounds.lowerBound ++ instance.tuples
 	 * @return instance
 	 */
@@ -381,7 +381,7 @@ public final class Solver {
 		 * Solves translation.cnf and adds the negation of the
 		 * found model to the set of clauses.
 		 * @requires this.translation != null
-		 * @effects this.translation.cnf is modified to eliminate
+		 * @ensures this.translation.cnf is modified to eliminate
 		 * the  current solution from the set of possible solutions
 		 * @return current solution
 		 */
@@ -420,7 +420,7 @@ public final class Solver {
 		 * this.formula and this.bounds are modified to eliminate the current
 		 * trivial solution from the set of possible solutions.
 		 * @requires this.translation = null
-		 * @effects this.formula and this.bounds are modified to eliminate the current
+		 * @ensures this.formula and this.bounds are modified to eliminate the current
 		 * trivial solution from the set of possible solutions.
 		 * @return current solution
 		 */

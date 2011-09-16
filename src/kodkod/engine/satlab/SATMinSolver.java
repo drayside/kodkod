@@ -42,7 +42,7 @@ public interface SATMinSolver extends SATSolver {
 	/**
 	 * Sets the cost of the given variable to the specified value.
 	 * @requires variable in this.variables && cost >= 0
-	 * @effects this.cost' = this.cost ++ variable -> cost
+	 * @ensures this.cost' = this.cost ++ variable -> cost
 	 * @throws IllegalArgumentException - variable !in this.variables || cost < 0
 	 */
 	public abstract void setCost(int variable, int cost);

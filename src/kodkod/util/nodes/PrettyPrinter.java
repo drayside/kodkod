@@ -154,7 +154,7 @@ public final class PrettyPrinter {
 		
 		/**
 		 * Constructs a new tokenizer.
-		 * @effects no this.tokens
+		 * @ensures no this.tokens
 		 */
 		Formatter(int offset, int line) {
 			assert offset >= 0 && offset < line;
@@ -169,45 +169,45 @@ public final class PrettyPrinter {
 		/*--------------FORMATTERS---------------*/
 		
 			
-		/** @effects this.tokens' = concat [ this.tokens, " ", token, " " ]*/
+		/** @ensures this.tokens' = concat [ this.tokens, " ", token, " " ]*/
 		private void infix(Object token) { 
 			space();
 			tokens.append(token);
 			space();
 		}
 		
-		/** @effects this.tokens' = concat [ this.tokens, token, " " ]*/
+		/** @ensures this.tokens' = concat [ this.tokens, token, " " ]*/
 		private void keyword(Object token) { 
 			append(token);
 			space();
 		}
 		
-		/** @effects this.tokens' = concat [ this.tokens, ", " ]*/
+		/** @ensures this.tokens' = concat [ this.tokens, ", " ]*/
 		private void comma() { 
 			tokens.append(","); 
 			space(); 
 		}
 		
-		/** @effects this.tokens' = concat [ this.tokens, ": " ]*/
+		/** @ensures this.tokens' = concat [ this.tokens, ": " ]*/
 		private void colon() { 
 			tokens.append(":"); 
 			space(); 
 		}
 		
-		/** @effects adds this.indent spaces to this.tokens */
+		/** @ensures adds this.indent spaces to this.tokens */
 		private void indent() { for(int i = 0; i < indent; i++) { space(); } }
 		
-		/** @effects adds newline plus this.indent spaces to this.tokens */
+		/** @ensures adds newline plus this.indent spaces to this.tokens */
 		private void newline() { 
 			tokens.append("\n");
 			lineStart = tokens.length();
 			indent();
 		}
 		
-		/** @effects this.tokens' = concat[ this.tokens,  " " ] **/
+		/** @ensures this.tokens' = concat[ this.tokens,  " " ] **/
 		private void space() { tokens.append(" "); }
 	
-		/** @effects this.tokens' = concat [ this.tokens, token ]*/
+		/** @ensures this.tokens' = concat [ this.tokens, token ]*/
 		private void append(Object token) { 
 			final String str = String.valueOf(token);
 			if ((tokens.length() - lineStart + str.length()) > lineLength) {
@@ -217,24 +217,24 @@ public final class PrettyPrinter {
 		}
 		
 		/*--------------LEAVES---------------*/
-		/** @effects this.tokens' = concat[ this.tokens, node ] */
+		/** @ensures this.tokens' = concat[ this.tokens, node ] */
 		public void visit(Relation node) { append(node); }
 
-		/** @effects this.tokens' = concat[ this.tokens, node ] */
+		/** @ensures this.tokens' = concat[ this.tokens, node ] */
 		public void visit(Variable node) { append(node); }
 
-		/** @effects this.tokens' = concat[ this.tokens, node ] */
+		/** @ensures this.tokens' = concat[ this.tokens, node ] */
 		public void visit(ConstantExpression node) { append(node); }
 		
-		/** @effects this.tokens' = concat[ this.tokens, node ] */
+		/** @ensures this.tokens' = concat[ this.tokens, node ] */
 		public void visit(IntConstant node) { append(node); }
 		
-		/** @effects this.tokens' = concat[ this.tokens, node ] */
+		/** @ensures this.tokens' = concat[ this.tokens, node ] */
 		public void visit(ConstantFormula node) { append(node); }
 		
 		/*--------------DECLARATIONS---------------*/
 		/** 
-		 * @effects this.tokens' = 
+		 * @ensures this.tokens' = 
 		 *   concat[ this.tokens, tokenize[ node.variable ], ":", tokenize[ node.expression ] 
 		 **/
 		public void visit(Decl node) {
@@ -248,7 +248,7 @@ public final class PrettyPrinter {
 		}
 		
 		/** 
-		 * @effects this.tokens' = 
+		 * @ensures this.tokens' = 
 		 *   concat[ this.tokens, tokenize[ node.declarations[0] ], ",", 
 		 *    ..., tokenize[ node.declarations[ node.size() - 1 ] ] ] 
 		 **/
@@ -263,7 +263,7 @@ public final class PrettyPrinter {
 		
 		/*--------------UNARY NODES---------------*/
 		
-		/** @effects this.tokenize' = 
+		/** @ensures this.tokenize' = 
 		 *   (parenthesize => concat [ this.tokens, "(", tokenize[child], ")" ] else 
 		 *                    concat [ this.tokens, tokenize[child] ]*/
 		private void visitChild(Node child, boolean parenthesize) { 
@@ -293,7 +293,7 @@ public final class PrettyPrinter {
 					 child instanceof RelationPredicate);
 		}
 		
-		/** @effects appends the given op and child to this.tokens; the child is 
+		/** @ensures appends the given op and child to this.tokens; the child is 
 		 * parenthesized if it's an instance of binary expression or an if expression. **/
 		public void visit(UnaryExpression node) { 
 			append(node.op());
@@ -301,7 +301,7 @@ public final class PrettyPrinter {
 		}
 		
 		
-		/** @effects appends the given op and child to this.tokens; the child is 
+		/** @ensures appends the given op and child to this.tokens; the child is 
 		 * parenthesized if it's not an instance of unary int expression or int constant. **/
 		public void visit(UnaryIntExpression node)  { 
 			final IntExpression child = node.intExpr();
@@ -313,7 +313,7 @@ public final class PrettyPrinter {
 			visitChild(child, parens);
 		}
 		
-		/** @effects appends the given op and child to this.tokens; the child is 
+		/** @ensures appends the given op and child to this.tokens; the child is 
 		 * parenthesized if it's not an instance of not formula, constant formula, or 
 		 * relation predicate. **/
 		public void visit(NotFormula node) {
@@ -324,7 +324,7 @@ public final class PrettyPrinter {
 			indent -= pchild ? 2 : 1;
 		}
 		
-		/** @effects appends the given op and child to this.tokens; the child is 
+		/** @ensures appends the given op and child to this.tokens; the child is 
 		 * parenthesized if it's an instance of binary expression or an if expression. **/
 		public void visit(MultiplicityFormula node) {
 			keyword(node.multiplicity());
@@ -343,7 +343,7 @@ public final class PrettyPrinter {
 			         ((BinaryExpression)child).op()!=op));
 		}
 		
-		/** @effects appends the tokenization of the given node to this.tokens */
+		/** @ensures appends the tokenization of the given node to this.tokens */
 		public void visit(BinaryExpression node) {
 			final ExprOperator op = node.op();
 			visitChild(node.left(), parenthesize(op, node.left()));
@@ -371,7 +371,7 @@ public final class PrettyPrinter {
 			        (!associative(op) || ((BinaryIntExpression)child).op()!=op));
 		}
 		
-		/** @effects appends the tokenization of the given node to this.tokens */
+		/** @ensures appends the tokenization of the given node to this.tokens */
 		public void visit(BinaryIntExpression node) {
 			final IntOperator op = node.op();
 			visitChild(node.left(), parenthesize(op, node.left()));
@@ -389,7 +389,7 @@ public final class PrettyPrinter {
 			         ((BinaryFormula)child).op()!=op));
 		}
 	
-		/** @effects appends the tokenization of the given node to this.tokens */
+		/** @ensures appends the tokenization of the given node to this.tokens */
 		public void visit(BinaryFormula node) {
 			final FormulaOperator op = node.op();
 			final boolean pleft = parenthesize(op, node.left());
@@ -404,14 +404,14 @@ public final class PrettyPrinter {
 			if (pright) indent--;
 		}
 		
-		/** @effects this.tokens' = concat[ this.tokens, tokenize[node.left], node.op, tokenize[node.right] */
+		/** @ensures this.tokens' = concat[ this.tokens, tokenize[node.left], node.op, tokenize[node.right] */
 		public void visit(ComparisonFormula node) {
 			visitChild(node.left(), parenthesize(node.left()));
 			infix(node.op());
 			visitChild(node.right(), parenthesize(node.right()));
 		}
 		
-		/** @effects this.tokens' = concat[ this.tokens, tokenize[node.left], node.op, tokenize[node.right] */
+		/** @ensures this.tokens' = concat[ this.tokens, tokenize[node.left], node.op, tokenize[node.right] */
 		public void visit(IntComparisonFormula node) {
 			visitChild(node.left(), parenthesize(node.left()));
 			infix(node.op());
@@ -420,7 +420,7 @@ public final class PrettyPrinter {
 		
 		/*--------------TERNARY NODES---------------*/
 		
-		/** @effects appends the tokenization of the given node to this.tokens */
+		/** @ensures appends the tokenization of the given node to this.tokens */
 		public void visit(IfExpression node) {
 			visitChild(node.condition(), parenthesize(node.condition()));
 			infix("=>");
@@ -433,7 +433,7 @@ public final class PrettyPrinter {
 			indent--;
 		}
 		
-		/** @effects appends the tokenization of the given node to this.tokens */
+		/** @ensures appends the tokenization of the given node to this.tokens */
 		public void visit(IfIntExpression node) {
 			visitChild(node.condition(), parenthesize(node.condition()));
 			infix("=>");
@@ -447,7 +447,7 @@ public final class PrettyPrinter {
 		}
 		
 		/*--------------VARIABLE CREATOR NODES---------------*/
-		/** @effects this.tokens' = concat[ this.tokens, 
+		/** @ensures this.tokens' = concat[ this.tokens, 
 		 *   "{", tokenize[node.decls], "|", tokenize[ node.formula ], "}" ]*/
 		public void visit(Comprehension node) {
 			append("{");
@@ -457,7 +457,7 @@ public final class PrettyPrinter {
 			append("}");	
 		}
 		
-		/** @effects this.tokens' = concat[ this.tokens,  "sum",
+		/** @ensures this.tokens' = concat[ this.tokens,  "sum",
 		 *   tokenize[node.decls], "|", tokenize[ node.intExpr ],  ]*/
 		public void visit(SumExpression node) {
 			keyword("sum");
@@ -466,7 +466,7 @@ public final class PrettyPrinter {
 			node.intExpr().accept(this);
 		}
 		
-		/** @effects this.tokens' = concat[ this.tokens,  node.quantifier,
+		/** @ensures this.tokens' = concat[ this.tokens,  node.quantifier,
 		 *   tokenize[node.decls], "|", tokenize[ node.formula ] ]*/
 		public void visit(QuantifiedFormula node) {
 			keyword(node.quantifier());
@@ -480,7 +480,7 @@ public final class PrettyPrinter {
 		
 		/*--------------NARY NODES---------------*/
 		
-		/** @effects appends the tokenization of the given node to this.tokens */
+		/** @ensures appends the tokenization of the given node to this.tokens */
 		public void visit(NaryExpression node) {
 			final ExprOperator op = node.op();
 			visitChild(node.child(0), parenthesize(op, node.child(0)));
@@ -489,7 +489,7 @@ public final class PrettyPrinter {
 				visitChild(node.child(i), parenthesize(op, node.child(i)));
 			}
 		}
-		/** @effects appends the tokenization of the given node to this.tokens */
+		/** @ensures appends the tokenization of the given node to this.tokens */
 		public void visit(NaryIntExpression node) {
 			final IntOperator op = node.op();
 			visitChild(node.child(0), parenthesize(op, node.child(0)));
@@ -498,7 +498,7 @@ public final class PrettyPrinter {
 				visitChild(node.child(i), parenthesize(op, node.child(i)));
 			}
 		}
-		/** @effects appends the tokenization of the given node to this.tokens */
+		/** @ensures appends the tokenization of the given node to this.tokens */
 		public void visit(NaryFormula node) {
 			final FormulaOperator op = node.op();
 			boolean parens = parenthesize(op, node.child(0));
@@ -516,7 +516,7 @@ public final class PrettyPrinter {
 		}
 		/*--------------OTHER NODES---------------*/
 		
-		/** @effects appends the tokenization of the given node to this.tokens */
+		/** @ensures appends the tokenization of the given node to this.tokens */
 		public void visit(ProjectExpression node) {
 			append("project");
 			append("[");
@@ -533,7 +533,7 @@ public final class PrettyPrinter {
 			append("]");
 		}
 		
-		/** @effects this.tokens' = concat[ this.tokens, "Int","[",
+		/** @ensures this.tokens' = concat[ this.tokens, "Int","[",
 		 *   tokenize[node.intExpr], "]" ] **/
 		public void visit(IntToExprCast node) {
 			append("Int");
@@ -542,7 +542,7 @@ public final class PrettyPrinter {
 			append("]");
 		}
 		
-		/** @effects this.tokens' = concat[ this.tokens, "int","[",
+		/** @ensures this.tokens' = concat[ this.tokens, "int","[",
 		 *   tokenize[node.expression], "]" ] **/
 		public void visit(ExprToIntCast node) {
 			switch(node.op()) { 
@@ -563,7 +563,7 @@ public final class PrettyPrinter {
 			
 		}
 
-		/** @effects appends the tokenization of the given node to this.tokens */
+		/** @ensures appends the tokenization of the given node to this.tokens */
 		public void visit(RelationPredicate node) {
 			switch(node.name()) { 
 			case ACYCLIC : 

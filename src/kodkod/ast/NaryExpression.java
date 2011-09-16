@@ -46,7 +46,7 @@ public final class NaryExpression extends Expression implements Iterable<Express
 	 * Constructs a new associative expression: op(children)
 	 * @requires children array is not modified while in use by this associative expression
 	 * @requires some op.op[children]
-	 * @effects this.children' = children && this.op' = op
+	 * @ensures this.children' = children && this.op' = op
 	 */
 	NaryExpression(ExprOperator op, Expression[] children) {
 		assert children.length>2;

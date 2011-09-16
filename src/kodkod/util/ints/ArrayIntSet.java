@@ -39,7 +39,7 @@ public final class ArrayIntSet extends AbstractIntSet {
 	 * in the ascending order, and its contents
 	 * must not be changed while it is in use by this set
 	 * @requires all i, j: [0..ints.length) | i < j => array[i] <= array[j]
-	 * @effects this.ints' = ints
+	 * @ensures this.ints' = ints
 	 */
 	public ArrayIntSet(int[] ints) {
 		this.ints = ints;
@@ -49,7 +49,7 @@ public final class ArrayIntSet extends AbstractIntSet {
 	/**
 	 * Constructs an ArrayIntSet that is <tt>equal</tt> to the
 	 * given set.
-	 * @effects this.ints' = s.ints
+	 * @ensures this.ints' = s.ints
 	 */
 	public ArrayIntSet(IntSet s) {
 		this(s.toArray());

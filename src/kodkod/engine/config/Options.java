@@ -57,7 +57,7 @@ public final class Options {
 	/**
 	 * Constructs an Options object initalized with 
 	 * default values.
-	 * @effects this.solver' = SATFactory.DefaultSAT4J
+	 * @ensures this.solver' = SATFactory.DefaultSAT4J
 	 *          this.reporter' is silent (no messages reported)
 	 *          this.symmetryBreaking' = 20
 	 *          this.sharing' = 3
@@ -81,7 +81,7 @@ public final class Options {
 	
 	/**
 	 * Sets the solver option to the given value.
-	 * @effects this.solver' = solver
+	 * @ensures this.solver' = solver
 	 * @throws NullPointerException - solver = null
 	 */
 	public void setSolver(SATFactory solver) {
@@ -101,7 +101,7 @@ public final class Options {
 	/**
 	 * Sets this.reporter to the given reporter.
 	 * @requires reporter != null
-	 * @effects this.reporter' = reporter
+	 * @ensures this.reporter' = reporter
 	 * @throws NullPointerException - reporter = null
 	 */
 	public void setReporter(Reporter reporter) {
@@ -133,7 +133,7 @@ public final class Options {
 	
 	/**
 	 * Sets the intEncoding option to the given value.
-	 * @effects this.intEncoding' = encoding
+	 * @ensures this.intEncoding' = encoding
 	 * @throws NullPointerException - encoding = null
 	 * @throws IllegalArgumentException - this.bitwidth is not a valid bitwidth for the specified encoding
 	 */
@@ -156,7 +156,7 @@ public final class Options {
 	
 	/**
 	 * Sets this.bitwidth to the given value.
-	 * @effects this.bitwidth' = bitwidth
+	 * @ensures this.bitwidth' = bitwidth
 	 * @throws IllegalArgumentException - bitwidth < 1
 	 * @throws IllegalArgumentException - this.intEncoding==BINARY && bitwidth > 32
 	 */
@@ -187,7 +187,7 @@ public final class Options {
 	
 	/**
 	 * Sets the flattening option to the given value.
-	 * @effects this.flatten' = flatten
+	 * @ensures this.flatten' = flatten
 	 * @throws IllegalArgumentException - this.logTranslation>0 && flatten
 	 */
 	public void setFlatten(boolean flatten) {
@@ -218,7 +218,7 @@ public final class Options {
 	
 	/**
 	 * Sets the symmetryBreaking option to the given value.
-	 * @effects this.symmetryBreaking' = symmetryBreaking
+	 * @ensures this.symmetryBreaking' = symmetryBreaking
 	 * @throws IllegalArgumentException - symmetryBreaking !in [0..Integer.MAX_VALUE]
 	 */
 	public void setSymmetryBreaking(int symmetryBreaking) {
@@ -238,7 +238,7 @@ public final class Options {
 	
 	/**
 	 * Sets the sharing option to the given value.
-	 * @effects this.sharing' = sharing
+	 * @ensures this.sharing' = sharing
 	 * @throws IllegalArgumentException - sharing !in [1..Integer.MAX_VALUE]
 	 */
 	public void setSharing(int sharing) {
@@ -260,7 +260,7 @@ public final class Options {
 	
 	/**
 	 * Sets the skolemDepth to the given value. 
-	 * @effects this.skolemDepth' = skolemDepth
+	 * @ensures this.skolemDepth' = skolemDepth
 	 */
 	public void setSkolemDepth(int skolemDepth) {
 		this.skolemDepth = skolemDepth;
@@ -284,7 +284,7 @@ public final class Options {
 	 * Sets the translation logging level.  If the level is above 0, 
 	 * flattening is automatically disabled.
 	 * @requires logTranslation in [0..2]
-	 * @effects this.logTranslation' = logTranslation &&
+	 * @ensures this.logTranslation' = logTranslation &&
 	 *          logTranslation>0 => this.flatten' = false 
 	 * @throws IllegalArgumentException - logTranslation !in [0..2]
 	 */
@@ -316,7 +316,7 @@ public final class Options {
 	/**
 	 * Sets the core granularity level.  
 	 * @requires coreGranularity in [0..3]
-	 * @effects this.coreGranularity' = coreGranularity  
+	 * @ensures this.coreGranularity' = coreGranularity  
 	 * @throws IllegalArgumentException - coreGranularity !in [0..3]
 	 */
 	public void setCoreGranularity(int coreGranularity) { 

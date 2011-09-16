@@ -46,7 +46,7 @@ public final class TrivialFormulaException extends Exception {
 	/**
 	 * Constructs a new TrivialFormulaException using the given arguments.  
 	 * @requires log != null && bounds != null && value != null
-	 * @effects this.log' = log && this.formula' = log.formula && 
+	 * @ensures this.log' = log && this.formula' = log.formula && 
 	 * this.bounds' = bounds && this.value' = value 
 	 */
 	 TrivialFormulaException(Formula formula, Bounds bounds, BooleanConstant formulaValue, TranslationLog log) {

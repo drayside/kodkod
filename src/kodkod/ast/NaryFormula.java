@@ -46,7 +46,7 @@ public final class NaryFormula extends Formula implements Iterable<Formula> {
 	 * Constructs a new composite Formula: op(children)
 	 * @requires children array is not modified while in use by this composite Formula
 	 * @requires some op.op[children]
-	 * @effects this.children' = children && this.op' = op
+	 * @ensures this.children' = children && this.op' = op
 	 */
 	NaryFormula(FormulaOperator op, Formula[] children) { 
 		assert children.length>2;

@@ -73,11 +73,11 @@ final class FileLogger extends TranslationLogger {
 	private final Bounds bounds;
 	/**
 	 * Constructs a new file logger from the given annotated formula.
-	 * @effects this.formula' = annotated.node
-	 * @effects this.originalFormula' = annotated.source[annotated.node]
-	 * @effects this.bounds' = bounds
-	 * @effects this.log().roots() = Nodes.conjuncts(annotated)
-	 * @effects no this.records' 
+	 * @ensures this.formula' = annotated.node
+	 * @ensures this.originalFormula' = annotated.source[annotated.node]
+	 * @ensures this.bounds' = bounds
+	 * @ensures this.log().roots() = Nodes.conjuncts(annotated)
+	 * @ensures no this.records' 
 	 */
 	FileLogger(final AnnotatedNode<Formula> annotated, Bounds bounds) {
 		this.annotated = annotated;
@@ -147,7 +147,7 @@ final class FileLogger extends TranslationLogger {
 	 * given transformed formula to the given boolean value 
 	 * in the specified environment.
 	 * @requires some this.transforms.f
-	 * @effects this.records' = this.records + this.transforms.f -> translation -> freeVariables(f)<:env
+	 * @ensures this.records' = this.records + this.transforms.f -> translation -> freeVariables(f)<:env
 	 * @throws IllegalArgumentException - no this.transforms.f
 	 * @throws IllegalStateException - this log has been closed
 	 */

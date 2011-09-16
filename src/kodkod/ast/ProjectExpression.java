@@ -45,7 +45,7 @@ public final class ProjectExpression extends Expression {
 	/**
 	 * Constructs a new projection expression using the given
 	 * expr and columns.
-	 * @effects this.expression' = expr && this.indices' = columns
+	 * @ensures this.expression' = expr && this.indices' = columns
 	 */
 	ProjectExpression(Expression expr, IntExpression... columns) {
 		if (columns.length==0)

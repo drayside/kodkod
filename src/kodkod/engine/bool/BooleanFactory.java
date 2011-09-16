@@ -62,9 +62,9 @@ public abstract class BooleanFactory {
 	 * using the given number of bits.
 	 * @requires 0 <= numVars < Integer.MAX_VALUE
 	 * @requires checkToDepth >= 0 && bitwidth > 0
-	 * @effects #this.components' = numInputVariables && this.components' in BooleanVariable 
-	 * @effects this.bitwidth' = bitwidth
-	 * @effects this.comparisonDepth' = comparisonDepth
+	 * @ensures #this.components' = numInputVariables && this.components' in BooleanVariable 
+	 * @ensures this.bitwidth' = bitwidth
+	 * @ensures this.comparisonDepth' = comparisonDepth
 	 */
 	private BooleanFactory(int numVars, int comparisonDepth, int bitwidth) {
 		if (numVars==0) {
@@ -127,7 +127,7 @@ public abstract class BooleanFactory {
 	 * comparison depth to a high value will result in more 
 	 * subcomponents being shared.  However, it will also slow down
 	 * gate construction.
-	 * @effects this.comparisonDepth' = newDepth
+	 * @ensures this.comparisonDepth' = newDepth
 	 * @throws IllegalArgumentException - newDepth < 1
 	 */
 	public final void setComparisonDepth(int newDepth) {
@@ -177,7 +177,7 @@ public abstract class BooleanFactory {
 	/**
 	 * Returns the negation of the given boolean value.
 	 * @return {n: BooleanValue | n.label = -v.label && [[n]] = ![[v]] }
-	 * @effects (components.v).components' = (components.v).components + n 
+	 * @ensures (components.v).components' = (components.v).components + n 
 	 * @throws NullPointerException - v = null                             
 	 */
 	public final BooleanValue not(BooleanValue v) {
@@ -189,7 +189,7 @@ public abstract class BooleanFactory {
 	 * The behavior of this method is unspecified if v0 or v1 are not components of this factory.
 	 * @requires v0 + v1 in this.components
 	 * @return {v: BooleanValue | [[v]] = [[v0]] AND [[v1]] }
-	 * @effects this.components' = this.components + v 
+	 * @ensures this.components' = this.components + v 
 	 * @throws NullPointerException - any of the arguments are null
 	 */
 	public final BooleanValue and(BooleanValue v0, BooleanValue v1) {
@@ -201,7 +201,7 @@ public abstract class BooleanFactory {
 	 * The behavior of this method is unspecified if v0 or v1 are not components of this factory.
 	 * @requires v0 + v1 in this.components
 	 * @return {v: BooleanValue | [[v]] = [[v0]] OR [[v1]] }
-	 * @effects this.components' = this.components + v 
+	 * @ensures this.components' = this.components + v 
 	 * @throws NullPointerException - any of the arguments are null
 	 * @throws IllegalArgumentException - v0 + v1 !in this.components
 	 */
@@ -214,7 +214,7 @@ public abstract class BooleanFactory {
 	 * The behavior of this method is unspecified if v0 or v1 are not components of this factory.
 	 * @requires v0 + v1 in this.components
 	 * @return { v: BooleanValue | [[v]] = [[v0]] xor [[v1]] }
-	 * @effects this.components' = this.components + v
+	 * @ensures this.components' = this.components + v
 	 * @throws NullPointerException - any of the arguments are null
 	 */
 	public final BooleanValue xor(BooleanValue v0, BooleanValue v1) {
@@ -226,7 +226,7 @@ public abstract class BooleanFactory {
 	 * The behavior of this method is unspecified if v0 or v1 are not components of this factory.
 	 * @requires v0 + v1 in this.components
 	 * @return { v: BooleanValue | [[v]] = [[v0]] => [[v1]] }
-	 * @effects this.components' = this.components + v
+	 * @ensures this.components' = this.components + v
 	 * @throws NullPointerException - any of the arguments are null
 	 */
 	public final BooleanValue implies(BooleanValue v0, BooleanValue v1) {
@@ -238,7 +238,7 @@ public abstract class BooleanFactory {
 	 * The behavior of this method is unspecified if v0 or v1 are not components of this factory.
 	 * @requires v0 + v1 in this.components
 	 * @return { v: BooleanValue | [[v]] = [[v0]] iff [[v1]] }
-	 * @effects this.components' = this.components + v
+	 * @ensures this.components' = this.components + v
 	 * @throws NullPointerException - any of the arguments are null
 	 */
 	public final BooleanValue iff(BooleanValue v0, BooleanValue v1) {
@@ -250,7 +250,7 @@ public abstract class BooleanFactory {
 	 * The behavior of this method is unspecified if i, t, or e are not components of this factory.
 	 * @requires i + t + e in this.components 
 	 * @return { v: BooleanValue | [[v]] = [[i]] ? [[t]] : [[e]] }
-	 * @effects this.components' = this.components + v
+	 * @ensures this.components' = this.components + v
 	 * @throws NullPointerException - any of the arguments are null
 	 */
 	public final BooleanValue ite(BooleanValue i, BooleanValue t, BooleanValue e) {
@@ -262,7 +262,7 @@ public abstract class BooleanFactory {
 	 * The behavior of this method is unspecified if v0, v1, or cin are not components of this factory.
 	 * @requires v0 + v1 + cin in this.components 
 	 * @return { v: BooleanValue | [[v]] = [[cin]] xor [[v0]] xor [[v1]] }
-	 * @effects this.components' = this.components + v
+	 * @ensures this.components' = this.components + v
 	 * @throws NullPointerException - any of the arguments are null
 	 */
 	public final BooleanValue sum(BooleanValue v0, BooleanValue v1, BooleanValue cin) {
@@ -274,7 +274,7 @@ public abstract class BooleanFactory {
 	 * The behavior of this method is unspecified if v0, v1, or cin are not components of this factory.
 	 * @requires v0 + v1 + cin in this.components 
 	 * @return { v: BooleanValue | [[v]] = ([[v0]] and [[v1]]) or ([[cin]] and ([[v0]] xor [[v1]]))  }
-	 * @effects this.components' = this.components + v
+	 * @ensures this.components' = this.components + v
 	 * @throws NullPointerException - any of the arguments are null
 	 */
 	public final BooleanValue carry(BooleanValue v0, BooleanValue v1, BooleanValue cin) {
@@ -291,7 +291,7 @@ public abstract class BooleanFactory {
 	 * @return no g.inputs => g.op.identity(), 
 	 *         one g.inputs => g.inputs, 
 	 *         {g' : BooleanValue - BooleanAccumulator | [[g']] = [[g]] }
-	 * @effects this.components' = this.components + g'
+	 * @ensures this.components' = this.components + g'
 	 */
 	public final BooleanValue accumulate(BooleanAccumulator g) {
 		return circuits.assemble(g);
@@ -344,7 +344,7 @@ public abstract class BooleanFactory {
 	
 	/**
 	 * Removes all formulas with one or more inputs from this.components.
-	 * @effects this.componets' = 
+	 * @ensures this.componets' = 
 	 *    BooleanConstant + this.components & BooleanVariable
 	 */
 	public final void clear() {
@@ -416,10 +416,10 @@ public abstract class BooleanFactory {
 		 * using the given number of bits.
 		 * @requires 0 <= numVars < Integer.MAX_VALUE
 		 * @requires checkToDepth >= 0 && bitwidth > 0
-		 * @effects #this.components' = numInputVariables && this.components' in BooleanVariable 
-		 * @effects this.bitwidth' = bitwidth
-		 * @effects this.comparisonDepth' = comparisonDepth
-		 * @effects this.intEncoding' = BINARY
+		 * @ensures #this.components' = numInputVariables && this.components' in BooleanVariable 
+		 * @ensures this.bitwidth' = bitwidth
+		 * @ensures this.comparisonDepth' = comparisonDepth
+		 * @ensures this.intEncoding' = BINARY
 		 */
 		TwosComplementFactory(int numVars, int comparisonDepth, int bitwidth) {
 			super(numVars, comparisonDepth, bitwidth);

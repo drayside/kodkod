@@ -43,7 +43,7 @@ public final class NotGate extends BooleanFormula {
 	/**
 	 * Constructs a new NotGate with the given formula as its input.
 	 * @requires input != null && input !in NotGate
-	 * @effects this.inputs' = 0->input && this.output'.label = -input.label
+	 * @ensures this.inputs' = 0->input && this.output'.label = -input.label
 	 */
 	NotGate(BooleanFormula input) {
 		super(input);

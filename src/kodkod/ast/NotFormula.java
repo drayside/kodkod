@@ -39,7 +39,7 @@ public final class NotFormula extends Formula {
     /**
      * Constructs a new formula: !formula 
      * 
-     * @effects this.formula' = formula
+     * @ensures this.formula' = formula
      * @throws NullPointerException - formula = null
      */
     NotFormula(Formula child) {

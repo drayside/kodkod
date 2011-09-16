@@ -63,7 +63,7 @@ final class Environment<T> {
 	 * Constructs a new environment with the specified parent
 	 * and mapping.
 	 * 
-	 * @effects this.parent' = parent && this.variable' = variable && this.value' = value
+	 * @ensures this.parent' = parent && this.variable' = variable && this.value' = value
 	 */
 	private Environment(Environment<T> parent, Variable variable, T value) {
 		this.variable = variable;
