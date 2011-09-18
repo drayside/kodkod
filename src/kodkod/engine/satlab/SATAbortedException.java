@@ -54,7 +54,6 @@ public final class SATAbortedException extends RuntimeException {
 	 */
 	SATAbortedException(String message, Throwable cause) {
 		super(message, cause);
-		// TODO Auto-generated constructor stub
 	}
 
 }

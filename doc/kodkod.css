@@ -27,7 +27,7 @@ h1 {
     padding-bottom: 30px; 
 }
 
-hr { border: 0; width: 0; }
+hr { border: 1px dotted #DDDDDD;  }
 
 
 /* Table colors */

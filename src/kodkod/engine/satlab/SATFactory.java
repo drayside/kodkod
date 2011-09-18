@@ -21,6 +21,11 @@
  */
 package kodkod.engine.satlab;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.sat4j.minisat.SolverFactory;
 
 /**
@@ -127,6 +132,74 @@ public abstract class SATFactory {
 	};
 	
 	/**
+	 * Returns a SATFactory that produces SATSolver wrappers for Armin Biere's Plingeling
+	 * solver.  This is a parallel solver that is invoked as an external program rather than 
+	 * via the Java Native Interface.  As a result, it cannot be used incrementally.  Its
+	 * external factory manages the creation and deletion of temporary files automatically.
+	 * A statically compiled version of plingeling is assumed to be available in a
+	 * java.library.path directory.  The effect of this method is the same as calling
+	 * {@link #plingeling(Integer, Boolean) plingeling(null, null)}.
+	 * @return  SATFactory that produces SATSolver wrappers for the Plingeling solver
+	 */
+	public static final SATFactory plingeling() {
+		return plingeling(null, null);
+	}
+	
+	/**
+	 * Returns a SATFactory that produces SATSolver wrappers for Armin Biere's Plingeling
+	 * solver.  This is a parallel solver that is invoked as an external program rather than 
+	 * via the Java Native Interface.  As a result, it cannot be used incrementally.  Its
+	 * external factory manages the creation and deletion of temporary files automatically.
+	 * A statically compiled version of plingeling is assumed to be available in a
+	 * java.library.path directory.  
+	 * 
+	 * <p>Plingling takes as input two optional parameters: {@code threads}, specifying how
+	 * many worker threads to use, and {@code portfolio}, specifying whether the threads should
+	 * run in portfolio mode (no sharing of clauses) or sharing mode. If {@code threads}
+	 * is null, the solver uses one worker per core.  If {@code portfolio} is null, it is set to 
+	 * true by default.</p>
+	 * 
+	 * @requires threads != null => numberOfThreads > 0
+	 * 
+	 * @return  SATFactory that produces SATSolver wrappers for the Plingeling solver
+	 */
+	public static final SATFactory plingeling(Integer threads, Boolean portfolio) {
+		
+		final List<String> opts = new ArrayList<String>(3);
+		if (threads!=null) {
+			if (threads < 1)
+				throw new IllegalArgumentException("Number of threads must be at least 1: numberOfThreads=" + threads);
+			opts.add("-t");
+			opts.add(threads.toString());
+		}
+		if (portfolio!=null && portfolio)
+			opts.add("-p");
+		
+		return externalFactory(findStaticLibrary("plingeling"), null, opts.toArray(new String[opts.size()]));
+	}
+	
+	/**
+	 * Searches the {@code java.library.path} for an executable with the given name. Returns a fully 
+	 * qualified path to the first found executable.  Throws a {@link SATAbortedException} if no 
+	 * executable is found.
+	 * @return a fully qualified path to an executable with the given name 
+	 * @throws SATAbortedException no executable with the given name is found in the directories
+	 * specified by the {@code java.library.path}
+	 */
+	private static String findStaticLibrary(String name) { 
+		final String[] dirs = System.getProperty("java.library.path").split(System.getProperty("path.separator"));
+		
+		for(int i = dirs.length-1; i >= 0; i--) {
+			final File file = new File(dirs[i]+File.separator+name);
+			if (file.canExecute())
+				return file.getAbsolutePath();
+		}
+		
+		throw new SATAbortedException("Could not find an executable named " + name + 
+				" on the java.library.path: " + System.getProperty("java.library.path"));
+	}
+	
+	/**
 	 * Returns a SATFactory that produces instances of the specified
 	 * SAT4J solver.  For the list of available SAT4J solvers see
 	 * {@link org.sat4j.core.ASolverFactory#solverNames() org.sat4j.core.ASolverFactory#solverNames()}.
@@ -150,21 +223,32 @@ public abstract class SATFactory {
 	 * SAT solver specified by the executable parameter.  The solver's input
 	 * and output formats must conform to the 
 	 * <a href="http://www.satcompetition.org/2011/rules.pdf">SAT competition standards</a>.  The solver
-	 * will be called with the specified options, and the given tempInput file name will
-	 * be used to store the generated CNF files.  If the tempOutput string is empty,
-	 * the solver specified by the executable string is assumed to write its output 
-	 * to standard out; otherwise, the solver is assumed to write its output to the tempOutput file.  
-	 * It is the caller's responsibility to 
-	 * delete the temporary file(s) when no longer needed.  External solvers are never incremental.
-	 * @return  SATFactory that produces interruptible SATSolver wrappers for the specified external
+	 * will be called with the specified options, and it is expected to write properly formatted
+	 * output to standard out.  If the {@code cnf} string is non-null,  it will be 
+	 * used as the file name for generated CNF files by all solver instances that the factory generates.  
+	 * If {@code cnf} null, each solver instance will use an automatically generated temporary file, which 
+	 * will be deleted when the solver instance is garbage-collected. The {@code cnf} file, if provided, is not 
+	 * automatically deleted; it is the caller's responsibility to  delete it when no longer needed.  
+	 * External solvers are never incremental.
+	 * @return  SATFactory that produces SATSolver wrappers for the specified external
 	 * SAT solver
 	 */
-	public static final SATFactory externalFactory(final String executable, final String tempInput, final String tempOutput, final String... options) {
+	public static final SATFactory externalFactory(final String executable, final String cnf, final String... options) {
 		return new SATFactory() {
 
 			@Override
 			public SATSolver instance() {
-				return new ExternalSolver(executable, tempInput, tempOutput, options);
+				if (cnf != null) {
+					return new ExternalSolver(executable, cnf, false, options);
+				} else {
+					try {
+						return new ExternalSolver(executable, 
+								File.createTempFile("kodkod", String.valueOf(executable.hashCode())).getAbsolutePath(), 
+								true, options);
+					} catch (IOException e) {
+						throw new SATAbortedException("Could not create a temporary file.", e);
+					}
+				}
 			}
 			
 			@Override
