@@ -42,6 +42,10 @@ final class MiniSatProver extends NativeSolver implements SATProver {
 		proof = null;
 	}
 	
+	static {
+		loadLibrary(MiniSatProver.class);
+	}
+	
 	/**
 	 * Modifies the given raw trace so that it conforms to the 
 	 * specification of {@linkplain LazyTrace#LazyTrace(int[][], int)}, 
@@ -144,9 +148,7 @@ final class MiniSatProver extends NativeSolver implements SATProver {
 	}
 	
 	
-	static {
-		loadLibrary("minisatprover");
-	}
+	
 	
 	/**
 	 * Returns a pointer to an instance of  MiniSAT.

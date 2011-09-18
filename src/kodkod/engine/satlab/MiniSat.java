@@ -36,7 +36,7 @@ final class MiniSat extends NativeSolver {
 	}
 	
 	static {
-		loadLibrary("minisat");
+		loadLibrary(MiniSat.class);
 	}
 
 	

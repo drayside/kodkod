@@ -21,6 +21,8 @@
  */
 package kodkod.engine.satlab;
 
+import java.io.File;
+
 
 
 
@@ -50,10 +52,29 @@ abstract class NativeSolver implements SATSolver {
 	}
 	
 	/**
-	 * Loads the JNI library with the given name.
+	 * Loads the JNI library for the given class.
+	 * It first attempts to load the library named library.getSimpleName().toLowerCase().
+	 * If that fails, it attempts to load library.getSimpleName().toLowerCase()+suffix
+	 * where suffix ranges over the path-separator delimited list obtained by
+	 * calling System.getProperty("kodkod." + library.getSimpleName().toLowerCase()).
 	 */
-	static void loadLibrary(String library) {
-		System.loadLibrary(library);
+	static void loadLibrary(Class<? extends NativeSolver> library) {
+		final String name = library.getSimpleName().toLowerCase();
+		try {
+			System.loadLibrary(name);
+		} catch (UnsatisfiedLinkError e) {
+			final String versions = System.getProperty("kodkod." + name);
+			if (versions != null) {
+				for(String suffix : versions.split(File.pathSeparator)) {
+					try {
+						System.loadLibrary(name+suffix);
+						return;
+					} catch (UnsatisfiedLinkError e1) { }
+				}
+			}
+			throw new UnsatisfiedLinkError("Could not load the library " + System.mapLibraryName(name) + " or any of its variants.");
+		}
+		
 	}
 	
 	/**

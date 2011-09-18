@@ -35,7 +35,7 @@ final class Lingeling extends NativeSolver {
 	}
 	
 	static {
-		loadLibrary("lingeling");
+		loadLibrary(Lingeling.class);
 	}
 
 	

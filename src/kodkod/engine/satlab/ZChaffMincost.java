@@ -35,6 +35,10 @@ final class ZChaffMincost extends NativeSolver implements SATMinSolver {
 		super(make());
 	}
 
+	static {
+		loadLibrary(ZChaffMincost.class);
+	}
+	
 	/**
 	 * {@inheritDoc}
 	 * @see kodkod.engine.satlab.SATMinSolver#setCost(int, int)
@@ -63,9 +67,7 @@ final class ZChaffMincost extends NativeSolver implements SATMinSolver {
 		return "ZChaffMincost";
 	}
 	
-	static {
-		loadLibrary("zchaffmincost");
-	}
+	
 
 	/**
 	 * Creates an instance of zchaff and returns 

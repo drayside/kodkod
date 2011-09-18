@@ -37,7 +37,7 @@ final class CryptoMiniSat extends NativeSolver {
 	}
 
 	static {
-		loadLibrary("cryptominisat");
+		loadLibrary(CryptoMiniSat.class);
 	}
 	
 	/**
