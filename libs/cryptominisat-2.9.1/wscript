@@ -1,9 +1,6 @@
 #! /usr/bin/env python
 # encoding: utf-8
 
-top = '.'
-out = 'bin'
-
 def options(opt):
     opt.load('compiler_cxx')
     opt.load('java')
@@ -13,7 +10,7 @@ def configure(conf):
     conf.load('java')
     conf.check_jni_headers()
     conf.env.DEFINES = ['__STDC_LIMIT_MACROS', '__STDC_FORMAT_MACROS', 'DISABLE_ZLIB']
-    conf.env.INCLUDES = ['.', '..', '../mtl', '../MTRand']
+    conf.env.INCLUDES = ['.', '..', conf.path.make_node('mtl').abspath(), conf.path.make_node('MTRand').abspath()]
     conf.env.CXXFLAGS = ['-Wall', '-O3', '-fopenmp']
     conf.env.LINKFLAGS = ['-fopenmp']
     conf.env.CORE_SRC = {'include' : ['Solver/*.cpp'], 'exclude' : ['Solver/Main*']}

@@ -1,5 +1,0 @@
-#define LGL_OS "darwin x86_64"
-#define LGL_COMPILED "2011-08-06 21:37:48.170468"
-#define LGL_RELEASED "Sat Jul 31 11:52:29 CEST 2010"
-#define LGL_VERSION "276"
-#define LGL_ID "6264d55e84105d420ec6e7f27ad0fad15f5885a4"

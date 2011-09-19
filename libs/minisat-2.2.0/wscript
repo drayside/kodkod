@@ -1,9 +1,6 @@
 #! /usr/bin/env python
 # encoding: utf-8
 
-top = '.'
-out = 'bin'
-
 def options(opt):
     opt.load('compiler_cxx')
     opt.load('java')
@@ -13,7 +10,7 @@ def configure(conf):
     conf.load('java')
     conf.check_jni_headers()
     conf.env.DEFINES = ['__STDC_LIMIT_MACROS', '__STDC_FORMAT_MACROS']
-    conf.env.INCLUDES = ['.', '..']
+    conf.env.INCLUDES = ['.', '..', conf.path.abspath()]
     conf.env.CXXFLAGS = ['-Wall', '-O3']
     conf.env.UTILS_SRC = 'utils/*.cc'
     conf.env.CORE_SRC = 'core/Solver.cc'
