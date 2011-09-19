@@ -18,7 +18,7 @@
 	-stylesheetfile src/kodkod/util/taglet/kodkod.css 
 	-doctitle &quot;Kodkod API&quot; 
 	-windowtitle &quot;Kodkod API&quot; 
-	-bottom &quot;&lt;br&gt;&amp;copy; Emina Torlak 2006-2011&lt;br&gt;&quot;" 
+	-bottom &quot;&lt;br&gt;&amp;copy; Emina Torlak 2005-2011&lt;br&gt;&quot;" 
 	author="true" 
 	classpath="libs/sat4j-core-v20110329/org.sat4j.core.jar"
 	destdir="doc" 
