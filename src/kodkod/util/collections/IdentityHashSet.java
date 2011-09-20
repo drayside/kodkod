@@ -151,7 +151,7 @@ public final class IdentityHashSet<T> extends AbstractSet<T> {
 	 * the set may cause the internal data structure to grow, which may be
 	 * somewhat time-consuming.
 	 * @ensures no this.elems'
-	 * @throws IllegalArgumentException - <tt>expectedMaxSize</tt> < 0
+	 * @throws IllegalArgumentException  <tt>expectedMaxSize</tt> < 0
 	 */
 	public IdentityHashSet(int expectedMaxSize) {
 		if (expectedMaxSize < 0)
@@ -167,7 +167,7 @@ public final class IdentityHashSet<T> extends AbstractSet<T> {
 	 * Constructs a new identity hash set containing the elements
 	 * in the specified collection.
 	 * @ensures this.elems' = c.elems
-	 * @throws NullPointerException - c = null
+	 * @throws NullPointerException  c = null
 	 */
 	public IdentityHashSet(Collection<? extends T> c) {
 		// Allow for a bit of growth

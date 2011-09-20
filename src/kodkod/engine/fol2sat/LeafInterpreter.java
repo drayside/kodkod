@@ -184,7 +184,7 @@ final class LeafInterpreter {
 	 *           m.elements[lset] = TRUE && m.elements[dset-hset] = FALSE &&
 	 *           all disj i, j: hset-lset | m.elements[i]+m.elements[j] in this.vars[r] && 
 	 *            m.elements[i].label < m.elements[j].label <=> i < j }
-	 * @throws UnboundLeafException - r !in this.relations
+	 * @throws UnboundLeafException  r !in this.relations
 	 */
 	public final BooleanMatrix interpret(Relation r) {
 		if (!lowers.containsKey(r))

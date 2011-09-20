@@ -42,8 +42,8 @@ public abstract class RelationPredicate extends Formula {
 
 	/**
 	 * Constructs a new relation predicate for the given relation.
-	 * @throws NullPointerException - relation = null
-	 * @throws IllegalArgumentException - relation.arity != 2
+	 * @throws NullPointerException  relation = null
+	 * @throws IllegalArgumentException  relation.arity != 2
 	 */
 	private RelationPredicate(Relation relation) {
 		if (relation.arity() != 2)
@@ -115,7 +115,7 @@ public abstract class RelationPredicate extends Formula {
 		/**
 		 * Constructs a new acyclic predicate over the given relation.
 		 * @ensures this.relation' = relation && this.name' = ACYCLIC
-		 * @throws IllegalArgumentException - relation.arity != 2
+		 * @throws IllegalArgumentException  relation.arity != 2
 		 */
 		Acyclic(Relation relation) {
 			super(relation);
@@ -170,7 +170,7 @@ public abstract class RelationPredicate extends Formula {
 		 * with the specified target multiplicity.
 		 * @ensures this.name' = FUNCTION && this.relation' = relation && this.domain' = domain &&
 		 *          this.range' = range
-		 * @throws IllegalArgumentException - relation.arity != 2 || domain.arity != 1 || range.arity != 1 || 
+		 * @throws IllegalArgumentException  relation.arity != 2 || domain.arity != 1 || range.arity != 1 || 
 		 *                                    targetMult !in ONE + LONE
 		 */
 		Function(Relation relation, Expression domain, Multiplicity targetMult, Expression range) {
@@ -263,8 +263,8 @@ public abstract class RelationPredicate extends Formula {
 		 * Constructs a new total ordering predicate.
 		 * @ensures this.relation' = relation && this.first' = first && this.last' = last &&
 		 *          this.name' = TOTAL_ORDERING
-		 * @throws NullPointerException - any of the arguments are null
-		 * @throws IllegalArgumentException - relation.arity != 2 || first.arity != 1 || last.arity != 1
+		 * @throws NullPointerException  any of the arguments are null
+		 * @throws IllegalArgumentException  relation.arity != 2 || first.arity != 1 || last.arity != 1
 		 **/
 		TotalOrdering(Relation relation, Relation ordered, Relation first, Relation last) {
 			super(relation);

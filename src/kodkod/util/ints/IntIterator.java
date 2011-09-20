@@ -39,15 +39,15 @@ public interface IntIterator  {
 	 * Returns the next int in the iteration, if any.
 	 * Otherwise throws a NoSuchElementException.
 	 * @return the next element in the iteration
-	 * @throws java.util.NoSuchElementException - the iteration is empty. 
+	 * @throws java.util.NoSuchElementException  the iteration is empty. 
 	 */
 	public abstract int next();
 	
 	/**
 	 * Removes the last returned element from the underlying collection.
 	 * @ensures removes the last returned element from the underlying collection.
-	 * @throws UnsupportedOperationException - removal is not supported
-	 * @throws IllegalStateException - next() has not been called yet or remove()
+	 * @throws UnsupportedOperationException  removal is not supported
+	 * @throws IllegalStateException  next() has not been called yet or remove()
 	 * has already been called since the last call to next().
 	 */
 	public abstract void remove();

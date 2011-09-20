@@ -93,8 +93,8 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 	 *           annotated.node in Formula => transl in BooleanValue, 
 	 *           annotated.node in Expression => transl in BooleanMatrix, 
 	 *           annotated.node in IntExpression => transl in Int}
-	 * @throws HigherOrderDeclException - annotated.node contains a higher order declaration
-	 * @throws UnboundLeafException - annotated.node refers to an undeclared variable 
+	 * @throws HigherOrderDeclException  annotated.node contains a higher order declaration
+	 * @throws UnboundLeafException  annotated.node refers to an undeclared variable 
 	 **/
 	@SuppressWarnings("unchecked")
 	static final <T> T translate(AnnotatedNode<? extends Node> annotated, LeafInterpreter interpreter) {
@@ -110,8 +110,8 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 	 * @requires annotated.source[annotated.sourceSensitiveRoots()] = Nodes.roots(annotated.source[annotated.node])
 	 * @return BooleanAccumulator that is the meaning of the given annotated formula with respect to the given interpreter
 	 * @ensures log.records' contains the translation events that occurred while generating the returned value
-	 * @throws HigherOrderDeclException - annotated.node contains a higher order declaration
-	 * @throws UnboundLeafException - annotated.node refers to an undeclared variable 
+	 * @throws HigherOrderDeclException  annotated.node contains a higher order declaration
+	 * @throws UnboundLeafException  annotated.node refers to an undeclared variable 
 	 **/
 	static final BooleanAccumulator translate(final AnnotatedNode<Formula> annotated, LeafInterpreter interpreter, final TranslationLogger logger) {
 		final FOL2BoolCache cache = new FOL2BoolCache(annotated);
@@ -137,8 +137,8 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 	 * the provided interpreter and environment.
 	 * @requires interpreter.relations = AnnotatedNode.relations(annotated)
 	 * @return a boolean matrix that is a least sound upper bound on the expression's value
-	 * @throws HigherOrderDeclException - annotated.node contains a higher order declaration
-	 * @throws UnboundLeafException - annotated.node refers to a variable that neither declared nor bound in env
+	 * @throws HigherOrderDeclException  annotated.node contains a higher order declaration
+	 * @throws UnboundLeafException  annotated.node refers to a variable that neither declared nor bound in env
 	 **/
 	static final BooleanMatrix approximate(AnnotatedNode<Expression> annotated, LeafInterpreter interpreter, Environment<BooleanMatrix> env) {
 		final FOL2BoolTranslator approximator = new FOL2BoolTranslator(new FOL2BoolCache(annotated), interpreter, env) {
@@ -286,7 +286,7 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 	 * Calls this.env.lookup(variable) and returns the current binding for the
 	 * given variable. If no binding is found, an UnboundLeafException is thrown.
 	 * @return this.env.lookup(variable)
-	 * @throws UnboundLeafException - no this.env.lookup(variable)
+	 * @throws UnboundLeafException  no this.env.lookup(variable)
 	 */
 	public final BooleanMatrix visit(Variable variable) {
 		final BooleanMatrix ret = env.lookup(variable);

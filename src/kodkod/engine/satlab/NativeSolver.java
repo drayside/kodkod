@@ -167,7 +167,7 @@ abstract class NativeSolver implements SATSolver {
 	/**
 	 * Throws an IllegalArgumentException if variable !in this.variables.
 	 * Otherwise does nothing.
-	 * @throws IllegalArgumentException - variable !in this.variables
+	 * @throws IllegalArgumentException  variable !in this.variables
 	 */
 	final void validateVariable(int variable) {
 		if (variable < 1 || variable > vars)

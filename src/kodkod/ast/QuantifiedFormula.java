@@ -46,7 +46,7 @@ public final class QuantifiedFormula extends Formula  {
      * 
      * @ensures this.quantifier' = quantifier && this.decls' = decls &&
      *          this.formula' = formula
-     * @throws NullPointerException - quantifier = null || decls = null || formula = null
+     * @throws NullPointerException  quantifier = null || decls = null || formula = null
      */
     QuantifiedFormula(Quantifier quantifier, Decls declarations, Formula formula) {
         if (quantifier == null || declarations == null || formula == null) {

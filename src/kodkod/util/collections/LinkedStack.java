@@ -64,7 +64,7 @@ public final class LinkedStack<T> extends  Stack<T> {
 	 * @ensures this.size' = this.size - 1 && 
 	 *          all i: [1..this.size) | this.elems'[i-1] = this.elems[i]
 	 * @return this.elems[0]
-	 * @throws EmptyStackException - no this.elems
+	 * @throws EmptyStackException  no this.elems
 	 */
 	public T pop() {
 		if (head==null) throw new EmptyStackException();
@@ -77,7 +77,7 @@ public final class LinkedStack<T> extends  Stack<T> {
 	/**
 	 * Looks at the object at the top of this stack without removing it from the stack.
 	 * @return this.elems[0]
-	 * @throws EmptyStackException - no this.elems
+	 * @throws EmptyStackException  no this.elems
 	 */
 	public T peek() {
 		if (head==null) throw new EmptyStackException();

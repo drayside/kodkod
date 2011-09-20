@@ -124,7 +124,7 @@ public final class ArrayIntVector extends AbstractIntVector {
 	
 
 	/**
-	 * @throws IndexOutOfBoundsException - index < 0 or index >= size
+	 * @throws IndexOutOfBoundsException  index < 0 or index >= size
 	 */
 	private void checkExcludeLength(int index) {
 		if (index < 0 || index >= size)
@@ -132,7 +132,7 @@ public final class ArrayIntVector extends AbstractIntVector {
 	}
 	
 	/**
-	 * @throws IndexOutOfBoundsException - index < 0 or index > size
+	 * @throws IndexOutOfBoundsException  index < 0 or index > size
 	 */
 	private void checkIncludeLength(int index) {
 		if (index < 0 || index > size)

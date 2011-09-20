@@ -45,7 +45,7 @@ public final class IfExpression extends Expression {
 	/**
 	 * @ensures this.condition' = condition && this.thenExpr' = thenExpr &&
 	 *         this.elseExpr' = elseExpr
-	 * @throws IllegalArgumentException - thenExpr.arity != elseExpr.arity
+	 * @throws IllegalArgumentException  thenExpr.arity != elseExpr.arity
 	 */
 	IfExpression(Formula condition, Expression thenExpr, Expression elseExpr) {
 		if (thenExpr.arity() != elseExpr.arity()) {

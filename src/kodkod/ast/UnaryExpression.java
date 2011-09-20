@@ -44,8 +44,8 @@ public final class UnaryExpression extends Expression {
      * Constructs a new unary expression: op expression
      * 
      * @ensures this.expression' = expression && this.op' = op
-     * @throws NullPointerException - expression = null || op = null
-     * @throws IllegalArgumentException - op in {TRANSPOSE, CLOSURE, REFLEXIVE_CLOSURE} && child.arity != 2
+     * @throws NullPointerException  expression = null || op = null
+     * @throws IllegalArgumentException  op in {TRANSPOSE, CLOSURE, REFLEXIVE_CLOSURE} && child.arity != 2
      */
     UnaryExpression(ExprOperator op, Expression child) {
         if (!op.unary()) {

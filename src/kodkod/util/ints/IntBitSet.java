@@ -52,7 +52,7 @@ public final class IntBitSet extends AbstractIntSet implements Cloneable {
 	 * Constructs an empty IntBitSet that can store up
 	 * to capacity elements.
 	 * @ensures no this.ints' && this.capacity' = capacity
-	 * @throws IllegalArgumentException - capacity < 0
+	 * @throws IllegalArgumentException  capacity < 0
 	 */
 	public IntBitSet(int capacity) {
 		if (capacity < 0) throw new IllegalArgumentException("capacity < 0");
@@ -67,7 +67,7 @@ public final class IntBitSet extends AbstractIntSet implements Cloneable {
 	 * data[i>>>6] & (1L<<i) == 1.  This IntBitSet is backed by the given
 	 * data array.  The array must not be modified while in use by this set.
 	 * @requires 0 <= capacity < max({i: int | data[i>>>6] & (1L<<i) == 1}) or (capacity>>>6)+1 > data.length
-	 * @throws IllegalArgumentException - capacity is out of range
+	 * @throws IllegalArgumentException  capacity is out of range
 	 */
 	public IntBitSet(int capacity, long[] data) {
 		if (capacity > (data.length<<6)) throw new IllegalArgumentException("capacity too large: " + capacity + ", max: " + (data.length<<6));
@@ -84,7 +84,7 @@ public final class IntBitSet extends AbstractIntSet implements Cloneable {
 	 * Returns the smallest element in this set.
 	 * Throws a NoSuchElementException if this set is empty.
 	 * @return min(this.ints)
-	 * @throws java.util.NoSuchElementException - no this.ints
+	 * @throws java.util.NoSuchElementException  no this.ints
 	 * @see kodkod.util.ints.IntSet#min()
 	 */
 	@Override
@@ -99,7 +99,7 @@ public final class IntBitSet extends AbstractIntSet implements Cloneable {
 	 * Returns the largest element in this set.
 	 * Throws a NoSuchElementException if this set is empty.
 	 * @return max(this.ints)
-	 * @throws java.util.NoSuchElementException - no this.ints
+	 * @throws java.util.NoSuchElementException  no this.ints
 	 * @see kodkod.util.ints.IntSet#max()
 	 */
 	@Override
@@ -236,7 +236,7 @@ public final class IntBitSet extends AbstractIntSet implements Cloneable {
 	 * and returns true.  Otherwise does nothing and returns false.
 	 * @ensures this.ints' = this.ints + i
 	 * @return i in this.ints'
-	 * @throws IllegalArgumentException - i !in [0..this.capacity)
+	 * @throws IllegalArgumentException  i !in [0..this.capacity)
 	 * @see kodkod.util.ints.IntSet#add(int)
 	 */
 	@Override

@@ -84,9 +84,9 @@ abstract class Skolemizer extends AbstractReplacer {
 	 * information will be recorded (i.e. f.source[t] = t for all descendants t of f).
 	 * @ensures upper bound mappings for skolem constants, if any, are added to the bounds
 	 * @return the skolemized version of the given formula
-	 * @throws NullPointerException - any of the arguments are null
-	 * @throws IllegalArgumentException - some Relation & annotated.node.^children - bounds.relations
-	 * @throws UnsupportedOperationException - bounds is unmodifiable
+	 * @throws NullPointerException  any of the arguments are null
+	 * @throws IllegalArgumentException  some Relation & annotated.node.^children - bounds.relations
+	 * @throws UnsupportedOperationException  bounds is unmodifiable
 	 */
 	static AnnotatedNode<Formula> skolemize(final AnnotatedNode<Formula> annotated, Bounds bounds, Options options) {
 		if (options.logTranslation()>0) {
@@ -273,7 +273,7 @@ abstract class Skolemizer extends AbstractReplacer {
 	/** 
 	 * Returns the binding for the given variable in the current replacement environment.
 	 * @return the binding for the given variable in the current replacement environment.
-	 * @throws UnboundLeafException - variable not bound in teh replacement environment.
+	 * @throws UnboundLeafException  variable not bound in teh replacement environment.
 	 */
 	@Override
 	public final Expression visit(Variable variable) { 

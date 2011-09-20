@@ -22,8 +22,7 @@
 package kodkod.engine;
 
 /**
- * Indicates that a solving or evaluation task has been aborted
- * by calling Thread.interrupt on the solving (evaluation) thread.
+ * Indicates that a solving or evaluation task has been aborted.
  * @author Emina Torlak
  */
 public final class AbortedException extends RuntimeException {

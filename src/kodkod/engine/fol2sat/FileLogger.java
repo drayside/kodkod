@@ -148,8 +148,8 @@ final class FileLogger extends TranslationLogger {
 	 * in the specified environment.
 	 * @requires some this.transforms.f
 	 * @ensures this.records' = this.records + this.transforms.f -> translation -> freeVariables(f)<:env
-	 * @throws IllegalArgumentException - no this.transforms.f
-	 * @throws IllegalStateException - this log has been closed
+	 * @throws IllegalArgumentException  no this.transforms.f
+	 * @throws IllegalStateException  this log has been closed
 	 */
 	@Override
 	void log(Formula f, BooleanValue v, Environment<BooleanMatrix> env) {

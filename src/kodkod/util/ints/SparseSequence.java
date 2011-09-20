@@ -67,9 +67,9 @@ public interface SparseSequence<V> extends Iterable<IndexedEntry<V>> {
 	 *
 	 * @ensures this.entries' = this.entries + index->value
 	 * @return this.entries[index]
-	 * @throws IndexOutOfBoundsException - the given index
+	 * @throws IndexOutOfBoundsException  the given index
 	 * is not valid for this sequence.
-	 * @throws IllegalArgumentException - the given value cannot 
+	 * @throws IllegalArgumentException  the given value cannot 
 	 * be stored in this sequence.
 	 */
 	public abstract V put(int index, V value);
@@ -80,9 +80,9 @@ public interface SparseSequence<V> extends Iterable<IndexedEntry<V>> {
 	 * calling put(e.index, e.value) on this sequence once for each entry 
      * e in the specified sequence. 
      * @ensures this.entries' = this.entries ++ s.entries
-     * @throws IndexOutOfBoundsException - s contains indeces that are
+     * @throws IndexOutOfBoundsException  s contains indeces that are
      * not valid for this sequence.
-     * @throws IllegalArgumentException - s contains a value that cannot
+     * @throws IllegalArgumentException  s contains a value that cannot
      * be stored in this sequence.
 	 */
 	public abstract void putAll(SparseSequence<? extends V> s);
@@ -217,7 +217,7 @@ public interface SparseSequence<V> extends Iterable<IndexedEntry<V>> {
 	 * clone() may return this.  An implementing class that does not support
 	 * cloning may throw a CloneNotSupportedException.
 	 * @return a copy of this sparse sequence.
-	 * @throws CloneNotSupportedException - this is not cloneable
+	 * @throws CloneNotSupportedException  this is not cloneable
 	 */
 	public abstract SparseSequence<V> clone() throws CloneNotSupportedException;
 	

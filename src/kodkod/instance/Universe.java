@@ -40,7 +40,7 @@ import kodkod.util.collections.Containers;
  * {@link kodkod.instance.TupleSet sets of tuples} based on the atoms in the universe.</p>
  * 
  * <p><b>Implementation Note:</b> although the atoms in a universe are not interpreted in any
- * way by the Kodkod engine, it is <b>strongly recommended</b> that the atoms
+ * way by the Kodkod engine, it is strongly recommended that the atoms
  * of the same 'type' be grouped together.  For instance, suppose that a client model is specified in
  * terms of disjoint types Person = {Person0, Person1, Person2} and Dog = {Dog0, Dog1}.  Then, 
  * the client may observe an improvement in performance if he constructs the universe over the
@@ -64,9 +64,9 @@ public final class Universe implements Iterable<Object> {
 	 * by the specified Collection's Iterator.
 	 * 
 	 * @ensures this.size' = atoms.size && this.atoms' = atoms.iterator
-	 * @throws NullPointerException - atoms = null 
-	 * @throws IllegalArgumentException - atoms contains duplicates
-	 * @throws IllegalArgumentException - atoms is empty
+	 * @throws NullPointerException  atoms = null 
+	 * @throws IllegalArgumentException  atoms contains duplicates
+	 * @throws IllegalArgumentException  atoms is empty
 	 */
 	public Universe(Collection<?> atoms) {
 		if (atoms.isEmpty()) throw new IllegalArgumentException("Cannot create an empty universe.");
@@ -88,9 +88,9 @@ public final class Universe implements Iterable<Object> {
 	 * in the specified array
 	 * 
 	 * @ensures this.size' = atoms.length && this.atoms' = atoms
-	 * @throws NullPointerException - atoms = null 
-	 * @throws IllegalArgumentException - atoms contains duplicates
-	 * @throws IllegalArgumentException - atoms is empty
+	 * @throws NullPointerException  atoms = null 
+	 * @throws IllegalArgumentException  atoms contains duplicates
+	 * @throws IllegalArgumentException  atoms is empty
 	 */
 	public Universe(Object...atoms) { 
 		if (atoms.length==0) throw new IllegalArgumentException("Cannot create an empty universe.");
@@ -108,8 +108,8 @@ public final class Universe implements Iterable<Object> {
 //	 * Returns a universe that stores the given atoms explicitly, in the specified order.
 //	 * The returned universe provides constant time index and atom lookup.
 //	 * @ensures { u: Universe | u.size = atoms.length && u.atoms = atoms }
-//	 * @throws IllegalArgumentException - atoms contains duplicates
-//	 * @throws IllegalArgumentException - atoms is empty  
+//	 * @throws IllegalArgumentException  atoms contains duplicates
+//	 * @throws IllegalArgumentException  atoms is empty  
 //	 */
 //	public static Universe universe(Object...atoms) { return new ExplicitUniverse(atoms); }
 //	
@@ -118,8 +118,8 @@ public final class Universe implements Iterable<Object> {
 //	 * are returned by the collection's iterator.  The returned universe provides constant 
 //	 * time index and atom lookup.
 //	 * @ensures { u: Universe | u.size = atoms.size() && u.atoms[int] = atoms }
-//	 * @throws IllegalArgumentException - atoms contains duplicates
-//	 * @throws IllegalArgumentException - atoms is empty  
+//	 * @throws IllegalArgumentException  atoms contains duplicates
+//	 * @throws IllegalArgumentException  atoms is empty  
 //	 */
 //	public static Universe universe(Collection<?> atoms) { return new ExplicitUniverse(atoms); }
 	
@@ -148,7 +148,7 @@ public final class Universe implements Iterable<Object> {
 	 * Returns the i_th atom in this universe
 	 * 
 	 * @return this.atoms[i]
-	 * @throws IndexOutOfBoundsException - i < 0 || i >= this.size
+	 * @throws IndexOutOfBoundsException  i < 0 || i >= this.size
 	 */
 	public Object atom(int index) { 
 		if (index<0||index>=atoms.length) throw new IndexOutOfBoundsException();
@@ -160,7 +160,7 @@ public final class Universe implements Iterable<Object> {
 	 * atom is not in this universe, an IllegalArgumentException is thrown.
 	 * 
 	 * @return this.atoms.atom
-	 * @throws IllegalArgumentException - no this.atoms.atom
+	 * @throws IllegalArgumentException  no this.atoms.atom
 	 */
 	public int index(Object atom) { 
 		if (indices.containsKey(atom)) return indices.get(atom);

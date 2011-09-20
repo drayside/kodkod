@@ -107,9 +107,9 @@ public final class HomogenousSequence<V> extends AbstractSparseSequence<V> {
 	 * returned sequence is backed by a {@link IntTreeSet IntTreeSet} instance.
 	 * @requires one seq.entries[int]
 	 * @ensures this.value' = seq.entries[int] && this.indices' = seq.indices()
-	 * @throws NullPointerException - seq = null
-	 * @throws IllegalArgumentException - seq.isEmpty()
-	 * @throws IllegalArgumentException - #seq.entries[int] > 1
+	 * @throws NullPointerException  seq = null
+	 * @throws IllegalArgumentException  seq.isEmpty()
+	 * @throws IllegalArgumentException  #seq.entries[int] > 1
 	 */
 	public HomogenousSequence(SparseSequence<? extends V> seq) {
 		if (seq.isEmpty())
@@ -181,7 +181,7 @@ public final class HomogenousSequence<V> extends AbstractSparseSequence<V> {
 	 * @requires this.value = value
 	 * @ensures this.indices' = this.indices + index
 	 * @return this.entries[index]
-	 * @throws IllegalArgumentException - this.value != value
+	 * @throws IllegalArgumentException  this.value != value
 	 * @see kodkod.util.ints.SparseSequence#put(int, Object)
 	 */
 	public V put(int index, V value) {

@@ -62,7 +62,7 @@ public abstract class Tuple  {
      * Returns the atom at the specified index
      *
      * @return this.atoms[i]
-     * @throws IndexOutOfBoundsException - i < 0 || i >= this.arity
+     * @throws IndexOutOfBoundsException  i < 0 || i >= this.arity
      */
     public abstract Object atom(int i);
     
@@ -71,7 +71,7 @@ public abstract class Tuple  {
      * The effect of this method is the same as calling this.universe.index(this.atom(i)).
      * 
      * @return this.universe.index(this.atoms[i])
-     * @throws IndexOutOfBoundsException - i < 0 || i >= this.arity
+     * @throws IndexOutOfBoundsException  i < 0 || i >= this.arity
      */
     public abstract int atomIndex(int i);
     
@@ -79,7 +79,7 @@ public abstract class Tuple  {
      * Returns true if atom is in this tuple, otherwise returns false.
      *
      * @return atom in this.atoms[int]
-     * @throws IllegalArgumentException - atom !in this.universe.atoms[int]
+     * @throws IllegalArgumentException  atom !in this.universe.atoms[int]
      */
     public abstract boolean contains(Object atom);
     
@@ -87,8 +87,8 @@ public abstract class Tuple  {
      * Returns the cross product of this and the specified tuple.
      *
      * @return {t : Tuple | t.atoms = this.atoms->tuple.atoms}
-     * @throws NullPointerException - tuple = null
-     * @throws IllegalArgumentException - tuple.universe != this.universe
+     * @throws NullPointerException  tuple = null
+     * @throws IllegalArgumentException  tuple.universe != this.universe
      */
     public abstract Tuple product(Tuple tuple);
     

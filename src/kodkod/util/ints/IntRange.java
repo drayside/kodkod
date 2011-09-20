@@ -67,7 +67,7 @@ public abstract class IntRange {
 	 * Returns true if this range contains the 
 	 * given range.
 	 * @return this.min <= range.min <= range.max <= this.max
-	 * @throws NullPointerException - range = null
+	 * @throws NullPointerException  range = null
 	 */
 	public boolean contains(IntRange range) {
 		return min() <= range.min() && range.max() <= max();
@@ -76,7 +76,7 @@ public abstract class IntRange {
 	/**
 	 * Returns true if this and the given range intersect.
 	 * @return some i: int | this.contains(i) && range.contains(i)
-	 * @throws NullPointerException - range = null
+	 * @throws NullPointerException  range = null
 	 */
 	public boolean intersects(IntRange range) {
 		return contains(range.min()) || contains(range.max());

@@ -102,7 +102,7 @@ public final class ArrayIntSet extends AbstractIntSet {
 	 * Returns the smallest element in this set.
 	 * Throws a NoSuchElementException if this set is empty.
 	 * @return min(this.ints)
-	 * @throws java.util.NoSuchElementException - no this.ints
+	 * @throws java.util.NoSuchElementException  no this.ints
 	 * @see kodkod.util.ints.IntSet#max()
 	 */
 	@Override
@@ -115,7 +115,7 @@ public final class ArrayIntSet extends AbstractIntSet {
 	 * Returns the largest element in this set.
 	 * Throws a NoSuchElementException if this set is empty.
 	 * @return max(this.ints)
-	 * @throws java.util.NoSuchElementException - no this.ints
+	 * @throws java.util.NoSuchElementException  no this.ints
 	 * @see kodkod.util.ints.IntSet#min()
 	 */
 	@Override

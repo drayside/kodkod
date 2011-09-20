@@ -72,7 +72,7 @@ public final class Bounds implements Cloneable {
 	/**
 	 * Constructs new Bounds over the given universe.
 	 * @ensures this.universe' = universe && no this.relations' && no this.intBound'
-	 * @throws NullPointerException - universe = null
+	 * @throws NullPointerException  universe = null
 	 */
 	public Bounds(Universe universe) {
 		this.factory = universe.factory();
@@ -162,8 +162,8 @@ public final class Bounds implements Cloneable {
 	}
 	
 	/**
-	 * @throws IllegalArgumentException - arity != bound.arity
-	 * @throws IllegalArgumentException - bound.universe != this.universe
+	 * @throws IllegalArgumentException  arity != bound.arity
+	 * @throws IllegalArgumentException  bound.universe != this.universe
 	 */
 	private void checkBound(int arity, TupleSet bound) {
 		if (arity != bound.arity())
@@ -180,8 +180,8 @@ public final class Bounds implements Cloneable {
 	 * @ensures this.relations' = this.relations + r 
 	 *          this.lowerBound' = this.lowerBound' ++ r->tuples &&
 	 *          this.upperBound' = this.lowerBound' ++ r->tuples
-	 * @throws NullPointerException - r = null || tuples = null 
-	 * @throws IllegalArgumentException - tuples.arity != r.arity || tuples.universe != this.universe
+	 * @throws NullPointerException  r = null || tuples = null 
+	 * @throws IllegalArgumentException  tuples.arity != r.arity || tuples.universe != this.universe
 	 */
 	public void boundExactly(Relation r, TupleSet tuples) {
 		checkBound(r.arity(), tuples);
@@ -198,10 +198,10 @@ public final class Bounds implements Cloneable {
 	 * @ensures this.relations' = this.relations + r &&
 	 *          this.lowerBound' = this.lowerBound ++ r->lower &&
 	 *          this.upperBound' = this.upperBound ++ r->upper
-	 * @throws NullPointerException - r = null || lower = null || upper = null
-	 * @throws IllegalArgumentException - lower.arity != r.arity || upper.arity != r.arity
-	 * @throws IllegalArgumentException - lower.universe != this.universe || upper.universe != this.universe
-	 * @throws IllegalArgumentException - lower.tuples !in upper.tuples                               
+	 * @throws NullPointerException  r = null || lower = null || upper = null
+	 * @throws IllegalArgumentException  lower.arity != r.arity || upper.arity != r.arity
+	 * @throws IllegalArgumentException  lower.universe != this.universe || upper.universe != this.universe
+	 * @throws IllegalArgumentException  lower.tuples !in upper.tuples                               
 	 */
 	public void bound(Relation r, TupleSet lower, TupleSet upper) {
 		if (!upper.containsAll(lower))
@@ -226,8 +226,8 @@ public final class Bounds implements Cloneable {
 	 * @ensures this.relations' = this.relations + r 
 	 *          this.lowerBound' = this.lowerBound ++ r->{s: TupleSet | s.universe = this.universe && s.arity = r.arity && no s.tuples} && 
 	 *          this.upperBound' = this.upperBound ++ r->upper
-	 * @throws NullPointerException - r = null || upper = null 
-	 * @throws IllegalArgumentException - upper.arity != r.arity || upper.universe != this.universe
+	 * @throws NullPointerException  r = null || upper = null 
+	 * @throws IllegalArgumentException  upper.arity != r.arity || upper.universe != this.universe
 	 */
 	public void bound(Relation r, TupleSet upper) {
 		checkBound(r.arity(), upper);
@@ -240,9 +240,9 @@ public final class Bounds implements Cloneable {
 	 * that corresponds to the given integer.
 	 * @requires ibound.arity = 1 && i.bound.size() = 1
 	 * @ensures this.intBound' = this.intBound' ++ i -> ibound
-	 * @throws NullPointerException - ibound = null
-	 * @throws IllegalArgumentException - ibound.arity != 1 || ibound.size() != 1
-	 * @throws IllegalArgumentException - ibound.universe != this.universe
+	 * @throws NullPointerException  ibound = null
+	 * @throws IllegalArgumentException  ibound.arity != 1 || ibound.size() != 1
+	 * @throws IllegalArgumentException  ibound.universe != this.universe
 	 */
 	public void boundExactly(int i, TupleSet ibound) {
 		checkBound(1, ibound);

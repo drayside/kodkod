@@ -152,7 +152,7 @@ final class RBCFactory {
 	 * @requires i + t + e in (this.values + this.values.negation + BooleanConstant)
 	 * @return v: BooleanValue | [[v]] = if [[i]] then [[t]] else [[e]] 
 	 * @ensures v in BooleanFormula - NotGate => this.values' = this.values + v, this.values' = this.values
-	 * @throws NullPointerException - any of the arguments are null
+	 * @throws NullPointerException  any of the arguments are null
 	 */
 	BooleanValue assemble(BooleanValue i, BooleanValue t, BooleanValue e) {
 		if (i==TRUE || t==e) return t;
@@ -198,7 +198,7 @@ final class RBCFactory {
 	 * @requires v0 + v1 in (this.values + this.values.negation + BooleanConstant)
 	 * @return  v: BooleanValue | [[v]] = [[v0]] op [[v1]] 
 	 * @ensures v in BooleanFormula - NotGate => this.values' = this.values + v, this.values' = this.values
-	 * @throws NullPointerException - any of the arguments are null
+	 * @throws NullPointerException  any of the arguments are null
 	 */
 	BooleanValue assemble(Operator.Nary op, BooleanValue v0, BooleanValue v1) {
 		if (op==OR) {
@@ -220,7 +220,7 @@ final class RBCFactory {
 	 * @requires acc.components in (this.values + this.values.negation + BooleanConstant)
 	 * @return v: BooleanValue | [[v]] = [[acc]] 
 	 * @ensures v in BooleanFormula - NotGate => this.values' = this.values + v, this.values' = this.values
-	 * @throws NullPointerException - any of the arguments are null
+	 * @throws NullPointerException  any of the arguments are null
 	 */
 	BooleanValue assemble(BooleanAccumulator acc) {
 		final int asize = acc.size();

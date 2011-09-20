@@ -54,7 +54,7 @@ public interface IntSet extends IntCollection, Cloneable {
 	 * Returns the smallest element in this set.
 	 * Throws a NoSuchElementException if this set is empty.
 	 * @return min(this.ints)
-	 * @throws java.util.NoSuchElementException - no this.ints
+	 * @throws java.util.NoSuchElementException  no this.ints
 	 */
 	public abstract int min();
 	
@@ -62,7 +62,7 @@ public interface IntSet extends IntCollection, Cloneable {
 	 * Returns the largest element in this set.
 	 * Throws a NoSuchElementException if this set is empty.
 	 * @return max(this.ints)
-	 * @throws java.util.NoSuchElementException - no this.ints
+	 * @throws java.util.NoSuchElementException  no this.ints
 	 */
 	public abstract int max();
 	
@@ -71,7 +71,7 @@ public interface IntSet extends IntCollection, Cloneable {
 	 * is smaller than or equal to i.  If this is emtpy or i is less than this.min(),
 	 * NoSuchElementException is thrown.
 	 * @return {j: this.ints | j <= i && no k: this.ints - j | k > j && k <= i}
-	 * @throws NoSuchElementException - no this.ints || i < this.min()
+	 * @throws NoSuchElementException  no this.ints || i < this.min()
 	 */
 	public abstract int floor(int i);
 	
@@ -80,7 +80,7 @@ public interface IntSet extends IntCollection, Cloneable {
 	 * is greater than or equal to i.  If this is emtpy or i is greater than this.max(),
 	 * NoSuchElementException is thrown.
 	 * @return {j: this.ints | j >= i && no k: this.ints - j | k < j && k >= i}
-	 * @throws NoSuchElementException - no this.ints || i > this.max()
+	 * @throws NoSuchElementException  no this.ints || i > this.max()
 	 */
 	public abstract int ceil(int i);
 	
@@ -106,7 +106,7 @@ public interface IntSet extends IntCollection, Cloneable {
 	 * and returns true.  Otherwise does nothing and returns false.
 	 * @ensures this.ints' = this.ints + i
 	 * @return i in this.ints'
-	 * @throws IllegalArgumentException - this is a bounded set
+	 * @throws IllegalArgumentException  this is a bounded set
 	 * and i is out of bounds
 	 */
 	public abstract boolean add(int i);
@@ -122,7 +122,7 @@ public interface IntSet extends IntCollection, Cloneable {
 	/**
 	 * Returns true if the elements of c are a subset of this set.
 	 * @return { i: int | c.contains(i) } in this.ints
-	 * @throws NullPointerException - c = null
+	 * @throws NullPointerException  c = null
 	 */
 	public abstract boolean containsAll(IntCollection c);
 	
@@ -131,9 +131,9 @@ public interface IntSet extends IntCollection, Cloneable {
 	 * if they're not already present. 
 	 * @ensures this.ints' = this.ints + { i: int | c.contains(i) }
 	 * @return this.ints' != this.ints
-	 * @throws NullPointerException - c = null
-	 * @throws UnsupportedOperationException - this is an unmodifiable set
-	 * @throws IllegalArgumentException - some aspect of an element of the specified 
+	 * @throws NullPointerException  c = null
+	 * @throws UnsupportedOperationException  this is an unmodifiable set
+	 * @throws IllegalArgumentException  some aspect of an element of the specified 
 	 * collection prevents it from being added to this collection.
 	 */
 	public abstract boolean addAll(IntCollection c);
@@ -143,8 +143,8 @@ public interface IntSet extends IntCollection, Cloneable {
 	 * specified set. 
 	 * @ensures this.ints' = this.ints - { i: int | c.contains(i) }
 	 * @return this.ints' != this.ints
-	 * @throws NullPointerException - s = null
-	 * @throws UnsupportedOperationException - this is an unmodifiable set
+	 * @throws NullPointerException  s = null
+	 * @throws UnsupportedOperationException  this is an unmodifiable set
 	 */
 	public abstract boolean removeAll(IntCollection c);
 	
@@ -153,8 +153,8 @@ public interface IntSet extends IntCollection, Cloneable {
 	 * specified set. 
 	 * @ensures this.ints' = this.ints & { i: int | c.contains(i) }
 	 * @return this.ints' != this.ints
-	 * @throws NullPointerException - s = null
-	 * @throws UnsupportedOperationException - this is an unmodifiable set
+	 * @throws NullPointerException  s = null
+	 * @throws UnsupportedOperationException  this is an unmodifiable set
 	 */
 	public abstract boolean retainAll(IntCollection c);
 	
@@ -170,7 +170,7 @@ public interface IntSet extends IntCollection, Cloneable {
 	 * clone() may return this.  An implementing class that does not support
 	 * cloning may throw a CloneNotSupportedException.
 	 * @return a copy of this IntSet.
-	 * @throws CloneNotSupportedException - this is not cloneable
+	 * @throws CloneNotSupportedException  this is not cloneable
 	 */
 	public abstract IntSet clone() throws CloneNotSupportedException;
 	
@@ -189,7 +189,7 @@ public interface IntSet extends IntCollection, Cloneable {
      * the effect of this method is the same as calling {@linkplain #toArray()}.
      * @ensures array.length>=this.size() => all i: [0..this.size()) | array'[i] in this.ints and #{e: this.ints | e < array'[i]} = i
      * @return array.length>=this.size() => array' else this.toArray()
-     * @throws NullPointerException - array = null
+     * @throws NullPointerException  array = null
      */
     public abstract int[] toArray(int[] array);
     

@@ -44,7 +44,7 @@ public abstract class LeafExpression extends Expression {
 	 * Constructs a leaf with the specified name and arity
 	 * 
 	 * @ensures  this.name' = name && this.arity' = arity 
-	 * @throws IllegalArgumentException - arity < 1
+	 * @throws IllegalArgumentException  arity < 1
 	 */
 	LeafExpression(String name, int arity) {
 		if (arity < 1) {

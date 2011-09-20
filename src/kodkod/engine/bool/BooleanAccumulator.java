@@ -60,7 +60,7 @@ public final class BooleanAccumulator extends BooleanValue implements Iterable<B
 	 * Returns a tree based implementation of BooleanAccumulator.
 	 * The addInput operation executes in O(lg n) time where n is the number of gate inputs. 
 	 * @return an empty tree based BooleanAccumulator with the given operator.
-	 * @throws NullPointerException - op = null
+	 * @throws NullPointerException  op = null
 	 */
 	public static BooleanAccumulator treeGate(Operator.Nary op) {
 		if (op==null) throw new NullPointerException();
@@ -71,7 +71,7 @@ public final class BooleanAccumulator extends BooleanValue implements Iterable<B
 	 * Returns a tree based implementation of BooleanAccumulator, initialized with the given inputs.
 	 * The addInput operation executes in O(lg n) time where n is the number of gate inputs. 
 	 * @return a tree based BooleanAccumulator with the given operator, initialized with the given inputs 
-	 * @throws NullPointerException - op = null || inputs = null
+	 * @throws NullPointerException  op = null || inputs = null
 	 */
 	public static BooleanAccumulator treeGate(Operator.Nary op, BooleanValue... inputs) {
 		if (op==null) throw new NullPointerException();
@@ -138,8 +138,8 @@ public final class BooleanAccumulator extends BooleanValue implements Iterable<B
 	 * otherwise returns the sum of digests of this gate's
 	 * inputs with respect to the given operator.
 	 * @return op = this.op => sum(this.inputs.digest(op))
-	 * @throws IllegalArgumentException - op != this.op
-	 * @throws ClassCastException - some this.inputs & BooleanConstant
+	 * @throws IllegalArgumentException  op != this.op
+	 * @throws ClassCastException  some this.inputs & BooleanConstant
 	 */
 	int digest(Operator op) {
 		if (this.op != op) throw new IllegalArgumentException();

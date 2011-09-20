@@ -46,7 +46,7 @@ public abstract class Int {
 	
 	/**
 	 * Throws IllegalArgumentException if other.factory != this.factory.
-	 * @throws IllegalArgumentException - other.factory != this.factory.
+	 * @throws IllegalArgumentException  other.factory != this.factory.
 	 */
 	final void validate(Int other) {
 		if (other.factory != factory)
@@ -66,7 +66,7 @@ public abstract class Int {
 	 * this.factory.bitwidth boolean values such that the meaning of this integer is 
 	 * 1*[[L.get(0)]] + ... + (1<<i)*[[L.get(i)]] + ... + (-1<<(L.size()-1))*[[L.get(L.size()-1)]].
 	 * @return a list containing the little endian two's complement representation of this integer.
-	 * @throws UnsupportedOperationException - this integer encoding cannot be converted to two's complement.
+	 * @throws UnsupportedOperationException  this integer encoding cannot be converted to two's complement.
 	 */
 	public abstract List<BooleanValue> twosComplementBits();
 		
@@ -94,7 +94,7 @@ public abstract class Int {
 	 * If this Int is constant, returns its value.  Otherwise
 	 * throws an IllegalStateException.
 	 * @return this.isConstant() => [[this.bits]]
-	 * @throws IllegalStateException - !this.isConstant()
+	 * @throws IllegalStateException  !this.isConstant()
 	 */
 	public abstract int value();
 	
@@ -106,7 +106,7 @@ public abstract class Int {
 	 * @return BooleanValue encoding the comparator circuit
 	 * that checks whether the integer represented by this
 	 * Int is equal to the integer represented by the specified Int
-	 * @throws IllegalArgumentException - this.factory != other.factory 
+	 * @throws IllegalArgumentException  this.factory != other.factory 
 	 */
 	public abstract BooleanValue eq(Int other);
 	
@@ -120,7 +120,7 @@ public abstract class Int {
 	 * that checks whether the integer represented by this
 	 * Int is less than or equal to the integer
 	 * represented by the specified Int
-	 * @throws IllegalArgumentException - this.factory != other.factory 
+	 * @throws IllegalArgumentException  this.factory != other.factory 
 	 */
 	public abstract BooleanValue lte(Int other);
 	
@@ -134,7 +134,7 @@ public abstract class Int {
 	 * that checks whether the integer represented by this
 	 * Int is less than the integer
 	 * represented by the specified Int
-	 * @throws IllegalArgumentException - this.factory != other.factory 
+	 * @throws IllegalArgumentException  this.factory != other.factory 
 	 */
 	public abstract BooleanValue lt(Int other);
 	
@@ -148,7 +148,7 @@ public abstract class Int {
 	 * that checks whether the integer represented by this
 	 * Int is greater than or equal to the integer
 	 * represented by the specified Int
-	 * @throws IllegalArgumentException - this.factory != other.factory 
+	 * @throws IllegalArgumentException  this.factory != other.factory 
 	 */
 	public BooleanValue gte(Int other) {
 		return other.lte(this);
@@ -164,7 +164,7 @@ public abstract class Int {
 	 * that checks whether the integer represented by this
 	 * Int is greater than the integer
 	 * represented by the specified Int
-	 * @throws IllegalArgumentException - this.factory != other.factory
+	 * @throws IllegalArgumentException  this.factory != other.factory
 	 */
 	public BooleanValue gt(Int other) {
 		return other.lt(this);
@@ -174,7 +174,7 @@ public abstract class Int {
 	 * Returns an Int that represents the sum of this and the given Int.
 	 * @requires this.factory = other.factory 
 	 * @return an Int that represents the sum of this and the given Int
-	 * @throws IllegalArgumentException - this.factory != other.factory
+	 * @throws IllegalArgumentException  this.factory != other.factory
 	 */
 	public abstract Int plus(Int other);
 	
@@ -182,7 +182,7 @@ public abstract class Int {
 	 * Returns an Int that represents the sum of this and the given Ints.
 	 * @requires this.factory = others[int].factory 
 	 * @return an Int that represents the sum of this and the given Ints
-	 * @throws IllegalArgumentException - this.factory != others[int].factory
+	 * @throws IllegalArgumentException  this.factory != others[int].factory
 	 */
 	public abstract Int plus(Int... others);
 	
@@ -190,7 +190,7 @@ public abstract class Int {
 	 * Returns an Int that represents the product between this and the given Int.
 	 * @requires this.factory = other.factory
 	 * @return an Int that represents the product between this and the given Int
-	 * @throws UnsupportedOperationException - this.encoding does not support multiplication
+	 * @throws UnsupportedOperationException  this.encoding does not support multiplication
 	 */
 	public abstract Int multiply(Int other);
 	
@@ -198,7 +198,7 @@ public abstract class Int {
 	 * Returns an Int that represents the product between this and the given Ints.
 	 * @requires this.factory = others[int].factory
 	 * @return an Int that represents the product between this and the given Ints
-	 * @throws UnsupportedOperationException - this.encoding does not support multiplication
+	 * @throws UnsupportedOperationException  this.encoding does not support multiplication
 	 */
 	public abstract Int multiply(Int... others);
 	
@@ -206,7 +206,7 @@ public abstract class Int {
 	 * Returns an Int that represents the difference between this and the given Int.
 	 * @requires this.factory = other.factory
 	 * @return an Int that represents the difference between this and the given Int
-	 * @throws UnsupportedOperationException - this.encoding does not support subtraction
+	 * @throws UnsupportedOperationException  this.encoding does not support subtraction
 	 */
 	public abstract Int minus(Int other);
 	
@@ -214,7 +214,7 @@ public abstract class Int {
 	 * Returns an Int that represents the quotient of the division between this and the given Int.
 	 * @requires this.factory = other.factory
 	 * @return an Int that represents the quotient of the division between this and the given Int
-	 * @throws UnsupportedOperationException - this.encoding does not support division
+	 * @throws UnsupportedOperationException  this.encoding does not support division
 	 */
 	public abstract Int divide(Int other);
 	
@@ -222,7 +222,7 @@ public abstract class Int {
 	 * Returns an Int that represents the remainder of the division between this and the given Int.
 	 * @requires this.factory = other.factory
 	 * @return an Int that represents the remainder of the division between this and the given Int
-	 * @throws UnsupportedOperationException - this.encoding does not support division
+	 * @throws UnsupportedOperationException  this.encoding does not support division
 	 */
 	public abstract Int modulo(Int other);
 	
@@ -267,7 +267,7 @@ public abstract class Int {
 	 * Returns an Int that represents the bitwise XOR of this and the given Int.
 	 * @requires this.factory = other.factory
 	 * @return an Int that represents the bitwise XOR of this and the given Int.
-	 * @throws UnsupportedOperationException - this.encoding does not support XOR
+	 * @throws UnsupportedOperationException  this.encoding does not support XOR
 	 */
 	public abstract Int xor(Int other);
 	
@@ -275,7 +275,7 @@ public abstract class Int {
 	 * Returns an Int that represents this shifted to the left by the given Int.
 	 * @requires this.factory = other.factory
 	 * @return an Int that represents this shifted to the left by the given Int.
-	 * @throws UnsupportedOperationException - this.encoding does not support SHL
+	 * @throws UnsupportedOperationException  this.encoding does not support SHL
 	 */
 	public abstract Int shl(Int other);
 	
@@ -285,7 +285,7 @@ public abstract class Int {
 	 * @requires this.factory = other.factory
 	 * @return an Int that represents this shifted to the right by the given Int, 
 	 * with zero extension.
-	 * @throws UnsupportedOperationException - this.encoding does not support SHR
+	 * @throws UnsupportedOperationException  this.encoding does not support SHR
 	 */
 	public abstract Int shr(Int other);
 	
@@ -295,21 +295,21 @@ public abstract class Int {
 	 * @requires this.factory = other.factory
 	 * @return an Int that represents this shifted to the right by the given Int, 
 	 * with sign extension.
-	 * @throws UnsupportedOperationException - this.encoding does not support SHA
+	 * @throws UnsupportedOperationException  this.encoding does not support SHA
 	 */
 	public abstract Int sha(Int other);
 	
 	/**
 	 * Returns an Int that represents the negation of this integer.
 	 * @return -[[this]]
-	 * @throws UnsupportedOperationException - this.encoding does not support negation
+	 * @throws UnsupportedOperationException  this.encoding does not support negation
 	 */
 	public abstract Int negate();
 	
 	/**
 	 * Returns an Int that represents bitwise negation of this integer.
 	 * @return ~[[this]]
-	 * @throws UnsupportedOperationException - this.encoding does not support bitwise negation
+	 * @throws UnsupportedOperationException  this.encoding does not support bitwise negation
 	 */
 	public abstract Int not();
 	

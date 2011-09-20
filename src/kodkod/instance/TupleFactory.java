@@ -47,7 +47,7 @@ public final class TupleFactory {
 	 * Constructs a factory for the given universe.
 	 * @requires no (TupleFactory<:universe).universe
 	 * @ensures this.universe' = universe
-	 * @throws NullPointerException - universe = null
+	 * @throws NullPointerException  universe = null
 	 */
 	TupleFactory(Universe universe) {
 		this.universe = universe;
@@ -65,9 +65,9 @@ public final class TupleFactory {
      * drawn from this.universe.
      * 
      * @return {t: Tuple | t.universe = this.universe && t.atoms = atoms }
-     * @throws NullPointerException - atoms = null 
-     * @throws IllegalArgumentException - atoms.length < 1
-     * @throws IllegalArgumentException  - some a: atoms[int] | a !in this.universe.atoms[int]
+     * @throws NullPointerException  atoms = null 
+     * @throws IllegalArgumentException  atoms.length < 1
+     * @throws IllegalArgumentException   some a: atoms[int] | a !in this.universe.atoms[int]
      */
 	public Tuple tuple(Object... atoms) {
 		if (atoms.length<1) throw new IllegalArgumentException("atoms.length<1");
@@ -79,9 +79,9 @@ public final class TupleFactory {
      * drawn from this.universe.
      * 
      * @return {t: Tuple | t.universe = this.universe && t.atoms = atoms }
-     * @throws NullPointerException - atoms = null 
-     * @throws IllegalArgumentException - atoms.size < 1
-     * @throws IllegalArgumentException  - some a: atoms[int] | a !in this.universe.atoms[int]
+     * @throws NullPointerException  atoms = null 
+     * @throws IllegalArgumentException  atoms.size < 1
+     * @throws IllegalArgumentException   some a: atoms[int] | a !in this.universe.atoms[int]
      */
 	public Tuple tuple(List<?> atoms) {
 		if (atoms.size()<1) throw new IllegalArgumentException("atoms.size()<1");
@@ -94,7 +94,7 @@ public final class TupleFactory {
      * 
      * @return {t: Tuple | t.universe = this.universe && t.arity = arity && 
      *                     index = sum({i : [0..arity) | universe.index(t.atoms[i]) * universe.size^(arity - 1 - i))}) }
-     * @throws IllegalArgumentException - arity < 1 || index < 0 || index >= universe.size^arity
+     * @throws IllegalArgumentException  arity < 1 || index < 0 || index >= universe.size^arity
      */
 	public Tuple tuple(final int arity, final int index) {
 		return new IntTuple(arity, index);
@@ -104,7 +104,7 @@ public final class TupleFactory {
 	 * Returns a set of all tuples of the given arity, drawn from this.universe.
 	 * @return { s: TupleSet | s.universe = this.universe && s.arity = arity && 
 	 *                         s.tuples = {t: Tuple | t.universe = this.universe && t.arity = arity} }
-	 * @throws IllegalArgumentException - arity < 1                     
+	 * @throws IllegalArgumentException  arity < 1                     
 	 */
 	public TupleSet allOf(int arity) {
 		return new TupleSet(universe, arity, 
@@ -118,8 +118,8 @@ public final class TupleFactory {
 	 * @return {s: TupleSet | s.universe = this.universe && s.arity = 1 &&
 	 *                        s.tuples = { t: Tuple | t.universe=this.universe && 
 	 *                                                t.arity=1 && t.atoms[0] in atoms[int]}}
-	 * @throws NullPointerException - atoms = null
-	 * @throws IllegalArgumentException - some atoms[int] - this.universe.atoms[int]
+	 * @throws NullPointerException  atoms = null
+	 * @throws IllegalArgumentException  some atoms[int] - this.universe.atoms[int]
 	 */
 	public TupleSet setOf(Object... atoms) {
 		final TupleSet ret = new TupleSet(universe, 1);
@@ -135,9 +135,9 @@ public final class TupleFactory {
 	 *
 	 * @return {s: TupleSet | s.universe = this.universe && s.arity = first.arity &&
 	 *                        s.tuples = first + rest[int] }
-	 * @throws NullPointerException - first = null || rest = null
-	 * @throws IllegalArgumentException - first.universe != this.universe 
-	 * @throws IllegalArgumentException - some t: rest[int] | t.universe != this.universe || t.arity != first.arity
+	 * @throws NullPointerException  first = null || rest = null
+	 * @throws IllegalArgumentException  first.universe != this.universe 
+	 * @throws IllegalArgumentException  some t: rest[int] | t.universe != this.universe || t.arity != first.arity
 	 */
 	public TupleSet setOf(Tuple first, Tuple... rest) {
 		if (!first.universe().equals(universe))
@@ -156,9 +156,9 @@ public final class TupleFactory {
 	 *
 	 * @return {s: TupleSet | s.universe = this.universe && s.arity = first.arity &&
 	 *                        s.tuples = tuples }
-	 * @throws NullPointerException - tuples = null 
-	 * @throws IllegalArgumentException - tuples.isEmpty()  
-	 * @throws IllegalArgumentException - tuples.universe != this.universe || #tuples.arity > 1
+	 * @throws NullPointerException  tuples = null 
+	 * @throws IllegalArgumentException  tuples.isEmpty()  
+	 * @throws IllegalArgumentException  tuples.universe != this.universe || #tuples.arity > 1
 	 */
 	public TupleSet setOf(Collection<Tuple> tuples) {
 		if (tuples.isEmpty())
@@ -179,10 +179,10 @@ public final class TupleFactory {
 	 * @requires tupleIndices is cloneable
 	 * @return {s: TupleSet | s.universe = this.universe && s.arity = arity &&
 	 *                        s.tuples = {t: Tuple | t.index() in tupleIndices} }
-	 * @throws NullPointerException - tupleIndices = null
-	 * @throws IllegalArgumentException - tupleIndices is uncloneable
-	 * @throws IllegalArgumentException - arity < 1
-	 * @throws IllegalArgumentException - tupleIndices.min() < 0 || tupleIndices.max() >= this.universe.size()^arity 
+	 * @throws NullPointerException  tupleIndices = null
+	 * @throws IllegalArgumentException  tupleIndices is uncloneable
+	 * @throws IllegalArgumentException  arity < 1
+	 * @throws IllegalArgumentException  tupleIndices.min() < 0 || tupleIndices.max() >= this.universe.size()^arity 
 	 */
 	public TupleSet setOf(int arity, IntSet tupleIndices) {
 		try {
@@ -195,7 +195,7 @@ public final class TupleFactory {
 	/**
 	 * Returns an initially empty tuple set of the given arity, based on this.universe.
 	 * @return { s: TupleSet | s.universe = this.universe && s.arity = arity && no s.tuples }
-	 * @throws IllegalArgumentException - arity < 1    
+	 * @throws IllegalArgumentException  arity < 1    
 	 */
 	public TupleSet noneOf(int arity) {
 		return new TupleSet(universe, arity);
@@ -209,10 +209,10 @@ public final class TupleFactory {
 	 *                         s.tuples = {t: Tuple | t.universe = this.universe &&
 	 *                                                t.arity = s.arity &&
 	 *                                                from.index()<=t.index()<=to.index() }}
-	 * @throws NullPointerException - from = null || to = null
-	 * @throws IllegalArgumentException - from.arity != to.arity 
-	 * @throws IllegalArgumentException - from.universe != this.universe || to.universe != this.universe
-	 * @throws IllegalArgumentException - from.index > to.index
+	 * @throws NullPointerException  from = null || to = null
+	 * @throws IllegalArgumentException  from.arity != to.arity 
+	 * @throws IllegalArgumentException  from.universe != this.universe || to.universe != this.universe
+	 * @throws IllegalArgumentException  from.index > to.index
 	 */
 	public TupleSet range(Tuple from, Tuple to) {
 		if (from.arity()!=to.arity()) 
@@ -238,10 +238,10 @@ public final class TupleFactory {
 	 *                                     this.universe.index(upperLeft.atoms[i]) <=
 	 *                                     this.universe.index(t.atoms[i]) <= 
 	 *                                     this.universe.index(lowerRight.atoms[i]}}
-	 * @throws NullPointerException - upperLeft = null || lowerRight = null
-	 * @throws IllegalArgumentException - upperLeft.arity != lowerRight.arity 
-	 * @throws IllegalArgumentException - lowerRight.universe != this.universe || upperLeft.universe != this.universe
-	 * @throws IllegalArgumentException - some i: [0..upperLeft.arity) | 
+	 * @throws NullPointerException  upperLeft = null || lowerRight = null
+	 * @throws IllegalArgumentException  upperLeft.arity != lowerRight.arity 
+	 * @throws IllegalArgumentException  lowerRight.universe != this.universe || upperLeft.universe != this.universe
+	 * @throws IllegalArgumentException  some i: [0..upperLeft.arity) | 
 	 *                                       this.universe.index(upperLeft.atoms[i]) > 
 	 *                                       this.universe.index(lowerRight.atoms[i])
 	 */
@@ -300,7 +300,7 @@ public final class TupleFactory {
 	     * 
 	     * @ensures this.arity' = arity && 
 	     *          this.index' = index 
-	     * @throws IllegalArgumentException - arity < 1 || index < 0 || index >= TupleFactory.this.base^arity
+	     * @throws IllegalArgumentException  arity < 1 || index < 0 || index >= TupleFactory.this.base^arity
 	     */
 	    IntTuple(final int arity, final int index) {
 	    	checkCapacity(arity);
@@ -317,8 +317,8 @@ public final class TupleFactory {
 	     * 
 	     * @requires atoms.length > 0
 	     * @ensures this.atoms' = atoms
-	     * @throws NullPointerException - atoms = null
-	     * @throws IllegalArgumentException  - some a: atoms[int] | a !in universe.atoms[int]
+	     * @throws NullPointerException  atoms = null
+	     * @throws IllegalArgumentException   some a: atoms[int] | a !in universe.atoms[int]
 	     */
 	    IntTuple(final Object... atoms) {
 	        this.arity = atoms.length;
@@ -336,8 +336,8 @@ public final class TupleFactory {
 		 * Constructs a tuple with the specified arity, with the specified atom
 		 * at each position.  
 		 * @ensures this.arity' = arity && this.atoms = [0..arity)->atom 
-		 * @throws NullPointerException - atom = null
-	     * @throws IllegalArgumentException - arity < 1 || atom !in this.universe.atoms[int]
+		 * @throws NullPointerException  atom = null
+	     * @throws IllegalArgumentException  arity < 1 || atom !in this.universe.atoms[int]
 	     */
 	    @SuppressWarnings("unused")
 		IntTuple(final int arity, final Object atom) {

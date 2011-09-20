@@ -204,7 +204,7 @@ public final class CacheSet<E> extends AbstractSet<E> {
 	/**
 	 * Returns true if this set contains the given element.
 	 * @return elt in this.elts
-	 * @throws NullPointerException - elt = null
+	 * @throws NullPointerException  elt = null
 	 * @see java.util.Set#contains(java.lang.Object)
 	 */
 	public boolean contains(Object elt) {
@@ -229,7 +229,7 @@ public final class CacheSet<E> extends AbstractSet<E> {
 	/**
 	 * Adds the given element to this set, if not already present.
 	 * @ensures this.elts' = this.elts + elt
-	 * @throws NullPointerException - elt = null
+	 * @throws NullPointerException  elt = null
 	 * @return elt !in this.elts
 	 */
 	public boolean add(E elt) {
@@ -302,7 +302,7 @@ public final class CacheSet<E> extends AbstractSet<E> {
 	 * Removes the specified object from this set, if present.
 	 * @ensures this.elts' = this.elts - elt
 	 * @return elt in this.elts
-	 * @throws NullPointerException - elt = null
+	 * @throws NullPointerException  elt = null
 	 * @see java.util.Set#remove(java.lang.Object)
 	 */
 	public boolean remove(Object elt) {

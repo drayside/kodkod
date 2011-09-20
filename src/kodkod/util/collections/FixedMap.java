@@ -116,7 +116,7 @@ public final class FixedMap<K, V> extends AbstractMap<K, V> implements Indexer<K
 	/**
 	 * Returns the key at the given index.
 	 * @return this.indices.index
-	 * @throws IndexOutOfBoundsException - index !in this.indices[this.keys]
+	 * @throws IndexOutOfBoundsException  index !in this.indices[this.keys]
 	 */
 	@SuppressWarnings("unchecked")
 	public final K keyAt(int index) {
@@ -239,7 +239,7 @@ public final class FixedMap<K, V> extends AbstractMap<K, V> implements Indexer<K
 	 * Returns the value to which the key at the specified index is mapped in this fixed map.
 	 * @requires index in this.indices[this.keys]
 	 * @return this.map[this.indices.index]
-	 * @throws IndexOutOfBoundsException - index !in this.indices[this.keys]
+	 * @throws IndexOutOfBoundsException  index !in this.indices[this.keys]
 	 */
 	@SuppressWarnings("unchecked")
 	public final V get(int index) {
@@ -266,7 +266,7 @@ public final class FixedMap<K, V> extends AbstractMap<K, V> implements Indexer<K
      * @requires key in this.keys
      * @return this.map[key]
      * @ensures this.map' = this.map ++ key->value
-     * @throws IllegalArgumentException - key !in this.keys
+     * @throws IllegalArgumentException  key !in this.keys
      */
 
 	@SuppressWarnings("unchecked")

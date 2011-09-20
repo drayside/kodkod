@@ -63,8 +63,8 @@ public interface IntCollection {
 	 * Ensures that this collection contains the given integer, and returns true
 	 * if this collection has changed as a result of the call.  
 	 * @return true if this collection has changed as a result of the call
-	 * @throws UnsupportedOperationException - this is an unmodifiable collection
-	 * @throws IllegalArgumentException - some aspect of the element prevents it 
+	 * @throws UnsupportedOperationException  this is an unmodifiable collection
+	 * @throws IllegalArgumentException  some aspect of the element prevents it 
 	 * from being added to this collection.
 	 */
 	public abstract boolean add(int i);
@@ -73,14 +73,14 @@ public interface IntCollection {
 	 * Removes a single instance of the given integer from this collection,
 	 * and returns true if this collection has changed as a result of the call.
 	 * @return true if this collection has changed as a result of the call
-	 * @throws UnsupportedOperationException - this is an unmodifiable collection
+	 * @throws UnsupportedOperationException  this is an unmodifiable collection
 	 */
 	public abstract boolean remove(int i);
 	
 	/**
 	 * Returns true if this collection contains all of the elements in the specified collection.
 	 * @return true if this collection contains all of the elements in the specified collection.
-	 * @throws NullPointerException - c = null
+	 * @throws NullPointerException  c = null
 	 */
 	public abstract boolean containsAll(IntCollection c);
 	
@@ -88,9 +88,9 @@ public interface IntCollection {
 	 * Adds all of the elements in the specified collection to this collection.
 	 * Returns true if this collection has changed as a result of the call.
 	 * @return true if this collection has changed as a result of the call
-	 * @throws NullPointerException - c = null
-	 * @throws UnsupportedOperationException - this is an unmodifiable collection
-	 * @throws IllegalArgumentException - some aspect of an element of the specified 
+	 * @throws NullPointerException  c = null
+	 * @throws UnsupportedOperationException  this is an unmodifiable collection
+	 * @throws IllegalArgumentException  some aspect of an element of the specified 
 	 * collection prevents it from being added to this collection.
 	 */
 	public abstract boolean addAll(IntCollection c);
@@ -100,8 +100,8 @@ public interface IntCollection {
 	 * collection. After this call returns, this collection will contain no elements in 
 	 * common with the specified collection. Returns true if this collection has changed as a result of the call. 
 	 * @return true if this collection has changed as a result of the call
-	 * @throws NullPointerException - c = null
-	 * @throws UnsupportedOperationException - this is an unmodifiable collection
+	 * @throws NullPointerException  c = null
+	 * @throws UnsupportedOperationException  this is an unmodifiable collection
 	 */
 	public abstract boolean removeAll(IntCollection c);
 	
@@ -110,14 +110,14 @@ public interface IntCollection {
 	 * collection. In other words, removes from this collection all of its elements that 
 	 * are not contained in the specified collection.  Returns true if this collection has changed as a result of the call. 
 	 * @return rue if this collection has changed as a result of the call
-	 * @throws NullPointerException - c = null
-	 * @throws UnsupportedOperationException - this is an unmodifiable collection
+	 * @throws NullPointerException  c = null
+	 * @throws UnsupportedOperationException  this is an unmodifiable collection
 	 */
 	public abstract boolean retainAll(IntCollection c);
 	
 	/**
 	 * Removes all elements from this collection. 
-	 * @throws UnsupportedOperationException - this is an unmodifiable collection
+	 * @throws UnsupportedOperationException  this is an unmodifiable collection
 	 */
 	public abstract void clear();
 	
@@ -134,7 +134,7 @@ public interface IntCollection {
      * @return the given array, filled with the elements from this collection, if
      * the it is large enough; otherwise a new array containing all of the elements
      * in this collection.
-     * @throws NullPointerException - array = null
+     * @throws NullPointerException  array = null
      */
     public abstract int[] toArray(int[] array);
 }

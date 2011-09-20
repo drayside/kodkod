@@ -191,7 +191,7 @@ final class ExternalSolver implements SATSolver {
 
 	/**
 	 * @ensures |lit| <= this.vars && lit != 0 => this.solution'.set(|lit|, lit>0)
-	 * @throws SATAbortedException - lit=0 || |lit|>this.vars
+	 * @throws SATAbortedException  lit=0 || |lit|>this.vars
 	 */
 	private final void updateSolution(int lit) {
 		int abs = StrictMath.abs(lit);

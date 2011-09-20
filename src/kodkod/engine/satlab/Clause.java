@@ -71,7 +71,7 @@ public abstract class Clause {
      * a new array is allocated, populated with this.literals, and returned.
      * @return the given array, filled with this.literals, if
      * the it is large enough; otherwise a new array containing this.literals
-     * @throws NullPointerException - array = null
+     * @throws NullPointerException  array = null
      */
 	public abstract int[] toArray(int[] array);
 	
@@ -104,7 +104,7 @@ public abstract class Clause {
 //	 * Returns the antecedent at the given index.
 //	 * @requires 0 <= index < this.numberOfAntecedents()
 //	 * @return this.antecedents[index]
-//	 * @throws IndexOutOfBoundsException - index < 0 || index >= this.numberOfAntecedents()
+//	 * @throws IndexOutOfBoundsException  index < 0 || index >= this.numberOfAntecedents()
 //	 */
 //	public abstract Clause antecedent(int index);
 	

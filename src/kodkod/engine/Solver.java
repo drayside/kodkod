@@ -69,7 +69,7 @@ public final class Solver {
 	/**
 	 * Constructs a new Solver with the given options.
 	 * @ensures this.options' = options
-	 * @throws NullPointerException - options = null
+	 * @throws NullPointerException  options = null
 	 */
 	public Solver(Options options) {
 		if (options == null)
@@ -99,14 +99,14 @@ public final class Solver {
 	 * 
 	 * @requires this.options.logTranslation==0 && this.options.solver.minimizer
 	 * @return Solution to the formula with respect to the given bounds and cost
-	 * @throws NullPointerException - formula = null || bounds = null || cost = null
-	 * @throws kodkod.engine.fol2sat.UnboundLeafException - the formula contains an undeclared variable or
+	 * @throws NullPointerException  formula = null || bounds = null || cost = null
+	 * @throws kodkod.engine.fol2sat.UnboundLeafException  the formula contains an undeclared variable or
 	 * a relation not mapped by the given bounds
-	 * @throws kodkod.engine.fol2sat.HigherOrderDeclException - the formula contains a higher order declaration that cannot
+	 * @throws kodkod.engine.fol2sat.HigherOrderDeclException  the formula contains a higher order declaration that cannot
 	 * be skolemized, or it can be skolemized but this.options.skolemize is false.
-	 * @throws AbortedException - this solving task was interrupted with a call to Thread.interrupt on this thread
-	 * @throws IllegalArgumentException -  some  (formula.^children & Relation) - cost.relations
-	 * @throws IllegalStateException - !this.options.solver.minimizer || this.options.logTranslation
+	 * @throws AbortedException  this solving task was interrupted with a call to Thread.interrupt on this thread
+	 * @throws IllegalArgumentException   some  (formula.^children & Relation) - cost.relations
+	 * @throws IllegalStateException  !this.options.solver.minimizer || this.options.logTranslation
 	 * @see Solution
 	 * @see Options
 	 * @see Cost
@@ -161,12 +161,12 @@ public final class Solver {
 	 * there are no subnodes in the given formula that are both syntactically shared and contain free variables.  
 	 * 
 	 * @return Solution to the formula with respect to the given bounds
-	 * @throws NullPointerException - formula = null || bounds = null
-	 * @throws kodkod.engine.fol2sat.UnboundLeafException - the formula contains an undeclared variable or
+	 * @throws NullPointerException  formula = null || bounds = null
+	 * @throws kodkod.engine.fol2sat.UnboundLeafException  the formula contains an undeclared variable or
 	 * a relation not mapped by the given bounds
-	 * @throws kodkod.engine.fol2sat.HigherOrderDeclException - the formula contains a higher order declaration that cannot
+	 * @throws kodkod.engine.fol2sat.HigherOrderDeclException  the formula contains a higher order declaration that cannot
 	 * be skolemized, or it can be skolemized but this.options.skolemize is false.
-	 * @throws AbortedException - this solving task was interrupted with a call to Thread.interrupt on this thread
+	 * @throws AbortedException  this solving task was interrupted with a call to Thread.interrupt on this thread
 	 * @see Solution
 	 * @see Options
 	 * @see Proof
@@ -211,13 +211,13 @@ public final class Solver {
 	 * there are no subnodes in the given formula that are both syntactically shared and contain free variables.  
 	 * 
 	 * @return an iterator over all the Solutions to the formula with respect to the given bounds
-	 * @throws NullPointerException - formula = null || bounds = null
-	 * @throws kodkod.engine.fol2sat.UnboundLeafException - the formula contains an undeclared variable or
+	 * @throws NullPointerException  formula = null || bounds = null
+	 * @throws kodkod.engine.fol2sat.UnboundLeafException  the formula contains an undeclared variable or
 	 * a relation not mapped by the given bounds
-	 * @throws kodkod.engine.fol2sat.HigherOrderDeclException - the formula contains a higher order declaration that cannot
+	 * @throws kodkod.engine.fol2sat.HigherOrderDeclException  the formula contains a higher order declaration that cannot
 	 * be skolemized, or it can be skolemized but this.options.skolemize is false.
-	 * @throws AbortedException - this solving task was interrupted with a call to Thread.interrupt on this thread
-	 * @throws IllegalStateException - !this.options.solver().incremental()
+	 * @throws AbortedException  this solving task was interrupted with a call to Thread.interrupt on this thread
+	 * @throws IllegalStateException  !this.options.solver().incremental()
 	 * @see Solution
 	 * @see Options
 	 * @see Proof

@@ -57,7 +57,7 @@ public final class Evaluator {
 	 * Constructs a new Evaluator for the given instance, using a 
 	 * default Options object.
 	 * @ensures this.instance' = instance && this.options' = new Options()
-	 * @throws NullPointerException - instance = null
+	 * @throws NullPointerException  instance = null
 	 */
 	public Evaluator(Instance instance) {
 		this(instance, new Options());
@@ -66,7 +66,7 @@ public final class Evaluator {
 	/**
 	 * Constructs a new Evaluator for the given instance and options
 	 * @ensures this.instance' = instance && this.options' = options
-	 * @throws NullPointerException - instance = null || options = null
+	 * @throws NullPointerException  instance = null || options = null
 	 */
 	public Evaluator(Instance instance, Options options) {
 		if (instance==null || options==null) throw new NullPointerException();
@@ -93,8 +93,8 @@ public final class Evaluator {
 	 * given by this.instance and using this.options. 
 	 * @return true if formula is true with respect to this.instance and this.options; 
 	 * otherwise returns false
-	 * @throws kodkod.engine.fol2sat.HigherOrderDeclException - the formula contains a higher order declaration
-	 * @throws kodkod.engine.fol2sat.UnboundLeafException - the formula contains an undeclared variable or
+	 * @throws kodkod.engine.fol2sat.HigherOrderDeclException  the formula contains a higher order declaration
+	 * @throws kodkod.engine.fol2sat.UnboundLeafException  the formula contains an undeclared variable or
 	 * a relation not mapped by this.instance
 	 */
 	public boolean evaluate(Formula formula){
@@ -107,8 +107,8 @@ public final class Evaluator {
 	 * given by this.instance and using this.options.
 	 * @return  {@link kodkod.instance.TupleSet set} of tuples to which the expression evaluates given the
 	 * mappings in this.instance and the options in this.options.
-	 * @throws kodkod.engine.fol2sat.HigherOrderDeclException - the expression contains a higher order declaration
-	 * @throws kodkod.engine.fol2sat.UnboundLeafException - the expression contains an undeclared variable or
+	 * @throws kodkod.engine.fol2sat.HigherOrderDeclException  the expression contains a higher order declaration
+	 * @throws kodkod.engine.fol2sat.UnboundLeafException  the expression contains an undeclared variable or
 	 * a relation not mapped by this.instance
 	 */
 	public TupleSet evaluate(Expression expression){
@@ -122,8 +122,8 @@ public final class Evaluator {
 	 * given by this.instance and using this.options.
 	 * @return  the integer to which the expression evaluates given the
 	 * mappings in this.instance and the options in this.options.
-	 * @throws kodkod.engine.fol2sat.HigherOrderDeclException - intExpr contains a higher order declaration
-	 * @throws kodkod.engine.fol2sat.UnboundLeafException - intExpr contains an undeclared variable or
+	 * @throws kodkod.engine.fol2sat.HigherOrderDeclException  intExpr contains a higher order declaration
+	 * @throws kodkod.engine.fol2sat.UnboundLeafException  intExpr contains an undeclared variable or
 	 * a relation not mapped by this.instance
 	 */
 	public int evaluate(IntExpression intExpr) {

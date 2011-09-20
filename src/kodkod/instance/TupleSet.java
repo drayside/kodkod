@@ -56,8 +56,8 @@ public final class TupleSet extends AbstractSet<Tuple> implements Cloneable {
 	 * of the specified arity, over the given universe.
 	 * 
 	 * @ensures this.universe' = universe && this.arity' = arity && no this.tuples'
-	 * @throws NullPointerException - universe = null
-	 * @throws IllegalArgumentException - arity < 1
+	 * @throws NullPointerException  universe = null
+	 * @throws IllegalArgumentException  arity < 1
 	 */
 	TupleSet(Universe universe, int arity) {
 		if (arity < 1) throw new IllegalArgumentException("arity < 1");
@@ -75,9 +75,9 @@ public final class TupleSet extends AbstractSet<Tuple> implements Cloneable {
 	 * @ensures this.universe' = universe && this.arity' = arity && 
 	 *          this.tuples' = {t: Tuple | t.universe=universe && t.arity=arity && 
 	 *                                     fromIndex()<=t.index()<=toIndex() }
-	 * @throws NullPointerException - universe = null 
-	 * @throws IllegalArgumentException - arity < 1 || 
-	 * @throws IndexOutOfBoundsException - fromIndex !in [0..toIndex] ||
+	 * @throws NullPointerException  universe = null 
+	 * @throws IllegalArgumentException  arity < 1 || 
+	 * @throws IndexOutOfBoundsException  fromIndex !in [0..toIndex] ||
 	 *                                     toIndex !in [0..universe.size()^arity - 1]
 	 */
 	TupleSet(Universe universe, int arity, int fromIndex, int toIndex) {
@@ -97,9 +97,9 @@ public final class TupleSet extends AbstractSet<Tuple> implements Cloneable {
 	 * set will result in a runtime exception.  
 	 * @return {s: TupleSet | s.universe = this.universe && s.arity = arity &&
 	 *                        s.tuples = {t: Tuple | t.index() in tupleIndeces} }
-	 * @throws NullPointerException - tupleIndeces = null
-	 * @throws IllegalArgumentException - arity < 1
-	 * @throws IllegalArgumentException - tupleIndeces.min() < 0 || tupleIndeces.max() >= this.universe.size()^arity 
+	 * @throws NullPointerException  tupleIndeces = null
+	 * @throws IllegalArgumentException  arity < 1
+	 * @throws IllegalArgumentException  tupleIndeces.min() < 0 || tupleIndeces.max() >= this.universe.size()^arity 
 	 */
 	TupleSet(Universe universe, int arity, IntSet tupleIndeces) {
 		if (arity < 1) throw new IllegalArgumentException("arity < 1");
@@ -191,8 +191,8 @@ public final class TupleSet extends AbstractSet<Tuple> implements Cloneable {
 	 * @return {t: TupleSet | t.arity = this.arity + s.arity &&
 	 *                        t.universe = this.universe &&
 	 *                        t.tuples = this.tuples->s.tuples }
-	 * @throws NullPointerException - s = null
-	 * @throws IllegalArgumentException - s.universe != this.universe                              
+	 * @throws NullPointerException  s = null
+	 * @throws IllegalArgumentException  s.universe != this.universe                              
 	 */
 	public TupleSet product(TupleSet s) {
 		if (!s.universe().equals(universe))
@@ -214,7 +214,7 @@ public final class TupleSet extends AbstractSet<Tuple> implements Cloneable {
 	 * Projects this TupleSet onto the given dimension.
 	 * @return {s: TupleSet | s.arity = 1 && s.universe = this.universe && 
 	 *                        s.tuples = { t: Tuple | some q: this.tuples | q.atoms[dimension] = t.atoms[int] } }
-	 * @throws IllegalArgumentException - dimension < 0 || dimension >= this.arity
+	 * @throws IllegalArgumentException  dimension < 0 || dimension >= this.arity
 	 */
 	public TupleSet project(int dimension) {
 		if (dimension < 0 || dimension >= arity) {
@@ -263,7 +263,7 @@ public final class TupleSet extends AbstractSet<Tuple> implements Cloneable {
 	 * Returns the index of the given tuple, if the tuple has the same
 	 * arity and universe as this.  Otherwise throws an IllegalArgumentException.
 	 * @return t.index
-	 * @throws IllegalArgumentException - t.arity != this.arity || t.universe != this.universe
+	 * @throws IllegalArgumentException  t.arity != this.arity || t.universe != this.universe
 	 */
 	private final int extractIndex(Tuple t) {
 		if (t.arity() != arity || !t.universe().equals(universe)) {
@@ -304,7 +304,7 @@ public final class TupleSet extends AbstractSet<Tuple> implements Cloneable {
 	 * operation.
 	 * @ensures this.tuples' = this.tuples + t
 	 * @return o !in this.tuples
-	 * @throws IllegalArgumentException - t.universe != this.universe || t.arity != this.arity
+	 * @throws IllegalArgumentException  t.universe != this.universe || t.arity != this.arity
 	 */
 	@Override
 	public boolean add(Tuple t) {
@@ -316,7 +316,7 @@ public final class TupleSet extends AbstractSet<Tuple> implements Cloneable {
 	 * returns true.  Otherwise does nothing and returns false.
 	 * @ensures this.tuples' = this.tuples - o
 	 * @return o in this.tuples
-	 * @throws IllegalArgumentException - o.universe != this.universe || o.arity != this.arity
+	 * @throws IllegalArgumentException  o.universe != this.universe || o.arity != this.arity
 	 */
 	@Override
 	public boolean remove(Object o) {
@@ -329,8 +329,8 @@ public final class TupleSet extends AbstractSet<Tuple> implements Cloneable {
 	 * with the modifiable view of c. 
 	 * @requires c in TupleSet => c.arity = this.arity
 	 * @return c in TupleSet && c.universe = this.universe && c.arity = this.arity => c.tuples, null
-	 * @throws NullPointerException - s = null
-	 * @throws IllegalArgumentException - this.arity!=s.arity
+	 * @throws NullPointerException  s = null
+	 * @throws IllegalArgumentException  this.arity!=s.arity
 	 */
 	private IntSet extractTuples(Collection<?> c) {
 		if (c instanceof TupleSet) {
@@ -345,7 +345,7 @@ public final class TupleSet extends AbstractSet<Tuple> implements Cloneable {
 	/**
 	 * Returns true if this contains all tuples from c.  Otherwise returns false.
 	 * @return c.elements in this.tuples
-	 * @throws IllegalArgumentException - some t: c.elements | t.universe != this.universe || t.arity != this.arity
+	 * @throws IllegalArgumentException  some t: c.elements | t.universe != this.universe || t.arity != this.arity
 	 */
 	@Override
 	public boolean containsAll(Collection<?> c) { 
@@ -358,7 +358,7 @@ public final class TupleSet extends AbstractSet<Tuple> implements Cloneable {
 	 * true.  Otherwise does nothing and returns false.
 	 * @ensures this.tuples' = this.tuples + c.elements
 	 * @return c.elements !in this.tuples
-	 * @throws IllegalArgumentException - some t: c.elements | t.universe != this.universe || t.arity != this.arity
+	 * @throws IllegalArgumentException  some t: c.elements | t.universe != this.universe || t.arity != this.arity
 	 */
 	@Override
 	public boolean addAll(Collection<? extends Tuple> c) {
@@ -371,7 +371,7 @@ public final class TupleSet extends AbstractSet<Tuple> implements Cloneable {
 	 * true.  Otherwise does nothing and returns false.
 	 * @ensures this.tuples' = this.tuples - c.elements
 	 * @return some c.elements & this.tuples
-	 * @throws IllegalArgumentException - some t: c.elements | t.universe != this.universe || t.arity != this.arity
+	 * @throws IllegalArgumentException  some t: c.elements | t.universe != this.universe || t.arity != this.arity
 	 */
 	@Override
 	public boolean removeAll(Collection<?> c) {
@@ -384,7 +384,7 @@ public final class TupleSet extends AbstractSet<Tuple> implements Cloneable {
 	 * returns true. Otherwise does nothing and returns false.
 	 * @ensures this.tuples' = this.tuples & c.elements
 	 * @return this.tuples !in c.elements
-	 * @throws IllegalArgumentException - some t: c.elements | t.universe != this.universe || t.arity != this.arity
+	 * @throws IllegalArgumentException  some t: c.elements | t.universe != this.universe || t.arity != this.arity
 	 */
 	@Override
 	public boolean retainAll(Collection<?> c) {

@@ -82,7 +82,7 @@ public final class Options {
 	/**
 	 * Sets the solver option to the given value.
 	 * @ensures this.solver' = solver
-	 * @throws NullPointerException - solver = null
+	 * @throws NullPointerException  solver = null
 	 */
 	public void setSolver(SATFactory solver) {
 		if (solver==null)
@@ -102,7 +102,7 @@ public final class Options {
 	 * Sets this.reporter to the given reporter.
 	 * @requires reporter != null
 	 * @ensures this.reporter' = reporter
-	 * @throws NullPointerException - reporter = null
+	 * @throws NullPointerException  reporter = null
 	 */
 	public void setReporter(Reporter reporter) {
 		if (reporter==null)
@@ -111,7 +111,7 @@ public final class Options {
 	}
 		
 	/**
-	 * @throws IllegalArgumentException - arg !in [min..max]
+	 * @throws IllegalArgumentException  arg !in [min..max]
 	 */
 	private void checkRange(int arg, int min, int max) {
 		if (arg < min || arg > max)
@@ -134,8 +134,8 @@ public final class Options {
 	/**
 	 * Sets the intEncoding option to the given value.
 	 * @ensures this.intEncoding' = encoding
-	 * @throws NullPointerException - encoding = null
-	 * @throws IllegalArgumentException - this.bitwidth is not a valid bitwidth for the specified encoding
+	 * @throws NullPointerException  encoding = null
+	 * @throws IllegalArgumentException  this.bitwidth is not a valid bitwidth for the specified encoding
 	 */
 	public void setIntEncoding(IntEncoding encoding) {
 		if (encoding.maxAllowedBitwidth()<bitwidth) throw new IllegalArgumentException();
@@ -157,8 +157,8 @@ public final class Options {
 	/**
 	 * Sets this.bitwidth to the given value.
 	 * @ensures this.bitwidth' = bitwidth
-	 * @throws IllegalArgumentException - bitwidth < 1
-	 * @throws IllegalArgumentException - this.intEncoding==BINARY && bitwidth > 32
+	 * @throws IllegalArgumentException  bitwidth < 1
+	 * @throws IllegalArgumentException  this.intEncoding==BINARY && bitwidth > 32
 	 */
 	public void setBitwidth(int bitwidth) {
 		checkRange(bitwidth, 1, intEncoding.maxAllowedBitwidth());
@@ -188,7 +188,7 @@ public final class Options {
 	/**
 	 * Sets the flattening option to the given value.
 	 * @ensures this.flatten' = flatten
-	 * @throws IllegalArgumentException - this.logTranslation>0 && flatten
+	 * @throws IllegalArgumentException  this.logTranslation>0 && flatten
 	 */
 	public void setFlatten(boolean flatten) {
 		if (logTranslation>0 && flatten)
@@ -219,7 +219,7 @@ public final class Options {
 	/**
 	 * Sets the symmetryBreaking option to the given value.
 	 * @ensures this.symmetryBreaking' = symmetryBreaking
-	 * @throws IllegalArgumentException - symmetryBreaking !in [0..Integer.MAX_VALUE]
+	 * @throws IllegalArgumentException  symmetryBreaking !in [0..Integer.MAX_VALUE]
 	 */
 	public void setSymmetryBreaking(int symmetryBreaking) {
 		checkRange(symmetryBreaking, 0, Integer.MAX_VALUE);
@@ -239,7 +239,7 @@ public final class Options {
 	/**
 	 * Sets the sharing option to the given value.
 	 * @ensures this.sharing' = sharing
-	 * @throws IllegalArgumentException - sharing !in [1..Integer.MAX_VALUE]
+	 * @throws IllegalArgumentException  sharing !in [1..Integer.MAX_VALUE]
 	 */
 	public void setSharing(int sharing) {
 		checkRange(sharing, 1, Integer.MAX_VALUE);
@@ -286,7 +286,7 @@ public final class Options {
 	 * @requires logTranslation in [0..2]
 	 * @ensures this.logTranslation' = logTranslation &&
 	 *          logTranslation>0 => this.flatten' = false 
-	 * @throws IllegalArgumentException - logTranslation !in [0..2]
+	 * @throws IllegalArgumentException  logTranslation !in [0..2]
 	 */
 	public void setLogTranslation(int logTranslation) {
 		checkRange(logTranslation, 0, 2);
@@ -317,7 +317,7 @@ public final class Options {
 	 * Sets the core granularity level.  
 	 * @requires coreGranularity in [0..3]
 	 * @ensures this.coreGranularity' = coreGranularity  
-	 * @throws IllegalArgumentException - coreGranularity !in [0..3]
+	 * @throws IllegalArgumentException  coreGranularity !in [0..3]
 	 */
 	public void setCoreGranularity(int coreGranularity) { 
 		checkRange(coreGranularity, 0, 3);

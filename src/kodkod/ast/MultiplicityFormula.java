@@ -43,8 +43,8 @@ public final class MultiplicityFormula extends Formula {
      * Constructs a new multiplicity formula:  multiplicity expression
      * 
      * @ensures this.expression' = expression && this.multiplicity' = multiplicity
-     * @throws NullPointerException - multiplicity = null || expression = null
-     * @throws IllegalArgumentException - multiplicity = SET
+     * @throws NullPointerException  multiplicity = null || expression = null
+     * @throws IllegalArgumentException  multiplicity = SET
      */
     MultiplicityFormula(Multiplicity multiplicity, Expression expression) {
     		if (multiplicity==Multiplicity.SET) throw new IllegalArgumentException("invalid expression mulitplicity: SET");

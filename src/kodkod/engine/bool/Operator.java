@@ -51,7 +51,7 @@ public abstract class Operator implements Comparable<Operator>{
 	 * i = 0 when this.ordinal = op.ordinal, and i > 0 when this.ordinal > op.ordinal.
 	 * @return i: int | this.ordinal < op.ordinal => i < 0,
 	 *         this.ordinal = op.ordinal => i = 0, i > 0
-	 * @throws NullPointerException - op = null
+	 * @throws NullPointerException  op = null
 	 */
 	public int compareTo(Operator op) {
 		return ordinal() - op.ordinal();

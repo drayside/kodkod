@@ -136,7 +136,7 @@ public final class Nodes {
 	 * @requires descendants in formula.*components
 	 * @return { s: Set<Formula> | s.elements in roots(formula) and descendants in s.elements.*components and 
 	 * 				no s': Set<Formula> | s.containsAll(s') and s'.size()<s.size() and descendants in s.elements.*components }
-	 * @throws IllegalArgumentException - descendants !in formula.*components
+	 * @throws IllegalArgumentException  descendants !in formula.*components
 	 */
 	public static Set<Formula> minRoots(Formula formula, Collection<? extends Node> descendants) { 
 		

@@ -48,7 +48,7 @@ public final class ArraySequence<V> extends AbstractSparseSequence<V> implements
 	 * Constructs an array sequence that contains 
 	 * the given indeces.  
 	 * @ensures this.indeces' = indeces && no this.entries'
-	 * @throws NullPointerException - indeces = null
+	 * @throws NullPointerException  indeces = null
 	 */
 	@SuppressWarnings("unchecked")
 	public ArraySequence(IntSet indices) {
@@ -64,7 +64,7 @@ public final class ArraySequence<V> extends AbstractSparseSequence<V> implements
 	 * Constructs a new array sequence with the same index/value mappings
 	 * as the given sequence.
 	 * @ensures this.entries' = s.entries
-	 * @throws NullPointerException - s = null || null in s
+	 * @throws NullPointerException  s = null || null in s
 	 */
 	@SuppressWarnings("unchecked")
 	public ArraySequence(SparseSequence<? extends V> s) {
@@ -154,8 +154,8 @@ public final class ArraySequence<V> extends AbstractSparseSequence<V> implements
 	 *
 	 * @ensures this.entries' = this.entries + index->value
 	 * @return this.entries[index]
-	 * @throws IndexOutOfBoundsException - index !in this.indeces
-	 * @throws NullPointerException - value = null
+	 * @throws IndexOutOfBoundsException  index !in this.indeces
+	 * @throws NullPointerException  value = null
 	 * @see kodkod.util.ints.SparseSequence#put(int, Object)
 	 */
 	public V put(int index, V value) {

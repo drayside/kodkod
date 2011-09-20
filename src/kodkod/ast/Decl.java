@@ -51,8 +51,8 @@ public final class Decl extends Decls {
      * expression, with the specified order.
      * 
      * @ensures this.variable' = variable && this.expression' = expression && this.multiplicity' = mult
-     * @throws NullPointerException - variable = null || expression = null || mult = null
-     * @throws IllegalArgumentException - variable.arity != expression.arity 
+     * @throws NullPointerException  variable = null || expression = null || mult = null
+     * @throws IllegalArgumentException  variable.arity != expression.arity 
      */
     Decl(Variable variable, Multiplicity mult, Expression expression) {
    		if (mult==Multiplicity.NO)

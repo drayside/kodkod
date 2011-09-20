@@ -74,7 +74,7 @@ public interface IntVector extends IntCollection {
      * the elements in the descending order.
      * @return an iterator over the elements in this vector in proper sequence, 
      * starting at <tt>fromIndex<\tt>, inclusive, and ending at <tt>toIndex<\tt>.
-     * @throws IndexOutOfBoundsException - fromIndex !in [0..this.length) || toIndex !in [-1..this.length]
+     * @throws IndexOutOfBoundsException  fromIndex !in [0..this.length) || toIndex !in [-1..this.length]
      */
     public IntIterator iterator(int fromIndex, int toIndex);
     
@@ -184,7 +184,7 @@ public interface IntVector extends IntCollection {
 	 * and returns true if this vector has changed as a result of the call.
 	 * @ensures removes the first occurrence of the given integer from this vector
 	 * @return this.elements != this.elements'
-	 * @throws UnsupportedOperationException - this is an unmodifiable collection
+	 * @throws UnsupportedOperationException  this is an unmodifiable collection
 	 */
 	public abstract boolean remove(int i);
 	
@@ -211,8 +211,8 @@ public interface IntVector extends IntCollection {
 	 * @ensures removes all of this vector's elements that are also contained in the specified 
 	 * collection
 	 * @return this.elements != this.elements'
-	 * @throws NullPointerException - c = null
-	 * @throws UnsupportedOperationException - this is an unmodifiable collection
+	 * @throws NullPointerException  c = null
+	 * @throws UnsupportedOperationException  this is an unmodifiable collection
 	 */
 	public abstract boolean removeAll(IntCollection c);
 	
@@ -223,8 +223,8 @@ public interface IntVector extends IntCollection {
 	 * @ensures retains only the elements in this vector that are contained in the specified 
 	 * collection
 	 * @return this.elements != this.elements'
-	 * @throws NullPointerException - c = null
-	 * @throws UnsupportedOperationException - this is an unmodifiable collection
+	 * @throws NullPointerException  c = null
+	 * @throws UnsupportedOperationException  this is an unmodifiable collection
 	 */
 	public abstract boolean retainAll(IntCollection c);
 	
@@ -265,7 +265,7 @@ public interface IntVector extends IntCollection {
      * calling {@linkplain #toArray()}.
      * @ensures array.length>=this.length => all i: [0..this.length) | array'[i] = this.elements[i]
      * @return array.length>=this.length => array' else this.toArray()
-     * @throws NullPointerException - array = null
+     * @throws NullPointerException  array = null
      */
     public int[] toArray(int[] array);
 }

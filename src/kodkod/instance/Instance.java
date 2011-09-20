@@ -61,7 +61,7 @@ public final class Instance implements Cloneable {
 	 * Constructs an empty instance over the given universe
 	 * 
 	 * @ensures this.universe' = universe && no this.tuples' 
-	 * @throws NullPointerException - universe = null
+	 * @throws NullPointerException  universe = null
 	 */
 	public Instance(final Universe universe) {
 		if (universe==null) throw new NullPointerException("universe=null");
@@ -120,10 +120,10 @@ public final class Instance implements Cloneable {
 	/**
 	 * Maps the given relation to the given tuple set.  
 	 * @ensures this.tuples' = this.tuples ++ relation->s
-	 * @throws NullPointerException - relation = null || s = null
-	 * @throws IllegalArgumentException - relation.arity != s.arity
-	 * @throws IllegalArgumentException - s.universe != this.universe
-	 * @throws UnsupportedOperationException - this is an unmodifiable instance
+	 * @throws NullPointerException  relation = null || s = null
+	 * @throws IllegalArgumentException  relation.arity != s.arity
+	 * @throws IllegalArgumentException  s.universe != this.universe
+	 * @throws UnsupportedOperationException  this is an unmodifiable instance
 	 */
 	public void add(final Relation relation, TupleSet s) {
 		if (!s.universe().equals(universe))
@@ -136,10 +136,10 @@ public final class Instance implements Cloneable {
 	/**
 	 * Maps the given integer to the given tuple set.  
 	 * @ensures this.tuples' = this.tuples ++ i->s
-	 * @throws NullPointerException - s = null
-	 * @throws IllegalArgumentException - s.arity != 1 || s.size() != 1
-	 * @throws IllegalArgumentException - s.universe != this.universe
-	 * @throws UnsupportedOperationException - this is an unmodifiable instance
+	 * @throws NullPointerException  s = null
+	 * @throws IllegalArgumentException  s.arity != 1 || s.size() != 1
+	 * @throws IllegalArgumentException  s.universe != this.universe
+	 * @throws UnsupportedOperationException  this is an unmodifiable instance
 	 */
 	public void add(int i, TupleSet s) {
 		if (!s.universe().equals(universe))

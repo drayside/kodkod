@@ -69,7 +69,7 @@ public final class Variable extends LeafExpression {
 	/**
 	 * Returns a new variable with the specified name and arity.
 	 * @ensures this.name' = name && this.arity' = arity
-	 * @throws IllegalArgumentException - arity < 1
+	 * @throws IllegalArgumentException  arity < 1
 	 */
 	public static Variable nary(String name, int arity) {
 		return new Variable(name, arity);
@@ -79,8 +79,8 @@ public final class Variable extends LeafExpression {
 	 * Returns the declaration that constrains this variable to 
 	 * be bound to at most one element of the given expression:  'this: lone expr'.
 	 * @return {d: Decl | d.variable = this && d.multiplicity = LONE && d.expression = expr }
-	 * @throws NullPointerException - expr = null
-	 * @throws IllegalArgumentException - this.arity != expr.arity || expr.arity != 1
+	 * @throws NullPointerException  expr = null
+	 * @throws IllegalArgumentException  this.arity != expr.arity || expr.arity != 1
 	 */
 	public Decl loneOf(Expression expr) {
 		return new Decl(this, Multiplicity.LONE, expr);
@@ -90,8 +90,8 @@ public final class Variable extends LeafExpression {
 	 * Returns the declaration that constrains this variable to 
 	 * be bound to exactly one element of the given expression:  'this: one expr'.
 	 * @return {d: Decl | d.variable = this && d.multiplicity = ONE && d.expression = expr }
-	 * @throws NullPointerException - expr = null
-	 * @throws IllegalArgumentException - this.arity != expr.arity || expr.arity != 1
+	 * @throws NullPointerException  expr = null
+	 * @throws IllegalArgumentException  this.arity != expr.arity || expr.arity != 1
 	 */
 	public Decl oneOf(Expression expr) {
 		return new Decl(this, Multiplicity.ONE, expr);
@@ -101,8 +101,8 @@ public final class Variable extends LeafExpression {
 	 * Returns the declaration that constrains this variable to 
 	 * be bound to at least one element of the given expression:  'this: some expr'.
 	 * @return {d: Decl | d.variable = this && d.multiplicity = SOME && d.expression = expr }
-	 * @throws NullPointerException - expr = null
-	 * @throws IllegalArgumentException - this.arity != expr.arity || expr.arity != 1
+	 * @throws NullPointerException  expr = null
+	 * @throws IllegalArgumentException  this.arity != expr.arity || expr.arity != 1
 	 */
 	public Decl someOf(Expression expr) {
 		return new Decl(this, Multiplicity.SOME, expr);
@@ -112,8 +112,8 @@ public final class Variable extends LeafExpression {
 	 * Returns the declaration that constrains this variable to 
 	 * be bound to a subset of the elements in the given expression:  'this: set expr'.
 	 * @return {d: Decl | d.variable = this && d.multiplicity = SET && d.expression = expr }
-	 * @throws NullPointerException - expr = null
-	 * @throws IllegalArgumentException - this.arity != expr.arity 
+	 * @throws NullPointerException  expr = null
+	 * @throws IllegalArgumentException  this.arity != expr.arity 
 	 */
 	public Decl setOf(Expression expr) {
 		return new Decl(this, Multiplicity.SET, expr);
@@ -123,10 +123,10 @@ public final class Variable extends LeafExpression {
 	 * Returns the declaration that constrains this variable to 
 	 * be bound to the specified number of the elements in the given expression:  'this: mult expr'.
 	 * @return {d: Decl | d.variable = this && d.multiplicity = mult && d.expression = expr }
-	 * @throws NullPointerException - expression = null || mult = null
-	 * @throws IllegalArgumentException - mult = NO
-	 * @throws IllegalArgumentException - mult in ONE + LONE + SOME && expr.arity != 1
-	 * @throws IllegalArgumentException - this.arity != expr.arity
+	 * @throws NullPointerException  expression = null || mult = null
+	 * @throws IllegalArgumentException  mult = NO
+	 * @throws IllegalArgumentException  mult in ONE + LONE + SOME && expr.arity != 1
+	 * @throws IllegalArgumentException  this.arity != expr.arity
 	 */
 	public Decl declare(Multiplicity mult, Expression expr) {
 		return new Decl(this, mult, expr);

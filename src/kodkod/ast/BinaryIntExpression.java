@@ -43,7 +43,7 @@ public final class BinaryIntExpression extends IntExpression  {
 	 * Constructs a new binary int formula: left op right
 	 * 
 	 * @ensures this.left' = left && this.right' = right && this.op' = op
-	 * @throws NullPointerException - left = null || right = null || op = null
+	 * @throws NullPointerException  left = null || right = null || op = null
 	 */
 	public BinaryIntExpression(final IntExpression left, final IntOperator op, final IntExpression right) {
 		if (!op.binary()) throw new IllegalArgumentException("Not a binary operator: " + op);

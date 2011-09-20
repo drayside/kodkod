@@ -125,7 +125,7 @@ final class BinaryGate extends MultiGate {
 	 * Returns the ith input to this gate.
 	 * @return this.inputs[i]
 	 * @requires 0 <= i < size
-	 * @throws IndexOutOfBoundsException - i < 0 || i >= #this.inputs
+	 * @throws IndexOutOfBoundsException  i < 0 || i >= #this.inputs
 	 */
 	@Override
 	public BooleanFormula input(int i) {

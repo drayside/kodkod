@@ -47,7 +47,7 @@ public class Decls extends Node implements Iterable<Decl> {
 	 * from inside the Decl constructor; otherwise it will
 	 * throw a ClassCastException.
 	 * @ensures this.declarations' = 0->this
-	 * @throws ClassCastException - this !in Decl
+	 * @throws ClassCastException  this !in Decl
 	 */
     Decls() {
     	this.decls = new Decl[]{ (Decl) this };
@@ -59,7 +59,7 @@ public class Decls extends Node implements Iterable<Decl> {
 	 * @ensures this.size' = head.size + tail.size &&
 	 *          (all i: [0..head.size) | this.decls[i] = head.decls[i]) &&
 	 *          (all i: [head.size..this.size') | this.decls[i] = tail.decls[i])
-	 * @throws NullPointerException - head = null || tail is null 
+	 * @throws NullPointerException  head = null || tail is null 
 	 */
 	private Decls(Decls head, Decls tail) {
 		this.decls = new Decl[head.size()+tail.size()];
@@ -92,7 +92,7 @@ public class Decls extends Node implements Iterable<Decl> {
      * @return {ds: Decls | ds.size = this.size + other.size && 
      *                      ds.decls = this.decls + 
      *                      {i: [this.size..this.size+other.size), d: Decl | d = other.decls[i-this.size] }
-     * @throws NullPointerException - decl = null
+     * @throws NullPointerException  decl = null
      */
     public final Decls and(Decls other) {
     	return new Decls(this, other);

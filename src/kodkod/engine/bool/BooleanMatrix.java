@@ -243,7 +243,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	/**
      * Returns the element at the specified index.
      * @return this.elements[index]
-     * @throws IndexOutOfBoundsException - index < 0 || index >= this.dimensions.capacity
+     * @throws IndexOutOfBoundsException  index < 0 || index >= this.dimensions.capacity
      */
 	public final BooleanValue get(final int index) {
 		if (!dims.validate(index)) throw new IndexOutOfBoundsException(index + " is not a valid index.");
@@ -273,14 +273,14 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	}
 	
 	/**
-	 * @throws IllegalArgumentException - f != this.factory
+	 * @throws IllegalArgumentException  f != this.factory
 	 */
 	private static final void checkFactory(BooleanFactory f0, BooleanFactory f1) {
 		if (f0 != f1) throw new IllegalArgumentException("Incompatible factories: " + f0 + " and " + f1);
 	}
 	
 	/**
-	 * @throws IllegalArgumentException - !d0.equals(d1)
+	 * @throws IllegalArgumentException  !d0.equals(d1)
 	 */
 	private static final void checkDimensions(Dimensions d0, Dimensions d1) {
 		if (!d0.equals(d1)) throw new IllegalArgumentException("Incompatible dimensions: " + d0 + " and " + d1);
@@ -294,8 +294,8 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	 * @return { m: BooleanMatrix | m.dimensions = this.dimensions && m.factory = this.factory &&
 	 *                              all i: [0..m.dimensions.capacity) | 
 	 *                               m.elements[i] = this.elements[i] AND other.elements[i] }
-	 * @throws NullPointerException - other = null
-	 * @throws IllegalArgumentException - !other.dimensions.equals(this.dimensions) || this.factory != other.factory
+	 * @throws NullPointerException  other = null
+	 * @throws IllegalArgumentException  !other.dimensions.equals(this.dimensions) || this.factory != other.factory
 	 */
 	public final BooleanMatrix and(BooleanMatrix  other) {
 		checkFactory(this.factory, other.factory); checkDimensions(this.dims, other.dims);
@@ -317,8 +317,8 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	 * @return others.length = 0 => m else 
 	 * 		   { m: BooleanMatrix | m.dimensions = this.dimensions && m.factory = this.factory &&
 	 *            all i: [0..m.dimensions.capacity) | m.elements[i] = AND(this.elements[i], others[int].elements[i]) }
-	 * @throws NullPointerException - others = null
-	 * @throws IllegalArgumentException - some m: others[int] | !m.dimensions.equals(this.dimensions) || m.factory != this.factory
+	 * @throws NullPointerException  others = null
+	 * @throws IllegalArgumentException  some m: others[int] | !m.dimensions.equals(this.dimensions) || m.factory != this.factory
 	 */
 	public final BooleanMatrix and(final BooleanMatrix...others) {
 		final BooleanMatrix ret = new BooleanMatrix(dims, this, others);
@@ -342,8 +342,8 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	 * @return { m: BooleanMatrix | m.dimensions = this.dimensions && m.factory = this.factory &&
 	 *                              all i: [0..m.dimensions.capacity) | 
 	 *                               m.elements[i] = this.elements[i] OR other.elements[i] }
-	 * @throws NullPointerException - other = null 
-	 * @throws IllegalArgumentException - !other.dimensions.equals(this.dimensions) || this.factory != other.factory
+	 * @throws NullPointerException  other = null 
+	 * @throws IllegalArgumentException  !other.dimensions.equals(this.dimensions) || this.factory != other.factory
 	 */
 	public final BooleanMatrix or(BooleanMatrix  other) {
 		checkFactory(this.factory, other.factory); checkDimensions(this.dims, other.dims);
@@ -372,8 +372,8 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	 * @return others.length = 0 => m else 
 	 * 		   { m: BooleanMatrix | m.dimensions = this.dimensions && m.factory = this.factory &&
 	 *            all i: [0..m.dimensions.capacity) | m.elements[i] = OR(this.elements[i], others[int].elements[i]) }
-	 * @throws NullPointerException - others = null
-	 * @throws IllegalArgumentException - some m: others[int] | !m.dimensions.equals(this.dimensions) || m.factory != this.factory
+	 * @throws NullPointerException  others = null
+	 * @throws IllegalArgumentException  some m: others[int] | !m.dimensions.equals(this.dimensions) || m.factory != this.factory
 	 */
 	public final BooleanMatrix or(final BooleanMatrix... others) {
 		final BooleanMatrix ret = new BooleanMatrix(dims, this, others);
@@ -407,8 +407,8 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
      * multiplication.
      * 
      * @return { m: BooleanMatrix | m = this x other }
-     * @throws NullPointerException - other = null
-     * @throws IllegalArgumentException - this.factory != other.factory
+     * @throws NullPointerException  other = null
+     * @throws IllegalArgumentException  this.factory != other.factory
      */
 	public final BooleanMatrix cross(final BooleanMatrix other) {
 		checkFactory(this.factory, other.factory);
@@ -482,8 +482,8 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
      * @requires this.factory = others[int].factory
      * @return others.length=0 => { m: BooleanMatrix | m.dimensions = this.dimensions && no m.elements } else
      *           { m: BooleanMatrix | m = this x others[0] x ... x others[others.length-1] }
-     * @throws NullPointerException - others = null
-     * @throws IllegalArgumentException - this.factory != others[int].factory
+     * @throws NullPointerException  others = null
+     * @throws IllegalArgumentException  this.factory != others[int].factory
      */
 	public final BooleanMatrix cross(final BooleanMatrix...others) {
 		Dimensions retDims = dims;
@@ -534,9 +534,9 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
      * multiplication and disjunction instead of addition.
      * 
      * @return { m: BooleanMatrix | m = this*other }
-     * @throws NullPointerException - other = null
-     * @throws IllegalArgumentException - this.factory != other.factory
-     * @throws IllegalArgumentException - dimensions incompatible for multiplication
+     * @throws NullPointerException  other = null
+     * @throws IllegalArgumentException  this.factory != other.factory
+     * @throws IllegalArgumentException  dimensions incompatible for multiplication
      */
 	public final BooleanMatrix dot(final BooleanMatrix other) {  
 		checkFactory(this.factory, other.factory);
@@ -587,8 +587,8 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	 * implies the value of the corresponding entry in the given matrix.
 	 * @return { f: BooleanValue | f <=> (this.elements[0]=>other.elements[0]) AND ... 
 	 *            AND (this.elements[this.dimensions.capacity-1]=>other.elements[this.dimensions.capacity-1]))
-	 * @throws NullPointerException -  other = null 
-	 * @throws IllegalArgumentException - !other.dimensions.equals(this.dimensions) || this.factory != other.factory           
+	 * @throws NullPointerException   other = null 
+	 * @throws IllegalArgumentException  !other.dimensions.equals(this.dimensions) || this.factory != other.factory           
 	 */
 	public final BooleanValue subset(BooleanMatrix other) {
 		checkFactory(this.factory, other.factory); checkDimensions(this.dims, other.dims);
@@ -608,8 +608,8 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	 * but this method performs the operation more efficiently.
 	 * @return { f: BooleanValue | f <=> (this.elements[0]<=>other.elements[0]) AND ... 
 	 *            AND (this.elements[this.dimensions.capacity-1]<=>other.elements[this.dimensions.capacity-1]))
-	 * @throws NullPointerException -  other = null 
-	 * @throws IllegalArgumentException - !other.dimensions.equals(this.dimensions) || this.factory != other.factory           
+	 * @throws NullPointerException   other = null 
+	 * @throws IllegalArgumentException  !other.dimensions.equals(this.dimensions) || this.factory != other.factory           
 	 */
 	public final BooleanValue eq(BooleanMatrix other) {
 		return factory.and(this.subset(other), other.subset(this));
@@ -624,8 +624,8 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	 * @return { m: BooleanMatrix | m.dimensions = this.dimensions && m.factory = this.factory &&
 	 *                              all i: [0..m.dimensions.capacity) | 
 	 *                               m.elements[i] = this.elements[i] AND !other.elements[i] }
-	 * @throws NullPointerException - other = null
-	 * @throws IllegalArgumentException - !other.dimensions.equals(this.dimensions) || this.factory != other.factory
+	 * @throws NullPointerException  other = null
+	 * @throws IllegalArgumentException  !other.dimensions.equals(this.dimensions) || this.factory != other.factory
 	 */
 	public final BooleanMatrix difference(BooleanMatrix other) {
 		checkFactory(this.factory, other.factory); checkDimensions(this.dims, other.dims);
@@ -640,7 +640,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
      * Returns the transitive closure of this matrix.
      * 
      * @return { m: BooleanMatrix | m = ^this }
-     * @throws UnsupportedOperationException - #this.diensions != 2 || !this.dimensions.square()
+     * @throws UnsupportedOperationException  #this.diensions != 2 || !this.dimensions.square()
      */
 	public final BooleanMatrix closure() {
 		if (dims.numDimensions() != 2 || !dims.isSquare()) {
@@ -672,7 +672,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
      * Returns the transpose of this matrix.
      * 
      * @return { m: BooleanMatrix | m = ~this }
-     * @throws UnsupportedOperationException - #this.dimensions != 2
+     * @throws UnsupportedOperationException  #this.dimensions != 2
      */
 	public final BooleanMatrix transpose() {
 		final BooleanMatrix ret = new BooleanMatrix(dims.transpose(), factory, cells, cells);
@@ -690,8 +690,8 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	 * @return { m: BooleanMatrix | m.dimensions = this.dimensions &&
      *                              all i: [0..m.dimensions.capacity) | 
      *                                 m.elements[i] = condition => this.elements[i], other.elements[i] }
-     * @throws NullPointerException - other = null || condition = null
-     * @throws IllegalArgumentException - !other.dimensions.equals(this.dimensions) || this.factory != other.factory
+     * @throws NullPointerException  other = null || condition = null
+     * @throws IllegalArgumentException  !other.dimensions.equals(this.dimensions) || this.factory != other.factory
 	 */
 	public final BooleanMatrix choice(BooleanValue condition, BooleanMatrix other) {
 		checkFactory(this.factory, other.factory); checkDimensions(this.dims, other.dims);
@@ -720,8 +720,8 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	 * @requires column[int] in this.dimensions.dimensions[int]
 	 * @requires this.dimensions.isSquare()
 	 * @return { m: BooleanMatrix | [[m]] = project([[this]], columns) }
-	 * @throws IllegalArgumentExceptions - columns.length < 1 || !this.dimensions.isSquare()
-	 * @throws NullPointerException - columns = null
+	 * @throws IllegalArgumentExceptions  columns.length < 1 || !this.dimensions.isSquare()
+	 * @throws NullPointerException  columns = null
 	 */
 	public final BooleanMatrix project(Int[] columns) {
 		if (!dims.isSquare())
@@ -817,8 +817,8 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	 *                               this.elements[i] && !OR(other.elements[row(i)]) }
 	 * where other.elements[row(i)] selects all elements of <code>other</code>
 	 * that are in the same row as i.  
-	 * @throws NullPointerException - other = null
-	 * @throws IllegalArgumentException - other.dimensions != this.dimensions
+	 * @throws NullPointerException  other = null
+	 * @throws IllegalArgumentException  other.dimensions != this.dimensions
 	 */
 	public final BooleanMatrix override(BooleanMatrix other) {
 		checkFactory(this.factory, other.factory); checkDimensions(this.dims, other.dims);
@@ -847,8 +847,8 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	 *                               all i: [0..m.capacity()) | m.elements[i] = 
 	 *                                other.elements[i] || this.elements[i] && !OR(other.elements[rowOf(i)]) } else
 	 *                              this.override(others[0).override(others[1..others.length))
-	 * @throws NullPointerException - others = null
-	 * @throws IllegalArgumentException - others[int].factory != this.factory or others[int].dimensions != this.dimensions
+	 * @throws NullPointerException  others = null
+	 * @throws IllegalArgumentException  others[int].factory != this.factory or others[int].dimensions != this.dimensions
 	 */
 	public final BooleanMatrix override(BooleanMatrix... others) {
 		if (others.length==0) return clone();
@@ -946,9 +946,9 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
      * 
      * @requires value in this.factory.components
      * @ensures this.elements'[index] = value
-     * @throws NullPointerException - value = null
-     * @throws IllegalArgumentException - the given is a formula, and this matrix accepts only constants
-     * @throws IndexOutOfBoundsException - the given index does not belong to the set of indices at which
+     * @throws NullPointerException  value = null
+     * @throws IllegalArgumentException  the given is a formula, and this matrix accepts only constants
+     * @throws IndexOutOfBoundsException  the given index does not belong to the set of indices at which
      * this matrix can store non-FALSE values.
      */
 	public final void set(final int index, final BooleanValue value) {

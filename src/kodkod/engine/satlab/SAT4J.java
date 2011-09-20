@@ -44,7 +44,7 @@ final class SAT4J implements SATSolver {
 	/**
 	 * Constructs a wrapper for the given instance
 	 * of ISolver.
-	 * @throws NullPointerException - solver = null
+	 * @throws NullPointerException  solver = null
 	 */
 	SAT4J(ISolver solver) {
 		if (solver==null)

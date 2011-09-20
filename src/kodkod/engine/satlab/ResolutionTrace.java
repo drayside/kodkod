@@ -89,7 +89,7 @@ public interface ResolutionTrace extends Iterable<Clause> {
 	 * of the iterator instance.</p>
 	 * @requires indices.min() >= 0 && indices.max() < this.size()
 	 * @return an iterator over the elements at the given indices in this trace, in proper sequence.
-	 * @throws IndexOutOfBoundsException - indices.min() < 0 || indices.max() >= this.size()
+	 * @throws IndexOutOfBoundsException  indices.min() < 0 || indices.max() >= this.size()
 	 */
 	public abstract Iterator<Clause> iterator(IntSet indices);
 	
@@ -105,7 +105,7 @@ public interface ResolutionTrace extends Iterable<Clause> {
 	 * @requires indices.min() >= 0 && indices.max() < this.size()
 	 * @return an iterator over the elements at the given indices in this trace, in the 
 	 * reverse order of indices.
-	 * @throws IndexOutOfBoundsException - indices.min() < 0 || indices.max() >= this.size()
+	 * @throws IndexOutOfBoundsException  indices.min() < 0 || indices.max() >= this.size()
 	 */
 	public abstract Iterator<Clause> reverseIterator(IntSet indices);
 	
@@ -132,7 +132,7 @@ public interface ResolutionTrace extends Iterable<Clause> {
 	 * by following the antecedent relation zero or more times.
 	 * @requires indices.min() >= 0 && indices.max() < this.size()
 	 * @return { i: int | this.elts[i] in this.elts[indices].*antecedents }
-	 * @throws IllegalArgumentException - indices.min() < 0 || indices.max() >= this.size()
+	 * @throws IllegalArgumentException  indices.min() < 0 || indices.max() >= this.size()
 	 */
 	public abstract IntSet reachable(IntSet indices);
 	
@@ -141,7 +141,7 @@ public interface ResolutionTrace extends Iterable<Clause> {
 	 * by following the transpose of the antecedent relation zero or more times.
 	 * @requires indices.min() >= 0 && indices.max() < this.size()
 	 * @return { i: int | this.elts[i] in this.elts[indices].*~antecedents }
-	 * @throws IllegalArgumentException - indices.min() < 0 || indices.max() >= this.size()
+	 * @throws IllegalArgumentException  indices.min() < 0 || indices.max() >= this.size()
 	 */
 	public abstract IntSet backwardReachable(IntSet indices);
 	
@@ -150,7 +150,7 @@ public interface ResolutionTrace extends Iterable<Clause> {
 	 * clauses with the given indices.
 	 * @requires indices.min() >= 0 && indices.max() < this.size()
 	 * @return { i: int | this.elts[i].*antecedents = this.elts[indices].*antecedents + this.elts[i].*antecedents & this.elts[indices].*~antecedents }
-	 * @throws IllegalArgumentException - indices.min() < 0 || indices.max() >= this.size()
+	 * @throws IllegalArgumentException  indices.min() < 0 || indices.max() >= this.size()
 	 */
 	public abstract IntSet learnable(IntSet indices);
 	
@@ -159,7 +159,7 @@ public interface ResolutionTrace extends Iterable<Clause> {
 	 * clauses with the given indices.
 	 * @requires indices.min() >= 0 && indices.max() < this.size()
 	 * @return { i: int | this.elts[i].antecedents in this.elts[indices] }
-	 * @throws IllegalArgumentException - indices.min() < 0 || indices.max() >= this.size()
+	 * @throws IllegalArgumentException  indices.min() < 0 || indices.max() >= this.size()
 	 */
 	public abstract IntSet directlyLearnable(IntSet indices);
 	
@@ -171,7 +171,7 @@ public interface ResolutionTrace extends Iterable<Clause> {
 	 * objects returned by this method are guaranteed to be immutable.
 	 * @requires 0 <= index < this.size()
 	 * @return this.elts[index]
-	 * @throws IndexOutOfBoundsException - 0 < index || index >= this.size()
+	 * @throws IndexOutOfBoundsException  0 < index || index >= this.size()
 	 */
 	public abstract Clause get(int index);
 	

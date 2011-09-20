@@ -61,14 +61,14 @@ public abstract class Stack<T> implements Iterable<T> {
 	 * @ensures this.size' = this.size - 1 && 
 	 *          all i: [1..this.size) | this.elems'[i-1] = this.elems[i]
 	 * @return this.elems[0]
-	 * @throws EmptyStackException - no this.elems
+	 * @throws EmptyStackException  no this.elems
 	 */
 	public abstract T pop();
 
 	/**
 	 * Looks at the object at the top of this stack without removing it from the stack.
 	 * @return this.elems[0]
-	 * @throws EmptyStackException - no this.elems
+	 * @throws EmptyStackException  no this.elems
 	 */
 	public abstract T peek();
 

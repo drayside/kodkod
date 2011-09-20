@@ -49,7 +49,7 @@ public final class ITEGate extends BooleanFormula {
 	 * @requires hashcode = ITE.hash(ifFormula, thenFormula, elseFormula)
 	 * @ensures this.label' = label && this.ifFormula' = ifFormula &&
 	 * this.thenFormula' = thenFormula && this.elseFormula' = elseFormula
-	 * @throws NullPointerException - owner = null
+	 * @throws NullPointerException  owner = null
 	 */
 	ITEGate(int label, int hashcode, BooleanFormula ifFormula, BooleanFormula thenFormula, BooleanFormula elseFormula) {
 		super(null);
@@ -141,7 +141,7 @@ public final class ITEGate extends BooleanFormula {
 	/**
 	 * Returns this.inputs[i].
 	 * @return this.inputs[i]
-	 * @throws IndexOutOfBoundsException - 0 < i || i > 2
+	 * @throws IndexOutOfBoundsException  0 < i || i > 2
 	 */
 	@Override
 	public BooleanFormula input(int i) {

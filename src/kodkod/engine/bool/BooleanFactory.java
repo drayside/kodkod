@@ -91,8 +91,8 @@ public abstract class BooleanFactory {
 	 *                              f.comparisonDepth = options.sharing && 
 	 *                              f.bitwidth = options.bitwidth && f.intEncoding = options.intEncoding && 
 	 *                              (all i: [1..numVars] | one f.components.label & i }}
-	 * @throws IllegalArgumentException - numVars < 0 || numVars = Integer.MAX_VALUE
-	 * @throws NullPointerException - options = null
+	 * @throws IllegalArgumentException  numVars < 0 || numVars = Integer.MAX_VALUE
+	 * @throws NullPointerException  options = null
 	 */
 	public static BooleanFactory factory(int numVars, Options options) {
 		switch(options.intEncoding()) {
@@ -109,7 +109,7 @@ public abstract class BooleanFactory {
 	 * @return {f: BooleanFactory | f.components = BooleanConstant &&
 	 *                              f.comparisonDepth = options.sharing && 
 	 *                              f.bitwidth = options.bitwidth && f.intEncoding = options.intEncoding }
-	 * @throws NullPointerException - options = null
+	 * @throws NullPointerException  options = null
 	 */
 	public static BooleanFactory constantFactory(Options options) {
 		return factory(0, options);
@@ -128,7 +128,7 @@ public abstract class BooleanFactory {
 	 * subcomponents being shared.  However, it will also slow down
 	 * gate construction.
 	 * @ensures this.comparisonDepth' = newDepth
-	 * @throws IllegalArgumentException - newDepth < 1
+	 * @throws IllegalArgumentException  newDepth < 1
 	 */
 	public final void setComparisonDepth(int newDepth) {
 		if (newDepth < 1)
@@ -151,7 +151,7 @@ public abstract class BooleanFactory {
 	/**
 	 * Returns true if v is in this.components.
 	 * @return v in this.components
-	 * @throws NullPointerException - v = null
+	 * @throws NullPointerException  v = null
 	 */
 	public final boolean contains(BooleanValue v) {
 		return circuits.canAssemble(v);
@@ -178,7 +178,7 @@ public abstract class BooleanFactory {
 	 * Returns the negation of the given boolean value.
 	 * @return {n: BooleanValue | n.label = -v.label && [[n]] = ![[v]] }
 	 * @ensures (components.v).components' = (components.v).components + n 
-	 * @throws NullPointerException - v = null                             
+	 * @throws NullPointerException  v = null                             
 	 */
 	public final BooleanValue not(BooleanValue v) {
 		return v.negation();
@@ -190,7 +190,7 @@ public abstract class BooleanFactory {
 	 * @requires v0 + v1 in this.components
 	 * @return {v: BooleanValue | [[v]] = [[v0]] AND [[v1]] }
 	 * @ensures this.components' = this.components + v 
-	 * @throws NullPointerException - any of the arguments are null
+	 * @throws NullPointerException  any of the arguments are null
 	 */
 	public final BooleanValue and(BooleanValue v0, BooleanValue v1) {
 		return circuits.assemble(AND, v0, v1);
@@ -202,8 +202,8 @@ public abstract class BooleanFactory {
 	 * @requires v0 + v1 in this.components
 	 * @return {v: BooleanValue | [[v]] = [[v0]] OR [[v1]] }
 	 * @ensures this.components' = this.components + v 
-	 * @throws NullPointerException - any of the arguments are null
-	 * @throws IllegalArgumentException - v0 + v1 !in this.components
+	 * @throws NullPointerException  any of the arguments are null
+	 * @throws IllegalArgumentException  v0 + v1 !in this.components
 	 */
 	public final BooleanValue or(BooleanValue v0, BooleanValue v1) {
 		return circuits.assemble(OR, v0, v1);
@@ -215,7 +215,7 @@ public abstract class BooleanFactory {
 	 * @requires v0 + v1 in this.components
 	 * @return { v: BooleanValue | [[v]] = [[v0]] xor [[v1]] }
 	 * @ensures this.components' = this.components + v
-	 * @throws NullPointerException - any of the arguments are null
+	 * @throws NullPointerException  any of the arguments are null
 	 */
 	public final BooleanValue xor(BooleanValue v0, BooleanValue v1) {
 		return circuits.assemble(v0, v1.negation(), v1);
@@ -227,7 +227,7 @@ public abstract class BooleanFactory {
 	 * @requires v0 + v1 in this.components
 	 * @return { v: BooleanValue | [[v]] = [[v0]] => [[v1]] }
 	 * @ensures this.components' = this.components + v
-	 * @throws NullPointerException - any of the arguments are null
+	 * @throws NullPointerException  any of the arguments are null
 	 */
 	public final BooleanValue implies(BooleanValue v0, BooleanValue v1) {
 		return circuits.assemble(OR, v0.negation(), v1);
@@ -239,7 +239,7 @@ public abstract class BooleanFactory {
 	 * @requires v0 + v1 in this.components
 	 * @return { v: BooleanValue | [[v]] = [[v0]] iff [[v1]] }
 	 * @ensures this.components' = this.components + v
-	 * @throws NullPointerException - any of the arguments are null
+	 * @throws NullPointerException  any of the arguments are null
 	 */
 	public final BooleanValue iff(BooleanValue v0, BooleanValue v1) {
 		return circuits.assemble(v0, v1, v1.negation());
@@ -251,7 +251,7 @@ public abstract class BooleanFactory {
 	 * @requires i + t + e in this.components 
 	 * @return { v: BooleanValue | [[v]] = [[i]] ? [[t]] : [[e]] }
 	 * @ensures this.components' = this.components + v
-	 * @throws NullPointerException - any of the arguments are null
+	 * @throws NullPointerException  any of the arguments are null
 	 */
 	public final BooleanValue ite(BooleanValue i, BooleanValue t, BooleanValue e) {
 		return circuits.assemble(i, t, e);
@@ -263,7 +263,7 @@ public abstract class BooleanFactory {
 	 * @requires v0 + v1 + cin in this.components 
 	 * @return { v: BooleanValue | [[v]] = [[cin]] xor [[v0]] xor [[v1]] }
 	 * @ensures this.components' = this.components + v
-	 * @throws NullPointerException - any of the arguments are null
+	 * @throws NullPointerException  any of the arguments are null
 	 */
 	public final BooleanValue sum(BooleanValue v0, BooleanValue v1, BooleanValue cin) {
 		return xor(cin, xor(v0, v1));
@@ -275,7 +275,7 @@ public abstract class BooleanFactory {
 	 * @requires v0 + v1 + cin in this.components 
 	 * @return { v: BooleanValue | [[v]] = ([[v0]] and [[v1]]) or ([[cin]] and ([[v0]] xor [[v1]]))  }
 	 * @ensures this.components' = this.components + v
-	 * @throws NullPointerException - any of the arguments are null
+	 * @throws NullPointerException  any of the arguments are null
 	 */
 	public final BooleanValue carry(BooleanValue v0, BooleanValue v1, BooleanValue cin) {
 		return or(and(v0, v1), and(cin, xor(v0, v1)));
@@ -300,7 +300,7 @@ public abstract class BooleanFactory {
 	/**
 	 * Returns an Int that represents the given number using this.intEncoding.
 	 * @return { i: Int | [[i]] = number && i.encoding && this.intEncoding && i.factory = this}
-	 * @throws IllegalArgumentException - the number cannot be represented using 
+	 * @throws IllegalArgumentException  the number cannot be represented using 
 	 * the specified encoding
 	 */
 	public abstract Int integer(int number);
@@ -356,7 +356,7 @@ public abstract class BooleanFactory {
 	 * as the factory for its non-FALSE components.  The returned matrix 
 	 * can store any value from this.components at all
 	 * indices between 0, inclusive, and d.capacity(), exclusive.  
-	 * @throws NullPointerException - d = null
+	 * @throws NullPointerException  d = null
 	 * @return { m: BooleanMatrix | m.factory = this && m.dimensions = d && m.elements = [0..d.capacity) -> one FALSE }
 	 */
 	public final BooleanMatrix matrix(Dimensions d) {
@@ -365,7 +365,7 @@ public abstract class BooleanFactory {
 	}
 	
 	/**
-	 * @throws IllegalArgumentException - indices !in [0..d.capacity())
+	 * @throws IllegalArgumentException  indices !in [0..d.capacity())
 	 */
 	private static void validate(IntSet indices, Dimensions d) {
 		if (!indices.isEmpty()) {
@@ -388,9 +388,9 @@ public abstract class BooleanFactory {
 	 * @requires allIndices.containsAll(trueIndices)
 	 * @return { m: BooleanMatrix |  m.factory = this && m.dimensions = dims && 
 	 *           m.elements = [0..d.capacity()-1] ->one FALSE ++ indices->TRUE }
-	 * @throws IllegalArgumentException - allIndices !in [0..d.capacity())
-	 * @throws IllegalArgumentException - one of the input sets is not cloneable
-	 * @throws NullPointerException - d = null || allIndices = null || trueIndices = null	 	 
+	 * @throws IllegalArgumentException  allIndices !in [0..d.capacity())
+	 * @throws IllegalArgumentException  one of the input sets is not cloneable
+	 * @throws NullPointerException  d = null || allIndices = null || trueIndices = null	 	 
 	 */
 	public final BooleanMatrix matrix(Dimensions d, IntSet allIndices, IntSet trueIndices) {
 		assert allIndices.size() >= trueIndices.size(); // sanity check

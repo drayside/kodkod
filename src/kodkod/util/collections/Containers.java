@@ -43,7 +43,7 @@ public final class Containers {
 	 * The iterator is backed by the given array.  The contents
 	 * of the array are not modified by the iterator.  The effect
 	 * of this method is the same as calling Iterators.iterator(0, items.length, items).
-	 * @throws NullPointerException - items = null
+	 * @throws NullPointerException  items = null
 	 */
 	public static final <T, E extends T> Iterator<T> iterate(final E... items) {
 		return new AscendingArrayIterator<T>(0, items.length, items);
@@ -57,8 +57,8 @@ public final class Containers {
 	 * indeces start, inclusive, and end, exclusive.  If start < end,
 	 * the elements are returned in the ascending order; otherwise,
 	 * they are returned in the descending order.
-	 * @throws NullPointerException - items = null
-	 * @throws IllegalArgumentException - start < end && (start < 0 || end > items.length) ||
+	 * @throws NullPointerException  items = null
+	 * @throws IllegalArgumentException  start < end && (start < 0 || end > items.length) ||
 	 *                                    start > end && (start >= items.length || end < -1)
 	 */
 	public static final <T, E extends T> Iterator<T> iterate(int start, int end, final E... items) {
@@ -345,7 +345,7 @@ public final class Containers {
 		/**
 		 * Constructs a new iterator over the given array of items.
 		 * @requires items != null && start < end 
-		 * @throws IllegalArgumentException - start < 0 || end > items.length
+		 * @throws IllegalArgumentException  start < 0 || end > items.length
 		 */
 		<E extends T> AscendingArrayIterator(int start, int end, E[] items) {
 			super(start, end, items);
@@ -371,7 +371,7 @@ public final class Containers {
 		/**
 		 * Constructs a new iterator over the given array of items.
 		 * @requires items != null && start > end 
-		 * @throws IllegalArgumentException - start >= items.length || end < -1
+		 * @throws IllegalArgumentException  start >= items.length || end < -1
 		 */
 		<E extends T> DescendingArrayIterator(int start, int end, E[] items) {
 			super(start, end, items);

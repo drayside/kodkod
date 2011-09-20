@@ -88,7 +88,7 @@ public final class Translation {
 	 * or skolem constants.
 	 * @return an interpretation of the cnf solution as
 	 * a mapping from (this.variableUsage().keySet() & Relation) to sets of Tuples.
-	 * @throws IllegalStateException - this.solver.solve() has not been called or the 
+	 * @throws IllegalStateException  this.solver.solve() has not been called or the 
 	 * outcome of the last call was not <code>true</code>.
 	 */
 	public Instance interpret() {

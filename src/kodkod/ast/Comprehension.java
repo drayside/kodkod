@@ -48,7 +48,7 @@ public final class Comprehension extends Expression  {
      * and formula
      * 
      * @ensures this.decls' = decls && this.formula' = formula
-     * @throws NullPointerException - decls = null || formula = null
+     * @throws NullPointerException  decls = null || formula = null
      */
     Comprehension(Decls declarations, Formula formula) {
         if (formula == null) throw new NullPointerException("null formula");

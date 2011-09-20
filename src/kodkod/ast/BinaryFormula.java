@@ -44,7 +44,7 @@ public final class BinaryFormula extends Formula {
      * Constructs a new binary formula:  left op right
      * 
      * @ensures this.left' = left && this.right' = right &&  this.op' = op
-     * @throws NullPointerException - left = null || right = null || op = null
+     * @throws NullPointerException  left = null || right = null || op = null
      */
    BinaryFormula(Formula left, FormulaOperator op, Formula right) {
         this.left = left;

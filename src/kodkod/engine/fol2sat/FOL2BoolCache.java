@@ -162,7 +162,7 @@ final class FOL2BoolCache {
 		 * this.translation.  Otherwise returns null.  
 		 * @requires all v: varBinding.int | some e.lookup(v)
 		 * @return all v: varBinding.int | e.lookup(v).get(varBinding[v])=TRUE => this.translation, null
-		 * @throws NullPointerException - e = null
+		 * @throws NullPointerException  e = null
 		 */
 		abstract Object get(Environment<BooleanMatrix> e);
 		

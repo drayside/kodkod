@@ -39,7 +39,7 @@ public interface SATProver extends SATSolver {
 	 * Returns a resolution-based proof of  unsatisfiability of this.clauses.
 	 * @requires {@link SATSolver#solve()} has been called, and it returned false
 	 * @return { t: ResolutionTrace | t.prover = this }
-	 * @throws IllegalStateException - {@link SATSolver#solve()} has not been called, 
+	 * @throws IllegalStateException  {@link SATSolver#solve()} has not been called, 
 	 * or the last call to {@link SATSolver#solve()} returned true
 	 */
 	public ResolutionTrace proof();
@@ -68,7 +68,7 @@ public interface SATProver extends SATSolver {
 	 * </pre>
 	 * @requires {@link SATSolver#solve()} has been called, and it returned false
 	 * @ensures modifies this.clauses and this.resolvents according to the algorithm described above 
-	 * @throws IllegalStateException - {@link SATSolver#solve()} has not been called, 
+	 * @throws IllegalStateException  {@link SATSolver#solve()} has not been called, 
 	 * or the last call to {@link SATSolver#solve()} returned true
 	 * @see ReductionStrategy
 	 */

@@ -66,7 +66,7 @@ public abstract class AbstractIntCollection implements IntCollection {
 	 * if this.iterator() does not support removal.
 	 * @ensures iterates through the elements of this and removes i if it finds it
 	 * @return true if this collection has changed as a result of the call 
-	 * @throws UnsupportedOperationException - this.iterator() does not support removal
+	 * @throws UnsupportedOperationException  this.iterator() does not support removal
 	 */
 	public boolean remove(int i) {
 		for(IntIterator iter = iterator(); iter.hasNext(); ) {

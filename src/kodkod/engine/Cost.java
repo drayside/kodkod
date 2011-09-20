@@ -40,7 +40,7 @@ public interface Cost {
 	 * Returns the cost of one edge in the relational value of the given
 	 * {@link Relation Relation instance}.
 	 * @return this.cost[relation]
-	 * @throws IllegalArgumentException - relation !in this.relations
+	 * @throws IllegalArgumentException  relation !in this.relations
 	 */
 	public abstract int edgeCost(Relation relation);
 }

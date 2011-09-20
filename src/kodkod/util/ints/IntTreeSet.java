@@ -52,7 +52,7 @@ public final class IntTreeSet extends AbstractIntSet implements Cloneable {
 	 * Constructs a new int set containing the elements
 	 * in the specified set.
 	 * @ensures this.ints' = s.ints
-	 * @throws NullPointerException - s = null
+	 * @throws NullPointerException  s = null
 	 */
 	public IntTreeSet(IntSet s) {
 		this();
@@ -111,7 +111,7 @@ public final class IntTreeSet extends AbstractIntSet implements Cloneable {
 	 * Returns the smallest element in this set.
 	 * Throws a NoSuchElementException if this set is empty.
 	 * @return min(this.ints)
-	 * @throws java.util.NoSuchElementException - no this.ints
+	 * @throws java.util.NoSuchElementException  no this.ints
 	 * @see kodkod.util.ints.IntSet#min()
 	 */
 	@Override
@@ -124,7 +124,7 @@ public final class IntTreeSet extends AbstractIntSet implements Cloneable {
 	 * Returns the largest element in this set.
 	 * Throws a NoSuchElementException if this set is empty.
 	 * @return max(this.ints)
-	 * @throws java.util.NoSuchElementException - no this.ints
+	 * @throws java.util.NoSuchElementException  no this.ints
 	 * @see kodkod.util.ints.IntSet#max()
 	 */
 	@Override

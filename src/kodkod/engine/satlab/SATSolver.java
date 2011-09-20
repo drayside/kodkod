@@ -53,7 +53,7 @@ public interface SATSolver {
 	 * has returned <tt>false</tt>.
 	 * @requires numVars >= 0
 	 * @ensures this.variables' = [1..#this.variables + numVars]
-	 * @throws IllegalArgumentException - numVars < 0
+	 * @throws IllegalArgumentException  numVars < 0
 	 */
 	public abstract void addVariables(int numVars);
 	
@@ -71,7 +71,7 @@ public interface SATSolver {
 	 * @requires all disj i,j: [0..lits.length) | abs(lits[i]) != abs(lits[j])
 	 * @ensures [[this.clauses']] = ([[this.clauses]] and [[lits]])
 	 * @return #this.clauses' > #this.clauses
-	 * @throws NullPointerException - lits = null
+	 * @throws NullPointerException  lits = null
 	 */
 	public abstract boolean addClause(int[] lits);
 	
@@ -83,7 +83,7 @@ public interface SATSolver {
 	 * If the satisfiability of this.clauses cannot be determined within
 	 * the given number of seconds, a TimeoutException is thrown.
 	 * @return true if this.clauses are satisfiable; otherwise false.
-	 * @throws SATAbortedException -- the call to solve was cancelled or
+	 * @throws SATAbortedException - the call to solve was cancelled or
 	 * could not terminate normally.
 	 */
 	public abstract boolean solve() throws SATAbortedException;
@@ -95,8 +95,8 @@ public interface SATSolver {
 	 * outcome of the last call was <code>true</code>.  
 	 * @return the boolean value assigned to the given variable by the
 	 * last successful call to {@link #solve()}. 
-	 * @throws IllegalArgumentException - variable !in this.variables
-	 * @throws IllegalStateException - {@link #solve() } has not been called or the 
+	 * @throws IllegalArgumentException  variable !in this.variables
+	 * @throws IllegalStateException  {@link #solve() } has not been called or the 
 	 * outcome of the last call was not <code>true</code>.
 	 */
 	public abstract boolean valueOf(int variable);

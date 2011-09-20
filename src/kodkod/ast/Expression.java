@@ -283,7 +283,7 @@ public abstract class Expression extends Node {
      * to this.  
      * @requires op.unary()
      * @return {e: Expression | e.expression = this && e.op = this }
-     * @throws IllegalArgumentException - this.arity != 2
+     * @throws IllegalArgumentException  this.arity != 2
      */
     public final Expression apply(ExprOperator op) {
     	return new UnaryExpression(op, this);
@@ -292,7 +292,7 @@ public abstract class Expression extends Node {
     /**
      * Returns the projection of this expression onto the specified columns.
      * @return {e: Expression | e = project(this, columns) }
-     * @throws IllegalArgumentException - columns.length < 1
+     * @throws IllegalArgumentException  columns.length < 1
      */
     public final Expression project(IntExpression... columns) {
     	return new ProjectExpression(this, columns);
@@ -393,7 +393,7 @@ public abstract class Expression extends Node {
      * Returns the formula that results from applying the specified multiplicity to
      * this expression.  The SET multiplicity is not allowed.
      * @return {f: Formula | f.multiplicity = mult && f.expression = this}
-     * @throws IllegalArgumentException - mult = SET
+     * @throws IllegalArgumentException  mult = SET
      */
     public final Formula apply(Multiplicity mult) {
     	return new MultiplicityFormula(mult, this);

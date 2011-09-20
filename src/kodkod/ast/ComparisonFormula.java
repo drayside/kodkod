@@ -45,8 +45,8 @@ public final class ComparisonFormula extends Formula{
      * Constructs a new comparison formula: left op  right
      * 
      * @ensures this.left' = left && this.right' = right && this.op' = op
-     * * @throws NullPointerException - left = null || right = null || op = null
-     * @throws IllegalArgumentException - left.arity != right.arity
+     * * @throws NullPointerException  left = null || right = null || op = null
+     * @throws IllegalArgumentException  left.arity != right.arity
      */
     ComparisonFormula(Expression left, ExprCompOperator op, Expression right) {
         if (left.arity()!=right.arity()) {

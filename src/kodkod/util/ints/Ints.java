@@ -67,7 +67,7 @@ public final class Ints {
 	/**
 	 * Returns an integer range from min, inclusive, to max, inclusive.
 	 * @return { r: IntRange | r.min = min && r.max = max }
-	 * @throws IllegalArgumentException - min > max
+	 * @throws IllegalArgumentException  min > max
 	 */
 	public static IntRange range(int min, int max) {
 		if (min < max) return new TwoPointRange(min,max);
@@ -80,7 +80,7 @@ public final class Ints {
 	 * both r1 and r2.
 	 * @return { r: IntRange | r.contains(r1) && r.contains(r2) && 
 	 *           no r' : IntRange - r | r'.contains(r1) && r'.contains(r2) && r'.size() < r.size() }
-	 * @throws NullPointerException - range = null
+	 * @throws NullPointerException  range = null
 	 */
 	public static IntRange merge(IntRange r1, IntRange r2) {
 		if (r1.contains(r2)) return r1;
@@ -96,7 +96,7 @@ public final class Ints {
 	 * in an UnsupportedOperationException.  The clone() method of the returned set
 	 * returns the result of calling s.clone().
 	 * @return an unmodifiable view of s
-	 * @throws NullPointerException - s = null
+	 * @throws NullPointerException  s = null
 	 */
 	public static IntSet unmodifiableIntSet(final IntSet s) {
 		if (s==null) 
@@ -150,7 +150,7 @@ public final class Ints {
 	 * out of the specified range.
 	 * @return an int set that can store at least the 
 	 * elements in the given range.
-	 * @throws IllegalArgumentException - min > max
+	 * @throws IllegalArgumentException  min > max
 	 */
 	public static IntSet bestSet(int min, int max) {
 		if (min > max) throw new IllegalArgumentException("min > max");
@@ -219,7 +219,7 @@ public final class Ints {
 	 * in an UnsupportedOperationException.  The clone() method of the returned sequence
 	 * returns the result of calling s.clone().
 	 * @return an unmodifiable view of s
-	 * @throws NullPointerException - s = null
+	 * @throws NullPointerException  s = null
 	 */
 	public static <V> SparseSequence<V> unmodifiableSequence(SparseSequence<V> s) {
 		if (s==null) 

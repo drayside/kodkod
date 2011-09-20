@@ -63,8 +63,8 @@ public final class Translator {
 	 * @return a BooleanMatrix whose TRUE entries represent the tuples contained in a sound overapproximation
 	 * of the expression.
 	 * @throws expression = null || instance = null || options = null
-	 * @throws UnboundLeafException - the expression refers to an undeclared variable or a relation not mapped by the instance
-	 * @throws HigherOrderDeclException - the expression contains a higher order declaration
+	 * @throws UnboundLeafException  the expression refers to an undeclared variable or a relation not mapped by the instance
+	 * @throws HigherOrderDeclException  the expression contains a higher order declaration
 	 */
 	@SuppressWarnings("unchecked")
 	public static BooleanMatrix approximate(Expression expression, Bounds bounds, Options options) {
@@ -75,9 +75,9 @@ public final class Translator {
 	 * Evaluates the given formula to a BooleanConstant using the provided instance and options.  
 	 * 
 	 * @return a BooleanConstant that represents the value of the formula.
-	 * @throws NullPointerException - formula = null || instance = null || options = null
-	 * @throws UnboundLeafException - the formula refers to an undeclared variable or a relation not mapped by the instance
-	 * @throws HigherOrderDeclException - the formula contains a higher order declaration
+	 * @throws NullPointerException  formula = null || instance = null || options = null
+	 * @throws UnboundLeafException  the formula refers to an undeclared variable or a relation not mapped by the instance
+	 * @throws HigherOrderDeclException  the formula contains a higher order declaration
 	 */
 	public static BooleanConstant evaluate(Formula formula, Instance instance, Options options) {
 		return (BooleanConstant) FOL2BoolTranslator.translate(annotate(formula), LeafInterpreter.exact(instance, options));
@@ -87,9 +87,9 @@ public final class Translator {
 	 * Evaluates the given expression to a BooleanMatrix using the provided instance and options.
 	 * 
 	 * @return a BooleanMatrix whose TRUE entries represent the tuples contained by the expression.
-	 * @throws NullPointerException - expression = null || instance = null || options = null
-	 * @throws UnboundLeafException - the expression refers to an undeclared variable or a relation not mapped by the instance
-	 * @throws HigherOrderDeclException - the expression contains a higher order declaration
+	 * @throws NullPointerException  expression = null || instance = null || options = null
+	 * @throws UnboundLeafException  the expression refers to an undeclared variable or a relation not mapped by the instance
+	 * @throws HigherOrderDeclException  the expression contains a higher order declaration
 	 */
 	public static BooleanMatrix evaluate(Expression expression,Instance instance, Options options) {
 		return (BooleanMatrix) FOL2BoolTranslator.translate(annotate(expression), LeafInterpreter.exact(instance, options));
@@ -99,9 +99,9 @@ public final class Translator {
 	 * Evalutes the given intexpression to an {@link kodkod.engine.bool.Int} using the provided instance and options. 
 	 * @return an {@link kodkod.engine.bool.Int} representing the value of the intExpr with respect
 	 * to the specified instance and options.
-	 * @throws NullPointerException - formula = null || instance = null || options = null
-	 * @throws UnboundLeafException - the expression refers to an undeclared variable or a relation not mapped by the instance
-	 * @throws HigherOrderDeclException - the expression contains a higher order declaration
+	 * @throws NullPointerException  formula = null || instance = null || options = null
+	 * @throws UnboundLeafException  the expression refers to an undeclared variable or a relation not mapped by the instance
+	 * @throws HigherOrderDeclException  the expression contains a higher order declaration
 	 */
 	public static Int evaluate(IntExpression intExpr, Instance instance, Options options) {
 		return (Int) FOL2BoolTranslator.translate(annotate(intExpr), LeafInterpreter.exact(instance,options));
@@ -114,11 +114,11 @@ public final class Translator {
 	 * is generated in such a way that the magnitude of the literal representing the truth
 	 * value of a given formula is strictly larger than the magnitudes of the literals representing
 	 * the truth values of the formula's descendants.  
-	 * @throws TrivialFormulaException - the given formula is reduced to a constant during translation
+	 * @throws TrivialFormulaException  the given formula is reduced to a constant during translation
 	 * (i.e. the formula is trivially (un)satisfiable).
-	 * @throws NullPointerException - any of the arguments are null
-	 * @throws UnboundLeafException - the formula refers to an undeclared variable or a relation not mapped by the given bounds.
-	 * @throws HigherOrderDeclException - the formula contains a higher order declaration that cannot
+	 * @throws NullPointerException  any of the arguments are null
+	 * @throws UnboundLeafException  the formula refers to an undeclared variable or a relation not mapped by the given bounds.
+	 * @throws HigherOrderDeclException  the formula contains a higher order declaration that cannot
 	 * be skolemized, or it can be skolemized but options.skolemize is false.
 	 */
 	public static Translation translate(Formula formula, Bounds bounds, Options options) throws TrivialFormulaException {
@@ -159,10 +159,10 @@ public final class Translator {
 	 * is generated in such a way that the magnitude of a literal representing the truth
 	 * value of a given formula is strictly larger than the magnitudes of the literals representing
 	 * the truth values of the formula's descendants.  
-	 * @throws TrivialFormulaException - this.formula is reduced to a constant during translation
+	 * @throws TrivialFormulaException  this.formula is reduced to a constant during translation
 	 * (i.e. the formula is trivially (un)satisfiable).
-	 * @throws UnboundLeafException - this.formula refers to an undeclared variable or a relation not mapped by this.bounds.
-	 * @throws HigherOrderDeclException - this.formula contains a higher order declaration that cannot
+	 * @throws UnboundLeafException  this.formula refers to an undeclared variable or a relation not mapped by this.bounds.
+	 * @throws HigherOrderDeclException  this.formula contains a higher order declaration that cannot
 	 * be skolemized, or it can be skolemized but this.options.skolemDepth < 0
 	 */
 	private Translation translate() throws TrivialFormulaException  {
@@ -296,7 +296,7 @@ public final class Translator {
 	 * @ensures this.options.logTranslation => some this.log'
 	 * @return the result of calling  {@link #generateSBP(BooleanFormula, LeafInterpreter, SymmetryBreaker)}
 	 * on the translation of annotated.node with respect to this.bounds
-	 * @throws TrivialFormulaException - the translation of annotated is a constant or can be made into
+	 * @throws TrivialFormulaException  the translation of annotated is a constant or can be made into
 	 * a constant by flattening 
 	 */
 	private Translation toBoolean(AnnotatedNode<Formula> annotated, SymmetryBreaker breaker) throws TrivialFormulaException {
@@ -347,7 +347,7 @@ public final class Translator {
 	 * @requires interpreter is the leaf interpreter used in generating the given circuit
 	 * @requires breaker.bounds = this.bounds
 	 * @return flatten(circuit && breaker.generateSBP(interpreter), interpreter)
-	 * @throws TrivialFormulaException - flattening the circuit and the predicate yields a constant
+	 * @throws TrivialFormulaException  flattening the circuit and the predicate yields a constant
 	 */
 	private Translation generateSBP(AnnotatedNode<Formula> annotated, BooleanFormula circuit, LeafInterpreter interpreter, SymmetryBreaker breaker) 
 	throws TrivialFormulaException {
@@ -366,7 +366,7 @@ public final class Translator {
 	 * @return if this.options.flatten then 
 	 * 	toCNF(flatten(circuit), interpreter.factory().numberOfVariables(), interpreter.vars()) else
 	 *  toCNF(circuit, interpreter.factory().numberOfVariables(), interpreter.vars())
-	 * @throws TrivialFormulaException - flattening the circuit yields a constant
+	 * @throws TrivialFormulaException  flattening the circuit yields a constant
 	 */
 	private Translation flatten(AnnotatedNode<Formula> annotated, BooleanFormula circuit, LeafInterpreter interpreter) throws TrivialFormulaException {	
 		final BooleanFactory factory = interpreter.factory();

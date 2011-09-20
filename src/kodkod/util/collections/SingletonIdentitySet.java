@@ -48,7 +48,7 @@ public final class SingletonIdentitySet<V> extends AbstractSet<V> {
 	 * Constructs a SingletonIdentitySet that will hold the first element
 	 * returned by the given collection's iterator.
 	 * @ensures this.element' = collection.iterator().next()
-	 * @throws NoSuchElementException - collection.isEmpty()
+	 * @throws NoSuchElementException  collection.isEmpty()
 	 */
 	public SingletonIdentitySet(Collection<? extends V> collection) {
 		this.element = collection.iterator().next();

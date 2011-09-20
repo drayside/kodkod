@@ -120,7 +120,7 @@ final class IntTree<N extends IntTree.Node<N>> implements Cloneable {
 	 * Returns the given node's predecessor, if it exists.  
 	 * Otherwise returns null.  
 	 * @return the given node's predecessor
-	 * @throws NullPointerException - node = null
+	 * @throws NullPointerException  node = null
 	 */
 	final N predecessor(N node) {
 		if (node.left != null) {
@@ -141,7 +141,7 @@ final class IntTree<N extends IntTree.Node<N>> implements Cloneable {
 	 * Returns the given node's successor, if it exists.  
 	 * Otherwise returns null.
 	 * @return the given node's successor
-	 * @throws NullPointerException - node = null
+	 * @throws NullPointerException  node = null
 	 */
 	final N successor(N node) {
 		if (node.right != null) {
@@ -307,7 +307,7 @@ final class IntTree<N extends IntTree.Node<N>> implements Cloneable {
 	/**
 	 * {@inheritDoc}
 	 * @see java.lang.Object#clone()
-	 * @throws CloneNotSupportedException - nodes contained in this tree are not cloneable
+	 * @throws CloneNotSupportedException  nodes contained in this tree are not cloneable
 	 */
 	@SuppressWarnings("unchecked")
 	protected IntTree<N> clone() throws CloneNotSupportedException {

@@ -42,7 +42,7 @@ public interface Indexer<K> {
 	/**
 	 * Returns the key at the given index.
 	 * @return this.indices.index
-	 * @throws IndexOutOfBoundsException - index !in this.indices[this.keys]
+	 * @throws IndexOutOfBoundsException  index !in this.indices[this.keys]
 	 */
 	public abstract K keyAt(int index);
 	

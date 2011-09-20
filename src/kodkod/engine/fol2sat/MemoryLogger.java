@@ -80,7 +80,7 @@ final class MemoryLogger extends TranslationLogger {
 	 * Logs the translation of the given formula if and only if f is a root of this.formula.
 	 * @ensures f in Nodes.conjuncts(this.formula) and no this.records[f] =>
 	 *   this.records' = this.records ++ f -> translation -> env
-	 * @throws IllegalArgumentException - some this.records[f] and this.records[f] != translation -> env
+	 * @throws IllegalArgumentException  some this.records[f] and this.records[f] != translation -> env
 	 * @see kodkod.engine.fol2sat.TranslationLogger#log(kodkod.ast.Formula, kodkod.engine.bool.BooleanValue, kodkod.engine.fol2sat.Environment)
 	 */
 	@Override

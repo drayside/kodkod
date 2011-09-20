@@ -40,7 +40,7 @@ public final class NotFormula extends Formula {
      * Constructs a new formula: !formula 
      * 
      * @ensures this.formula' = formula
-     * @throws NullPointerException - formula = null
+     * @throws NullPointerException  formula = null
      */
     NotFormula(Formula child) {
         if (child == null) throw new NullPointerException("formula");

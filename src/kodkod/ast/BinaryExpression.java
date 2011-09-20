@@ -46,8 +46,8 @@ public final class BinaryExpression extends Expression {
 	 * Constructs a new binary expression: left op right
 	 * 
 	 * @ensures this.left' = left && this.right' = right && this.op' = op
-	 * @throws NullPointerException - left = null || right = null || op = null
-	 * @throws IllegalArgumentException - left and right cannot be combined with the specified operator.
+	 * @throws NullPointerException  left = null || right = null || op = null
+	 * @throws IllegalArgumentException  left and right cannot be combined with the specified operator.
 	 */
 	BinaryExpression(final Expression left, final ExprOperator op, final Expression right) {
 		switch(op) { 

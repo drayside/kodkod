@@ -131,7 +131,7 @@ public final class NotGate extends BooleanFormula {
 	/**
 	 * Returns this.input[i].
 	 * @return this.input[i]
-	 * @throws IndexOutOfBoundsException - i != 0
+	 * @throws IndexOutOfBoundsException  i != 0
 	 */
 	@Override
 	public BooleanFormula input(int i) {

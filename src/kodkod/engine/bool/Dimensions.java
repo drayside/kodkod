@@ -55,7 +55,7 @@ public abstract class Dimensions {
 	 * which has the specified size.
 	 * 
 	 * @return {d: Dimensions | d.n = n && d.dimensions[int] = size }
-	 * @throws IllegalArgumentException - n < 1 || size < 1
+	 * @throws IllegalArgumentException  n < 1 || size < 1
 	 */
 	public static Dimensions square(int size, int n) {
 		if (n < 1 || size < 1) throw new IllegalArgumentException("n < 1 || size < 1");
@@ -66,8 +66,8 @@ public abstract class Dimensions {
 	 * Constructs a new Dimensions object with the given dimensions.
 	 * 
 	 * @return {d: Dimensions | d.n = dimensions.length && d.dimensions = dimensions }
-	 * @throws NullPointerException - dimensions = null
-	 * @throws IllegalArgumentException - dimensions.length = 0 || 
+	 * @throws NullPointerException  dimensions = null
+	 * @throws IllegalArgumentException  dimensions.length = 0 || 
 	 *                                    some i: [0..dimensions.n) | dimensions[i] < 1
 	 */
 	public static Dimensions rectangular(int[] dimensions) {
@@ -97,7 +97,7 @@ public abstract class Dimensions {
 	/**
 	 * Returns the size of the ith dimensions
 	 * @return this.dimensions[i]
-	 * @throws ArrayIndexOutOfBoundsException - i < 0 || i >= this.capacity
+	 * @throws ArrayIndexOutOfBoundsException  i < 0 || i >= this.capacity
 	 */
 	public abstract int dimension(int i);
 	
@@ -140,7 +140,7 @@ public abstract class Dimensions {
 	 * @return { d: Dimensions | d.n = this.n + dim.n - 2 &&
 	 *                           (all i: [0..this.n-1) | d.dimensions[i] = this.dimensions[i]) &&
 	 *                           (all i: [this.n-1..d.n) | d.dimensions[i] = dim.dimensions[i-this.n+1])}
-	 * @throws IllegalArgumentException - this.n + dim.n < 3 || this.dimensions[n-1] != dim.dimensions[0]
+	 * @throws IllegalArgumentException  this.n + dim.n < 3 || this.dimensions[n-1] != dim.dimensions[0]
 	 */
 	public final Dimensions dot(Dimensions dim) {
 		final int n0 = numDimensions(), n1 = dim.numDimensions();
@@ -187,7 +187,7 @@ public abstract class Dimensions {
 	 * 
 	 * @return { d: Dimensions | d.n = 2 && d.dimensions[0] = this.dimensions[1] &&
 	 *                           d.dimensions[1] = this.dimensions[0] }
-	 * @throws UnsupportedOperationException - this.n != 2
+	 * @throws UnsupportedOperationException  this.n != 2
 	 */
 	public abstract Dimensions transpose();
 	
@@ -214,7 +214,7 @@ public abstract class Dimensions {
 	 * 
 	 * @return index.length = n && 
 	 *         (all i: [0..this.capacity) | 0 <= index[i] < this.dimensions[i])
-	 * @throws NullPointerException - index = null
+	 * @throws NullPointerException  index = null
 	 */
 	public final boolean validate(int[] index) {
 		final int length = numDimensions();
@@ -231,7 +231,7 @@ public abstract class Dimensions {
 	 * this.convert(index, new int[this.numDimensions()]).
 	 * @return an array of ints that represents a vector index corresponding to the specified 
 	 * integer index into a this.dimensions[0]x...xthis.dimensions[n-1] matrix
-	 * @throws IndexOutOfBoundsException - !validate(index)
+	 * @throws IndexOutOfBoundsException  !validate(index)
 	 */
 	public final int[] convert(int index) {
 		final int[] vector = new int[numDimensions()];
@@ -249,9 +249,9 @@ public abstract class Dimensions {
 	 * @ensures the first this.numDimensions entries of <code>vectorIndex</code> contain 
 	 * the vector index representation of the specified integer index into a 
 	 * this.dimensions[0]x...xthis.dimensions[n-1] matrix
-	 * @throws NullPointerException - vectorIndex = null
-	 * @throws IllegalArgumentException - vectorIndex.length < this.numDimensions
-	 * @throws IndexOutOfBoundsException - !validate(index)
+	 * @throws NullPointerException  vectorIndex = null
+	 * @throws IllegalArgumentException  vectorIndex.length < this.numDimensions
+	 * @throws IndexOutOfBoundsException  !validate(index)
 	 */
 	public final void convert(int index, int[] vectorIndex) {
 		final int length = numDimensions();	
@@ -274,9 +274,9 @@ public abstract class Dimensions {
 	 * 
 	 * @return an integer index corresponding to the first this.numDimensions positions of the specified 
 	 * vector index into a this.dimensions[0]x...xthis.dimensions[n-1] matrix
-	 * @throws NullPointerException - index == null
-	 * @throws IllegalArgumentException - index.length < this.n
-	 * @throws IndexOutOfBoundsException - some i: [0..n) | index[i] < 0 || 
+	 * @throws NullPointerException  index == null
+	 * @throws IllegalArgumentException  index.length < this.n
+	 * @throws IndexOutOfBoundsException  some i: [0..n) | index[i] < 0 || 
 	 *                                                      index[i] >= this.dimensions[i]
 	 */
 	public final int convert(int[] vectorIndex) {
@@ -320,7 +320,7 @@ public abstract class Dimensions {
 		 * 
 		 * @ensures this.n' = n && this.dimensions[int] = size
 		 * @requires size > 0 && n > 0
-		 * @throws IllegalArgumentException - n < 1 || size < 1
+		 * @throws IllegalArgumentException  n < 1 || size < 1
 		 */
 		Square(int n, int size) {
 			super(capacity(n, size));	
