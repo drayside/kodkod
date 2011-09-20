@@ -21,7 +21,8 @@ def configure(conf):
     conf.env.PLINGELING_MAIN = 'src/plingeling.c'
 
     flags = reduce(lambda x, y: x + " " + y, conf.env.CFLAGS + [ '-D'+flag for flag in conf.env.DEFINES ])
-    conf.define('LGL_CC', conf.env.CC_NAME)
+    cc_version = reduce(lambda x, y: x + "." + y, conf.env.CC_VERSION)
+    conf.define('LGL_CC', conf.env.CC_NAME + " " + cc_version)
     conf.define('LGL_CFLAGS', flags)
     conf.write_config_header('lglcflags.h')
 
