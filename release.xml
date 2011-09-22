@@ -1,36 +1,76 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project default="binary">
-	<property file="src/release.properties" />
+	<property file="release.properties" />
+	<property name="version" value=""/>
+	<property name="source" value="-src"/>
+	<property name="out" value="kodkod-${kodkod.version}"/>
+	
+	<mkdir dir="${out}"/>
+	
 	<tstamp>
 		<format property="TODAY" pattern="yyyy-MM-dd HH:mm:ss" />
 	</tstamp>
-	<macrodef name="buildJar">
-		<attribute name="dir"/>
-		<attribute name="ext"/>
-		<attribute name="suffix" default=""/>
+	
+	<import file="javadoc.xml"/>
+	
+	<target name="binary">
+		<makeJar destfile="kodkod${version}" basedir="bin" includes="**/*.class" excludes="**/taglet/*"/>
+	</target>
+	
+	<target name="source">
+		<makeJar destfile="kodkod${version}${source}" basedir="src" includes="**/*.java" excludes="**/taglet/*"/>
+	</target>
+	
+	<target name="lib">
+		<zip destfile="${out}/${kodkod.platform.darwin}.zip" basedir="lib" 
+			includes="**${kodkod.platform.darwin}/*" 
+			comment="SAT solver binaries for ${kodkod.platform.darwin}."/>		
+		<zip destfile="${out}/${kodkod.platform.linux}.zip" basedir="lib" 
+			includes="**${kodkod.platform.linux}/*" 
+			comment="SAT solver binaries for ${kodkod.platform.linux}."/>		
+		<zip destfile="${out}/${kodkod.platform.windows}.zip" basedir="lib" 
+			includes="**${kodkod.platform.windows}/*" 
+			comment="SAT solver binaries for ${kodkod.platform.windows}."/>		
+	</target>
+	
+	<target name="lib-source">
+		<zip destfile="${out}/solvers${version}${source}.zip" basedir="." 
+			includes="**lib/**" excludes="**/waf, **/sat4j*/*, **/darwin*/*, **/linux*/*, **/windows*/*" 
+			comment="Sources and build scripts for third-party SAT solvers."/>
+	</target>
+	
+	<target name="doc" depends="javadoc">
+		<zip destfile="${out}/doc${version}.zip" basedir="." 
+			includes="**doc/**"  
+			comment="Kodkod API Documentation."/>
+	</target>
+	
+	<target name="examples">
+		<makeJar destfile="examples${version}" title="Examples" basedir="../relations.examples" 
+			includes="**examples/alloy/*.*, **examples/classicnp/*.*, **examples/tptp/*.*, 
+					  **examples/sudoku/Sudoku*, **examples/netconfig/Netconfig.*"
+			excludes="**/util/*, **/*.col, **/sudoku/SudokuSolver*"/>
+	</target>
+	
+	<macrodef name="makeJar">
+		<attribute name="destfile"/>
+		<attribute name="basedir"/>
+		<attribute name="includes"/>
+		<attribute name="excludes" default=""/>
+		<attribute name="title" default=""/>
 		<sequential>
-			<jar jarfile="kodkod.${kodkod.version}@{suffix}.jar">
-				<fileset dir="@{dir}">
-					<include name="**/*.@{ext}" />
-					<exclude name="**/taglet/*" />
-				</fileset>
+			<jar destfile="${out}/@{destfile}.jar" basedir="@{basedir}" includes="@{includes}" excludes="@{excludes}">
 				<manifest>
 					<attribute name="Built-By" value="${kodkod.author}" />
 					<attribute name="Built-Date" value="${TODAY}" />
 					<attribute name="Specification-Vendor" value="${kodkod.author}" />
-					<attribute name="Specification-Title" value="${kodkod.specification.title}" />
+					<attribute name="Specification-Title" value="${kodkod.specification.title} @{title}" />
 					<attribute name="Specification-Version" value="${kodkod.version}" />
 					<attribute name="Implementation-Vendor" value="${kodkod.author}" />
-					<attribute name="Implementation-Title" value="${kodkod.specification.title}" />
+					<attribute name="Implementation-Title" value="${kodkod.specification.title} @{title}" />
 					<attribute name="Implementation-Version" value="${kodkod.version}" />
 				</manifest>
 			</jar>
 		</sequential>
 	</macrodef>
-	<target name="binary">
-		<buildJar dir="bin" ext="class" />
-	</target>
-	<target name="source">
-		<buildJar dir="src" ext="java" suffix="-src"/>
-	</target>
 </project>

@@ -4,13 +4,17 @@ import os.path
 import waflib.Context
 from waflib.Build import BuildContext, CleanContext, InstallContext, UninstallContext
 
-variants = [ 'cryptominisat-2.9.1', 'lingeling-276-6264d55-100731', 'minisat-2.2.0', 'minisat-1.14', 'minisat-p_v1.14', 'zchaff-mincost' ]
+variants = [ 'cryptominisat-2.9.1',
+             'lingeling-276-6264d55-100731',
+             'minisat-2.2.0',
+             'minisat-1.14',
+             'minisat-p_v1.14',
+             'zchaff-mincost' ]
 
 def options(opt):
     opt.recurse(variants)               # set options for all solvers
 
 def configure(conf):
-    conf.env.PREFIX = ''
     env = conf.env
     for solver in variants:             # create configuration environments for all solvers
         conf.setenv(solver, env)  
@@ -21,14 +25,12 @@ def build(bld):
         import waflib.Options
         for x in variants: 
             waflib.Options.commands.insert(0, bld.cmd + '_' + x)
-    else :                     
-        if bld.cmd.startswith('install') :
-            bld.env.BINDIR = ''
-            bld.env.LIBDIR = ''
-            if len(bld.options.destdir) == 0 :
+    else:                               
+        if bld.cmd.startswith('install'):
+            bld.env.PREFIX = bld.env.BINDIR = bld.env.LIBDIR = ''
+            if len(bld.options.destdir) == 0:
                 bld.options.destdir = repr(bld.path.make_node(bld.env.DEST_OS + "_" + bld.env.DEST_CPU))
-        bld.recurse(bld.variant)        # build the specifed solver
-        
+        bld.recurse(bld.variant)       
     
 for x in variants:
     for y in (BuildContext, CleanContext, InstallContext, UninstallContext):
