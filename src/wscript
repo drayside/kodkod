@@ -9,14 +9,14 @@ def configure(conf):
     conf.load('java')
     conf.env.MANIFEST = conf.path.parent.find_node('MANIFEST').abspath()
     conf.env.CLASSPATH = ['.', conf.path.parent.ant_glob('**/org.sat4j.core.jar')[0].abspath()]
-    
+
 def build(bld):
     bld(features  = 'javac jar',
         srcdir    = 'kodkod',
         outdir    = 'kodkod',
         compat    = '1.6',
         classpath = bld.env.CLASSPATH,
-        manifest  = bld.env.MANIFEST,
+        manifest  = '../MANIFEST',
         basedir   = 'kodkod',
         destfile  = 'kodkod.jar')
     
