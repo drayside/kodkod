@@ -10,7 +10,7 @@ def configure(conf):
     conf.load('java')
     conf.check_jni_headers()
     conf.env.INCLUDES = [ '.', '..']
-    conf.env.CXXFLAGS = ['-Wall', '-O3' ]
+    conf.env.CXXFLAGS = ['-Wall', '-O3', '-fPIC' ]
     conf.env.CORE_SRC = ['core/Solver.C']
     conf.env.JNI_SRC = ['jni/*.cpp']
 

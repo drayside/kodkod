@@ -11,7 +11,7 @@ def configure(conf):
     conf.check_jni_headers()
     conf.env.DEFINES = ['__STDC_LIMIT_MACROS', '__STDC_FORMAT_MACROS']
     conf.env.INCLUDES = ['.', '..', conf.path.abspath()]
-    conf.env.CXXFLAGS = ['-Wall', '-O3']
+    conf.env.CXXFLAGS = ['-Wall', '-O3', '-fPIC']
     conf.env.UTILS_SRC = 'utils/*.cc'
     conf.env.CORE_SRC = 'core/Solver.cc'
     conf.env.JNI_SRC = 'jni/*.cpp'

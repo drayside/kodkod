@@ -41,7 +41,9 @@
 #include <map>
 #include <set>
 #include <queue>
-
+#ifdef HAVE_LIMITS_H
+#include "limits.h"
+#endif
 using namespace std;
 
 #include "zchaff_solver.h"

@@ -36,6 +36,9 @@
 #include <iostream>
 #include <vector>
 #include <set>
+#ifdef HAVE_MALLOC_H
+#include "malloc.h"
+#endif
 
 using namespace std;
 
