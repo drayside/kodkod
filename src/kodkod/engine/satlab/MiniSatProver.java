@@ -29,7 +29,7 @@ import kodkod.util.ints.IntSet;
 
 /**
  * Java wrapper for the MiniSat solver with proof logging.  MiniSat
- * is developed by Niklas EŽn and Niklas Sšrensson.
+ * is developed by Niklas E&eacute;n and Niklas S&ouml;rensson.
  * @author Emina Torlak
  */
 final class MiniSatProver extends NativeSolver implements SATProver {
