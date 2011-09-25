@@ -1,3 +1,7 @@
+Kodkod 1.5.1
+
+* Fixed a bug in CryptoMiniSat bindings.  Thanks to Jasmin Blanchette.
+
 Kodkod 1.5 (September 24, 2011)
 
 * Includes JNI bindings for the latest SAT solvers:
@@ -26,3 +30,4 @@ Kodkod 1.5 (September 24, 2011)
   solver can be set at the command line via -Dkodkod.satlib="1.0:2.0:3.0".
   
 * Fixed a bug in translation caching.  Thanks to Matvey Arye.
+
