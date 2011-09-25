@@ -40,9 +40,9 @@ JNIEXPORT void JNICALL Java_kodkod_engine_satlab_CryptoMiniSat_free
  * Signature: (JI)V
  */
 JNIEXPORT void JNICALL Java_kodkod_engine_satlab_CryptoMiniSat_addVariables
-(JNIEnv *, jobject, jlong solver, jint  numVars) {
+(JNIEnv * env, jobject, jlong solver, jint  numVars) {
 	Solver* solverPtr = (Solver*) solver;
-	SolverConf conf = solverPtr->conf;
+	//SolverConf conf = solverPtr->conf;
 	/*std::cout << (conf.fixRestartType == static_restart);
 	std::cout << (conf.polarity_mode == polarity_false);
 	std::cout << (conf.doFindXors);
@@ -64,8 +64,9 @@ JNIEXPORT jboolean JNICALL Java_kodkod_engine_satlab_CryptoMiniSat_addClause
 	Solver* solverPtr = ((Solver*)solver);
 	vec<Lit> lits;
 	for(int i = 0; i < length; ++i) {
-		int var = *(buf+i);
-		lits.push((var > 0) ?  Lit(var, false) : Lit(-var, true));
+		int lit = *(buf+i);
+		int var = abs(lit)-1;
+		lits.push((lit > 0) ?  Lit(var, false) : Lit(var, true));
 	}
 	solverPtr->addClause(lits);
 	env->ReleaseIntArrayElements(clause, buf, 0);
