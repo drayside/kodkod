@@ -21,7 +21,12 @@
  */
 package kodkod.engine.bool;
 
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+
+import kodkod.ast.Variable;
 
 
 /**
@@ -35,6 +40,24 @@ import java.util.List;
 */
 public abstract class Int {
 	final BooleanFactory factory;
+	
+    /* ------------------------------------------------------------------------------------- */
+    /*                        used during translation                                        */
+    /* ------------------------------------------------------------------------------------- */
+	/* | */ private BooleanValue overflow = BooleanConstant.FALSE;
+	/* | */ private Set<Variable> vars = new HashSet<Variable>();
+	/* | */ public BooleanValue getOverflow()              { return overflow; }
+	/* | */ public void setOverflow(BooleanValue overflow) { this.overflow = overflow; }
+	/* | */ public void addVar(Variable v) { vars.add(v); }
+	/* | */ public void addVars(Collection<Variable> vars) { this.vars.addAll(vars); }
+	/* | */ public Set<Variable> vars() { return vars; }
+    /* ------------------------------------------------------------------------------------ */
+    /*                         used by the evaluator                                        */
+    /* ------------------------------------------------------------------------------------ */
+	/* | */ private boolean isOverflowFlag = false;
+	/* | */ public void setOverflowFlag(boolean overflow) { this.isOverflowFlag = overflow; }
+	/* | */ public boolean isOverflowFlag()               { return this.isOverflowFlag; }
+	/* ------------------------------------------------------------------------------------ */
 	
 	/**
 	 * Creates an Int with the given factory
@@ -59,6 +82,12 @@ public abstract class Int {
 	 * @return this.bits[i]
 	 */
 	abstract BooleanValue bit(int i);
+	
+	/**
+     * Returns the most significant bit
+     * @return this.bits[this.width()-1]
+     */
+	abstract BooleanValue msb();
 	
 	/**
 	 * Returns the little endian two's complement representation of this integer that is 

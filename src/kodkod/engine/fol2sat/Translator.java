@@ -68,7 +68,8 @@ public final class Translator {
 	 */
 	@SuppressWarnings("unchecked")
 	public static BooleanMatrix approximate(Expression expression, Bounds bounds, Options options) {
-		return FOL2BoolTranslator.approximate(annotate(expression), LeafInterpreter.overapproximating(bounds, options), Environment.EMPTY);
+		Environment<BooleanMatrix, Expression> emptyEnv = Environment.empty();
+        return FOL2BoolTranslator.approximate(annotate(expression), LeafInterpreter.overapproximating(bounds, options), emptyEnv);
 	}
 	
 	/**
@@ -80,7 +81,14 @@ public final class Translator {
 	 * @throws HigherOrderDeclException  the formula contains a higher order declaration
 	 */
 	public static BooleanConstant evaluate(Formula formula, Instance instance, Options options) {
-		return (BooleanConstant) FOL2BoolTranslator.translate(annotate(formula), LeafInterpreter.exact(instance, options));
+		final LeafInterpreter interpreter = LeafInterpreter.exact(instance, options);
+		final BooleanFactory factory = interpreter.factory();
+        BooleanConstant eval = (BooleanConstant) FOL2BoolTranslator.translate(annotate(formula), interpreter);
+        BooleanConstant overflow = (BooleanConstant) factory.of();
+        if (options.noOverflow() && overflow.booleanValue()) {
+            eval = BooleanConstant.FALSE;
+        }
+        return eval;
 	}
 	
 	/**
@@ -104,7 +112,15 @@ public final class Translator {
 	 * @throws HigherOrderDeclException  the expression contains a higher order declaration
 	 */
 	public static Int evaluate(IntExpression intExpr, Instance instance, Options options) {
-		return (Int) FOL2BoolTranslator.translate(annotate(intExpr), LeafInterpreter.exact(instance,options));
+		LeafInterpreter interpreter = LeafInterpreter.exact(instance, options);
+        Int ret = (Int) FOL2BoolTranslator.translate(annotate(intExpr), interpreter);
+		BooleanFactory factory = interpreter.factory();
+		BooleanConstant bc = (BooleanConstant) factory.of();
+		boolean overflow = false;
+		if (options.noOverflow() && bc.booleanValue())
+		    overflow = true;
+		ret.setOverflowFlag(overflow);
+		return ret;
 	}
 	
 	/**
@@ -304,10 +320,12 @@ public final class Translator {
 		options.reporter().translatingToBoolean(annotated.node(), bounds);
 		
 		final LeafInterpreter interpreter = LeafInterpreter.exact(bounds, options);
+		final BooleanFactory factory = interpreter.factory();
 		
 		if (options.logTranslation()>0) {
 			final TranslationLogger logger = options.logTranslation()==1 ? new MemoryLogger(annotated, bounds) : new FileLogger(annotated, bounds);
-			final BooleanAccumulator circuit = FOL2BoolTranslator.translate(annotated, interpreter, logger);
+			BooleanAccumulator circuit = FOL2BoolTranslator.translate(annotated, interpreter, logger);
+			// TODO: overflow doesn't work with log translation
 			log = logger.log();
 			if (circuit.isShortCircuited()) {
 				throw new TrivialFormulaException(annotated.node(), bounds, circuit.op().shortCircuit(), log);
@@ -316,7 +334,10 @@ public final class Translator {
 			}
 			return generateSBP(circuit, interpreter, breaker);
 		} else {
-			final BooleanValue circuit = (BooleanValue)FOL2BoolTranslator.translate(annotated, interpreter);
+			BooleanValue circuit = (BooleanValue)FOL2BoolTranslator.translate(annotated, interpreter);
+			if (options.noOverflow()) {
+	            circuit = factory.and(circuit, factory.not(factory.of()));
+	        }
 			if (circuit.op()==Operator.CONST) {
 				throw new TrivialFormulaException(annotated.node(), bounds, (BooleanConstant)circuit, null);
 			} 

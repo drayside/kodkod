@@ -25,6 +25,7 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
 
+import kodkod.ast.Expression;
 import kodkod.ast.Node;
 import kodkod.ast.Variable;
 import kodkod.engine.bool.BooleanConstant;
@@ -72,7 +73,7 @@ final class FOL2BoolCache {
 	 *         this.cache[node].map, null
 	 */
 	@SuppressWarnings("unchecked")
-	<T> T lookup(Node node, Environment<BooleanMatrix> env) {
+	<T> T lookup(Node node, Environment<BooleanMatrix, Expression> env) {
 		final Record info = cache.get(node);
 		return info==null ? null : (T) info.get(env);
 	}
@@ -86,7 +87,7 @@ final class FOL2BoolCache {
 	 *           this.cache' = this.cache
 	 * @return translation
 	 */
-	final <T> T cache(Node node, T translation, Environment<BooleanMatrix> env) {
+	final <T> T cache(Node node, T translation, Environment<BooleanMatrix, Expression> env) {
 		final Record info = cache.get(node);
 		if (info != null) {
 			info.set(translation, env);
@@ -164,7 +165,7 @@ final class FOL2BoolCache {
 		 * @return all v: varBinding.int | e.lookup(v).get(varBinding[v])=TRUE => this.translation, null
 		 * @throws NullPointerException  e = null
 		 */
-		abstract Object get(Environment<BooleanMatrix> e);
+		abstract Object get(Environment<BooleanMatrix, Expression> e);
 		
 		/**
 		 * Sets this.translation to the given translation
@@ -176,7 +177,7 @@ final class FOL2BoolCache {
 		 *           {v: this.varBinding.int, tupleIndex: int | 
 		 *             tupleIndex = env.lookup(v).iterator().next().index() }
 		 */
-		abstract void set(Object transl, Environment<BooleanMatrix> env);
+		abstract void set(Object transl, Environment<BooleanMatrix, Expression> env);
 	}
 	
 	/**
@@ -200,7 +201,7 @@ final class FOL2BoolCache {
 		/**
 		 * @see kodkod.engine.fol2sat.FOL2BoolCache.Record#get(kodkod.engine.fol2sat.Environment)
 		 */
-		Object get(Environment<BooleanMatrix> e) {
+		Object get(Environment<BooleanMatrix, Expression> e) {
 			if (translation==null) return null;
 			for(int i = 0; i < vars.length; i++) {
 				if (e.lookup(vars[i]).get(tuples[i])!=BooleanConstant.TRUE)
@@ -212,7 +213,7 @@ final class FOL2BoolCache {
 		/**
 		 * @see kodkod.engine.fol2sat.FOL2BoolCache.Record#set(java.lang.Object, kodkod.engine.fol2sat.Environment)
 		 */
-		void set(Object transl, Environment<BooleanMatrix> env) {
+		void set(Object transl, Environment<BooleanMatrix, Expression> env) {
 			translation = transl;
 			for(int i = 0; i < vars.length; i++) {
 				final BooleanMatrix varVal = env.lookup(vars[i]);
@@ -250,14 +251,14 @@ final class FOL2BoolCache {
 		/**
 		 * @see kodkod.engine.fol2sat.FOL2BoolCache.Record#get(kodkod.engine.fol2sat.Environment)
 		 */
-		Object get(Environment<BooleanMatrix> e) {
+		Object get(Environment<BooleanMatrix, Expression> e) {
 			return translation;
 		}
 		
 		/**
 		 * @see kodkod.engine.fol2sat.FOL2BoolCache.Record#set(java.lang.Object, kodkod.engine.fol2sat.Environment)
 		 */
-		void set(Object transl, Environment<BooleanMatrix> env) {
+		void set(Object transl, Environment<BooleanMatrix, Expression> env) {
 			translation = transl;
 		}
 		

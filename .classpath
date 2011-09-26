@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="src" path="src">
+		<attributes>
+			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="lib-sdg/jni-sdg/sat/linux_x86_64"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="lib" path="/Users/emina/Workspaces/kodkod/relations/lib/sat4j-core-v20110329/org.sat4j.core.jar" sourcepath="libs/sat4j-core-v20110329/org.sat4j.core-src.jar"/>
+	<classpathentry kind="lib" path="lib/sat4j-core-v20110329/org.sat4j.core.jar" sourcepath="lib/sat4j-core-v20110329/org.sat4j.core-src.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -49,10 +49,15 @@ public final class Options {
 	private IntEncoding intEncoding = IntEncoding.TWOSCOMPLEMENT;
 	private int bitwidth = 4;
 	private int sharing = 3;
+	private boolean nof = false; 
 	private int skolemDepth = 0;
 	private boolean flatten = false;
 	private int logTranslation = 0;
 	private int coreGranularity = 0;
+	
+	public static boolean isDebug() {
+	    return false; //TODO: read from the environment or something
+	}
 	
 	/**
 	 * Constructs an Options object initalized with 
@@ -109,6 +114,16 @@ public final class Options {
 			throw new NullPointerException();
 		this.reporter = reporter;
 	}
+	
+	/**
+	 * Returns the noOverflow flag
+	 */
+	public boolean noOverflow() { return nof; }
+	
+	/**
+	 * Sets the noOverflow flag
+	 */
+	public void setNoOverflow(boolean noOverflow) { this.nof = noOverflow; }
 		
 	/**
 	 * @throws IllegalArgumentException  arg !in [min..max]

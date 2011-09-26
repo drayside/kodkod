@@ -21,10 +21,10 @@
  */
 package kodkod.engine.satlab;
 
-import java.io.File;
+import java.io.*;
+import java.util.Arrays;
 
-
-
+import kodkod.engine.config.Options;
 
 /**
  * A skeleton implementation of a wrapper for a sat solver
@@ -40,6 +40,8 @@ abstract class NativeSolver implements SATSolver {
 	private Boolean sat;
 	private int clauses, vars;
 	
+	private OutputStream cnfFile;  
+	
 	/**
 	 * Constructs a new wrapper for the given 
 	 * instance of the native solver.
@@ -48,7 +50,11 @@ abstract class NativeSolver implements SATSolver {
 		this.peer = peer;
 		this.clauses = this.vars = 0;
 		this.sat = null;
-//		System.out.println("created " + peer);
+		try {
+		    if (Options.isDebug())
+		        cnfFile = new BufferedOutputStream(new FileOutputStream(new File(System.getProperty("java.io.tmpdir"), "cnf_kk.cnf")));
+        } catch (IOException e) {
+        }
 	}
 	
 	/**
@@ -133,6 +139,9 @@ abstract class NativeSolver implements SATSolver {
 //				System.out.println(0);
 //				System.out.println(Arrays.toString(lits));
 				clauses++;
+				try {
+                    if (Options.isDebug()) cnfFile.write((Arrays.toString(lits) + " 0\n").getBytes());
+                } catch (IOException e) {}
 				return true;
 			}
 		}
@@ -160,6 +169,14 @@ abstract class NativeSolver implements SATSolver {
 	 * @see #solve(long)
 	 */
 	public final boolean solve() {
+	    try {
+            if (Options.isDebug()) {
+                cnfFile.write(String.format("p cnf %s %s\n", vars, clauses).getBytes());
+                cnfFile.flush();
+                cnfFile.close();
+            }
+        } catch (IOException e) {
+        }
 		return (sat = solve(peer));
 	}
 	

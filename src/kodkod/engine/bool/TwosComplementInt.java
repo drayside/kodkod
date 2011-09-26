@@ -30,6 +30,7 @@ import java.util.AbstractList;
 import java.util.Arrays;
 import java.util.List;
 
+import kodkod.engine.bool.Operator.Nary;
 import kodkod.util.collections.Containers;
 
 /**
@@ -40,14 +41,19 @@ import kodkod.util.collections.Containers;
 final class TwosComplementInt extends Int {
 	private final BooleanValue[] bits;
 	
+	private TwosComplementInt(BooleanFactory factory, BooleanValue[] bits) {
+	    this(factory, bits, BooleanConstant.FALSE);
+	}
+	
 	/**
 	 * Constructs a TwosComplementInt out of the given factory and bits.
 	 * @requires bits is well formed
 	 * @ensures this.factory' = factory && this.bits' = bits
 	 */
-	private TwosComplementInt(BooleanFactory factory, BooleanValue[] bits) {
+	private TwosComplementInt(BooleanFactory factory, BooleanValue[] bits, BooleanValue overflow) {
 		super(factory);
 		this.bits = bits;
+		this.setOverflow(overflow);
 	}
 	
 	/**
@@ -139,8 +145,6 @@ final class TwosComplementInt extends Int {
 		return ret;
 	}
 	
-	
-	
 	/**
 	 * Returns the BooleanValue at the specified index.
 	 * @requires 0 <= i < this.factory.bitwidth
@@ -150,6 +154,14 @@ final class TwosComplementInt extends Int {
 		return bits[StrictMath.min(i, bits.length-1)];
 	}
 
+	/**
+     * {@inheritDoc}
+     * @see kodkod.engine.bool.Int#msb(kodkod.engine.bool.Int)
+     */
+	public final BooleanValue msb() {
+	    return bits[bits.length-1];
+	}
+	
 	/**
 	 * {@inheritDoc}
 	 * @see kodkod.engine.bool.Int#eq(kodkod.engine.bool.Int)
@@ -206,15 +218,22 @@ final class TwosComplementInt extends Int {
 		final int width = StrictMath.min(StrictMath.max(width(), other.width()) + 1, factory.bitwidth);
 		final BooleanValue[] plus = new BooleanValue[width];
 		BooleanValue carry = FALSE;
+		BooleanValue c1 = FALSE;
+        BooleanValue c2 = FALSE;
 		for(int i = 0; i < width; i++) {
 			BooleanValue v0 = bit(i), v1 = other.bit(i);
 			plus[i] = factory.sum(v0, v1, carry);
 			carry = factory.carry(v0, v1, carry);
+			if (i == width-2) c2 = carry; 
+			else if (i == width-1) c1 = carry;
 		}
-		return new TwosComplementInt(factory, plus);
+		BooleanValue overflow = BooleanConstant.FALSE;
+		if (width == factory.bitwidth) {
+            overflow = factory.xor(c1, c2);
+        }
+		return new TwosComplementInt(factory, plus, overflow);
 	}
 
-	
 	/**
 	 * {@inheritDoc}
 	 * @see kodkod.engine.bool.Int#minus(kodkod.engine.bool.Int)
@@ -225,12 +244,20 @@ final class TwosComplementInt extends Int {
 		final int width = StrictMath.min(StrictMath.max(width(), other.width()) + 1, factory.bitwidth);
 		final BooleanValue[] minus = new BooleanValue[width];
 		BooleanValue carry = TRUE;
+		BooleanValue c1 = FALSE;
+        BooleanValue c2 = FALSE;
 		for(int i = 0; i < width; i++) {
 			BooleanValue v0 = bit(i), v1 = other.bit(i).negation();
 			minus[i] = factory.sum(v0, v1, carry);
 			carry = factory.carry(v0, v1, carry);
+			if (i == width-2) c2 = carry; 
+            else if (i == width-1) c1 = carry;
 		}
-		return new TwosComplementInt(factory, minus);
+		BooleanValue overflow = BooleanConstant.FALSE;
+		if (width == factory.bitwidth) {
+		    overflow = factory.xor(c1, c2);
+        }
+		return new TwosComplementInt(factory, minus, overflow);
 	}
 
 	/**
@@ -244,14 +271,59 @@ final class TwosComplementInt extends Int {
 		bits[index] = factory.sum(oldBit, newBit, cin);
 		return factory.carry(oldBit, newBit, cin);
 	}
-
 	
 	/**
-	 * {@inheritDoc}
-	 * @see kodkod.engine.bool.Int#multiply(kodkod.engine.bool.Int)
-	 */
+     * {@inheritDoc}
+     * @see kodkod.engine.bool.Int#multiply(kodkod.engine.bool.Int)
+     */
+	// TODO: not optimal, uses double precision (too many bits)!
 	@Override
-	public Int multiply(Int other) {
+    public Int multiply(Int other) {
+        validate(other);
+	final int retWidth = width() + other.width();
+        final BooleanValue[] mult = new BooleanValue[retWidth];
+        final TwosComplementInt ret = new TwosComplementInt(factory, mult);
+        
+        /* first partial sum */
+        BooleanValue iBit = bit(0);
+        for(int j = 0; j < retWidth; j++) {
+            mult[j] = factory.and(iBit, other.bit(j));
+        }
+        
+        /* intermediate partial sums */
+        int last = retWidth - 1;
+        for(int i = 1; i < last; i++) {
+            iBit = this.bit(i);
+            BooleanValue carry = FALSE;
+            for (int j = 0; j < retWidth - i; j++) {
+                BooleanValue bit = factory.and(iBit, other.bit(j));
+                carry = ret.addAndCarry(i + j, bit, carry); 
+            }
+        }
+        
+        /* last partial sum is subtracted (see http://en.wikipedia.org/wiki/Multiplication_ALU) */
+        iBit = this.bit(last);
+        BooleanValue carry = TRUE;
+        for (int j = 0; j < retWidth - last; j++) {
+            BooleanValue bit = factory.and(iBit, other.bit(j)).negation();
+            carry = ret.addAndCarry(last + j, bit, carry);                
+        }
+        
+        final int width = StrictMath.min(mult.length, factory.bitwidth);
+        final BooleanValue[] multTrunc = new BooleanValue[width];
+        for (int i = 0; i < multTrunc.length; i++)
+            multTrunc[i] = mult[i];
+        
+        BooleanAccumulator acc = BooleanAccumulator.treeGate(Nary.OR);
+        for (int i = multTrunc.length; i < mult.length; i++) {
+            acc.add(factory.xor(mult[i - 1], mult[i]));
+        }
+        BooleanValue overflow = factory.accumulate(acc);
+        return new TwosComplementInt(factory, multTrunc, overflow);
+	}
+	
+	//@Override
+	public Int multiply_no_overflow_detection(Int other) {
 		validate(other);
 		final int width = StrictMath.min(width()+other.width(), factory.bitwidth);
 		final BooleanValue[] mult = new BooleanValue[width];
@@ -269,7 +341,7 @@ final class TwosComplementInt extends Int {
 			carry = FALSE;
 			iBit = bit(i);
 			for(int j = 0, jmax = width-i; j < jmax; j++) {
-				carry = ret.addAndCarry(j+i, factory.and(iBit, other.bit(j)), carry);
+			    carry = ret.addAndCarry(j+i, factory.and(iBit, other.bit(j)), carry);
 			}
 		}
 		
@@ -406,7 +478,12 @@ final class TwosComplementInt extends Int {
 	@Override
 	public Int divide(Int other) {
 		validate(other);
-		return new TwosComplementInt(factory, nonRestoringDivision(other, true));
+		TwosComplementInt ret = new TwosComplementInt(factory, nonRestoringDivision(other, true));
+		BooleanValue divByZero = other.eq(factory.integer(0));
+        BooleanValue singleOverflowCase = factory.and(this.eq(factory.integer(-(1 << (factory.bitwidth-1)))), other.eq(factory.integer(-1)));
+        BooleanValue of = factory.or(divByZero, singleOverflowCase);
+        ret.setOverflow(of);
+        return ret;
 	}
 	
 	/**
@@ -416,7 +493,10 @@ final class TwosComplementInt extends Int {
 	@Override
 	public Int modulo(Int other) {
 		validate(other);
-		return new TwosComplementInt(factory, nonRestoringDivision(other, false));
+		TwosComplementInt ret = new TwosComplementInt(factory, nonRestoringDivision(other, false));
+		BooleanValue divByZero = other.eq(factory.integer(0));
+        ret.setOverflow(divByZero);
+        return ret;
 	}
 	
 	/**
@@ -489,13 +569,24 @@ final class TwosComplementInt extends Int {
 		final int width = factory.bitwidth;
 		final TwosComplementInt shifted = new TwosComplementInt(factory, extend(width));
 		final int max = 32 - Integer.numberOfLeadingZeros(width - 1);
-		for(int i = 0; i < max; i++) {
+		BooleanAccumulator acc = BooleanAccumulator.treeGate(Nary.OR);
+		for(int i = 0; i < width; i++) {
 			int shift = 1 << i;
 			BooleanValue bit = other.bit(i);
-			for(int j = width-1; j >= 0; j--) {
-				shifted.bits[j] = factory.ite(bit, j < shift ? FALSE : shifted.bit(j-shift), shifted.bits[j]);
+			// overflow: check if the bits being pushed out is different from the one immediately to the right of it
+			for(int x = 0; x < shift; x++) {
+                BooleanValue b1 = width-x-1 < 0 ? FALSE : shifted.bit(width-x-1);
+                BooleanValue b2 = width-x-2 < 0 ? FALSE : shifted.bit(width-x-2);
+			    acc.add(factory.ite(bit, factory.xor(b1, b2), FALSE));
+            }
+			if (i < max) {
+    			for(int j = width-1; j >= 0; j--) {
+    				shifted.bits[j] = factory.ite(bit, j < shift ? FALSE : shifted.bit(j-shift), shifted.bits[j]);
+    			}
 			}
 		}
+		BooleanValue overflow = factory.accumulate(acc);
+		shifted.setOverflow(overflow);
 		return shifted;
 	}
 	
@@ -565,7 +656,10 @@ final class TwosComplementInt extends Int {
 	 */
 	@Override
 	public Int abs() {
-		return choice(factory.not(bits[bits.length-1]), negate());
+		Int negated = negate();
+        Int ret = choice(factory.not(bits[bits.length-1]), negated);
+        ret.setOverflow(negated.getOverflow());
+        return ret;
 	}
 	
 	/**

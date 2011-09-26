@@ -22,6 +22,9 @@
 package kodkod.engine.fol2sat;
 
 import kodkod.ast.Variable;
+import kodkod.engine.bool.BooleanAccumulator;
+import kodkod.engine.bool.BooleanValue;
+import kodkod.engine.bool.Operator.Nary;
 
 
 
@@ -34,21 +37,20 @@ import kodkod.ast.Variable;
  * 
  * @specfield variable: lone Variable
  * @specfield value: lone T
+ * @specfield type: lone E
  * @specfield parent: Environment
  * @invariant this = parent => no variable
  * @author Emina Torlak 
  */
-@SuppressWarnings("unchecked")
-final class Environment<T> {
+final class Environment<T, E> {
 	private final Variable variable;
 	private final T value;
-	private final Environment<T> parent;
-	
-	/**
-	 * The empty environment; EMPTY is its own parent.
-	 */
-	@SuppressWarnings("rawtypes")
-	static final Environment EMPTY = new Environment();
+	private final E type; 
+	private final Environment<T, E> parent;
+	/** Portion of the overflow circuit not affected by this.variable */ 
+	private final BooleanAccumulator overflow; 
+	/** Portion of the overflow circuit affected by this.variable (should be used only if this.type is INT) */
+	private final BooleanAccumulator varOverflow;
 	
 	/**
 	 * Constructs the empty environment.
@@ -56,7 +58,10 @@ final class Environment<T> {
 	private Environment() {
 		this.variable = null;
 		this.value = null;
+		this.type = null;
 		this.parent = this;
+		this.overflow = BooleanAccumulator.treeGate(Nary.OR);
+		this.varOverflow = BooleanAccumulator.treeGate(Nary.OR);
 	}
 	
 	/**  
@@ -65,18 +70,21 @@ final class Environment<T> {
 	 * 
 	 * @ensures this.parent' = parent && this.variable' = variable && this.value' = value
 	 */
-	private Environment(Environment<T> parent, Variable variable, T value) {
+	private Environment(Environment<T, E> parent, Variable variable, E type, T value) {
 		this.variable = variable;
 		this.value = value;
+		this.type = type; 
 		this.parent = parent;
+		this.overflow = BooleanAccumulator.treeGate(Nary.OR);
+		this.varOverflow = BooleanAccumulator.treeGate(Nary.OR);
 	}
 	
 	/**
 	 * Returns the empty environment.
 	 * @return the empty environment.
 	 */
-	public static <T> Environment<T> empty() {
-		return (Environment<T>) EMPTY;
+	public static <T, E> Environment<T, E> empty() {
+	    return new Environment<T, E>();
 	}
 	
 	/**
@@ -85,18 +93,23 @@ final class Environment<T> {
 	 * 
 	 * @return this.parent
 	 */
-	public Environment<T> parent() { return parent; }
-	
-	/**
+	public Environment<T, E> parent()          { return parent; }
+	public BooleanAccumulator overflow()       { return overflow; }
+    public BooleanAccumulator varOverflow()    { return varOverflow; }
+
+    /**
 	 * Returns a new environment that extends this environment with the specified
 	 * mapping.
 	 * @requires variable != null
 	 * @return e : Environment | e.parent = this && e.variable = variable && e.value = value
 	 */
-	public Environment<T> extend(Variable variable, T value) {
+	public Environment<T, E> extend(Variable variable, E type, T value) {
 		assert variable !=  null;
-		return new Environment<T>(this, variable, value);
+		return new Environment<T, E>(this, variable, type, value);
 	}
+	
+	public void addOverflowClause(BooleanValue v)    { this.overflow.add(v); }	
+	public void addVarOverflowClause(BooleanValue v) { this.varOverflow.add(v); }
 	
 	/**
 	 * Returns this.variable.
@@ -104,6 +117,14 @@ final class Environment<T> {
 	 */
 	public Variable variable() {
 		return this.variable;
+	}
+	
+	/**
+	 * Return this.isInt. 
+	 * @return this.isInt
+	 */
+	public E type() {
+	    return this.type;
 	}
 	
 	/**
@@ -115,12 +136,12 @@ final class Environment<T> {
 	}
 	
 	/**
-	 * Returns true if this is the empty environment;
+	 * Returns true if this is the empty (root) environment;
 	 * otherwise returns false.
-	 * @return this.parent = EMPTY
+	 * @return this.parent = this
 	 */
 	public boolean isEmpty() {
-		return this==EMPTY;
+		return this==this.parent;
 	}
 		
 	/**
@@ -133,21 +154,30 @@ final class Environment<T> {
 	 * @return variable = this.variable => this.value, this.parent.lookup(variable)
 	 */
 	public T lookup(Variable variable) {
-		Environment<T> p = this;
+		Environment<T, E> p = this;
 		// ok to use == for testing variable equality: 
 		// see kodkod.ast.LeafExpression#equals
-		while(p!=EMPTY && p.variable!=variable) {
+		while(!p.isEmpty() && p.variable!=variable) {
 			p = p.parent;
 		}
 		return p.value;
 	}
 	
+	public E lookupType(Variable variable) {
+        Environment<T, E> p = this;
+        // ok to use == for testing variable equality: 
+        // see kodkod.ast.LeafExpression#equals
+        while(!p.isEmpty() && p.variable!=variable) {
+            p = p.parent;
+        }
+        return p.type;
+    }
+	
 	/**
 	 * @see java.lang.Object#toString()
 	 */
 	public String toString() {
-		return (parent == EMPTY ? "[]" : parent.toString()) + "["+variable+"="+value+"]";
+		return (parent.isEmpty() ? "[]" : parent.toString()) + "["+variable+"="+value+"]";
 	}
-	
-	
+
 }
