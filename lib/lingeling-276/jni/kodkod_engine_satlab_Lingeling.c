@@ -2,7 +2,7 @@
 #include <jni.h>
 #include "src/lglib.h"
 #include "kodkod_engine_satlab_Lingeling.h"
-
+#include <stdio.h>
 
 /*
  * Class:     kodkod_engine_satlab_Lingeling
@@ -32,7 +32,9 @@ JNIEXPORT void JNICALL Java_kodkod_engine_satlab_Lingeling_free
  */
 JNIEXPORT void JNICALL Java_kodkod_engine_satlab_Lingeling_addVariables
   (JNIEnv * env, jobject obj, jlong lgl, jint nvars) {
-	// does nothing; variables don't need to be explicitly added
+	LGL* lglPtr = (LGL*)lgl;
+	lgladd(lglPtr, nvars+1);
+	lgladd(lglPtr, 0);
 }
 
 /*
@@ -62,7 +64,8 @@ JNIEXPORT jboolean JNICALL Java_kodkod_engine_satlab_Lingeling_addClause
  */
 JNIEXPORT jboolean JNICALL Java_kodkod_engine_satlab_Lingeling_solve
   (JNIEnv * env, jobject obj, jlong lgl) {
-	return lglsat((LGL*)lgl)==10;
+	LGL* lglPtr = (LGL*) lgl;
+	return lglsat(lglPtr)==10;
 }
 
 /*

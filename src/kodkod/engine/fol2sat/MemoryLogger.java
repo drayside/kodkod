@@ -86,7 +86,6 @@ final class MemoryLogger extends TranslationLogger {
 	@Override
 	void log(Formula f, BooleanValue translation, Environment<BooleanMatrix> env) {
 		if (logMap.containsKey(f)) { 
-			assert env.isEmpty();
 			final BooleanValue old = logMap.put(f, translation);
 			if (old!=null && old!=translation) 
 				throw new IllegalArgumentException("translation of root corresponding to the formula has already been logged: " + f);
