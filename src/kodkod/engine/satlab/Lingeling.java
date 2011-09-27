@@ -48,6 +48,18 @@ final class Lingeling extends NativeSolver {
 	}
 	
 	/**
+	 * {@inheritDoc}
+	 * @see kodkod.engine.satlab.SATSolver#addVariables(int)
+	 * @see #addVariables(long, int)
+	 */
+	public void addVariables(int numVars) {
+		if (numberOfVariables()==0)
+			super.addVariables(numVars);
+		else
+			throw new IllegalStateException("Lingeling binding does not allow incremental variable addition.");
+	}
+	
+	/**
 	 * Returns a pointer to an instance of Lingeling.
 	 * @return a pointer to an instance of minisat.
 	 */

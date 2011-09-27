@@ -110,7 +110,7 @@ abstract class NativeSolver implements SATSolver {
 	 * @see kodkod.engine.satlab.SATSolver#addVariables(int)
 	 * @see #addVariables(long, int)
 	 */
-	public final void addVariables(int numVars) {
+	public void addVariables(int numVars) {
 		if (numVars < 0)
 			throw new IllegalArgumentException("vars < 0: " + numVars);
 		else if (numVars > 0) {
