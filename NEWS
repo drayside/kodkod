@@ -2,6 +2,8 @@ Kodkod 1.5.1
 
 * Fixed a bug in CryptoMiniSat bindings.  Thanks to Jasmin Blanchette.
 
+* Fixed a bug in Lingeling bindings.  Thanks to Jasmin Blanchette.
+
 Kodkod 1.5 (September 24, 2011)
 
 * Includes JNI bindings for the latest SAT solvers:
