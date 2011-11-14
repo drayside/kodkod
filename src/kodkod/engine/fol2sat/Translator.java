@@ -21,6 +21,9 @@
  */
 package kodkod.engine.fol2sat;
 
+import static kodkod.util.nodes.AnnotatedNode.annotate;
+import static kodkod.util.nodes.AnnotatedNode.annotateRoots;
+
 import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -47,8 +50,6 @@ import kodkod.instance.Instance;
 import kodkod.util.ints.IntSet;
 import kodkod.util.nodes.AnnotatedNode;
 
-import static kodkod.util.nodes.AnnotatedNode.*;
-
 /** 
  * Translates, evaluates, and approximates {@link Node nodes} with
  * respect to given {@link Bounds bounds} (or {@link Instance instances}) and {@link Options}.
@@ -66,7 +67,6 @@ public final class Translator {
 	 * @throws UnboundLeafException  the expression refers to an undeclared variable or a relation not mapped by the instance
 	 * @throws HigherOrderDeclException  the expression contains a higher order declaration
 	 */
-	@SuppressWarnings("unchecked")
 	public static BooleanMatrix approximate(Expression expression, Bounds bounds, Options options) {
 		Environment<BooleanMatrix, Expression> emptyEnv = Environment.empty();
         return FOL2BoolTranslator.approximate(annotate(expression), LeafInterpreter.overapproximating(bounds, options), emptyEnv);
@@ -325,7 +325,9 @@ public final class Translator {
 		if (options.logTranslation()>0) {
 			final TranslationLogger logger = options.logTranslation()==1 ? new MemoryLogger(annotated, bounds) : new FileLogger(annotated, bounds);
 			BooleanAccumulator circuit = FOL2BoolTranslator.translate(annotated, interpreter, logger);
-			// TODO: overflow doesn't work with log translation
+			if (options.noOverflow()) {
+                circuit.add(factory.not(factory.of()));
+            }
 			log = logger.log();
 			if (circuit.isShortCircuited()) {
 				throw new TrivialFormulaException(annotated.node(), bounds, circuit.op().shortCircuit(), log);
