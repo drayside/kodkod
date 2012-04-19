@@ -544,7 +544,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 		final BooleanMatrix ret =  new BooleanMatrix(dims.dot(other.dims), factory, cells, other.cells);
 		if (cells.isEmpty() || other.cells.isEmpty()) return ret;
 		
-		final SparseSequence<BooleanValue> retCells = ret.cells;
+		final SparseSequence<BooleanValue> mutableCells = ret.clone().cells;
 		final int b = other.dims.dimension(0); 
 		final int c = other.dims.capacity() / b; 
 		
@@ -557,13 +557,13 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 				BooleanValue retVal = factory.and(iVal, e1.value());
 				if (retVal != FALSE) {
 					int k = (i / b)*c + e1.index()%c;
-					if (retVal==TRUE) retCells.put(k, TRUE);
+					if (retVal==TRUE) mutableCells.put(k, TRUE);
 					else {
-						BooleanValue kVal = retCells.get(k);
+						BooleanValue kVal = mutableCells.get(k);
 						if (kVal != TRUE) {
 							if (kVal==null) {
 								kVal = BooleanAccumulator.treeGate(OR);
-								retCells.put(k, kVal);
+								mutableCells.put(k, kVal);
 							} 
 							((BooleanAccumulator) kVal).add(retVal);
 						}
@@ -573,9 +573,11 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 		}
 		
 		// make mutable gates immutable
-		for(IndexedEntry<BooleanValue> e : ret.cells) {
+		for(IndexedEntry<BooleanValue> e : mutableCells) {
 			if (e.value()!=TRUE) {
-				ret.cells.put(e.index(), factory.accumulate((BooleanAccumulator) e.value()));
+				ret.fastSet(e.index(), factory.accumulate((BooleanAccumulator) e.value()));
+			} else {
+				ret.fastSet(e.index(), TRUE);
 			}
 		}
 		return ret;
