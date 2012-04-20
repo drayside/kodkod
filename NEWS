@@ -1,4 +1,8 @@
-Kodkod 1.5.1
+Kodkod 1.5.2 (April 19, 2012)
+
+* Fixed a bug in dot product computation.  Thanks to Marcelo Frias.
+
+Kodkod 1.5.1 (September 25, 2011)
 
 * Fixed a bug in CryptoMiniSat bindings.  Thanks to Jasmin Blanchette.
 

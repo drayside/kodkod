@@ -3,7 +3,7 @@
 	<property file="release.properties" />
 	<property name="version" value=""/>
 	<property name="source" value="-src"/>
-	<property name="out" value="kodkod-${kodkod.version}"/>
+	<property name="out" value="kodkod-${kodkod.specification.version}"/>
 	
 	<mkdir dir="${out}"/>
 	
@@ -65,10 +65,10 @@
 					<attribute name="Built-Date" value="${TODAY}" />
 					<attribute name="Specification-Vendor" value="${kodkod.author}" />
 					<attribute name="Specification-Title" value="${kodkod.specification.title} @{title}" />
-					<attribute name="Specification-Version" value="${kodkod.version}" />
+					<attribute name="Specification-Version" value="${kodkod.specification.version}" />
 					<attribute name="Implementation-Vendor" value="${kodkod.author}" />
 					<attribute name="Implementation-Title" value="${kodkod.specification.title} @{title}" />
-					<attribute name="Implementation-Version" value="${kodkod.version}" />
+					<attribute name="Implementation-Version" value="${kodkod.implementation.version}" />
 				</manifest>
 			</jar>
 		</sequential>
