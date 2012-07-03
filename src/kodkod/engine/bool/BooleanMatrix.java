@@ -95,7 +95,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 		this.factory = f;
 		final Class<?> c0 = s0.getClass(), c1 = s1.getClass();
 		if (c0!=c1 || c0==RangeSequence.class) 
-			this.cells = new  RangeSequence<BooleanValue>();
+			this.cells = new RangeSequence<BooleanValue>();
 		else if (c0==HomogenousSequence.class) 
 			this.cells = new HomogenousSequence<BooleanValue>(TRUE, Ints.bestSet(d.capacity())); 
 		else 
@@ -298,9 +298,11 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	 * @throws IllegalArgumentException  !other.dimensions.equals(this.dimensions) || this.factory != other.factory
 	 */
 	public final BooleanMatrix and(BooleanMatrix  other) {
-		checkFactory(this.factory, other.factory); checkDimensions(this.dims, other.dims);
+		checkFactory(this.factory, other.factory); 
+		checkDimensions(this.dims, other.dims);
 		final BooleanMatrix ret = new BooleanMatrix(dims, factory, cells, other.cells);
-		final  SparseSequence<BooleanValue> s1 = other.cells;
+		final SparseSequence<BooleanValue> s1 = other.cells;
+		if (cells.isEmpty() || s1.isEmpty()) return ret;
 		for(IndexedEntry<BooleanValue> e0 : cells) {
 			BooleanValue v1 = s1.get(e0.index());
 			if (v1!=null)
@@ -346,7 +348,12 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	 * @throws IllegalArgumentException  !other.dimensions.equals(this.dimensions) || this.factory != other.factory
 	 */
 	public final BooleanMatrix or(BooleanMatrix  other) {
-		checkFactory(this.factory, other.factory); checkDimensions(this.dims, other.dims);
+		checkFactory(this.factory, other.factory); 
+		checkDimensions(this.dims, other.dims);
+		if (this.cells.isEmpty())
+			return other.clone();
+		else if (other.cells.isEmpty())
+			return this.clone();
 		final BooleanMatrix ret = new BooleanMatrix(dims, factory, cells, other.cells);
 		final SparseSequence<BooleanValue> retSeq = ret.cells;
 		for(IndexedEntry<BooleanValue> e0 : cells) {
@@ -622,7 +629,7 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	 * the entries in this and the given matrix.  The same matrix can 
 	 * be obtained by calling this.and(other.not()), but this method
 	 * performs the operation more efficiently (intermediate
-	 * values are not explicity created).
+	 * values are not explicitly created).
 	 * @return { m: BooleanMatrix | m.dimensions = this.dimensions && m.factory = this.factory &&
 	 *                              all i: [0..m.dimensions.capacity) | 
 	 *                               m.elements[i] = this.elements[i] AND !other.elements[i] }
@@ -630,7 +637,9 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	 * @throws IllegalArgumentException  !other.dimensions.equals(this.dimensions) || this.factory != other.factory
 	 */
 	public final BooleanMatrix difference(BooleanMatrix other) {
-		checkFactory(this.factory, other.factory); checkDimensions(this.dims, other.dims);
+		checkFactory(this.factory, other.factory); 
+		checkDimensions(this.dims, other.dims);
+		if (this.cells.isEmpty() || other.cells.isEmpty()) return this.clone();
 		final BooleanMatrix ret = new BooleanMatrix(dims, factory, cells, other.cells);
 		for(IndexedEntry<BooleanValue> e0 : cells) {
 			ret.fastSet(e0.index(), factory.and(e0.value(), other.fastGet(e0.index()).negation()));
@@ -696,7 +705,8 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
      * @throws IllegalArgumentException  !other.dimensions.equals(this.dimensions) || this.factory != other.factory
 	 */
 	public final BooleanMatrix choice(BooleanValue condition, BooleanMatrix other) {
-		checkFactory(this.factory, other.factory); checkDimensions(this.dims, other.dims);
+		checkFactory(this.factory, other.factory); 
+		checkDimensions(this.dims, other.dims);
 		if (condition==TRUE) return this.clone();
 		else if (condition==FALSE) return other.clone();
 	
@@ -823,7 +833,8 @@ public final class BooleanMatrix implements Iterable<IndexedEntry<BooleanValue>>
 	 * @throws IllegalArgumentException  other.dimensions != this.dimensions
 	 */
 	public final BooleanMatrix override(BooleanMatrix other) {
-		checkFactory(this.factory, other.factory); checkDimensions(this.dims, other.dims);
+		checkFactory(this.factory, other.factory); 
+		checkDimensions(this.dims, other.dims);
 		if (other.cells.isEmpty()) return this.clone();
 		final BooleanMatrix ret = new BooleanMatrix(dims, factory, cells, other.cells);
 		ret.cells.putAll(other.cells);
