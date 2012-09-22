@@ -67,23 +67,6 @@ public abstract class SATFactory {
 	};
 	
 	/**
-	 * The factory the produces {@link SATMinSolver cost-minimizing} 
-	 * instances of the zchaff solver from Princeton.  Note that cost minimization
-	 * can incur a time and/or memory overhead during solving,
-	 * so if you do not need this functionality, use the {@link #MiniSat} factory
-	 * instead.  ZChaffMincost is not incremental.
-	 */
-	public static final SATFactory ZChaffMincost = new SATFactory() {
-		public SATSolver instance() {
-			return new ZChaffMincost();
-		}
-		@Override
-		public boolean minimizer() { return true; }
-		public boolean incremental() { return false; }
-		public String toString() { return "ZChaffMincost"; }
-	};
-	
-	/**
 	 * The factory the produces {@link SATProver proof logging} 
 	 * instances of the MiniSat solver.  Note that core
 	 * extraction can incur a significant time overhead during solving,

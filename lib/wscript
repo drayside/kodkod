@@ -8,8 +8,7 @@ solvers = [ 'cryptominisat-2.9.1',
              'lingeling-276',
              'minisat-2.2.0',
              'minisat-1.14',
-             'minisat-p_v1.14',
-             'zchaff-mincost' ]
+             'minisat-p_v1.14' ]
 
 def options(opt):
     opt.recurse(solvers)               # set options for all solvers
