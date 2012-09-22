@@ -21,14 +21,18 @@
  */
 package kodkod.instance;
 
-import java.util.Collections;
+import static java.util.Collections.unmodifiableMap;
+import static kodkod.util.ints.Ints.unmodifiableSequence;
+
+import java.util.AbstractSet;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
 import kodkod.ast.Relation;
 import kodkod.util.ints.IntSet;
-import kodkod.util.ints.Ints;
 import kodkod.util.ints.SparseSequence;
 import kodkod.util.ints.TreeSequence;
 
@@ -58,6 +62,7 @@ public final class Bounds implements Cloneable {
 	private final TupleFactory factory;
 	private final Map<Relation, TupleSet> lowers, uppers;
 	private final SparseSequence<TupleSet> intbounds;
+	private final Set<Relation> relations;
 	
 	/**
 	 * Constructs a Bounds object with the given factory and mappings.
@@ -67,6 +72,7 @@ public final class Bounds implements Cloneable {
 		this.lowers = lower;
 		this.uppers = upper;
 		this.intbounds = intbounds;
+		this.relations = relations(lowers, uppers);
 	}
 	
 	/**
@@ -76,9 +82,46 @@ public final class Bounds implements Cloneable {
 	 */
 	public Bounds(Universe universe) {
 		this.factory = universe.factory();
-		lowers = new LinkedHashMap<Relation, TupleSet>();
-		uppers = new LinkedHashMap<Relation, TupleSet>();
-		intbounds = new TreeSequence<TupleSet>();
+		this.lowers = new LinkedHashMap<Relation, TupleSet>();
+		this.uppers = new LinkedHashMap<Relation, TupleSet>();
+		this.intbounds = new TreeSequence<TupleSet>();
+		this.relations = relations(lowers, uppers);
+	}
+	
+	/**
+	 * Returns a set view of the relations mapped by the given lower/upper bounds.
+	 * @requires lowers.keySet().equals(uppers.keySet())
+	 * @return a set view of the relations mapped by the given lower/upper bounds
+	 */
+	private static Set<Relation> relations(final Map<Relation, TupleSet> lowers, final Map<Relation, TupleSet> uppers) {
+		return new AbstractSet<Relation>() {
+
+			public Iterator<Relation> iterator() {
+				return new Iterator<Relation>() {
+					final Iterator<Relation> itr = uppers.keySet().iterator();
+					Relation last = null;
+					public boolean hasNext() { return itr.hasNext(); }
+					public Relation next() { return last = itr.next(); }
+					public void remove() {
+						itr.remove();
+						lowers.remove(last);					
+					}
+				};
+			}
+
+			public int size() { return uppers.size(); }			
+			public boolean contains(Object key) { return uppers.containsKey(key); }
+			
+			public boolean remove(Object key) { 
+				return (uppers.remove(key) != null) && (lowers.remove(key) != null); 
+			}
+			public boolean removeAll(Collection<?> c) {
+				return uppers.keySet().removeAll(c) && lowers.keySet().removeAll(c);
+			}
+			public boolean retainAll(Collection<?> c) {
+				return uppers.keySet().retainAll(c) && lowers.keySet().retainAll(c);
+			}
+		};
 	}
 	
 	/**
@@ -86,17 +129,15 @@ public final class Bounds implements Cloneable {
 	 * @return this.universe
 	 */
 	public Universe universe() { return factory.universe(); }
-	
-	
+
 	/**
 	 * Returns the set of all relations bound by this Bounds.
 	 * The returned set does not support the add operation.
-	 * It supports removal iff this is not an unmodifiable
-	 * Bounds.
+	 * It supports removal iff this is not an unmodifiable Bounds.
 	 * @return this.relations
 	 */
-	public Set<Relation> relations() {
-		return lowers.keySet();
+	public Set<Relation> relations() { 
+		return relations; 
 	}
 	
 	/**
@@ -123,7 +164,7 @@ public final class Bounds implements Cloneable {
 	 * @return a map view of this.lowerBound
 	 */
 	public Map<Relation, TupleSet> lowerBounds() {
-		return Collections.unmodifiableMap(lowers);
+		return unmodifiableMap(lowers);
 	}
 	
 	/**
@@ -140,7 +181,7 @@ public final class Bounds implements Cloneable {
 	 * @return a map view of this.upperBound
 	 */
 	public Map<Relation, TupleSet> upperBounds() {
-		return Collections.unmodifiableMap(uppers);
+		return unmodifiableMap(uppers);
 	}
 	
 	/**
@@ -158,7 +199,7 @@ public final class Bounds implements Cloneable {
 	 * @return a sparse sequence view of this.intBound
 	 */
 	public SparseSequence<TupleSet> intBounds() {
-		return Ints.unmodifiableSequence(intbounds);
+		return unmodifiableSequence(intbounds);
 	}
 	
 	/**
@@ -257,12 +298,12 @@ public final class Bounds implements Cloneable {
 	 * @return an unmodifiable view of his Bounds object.
 	 */
 	public Bounds unmodifiableView() {
-		return new Bounds(factory, Collections.unmodifiableMap(lowers), Collections.unmodifiableMap(uppers), Ints.unmodifiableSequence(intbounds));
+		return new Bounds(factory, unmodifiableMap(lowers), unmodifiableMap(uppers), unmodifiableSequence(intbounds));
 	}
 	
 	/**
-	 * Returns a deep copy of this Bounds object.
-	 * @return a deep copy of this Bounds object.
+	 * Returns a deep (modifiable) copy of this Bounds object.
+	 * @return a deep (modifiable) copy of this Bounds object.
 	 */
 	public Bounds clone() {
 		try {

@@ -3,6 +3,7 @@
 #include "src/lglib.h"
 #include "kodkod_engine_satlab_Lingeling.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 /*
  * Class:     kodkod_engine_satlab_Lingeling
@@ -32,9 +33,11 @@ JNIEXPORT void JNICALL Java_kodkod_engine_satlab_Lingeling_free
  */
 JNIEXPORT void JNICALL Java_kodkod_engine_satlab_Lingeling_addVariables
   (JNIEnv * env, jobject obj, jlong lgl, jint nvars) {
-	LGL* lglPtr = (LGL*)lgl;
-	lgladd(lglPtr, nvars+1);
-	lgladd(lglPtr, 0);
+	// ignore calls to addVariables since
+	// lingeling dynamically adds variables as they appear in clauses.
+	// this means we have to compensate for it in the value_of method
+	// and just return false when passed a variable that has not appeared
+	// in any clause.
 }
 
 /*
@@ -50,8 +53,10 @@ JNIEXPORT jboolean JNICALL Java_kodkod_engine_satlab_Lingeling_addClause
 	int i;
 	for(i = 0; i < length; i++) {
 		int lit = *(buf+i);
+		//printf("%d ", lit);
 		lgladd (lglPtr, lit);
 	}
+	//printf("0\n");
 	lgladd (lglPtr, 0);
 	(*env)->ReleaseIntArrayElements(env, clause, buf, 0);
 	return JNI_TRUE;
@@ -75,6 +80,10 @@ JNIEXPORT jboolean JNICALL Java_kodkod_engine_satlab_Lingeling_solve
  */
 JNIEXPORT jboolean JNICALL Java_kodkod_engine_satlab_Lingeling_valueOf
   (JNIEnv * env, jobject obj, jlong lgl, jint var) {
-	return lglderef((LGL*)lgl, var) > 0;
+	LGL* lglPtr = (LGL*) lgl;
+	if (var <= lglmaxvar(lglPtr))
+		return lglderef(lglPtr, var) > 0;
+	else
+		return JNI_FALSE;
 }
 

@@ -56,12 +56,15 @@ final class CBCFactory {
 	 */
 	private final Set<BooleanFormula> scrap0, scrap1;
 	/**
-	 * Stores input variables.
-	 * @invariant all i: [1..iLits.size()] | vars[i-1].positive.label = i
+	 * Caches variables.  This representation is optimized for infrequent addition of 
+	 * ranges of variables at a time (as opposed to frequent addition of one variable at a time).
+	 * @invariant all i: [0..vars.length-1], j: [1..vars[i].length-1] | vars[i][j-1].label = vars[i][j] + 1
+	 * @invariant all i: [1..vars.length-1] | vars[i][0] > vars[i-1][vars[i-1].length-1] + 1
+	 * @invariant vars[0][0].label = 1
 	 */
-	private final BooleanVariable[] vars;
+	private BooleanVariable[][] vars;
 	/**
-	 * Caches the AND, OR, and ITE gates.  
+	 * Caches AND, OR, and ITE gates.  
 	 * @invariant all i: [0..2] | c[i].op.ordinal = i
 	 */
 	private final CacheSet<BooleanFormula>[] cache;
@@ -80,9 +83,13 @@ final class CBCFactory {
 		assert cmpMax > 0 && numVars >= 0;
 		this.cmpMax = cmpMax;
 		this.label = numVars + 1;
-		vars = new BooleanVariable[numVars];
-		for(int i = 0; i < numVars; i++) {
-			vars[i]= new BooleanVariable(i+1);                                                                        
+		if (numVars == 0) {
+			vars = new BooleanVariable[0][];
+		} else {
+			vars = new BooleanVariable[1][numVars];
+			for(int i = 0; i < numVars; i++) {
+				vars[0][i]= new BooleanVariable(i+1);                                                                        
+			}
 		}
 		scrap0 = new IdentityHashSet<BooleanFormula>(cmpMax);
 		scrap1 = new IdentityHashSet<BooleanFormula>(cmpMax);
@@ -115,52 +122,94 @@ final class CBCFactory {
 	int cmpMax() { return cmpMax; }
 	
 	/**
-	 * Removes all MultiGates and ITEGates from this.factory.
-	 * @ensures this.values' = this.values & BooleanVariable 
-	 */
-	void clear() {
-		label = vars.length+1;
-		cache[0].clear();
-		cache[1].clear();
-		cache[2].clear();
-		scrap0.clear(); 
-		scrap1.clear();
-	}
-	
-	/**
 	 * Returns true if the given value
 	 * is a valid argument to one of the <tt>assemble</tt>
 	 * methods.  Otherwise returns false.
 	 * @return v in this.values + this.values.negation + BooleanConstant
 	 */
 	boolean canAssemble(BooleanValue v) {
-		if (v.op()==CONST) return true;
-		if (v.label() < 0) v = v.negation();
-		final int absLit = v.label();
-		if (absLit <= vars.length) {
-			return v == vars[absLit-1];
+		if (v.op()==CONST) 
+			return true;
+		if (v.label() < 0) 
+			v = v.negation();
+		if (v instanceof BooleanVariable) {
+			return v == variable(v.label());
 		} else {
 			final BooleanFormula g = (BooleanFormula) v;
 			for(Iterator<BooleanFormula> gates = opCache(g.op()).get(g.hashCode()); gates.hasNext(); ) {
-			    	if (gates.next()==g) return true;
+		    	if (g==gates.next()) 
+		    		return true;
 		    }
 			return false;
 		}
 	}
 	
 	/**
-	 * Returns the number of variables in this factory.
-	 * @return #(this.values & BooleanVariable)
+	 * Returns the maximum label of a {@link BooleanVariable variable} in {@code this.components}.
+	 * @return max((this.values & BooleanVariable).label)
 	 */
-	int numVars() { return vars.length; }
+	int maxVariable() { 
+		if (vars.length==0) return 0;
+		final BooleanVariable[] last = vars[vars.length-1];
+		return last[last.length-1].label; 
+	}
+	
+	/**
+	 * Returns the maximum label of a {@link BooleanFormula formula} in {@code this.components}.
+	 * Note that {@link #maxFormula()} >= {@link #maxVariable()} since variables themselves are formulas.
+	 * @return max((this.values & BooleanFormula).label)
+	 */
+	int maxFormula() { return label-1; }
 	
 	/**
 	 * Returns the boolean variable from this.values with the given label.
-	 * @requires 0 < label <= #(this.values & BooleanVariable)
+	 * @requires label in (this.values & BooleanVariable).label
 	 * @return (this.values & BooleanVariable).label 
 	 */
 	BooleanVariable variable(int label) {
-		return vars[label-1];
+		int low = 0;
+		int high = vars.length-1;
+		while (low <= high) {
+			final int mid = (low + high) >>> 1;
+			final BooleanVariable[] midVars = vars[mid];
+			final int midKeyLow = midVars[0].label, midKeyHigh = midKeyLow + midVars.length - 1;	
+			if (midKeyHigh < label) {
+				low = mid + 1;
+			} else if (midKeyLow > label) { 
+				high = mid - 1;
+			} else { // variable range found
+				return midVars[label - midKeyLow];
+			}
+		}
+		throw new IllegalArgumentException("Expected a variable label, given label = " + label);
+	}
+	
+	/**
+	 * Adds the specified number of fresh variables to {@code this.values}.
+	 * @requires numVars > 0
+	 * @ensures let diff = this.values' - this.values | 
+	 *           diff in BooleanVariable && #diff = numVars &&
+	 *           diff.label = { i: int | this.maxFormula() < i <= this.maxFormula() + numVars }
+	 */
+	void addVariables(int numVars) {
+		assert numVars > 0;
+		if (label > 1 && maxVariable()==maxFormula()) {
+			final BooleanVariable[] last = vars[vars.length-1];
+			final BooleanVariable[] newLast = new BooleanVariable[last.length+numVars];
+			System.arraycopy(last, 0, newLast, 0, last.length);
+			for(int i = last.length, varLabel = this.label; i < newLast.length; i++, varLabel++)
+				newLast[i] = new BooleanVariable(varLabel);
+			vars[vars.length-1] = newLast;
+		} else {
+			final BooleanVariable[][] newVars = new BooleanVariable[vars.length+1][];	
+			System.arraycopy(vars, 0, newVars, 0, vars.length);
+			final BooleanVariable[] newLast = new BooleanVariable[numVars];
+			for(int i = 0, varLabel = this.label; i < numVars; i++, varLabel++)
+				newLast[i] = new BooleanVariable(varLabel);			
+			newVars[vars.length] = newLast;
+			vars = newVars;			
+		}
+		this.label += numVars;
 	}
 	
 	/**
@@ -588,82 +637,5 @@ final class CBCFactory {
 		NoV,		/* NOT op VAR */
 		XoX			/* VAR op VAR */
 	};
-	
-//	/**
-//	 * Returns true if for all inputs i1 in f1 there is a corresponding input i0 in 
-//	 * f0 such that  i0.label = i1.label 
-//	 * @requires #f0.inputs <= f1.inputs
-//	 */
-//	private static boolean containsAll(BooleanFormula f0, BooleanFormula f1) { 
-//		final int s0 = f0.size(), s1 = f1.size();
-//		for(int i = 0, j = 0; i<s0 && j<s1;) { 
-//			final int l0 = f0.input(i).label(), l1 = f1.input(j).label();
-//			if (l0 < l1) { 
-//				i++;
-//			} else if (l0 == l1) { 
-//				i++; j++;
-//			} else {
-//				return false;
-//			}
-//		}
-//		return true;
-//	}
-//	
-//	/**
-//	 * Returns true if for all inputs i1 in f1 there is a corresponding input i0 in 
-//	 * f0 such that  i0.label = -i1.label 
-//	 * @requires #f0.inputs <= f1.inputs
-//	 */
-//	private static boolean containsAllNeg(BooleanFormula f0, BooleanFormula f1) { 
-//		final int s0 = f0.size(), s1 = f1.size();
-//		for(int i = 0, j = s1-1; i<s0 && j>=0;) { 
-//			final int l0 = f0.input(i).label(), l1 = -f1.input(j).label();
-//			if (l0 < l1) { 
-//				i++;
-//			} else if (l0 == l1) { 
-//				i++; j--;
-//			} else {
-//				return false;
-//			}
-//		}
-//		return true;
-//	}
-//
-//	/**
-//	 * Returns true if there are inputs i0 in f0 and i1 in f1 such that  i0.label = i1.label 
-//	 * @requires #f0.inputs <= f1.inputs
-//	 */
-//	private static boolean containsSome(BooleanFormula f0, BooleanFormula f1) { 
-//		final int s0 = f0.size(), s1 = f1.size();
-//		for(int i = 0, j = 0; i<s0 && j<s1;) { 
-//			final int l0 = f0.input(i).label(), l1 = f1.input(j).label();
-//			if (l0 < l1) { 
-//				i++;
-//			} else if (l0 == l1) { 
-//				return true;
-//			} else {
-//				j++;
-//			}
-//		}
-//		return false;
-//	}
-//	
-//	/**
-//	 * Returns true if there are inputs i0 in f0 and i1 in f1 such that  i0.label = -i1.label 
-//	 * @requires #f0.inputs <= f1.inputs
-//	 */
-//	private static boolean containsSomeNeg(BooleanFormula f0, BooleanFormula f1) { 
-//		final int s0 = f0.size(), s1 = f1.size();
-//		for(int i = 0, j = s1-1; i<s0 && j>=0;) { 
-//			final int l0 = f0.input(i).label(), l1 = -f1.input(j).label();
-//			if (l0 < l1) { 
-//				i++;
-//			} else if (l0 == l1) { 
-//				return true;
-//			} else {
-//				j--;
-//			}
-//		}
-//		return false;
-//	}
+
 }

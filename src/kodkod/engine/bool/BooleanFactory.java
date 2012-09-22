@@ -37,21 +37,22 @@ import kodkod.util.ints.IntSet;
  * {@link kodkod.engine.bool.BooleanMatrix matrices}, and {@link kodkod.engine.bool.Int ints}.
  * 
  * @specfield comparisonDepth: int // the depth to which circuits should be checked for equality 
- * @specfield intEncoding: Options.IntEncoding // the encoding used for generating integers ({@link #integer(int)}
+ * @specfield intEncoding: {@link Options.IntEncoding} // the encoding used for generating integers ({@link #integer(int)}
  * @specfield bitwidth: int // the bitwidth used for integer computations
- * @specfield components: set BooleanValue
- * @invariant no f1, f2: BooleanFactory | f1 != f2 => f1.components & f2.components = BooleanConstant
+ * @specfield components: set {@link BooleanValue}
+ * @invariant {@link BooleanConstant} in components
+ * @invariant no f1, f2: BooleanFactory | f1 != f2 => f1.components & f2.components = {@link BooleanConstant}
+ * @invariant let formulas = (components & {@link BooleanFormula}) - {@link NotGate} | 
+ * 				min(formulas.label) = 1 && max(formulas.label) = #formulas
  * @author Emina Torlak
  */
 public abstract class BooleanFactory {
 	/**
-	 * IMPLEMENTATION NOTE:  BooleanFactory is the facade and a mediator for this package.
-	 */
-	private static CBCFactory CONSTANT_FACTORY;
-	/**
 	 * A circuit factory used internally to assemble circuits.
 	 */
 	private final CBCFactory circuits;
+	
+	private int numVars;
 	
 	/** The bitwidth used for integer computations */
 	final int bitwidth;
@@ -67,14 +68,9 @@ public abstract class BooleanFactory {
 	 * @ensures this.comparisonDepth' = comparisonDepth
 	 */
 	private BooleanFactory(int numVars, int comparisonDepth, int bitwidth) {
-		if (numVars==0) {
-			if (CONSTANT_FACTORY==null)
-				CONSTANT_FACTORY = new CBCFactory(0, 1);
-			this.circuits = CONSTANT_FACTORY;
-		} else {
-			this.circuits = new CBCFactory(numVars, 1<<comparisonDepth);
-		}
+		this.circuits = new CBCFactory(numVars, 1<<comparisonDepth);
 		this.bitwidth = bitwidth;
+		this.numVars = numVars;
 	}
 	
 	/**
@@ -157,13 +153,18 @@ public abstract class BooleanFactory {
 		return circuits.canAssemble(v);
 	}
 	
-	
+	/**
+	 * Returns the maximum label of a {@link BooleanVariable variable} in {@code this.components}.
+	 * @return max((this.components & BooleanVariable).label)
+	 */
+	public final int maxVariable() { return circuits.maxVariable(); }
 	
 	/**
-	 * Returns the number of variables in this.components
-	 * @return #(BooleanVariable & this.components)
+	 * Returns the maximum label of a {@link BooleanFormula formula} in {@code this.components}.
+	 * Note that {@link #maxFormula()} >= {@link #maxVariable()} since variables themselves are formulas.
+	 * @return max((this.components & BooleanFormula).label)
 	 */
-	public final int numberOfVariables() { return circuits.numVars(); }
+	public final int maxFormula() { return circuits.maxFormula(); }
 	
 	/**
 	 * Returns the variable with the given label.
@@ -172,6 +173,30 @@ public abstract class BooleanFactory {
 	 */
 	public final BooleanVariable variable(int label) {
 		return circuits.variable(label);
+	}
+	
+	/**
+	 * Adds the specified number of fresh variables to {@code this.components}.
+	 * @requires numVars >= 0
+	 * @ensures let diff = this.components' - this.components | 
+	 *           diff in BooleanVariable && #diff = numVars && 
+	 *           diff.label = { i: int | this.maxFormula() < i <= this.maxFormula() + numVars }
+	 */
+	public final void addVariables(int numVars) { 
+		if (numVars < 0) {
+			throw new IllegalArgumentException("Expected numVars >= 0, given numVars = " + numVars);
+		} else if (numVars > 0) {
+			circuits.addVariables(numVars);
+			this.numVars += numVars;
+		} // else do nothing
+	}
+	
+	/**
+	 * Returns the number of variables in this factory.
+	 * @return #(this.components & BooleanVariable)
+	 */
+	public final int numberOfVariables() {
+		return numVars;
 	}
 	
 	/**
@@ -340,15 +365,6 @@ public abstract class BooleanFactory {
 	 */
 	public final Int sum(Collection<BooleanValue> bits) {
 		return sum(bits.iterator(), 0, bits.size()-1);
-	}
-	
-	/**
-	 * Removes all formulas with one or more inputs from this.components.
-	 * @ensures this.componets' = 
-	 *    BooleanConstant + this.components & BooleanVariable
-	 */
-	public final void clear() {
-		circuits.clear();
 	}
 	
 	/**

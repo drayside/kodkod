@@ -27,11 +27,18 @@ respect to finite bounds or instances.
 <h2>Package Specification</h2>
 
 <p>Contains classes for analyzing and evaluating Kodkod ASTs with
-respect to finite bounds or instances. The class Solver provides
-methods for finding finite models of Kodkod formulas with respect
+respect to finite bounds or instances. A {@linkplain kodkod.engine.Solver Solver} 
+provides methods for finding finite models and minimal unsatisfiable cores of Kodkod formulas with respect
 to given {@linkplain kodkod.instance.Bounds Bounds} and {@linkplain kodkod.engine.config.Options Options}.
-The class Evalutor enables evaluation of formulas, expressions, and integer expressions with
-respect to a particular {@linkplain kodkod.instance.Instance Instance} and {@linkplain kodkod.engine.config.Options Options}.  </p> 
+An {@linkplain kodkod.engine.IncrementalSolver IncrementalSolver} provides a way to solve a sequence of 
+related formulas and bounds incrementally, with respect to the same 
+{@linkplain kodkod.engine.config.Options Options options}
+and {@linkplain kodkod.instance.Universe Universe universe}.  
+An {@linkplain kodkod.engine.Evaluator Evaluator} enables the evaluation of formulas, expressions, and 
+integer expressions with respect to a particular {@linkplain kodkod.instance.Instance Instance} and 
+{@linkplain kodkod.engine.config.Options Options}. 
+
+</p> 
 
 <h2>Related Documentation</h2>
 
@@ -41,6 +48,7 @@ respect to a particular {@linkplain kodkod.instance.Instance Instance} and {@lin
 @see kodkod.ast.IntExpression
 @see kodkod.ast.Formula
 @see kodkod.engine.Solver
+@see kodkod.engine.IncrementalSolver
 @see kodkod.engine.Evaluator
 
 </body>

@@ -100,7 +100,7 @@ abstract class NativeSolver implements SATSolver {
 	 * @ensures adjusts the internal clause so that the next call to {@linkplain #numberOfClauses()}
 	 * will return the given value.
 	 */
-	void adjustClauseCount(int clauseCount) {
+	final void adjustClauseCount(int clauseCount) {
 		assert clauseCount >= 0;
 		clauses = clauseCount;
 	}
@@ -110,7 +110,7 @@ abstract class NativeSolver implements SATSolver {
 	 * @see kodkod.engine.satlab.SATSolver#addVariables(int)
 	 * @see #addVariables(long, int)
 	 */
-	public void addVariables(int numVars) {
+	public final void addVariables(int numVars) {
 		if (numVars < 0)
 			throw new IllegalArgumentException("vars < 0: " + numVars);
 		else if (numVars > 0) {
@@ -125,17 +125,14 @@ abstract class NativeSolver implements SATSolver {
 	 * @see #addClause(long, int[])
 	 */
 	public final boolean addClause(int[] lits) {
-		if (lits.length > 0) {
-			if (addClause(peer, lits)) {
-//				for(int i : lits) {
-//					System.out.print(i + " ");
-//				}
-//				System.out.println(0);
-//				System.out.println(Arrays.toString(lits));
-				clauses++;
-				return true;
-			}
-		}
+		if (addClause(peer, lits)) {
+//			for(int i : lits) {
+//				System.out.print(i + " ");
+//			}
+//			System.out.println(0);
+			clauses++;
+			return true;
+		} 
 		return false;
 	}
 	
@@ -153,14 +150,17 @@ abstract class NativeSolver implements SATSolver {
 	 * solve() yielded UNSAT.
 	 */
 	final Boolean status() { return sat; }
-	
+		
 	/**
 	 * {@inheritDoc}
 	 * @see kodkod.engine.satlab.SATSolver#solve()
 	 * @see #solve(long)
 	 */
 	public final boolean solve() {
-		return (sat = solve(peer));
+		if (sat == Boolean.FALSE)
+			return sat;
+		else
+			return (sat = Boolean.valueOf(solve(peer)));
 	}
 	
 
@@ -179,7 +179,7 @@ abstract class NativeSolver implements SATSolver {
 	 * @see kodkod.engine.satlab.SATSolver#valueOf(int)
 	 */
 	public final boolean valueOf(int variable) {
-		if (!Boolean.TRUE.equals(sat))
+		if (sat != Boolean.TRUE)
 			throw new IllegalStateException();
 		validateVariable(variable);
 		return valueOf(peer, variable);

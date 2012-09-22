@@ -34,6 +34,7 @@ import kodkod.util.ints.IntSet;
  */
 final class MiniSatProver extends NativeSolver implements SATProver {
 	private LazyTrace proof;
+
 	/**
 	 * Constructs a new MiniSat prover wrapper.
 	 */
@@ -44,6 +45,40 @@ final class MiniSatProver extends NativeSolver implements SATProver {
 	
 	static {
 		loadLibrary(MiniSatProver.class);
+	}
+	
+	/**
+	 * Returns a subset of the given trivial trace that 
+	 * consists only of axioms.  A trace is trivial iff 
+	 * its last clause is an empty clause.  This means that 
+	 * the empty axiom was added to the solver via {@linkplain #addClause(int[])}, 
+	 * so no resolution was necessary to reach the conflict.  The empty axiom 
+	 * is always the last clause in the trace. 
+	 * @requires trace[trace.length].length = 0
+	 * @return a subset of the given trivial trace that 
+	 * consists only of axioms
+	 */
+	private int[][] formatTrivial(int[][] trace) {
+		final int length = trace.length;
+		final int empty = length-1;
+		final IntSet axioms = new IntBitSet(length);
+		axioms.add(empty);
+		final int numVars = numberOfVariables();
+		for(int i = 0; i < empty; i++) {
+			int[] clause = trace[i];
+			if (clause[0]<=numVars) {
+				axioms.add(i);
+			}
+		}
+		if (axioms.size()==length) {
+			return trace;
+		}
+		final int[][] axiomClauses = new int[axioms.size()][];
+		final IntIterator itr = axioms.iterator();
+		for(int i = 0; itr.hasNext(); i++) {
+			axiomClauses[i] = trace[itr.next()];
+		}
+		return axiomClauses;
 	}
 	
 	/**
@@ -105,7 +140,14 @@ final class MiniSatProver extends NativeSolver implements SATProver {
 		if (proof==null) {
 			final int[][] trace = trace(peer(), true);
 			free();
-			proof = new LazyTrace(format(trace), numberOfClauses());
+			// if the empty axiom was added to the solver, that axiom will be 
+			// the last clause in the trace, and it will form its own minimal unsat core.
+			//System.out.println(Arrays.deepToString(trace));
+			if (trace[trace.length-1].length==0) {
+				proof = new LazyTrace(formatTrivial(trace), numberOfClauses());
+			} else {
+				proof = new LazyTrace(format(trace), numberOfClauses());
+			}
 		}
 		return proof;
 	}
@@ -116,6 +158,9 @@ final class MiniSatProver extends NativeSolver implements SATProver {
 	 */
 	public void reduce(ReductionStrategy strategy) {
 		proof();
+		if (proof.resolvents().isEmpty()) {
+			return; // nothing to minimize; we had an empty axiom added to the solver's database
+		}
 		
 		for(IntSet next = strategy.next(proof); !next.isEmpty(); next = strategy.next(proof)) {
 			long prover = make();

@@ -24,6 +24,7 @@ package kodkod.util.ints;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
+import kodkod.util.collections.Containers;
 import kodkod.util.ints.IntRange.OnePointRange;
 import kodkod.util.ints.IntRange.TwoPointRange;
 
@@ -59,6 +60,18 @@ public final class Ints {
 			public int ceil(int i) { throw new NoSuchElementException(); }
 			public IntSet clone() { return EMPTY_SET;}
 	};
+	
+	/** An immutable empty sequence. The clone method returns the empty set itself. */
+	public static final SparseSequence<?> EMPTY_SEQUENCE = 
+		new AbstractSparseSequence<Object>() {
+			public int size() { return 0; }
+			public boolean containsIndex(int idx) { return false; }
+			public boolean contains(Object o) { return false; }
+			public IntSet indices() { return EMPTY_SET; }
+			public Object get(int index) { return null;}
+			public Iterator<IndexedEntry<Object>> iterator(int from, int to) { return Containers.emptyIterator(); }
+			public SparseSequence<Object> clone() { return this; }
+		};
 	
 	private Ints() {}
 
@@ -211,6 +224,16 @@ public final class Ints {
 	}
 	
 	/*-----------SEQUENCES-----------*/
+	
+	/**
+	 * Returns {@linkplain #EMPTY_SEQUENCE} cast to a sequence of type SparseSequence<V>.
+	 * @return {@linkplain #EMPTY_SEQUENCE}
+	 */
+	@SuppressWarnings("unchecked")
+	public static <V> SparseSequence<V> emptySequence() { 
+		return (SparseSequence<V>) EMPTY_SEQUENCE;
+	}
+	
 	/**
 	 * Returns an unmodifiable view of the specified sparse sequence. This method 
 	 * allows modules to provide users with "read-only" access to internal sparse sequences.

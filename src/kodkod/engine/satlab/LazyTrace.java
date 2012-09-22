@@ -351,7 +351,12 @@ final class LazyTrace implements ResolutionTrace {
 	 * {@inheritDoc}
 	 * @see kodkod.engine.satlab.ResolutionTrace#resolvents()
 	 */
-	public IntSet resolvents() { return Ints.rangeSet(Ints.range(axioms, trace.length-1)); }
+	public IntSet resolvents() { 
+		if (trace.length > axioms)
+			return Ints.rangeSet(Ints.range(axioms, trace.length-1)); 
+		else
+			return Ints.EMPTY_SET;
+	}
 	
 	/**
 	 * {@inheritDoc}

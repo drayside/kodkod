@@ -128,6 +128,7 @@ public abstract class SATFactory {
 		public SATSolver instance() {
 			return new Lingeling();
 		}
+		public boolean incremental() { return false; }
 		public String toString() { return "Lingeling"; }
 	};
 	

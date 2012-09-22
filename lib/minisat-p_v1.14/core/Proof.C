@@ -84,13 +84,15 @@ ClauseId Proof::addRoot(vec<Lit>& cl)
 
     if (trav != NULL)
         trav->root(clause);
+
     if (!fp.null()){
-        putUInt(fp, index(clause[0]) << 1);
-        for (int i = 1; i < clause.size(); i++)
-            putUInt(fp, index(clause[i]) - index(clause[i-1]));
+    	if (clause.size() > 0) { // PATCH for the case of an empty root clause
+			putUInt(fp, index(clause[0]) << 1);
+			for (int i = 1; i < clause.size(); i++)
+				putUInt(fp, index(clause[i]) - index(clause[i-1]));
+    	}
         putUInt(fp, 0);     // (0 is safe terminator since we removed duplicates)
     }
-
     return id_counter++;
 }
 
@@ -190,6 +192,8 @@ void Proof::traverse(ProofTraverser& trav, ClauseId goal)
     if (goal == ClauseId_NULL)
         goal = last();
 
+    //std::cout << "about to start traversal with goal " << goal << std::endl;
+
     uint64  tmp;
     int     idx;
     for(ClauseId id = 0; id <= goal; id++){
@@ -197,16 +201,17 @@ void Proof::traverse(ProofTraverser& trav, ClauseId goal)
         if ((tmp & 1) == 0){
             // Root clause:
             clause.clear();
-            idx = tmp >> 1;
-            clause.push(toLit(idx));
-            for(;;){
-                tmp = getUInt(fp);
-                if (tmp == 0) break;
-                idx += tmp;
-                clause.push(toLit(idx));
+            if (id < goal) { // PATCH for the case of an empty root clause being the goal clause
+				idx = tmp >> 1;
+				clause.push(toLit(idx));
+				for(;;){
+					tmp = getUInt(fp);
+					if (tmp == 0) break;
+					idx += tmp;
+					clause.push(toLit(idx));
+				}
             }
             trav.root(clause);
-
         }else{
             // Derivation or Deletion:
             chain_id .clear();

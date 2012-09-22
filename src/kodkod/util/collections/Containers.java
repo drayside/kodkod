@@ -25,6 +25,7 @@ import java.util.AbstractSet;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
@@ -306,6 +307,16 @@ public final class Containers {
 			public Iterator<T> iterator() { return iterate(array);}
 			public int size() { return array.length;}
 		};
+	}
+	
+	/**
+	 * Returns a new set that contains the asymmetric difference between the left and the right sets.
+	 * @return some s: Set<T> | s.elements = left.elements - right.elements
+	 */
+	public static final <T> Set<T> setDifference(Set<T> left, Set<T> right) { 
+		final Set<T> ret = new LinkedHashSet<T>(left);
+		ret.removeAll(right);
+		return ret;
 	}
 	
 	/**

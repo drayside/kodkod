@@ -23,7 +23,6 @@ package kodkod.engine;
 
 
 import kodkod.instance.Instance;
-
 /**
  * Represents the full solution to a formula:  an
  * instance if the formula is satisfiable or a
@@ -107,6 +106,22 @@ public final class Solution {
 	}
 	
 	/**
+	 * Returns true iff this solution has a (trivially) satisfiable outcome.
+	 * @return this.outcome = Outcome.SATISFIABLE || this.outcome = Outcome.TRIVIALLY_SATISFIABLE
+	 */
+	public final boolean sat() {
+		return outcome==Outcome.SATISFIABLE || outcome==Outcome.TRIVIALLY_SATISFIABLE;
+	}
+	
+	/**
+	 * Returns true iff this solution has a (trivially) unsatisfiable outcome.
+	 * @return this.outcome = Outcome.UNSATISFIABLE || this.outcome = Outcome.TRIVIALLY_UNSATISFIABLE
+	 */
+	public final boolean unsat() {
+		return outcome==Outcome.UNSATISFIABLE || outcome==Outcome.TRIVIALLY_UNSATISFIABLE;
+	}
+	
+	/**
 	 * Returns a satisfiying instance for this.formula, if the
 	 * value returned by {@link #outcome() this.outcome()} is either
 	 * SATISFIABLE or TRIVIALLY_SATISFIABLE.  Otherwise returns null.
@@ -182,7 +197,8 @@ public final class Solution {
 		 * The formula is trivially unsatisfiable with respect to the specified bounds:
 		 * a series of simple transformations reduces the formula to the constant FALSE.  
 		 */
-		TRIVIALLY_UNSATISFIABLE
+		TRIVIALLY_UNSATISFIABLE;
+		
 	}
 	
 }

@@ -62,11 +62,6 @@ public abstract class AbstractReporter implements Reporter {
 	public void generatingSBP() {}
 
 	/**
-	 * @see kodkod.engine.config.Reporter#flattening(kodkod.engine.bool.BooleanFormula)
-	 */
-	public void flattening(BooleanFormula circuit) {}
-
-	/**
 	 * {@inheritDoc}
 	 * @see kodkod.engine.config.Reporter#skolemizing(kodkod.ast.Decl, kodkod.ast.Relation, java.util.List)
 	 */

@@ -37,12 +37,11 @@ import kodkod.util.ints.Ints;
  * @specfield intEncoding: IntEncoding // encoding to use for translating int expressions
  * @specfield bitwidth: int // the bitwidth to use for integer representation / arithmetic
  * @specfield skolemDepth: int // skolemization depth
- * @specfield flatten: boolean // eliminate intermediate variables when possible?  default is false.
  * @specfield logTranslation: [0..2] // log translation events, default is 0 (no logging)
  * @specfield coreGranularity: [0..3] // unsat core granularity, default is 0 (only top-level conjuncts are considered)
  * @author Emina Torlak
  */
-public final class Options {
+public final class Options implements Cloneable {
 	private Reporter reporter = new AbstractReporter(){};
 	private SATFactory solver = SATFactory.DefaultSAT4J;
 	private int symmetryBreaking = 20;
@@ -50,13 +49,11 @@ public final class Options {
 	private int bitwidth = 4;
 	private int sharing = 3;
 	private int skolemDepth = 0;
-	private boolean flatten = false;
 	private int logTranslation = 0;
 	private int coreGranularity = 0;
 	
 	/**
-	 * Constructs an Options object initalized with 
-	 * default values.
+	 * Constructs an Options object initialized with default values.
 	 * @ensures this.solver' = SATFactory.DefaultSAT4J
 	 *          this.reporter' is silent (no messages reported)
 	 *          this.symmetryBreaking' = 20
@@ -64,7 +61,6 @@ public final class Options {
 	 *          this.intEncoding' = BINARY
 	 *          this.bitwidth' = 4
 	 *          this.skolemDepth' = 0
-	 *          this.flatten' = false
 	 *          this.logTranslation' = 0
 	 *          this.coreGranularity' = 0
 	 */
@@ -176,39 +172,13 @@ public final class Options {
 	}
 	
 	/**
-	 * Returns the value of the flattening flag, which specifies whether
-	 * to eliminate extraneous intermediate variables.  The flag is false by default.  
-	 * Flattening must be off if translation logging is enabled.  
-	 * @return this.flatten
-	 */
-	public boolean flatten() {
-		return flatten;
-	}
-	
-	/**
-	 * Sets the flattening option to the given value.
-	 * @ensures this.flatten' = flatten
-	 * @throws IllegalArgumentException  this.logTranslation>0 && flatten
-	 */
-	public void setFlatten(boolean flatten) {
-		if (logTranslation>0 && flatten)
-			throw new IllegalStateException("logTranslation enabled:  flattening must be off.");
-		this.flatten = flatten;
-	}
-	
-	/**
 	 * Returns the 'amount' of symmetry breaking to perform.
 	 * If a non-symmetric solver is chosen for this.solver,
 	 * this value controls the maximum length of the generated
-	 * lex-leader symmetry breaking predicate.  If a symmetric
-	 * solver is chosen, this value controls the amount of 
-	 * symmetry information to pass to the solver.  (For example,
-	 * if a formula has 10 relations on which symmetry can be broken,
-	 * and the symmetryBreaking option is set to 5, then symmetry information
-	 * will be computed for only 5 of the 10 relations.)  In general, 
-	 * the higher this value, the more symmetries will be broken, and the 
-	 * faster the formula will be solved.  But, setting the value too high 
-	 * may have the opposite effect and slow down the solving.  The default
+	 * lex-leader symmetry breaking predicate.  In general, 
+	 * the higher this value, the more symmetries will be broken.  But 
+	 * setting the value too high may have the opposite effect 
+	 * and slow down the solving.  The default
 	 * value for this property is 20.  
 	 * @return this.symmetryBreaking
 	 */
@@ -271,8 +241,7 @@ public final class Options {
 	 * means logging is not performed, 1 means only the translations of 
 	 * top level formulas are logged, and 2 means all formula translations
 	 * are logged.  This is necessary for determining which formulas occur in the unsat core of an 
-	 * unsatisfiable formula.  Flattening  must be off whenever 
-	 * logging is enabled.  Logging is off by default, since 
+	 * unsatisfiable formula.  Logging is off by default, since 
 	 * it incurs a non-trivial time overhead.
 	 * @return this.logTranslation
 	 */
@@ -281,18 +250,13 @@ public final class Options {
 	}
 	
 	/**
-	 * Sets the translation logging level.  If the level is above 0, 
-	 * flattening is automatically disabled.
+	 * Sets the translation logging level.   
 	 * @requires logTranslation in [0..2]
-	 * @ensures this.logTranslation' = logTranslation &&
-	 *          logTranslation>0 => this.flatten' = false 
+	 * @ensures this.logTranslation' = logTranslation  
 	 * @throws IllegalArgumentException  logTranslation !in [0..2]
 	 */
 	public void setLogTranslation(int logTranslation) {
 		checkRange(logTranslation, 0, 2);
-		if (logTranslation>0) {
-			flatten = false;
-		}
 		this.logTranslation = logTranslation;
 	}
 	
@@ -325,6 +289,27 @@ public final class Options {
 	}
 	
 	/**
+	 * Returns a shallow copy of this Options object.  In particular, 
+	 * the returned options shares the same {@linkplain #reporter()} 
+	 * and {@linkplain #solver()} factory objects as this Options. 
+	 * @return a shallow copy of this Options object.
+	 */
+	public Options clone() {
+		final Options c = new Options();
+		c.setSolver(solver);
+		c.setReporter(reporter);
+		c.setBitwidth(bitwidth);
+		c.setIntEncoding(intEncoding);
+		c.setSharing(sharing);
+		c.setSharing(sharing);
+		c.setSymmetryBreaking(symmetryBreaking);
+		c.setSkolemDepth(skolemDepth);
+		c.setLogTranslation(logTranslation);
+		c.setCoreGranularity(coreGranularity);
+		return c;
+	}
+	
+	/**
 	 * Returns a string representation of this Options object.
 	 * @return a string representation of this Options object.
 	 */
@@ -341,8 +326,6 @@ public final class Options {
 		b.append(bitwidth);
 		b.append("\n sharing: ");
 		b.append(sharing);
-		b.append("\n flatten: ");
-		b.append(flatten);
 		b.append("\n symmetryBreaking: ");
 		b.append(symmetryBreaking);
 		b.append("\n skolemDepth: ");

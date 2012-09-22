@@ -24,6 +24,7 @@ package kodkod.engine.fol2sat;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 import kodkod.ast.ConstantExpression;
 import kodkod.ast.Expression;
@@ -57,8 +58,9 @@ import kodkod.util.ints.SparseSequence;
  * @specfield factory: BooleanFactory
  * @specfield vars: relations -> set BooleanVariable
  * @invariant all r: relations | r.arity = lbounds[r].arity = ubounds[r].arity && ubounds[r].containsAll(lbounds[r])
- * @invariant all r: relations | lbounds[r].atoms + ubounds[r] in universe 
+ * @invariant all r: relations | lbounds[r].atoms + ubounds[r].atoms in universe 
  * @invariant all r: relations | #vars[r] = ubounds[r].size() - lbounds[r].size()
+ * @invariant all disj r, r': relations | no vars[r] & vars[r']
  * @invariant all i: ints | ibounds[i].arity = ibounds[i].size() = 1
  * @invariant vars[relations] in factory.components
  * 
@@ -104,45 +106,75 @@ final class LeafInterpreter {
 	}
 	
 	/**
+	 * Returns an overapproximating interpreter for the given bounds and options.
+	 * @return some l: LeafInterpreter | l.universe = bounds.universe && l.relations = bounds.relations() && 
+	 *           l.ints = bounds.ints() && l.lbounds = l.ubounds = bounds.upperBound && 
+	 *           l.ibounds = bounds.intBound && l.factory = BooleanFactory.constantFactory(options) && no l.vars 
+	 */
+	static final LeafInterpreter overapproximating(Bounds bounds, Options options) {
+		return new LeafInterpreter(bounds.universe(), bounds.upperBounds(), bounds.intBounds(), options);
+	}
+	
+	/**
 	 * Returns an exact leaf interpreter based on the given instance and options.
-	 * @return { l: LeafInterpreter | l.universe = instance.universe && l.relations = instance.relations() && 
-	 * l.ints = instance.ints() && l.lbounds = l.ubounds = instance.relationTuples() && 
-	 * l.ibounds = instance.intTuples && l.factory = BooleanFactory.constantFactory(options) && no l.vars }
+	 * @return some l: LeafInterpreter | l.universe = instance.universe && l.relations = instance.relations() && 
+	 *           l.ints = instance.ints() && l.lbounds = l.ubounds = instance.relationTuples() && 
+	 *           l.ibounds = instance.intTuples && l.factory = BooleanFactory.constantFactory(options) && no l.vars 
 	 */
 	static final LeafInterpreter exact(Instance instance, Options options) {
 		return new LeafInterpreter(instance.universe(), instance.relationTuples(), instance.intTuples(), options);
 	}
 	
 	/**  
-	 * Returns an exact interpreter for the given bounds and options.
-	 * @return { l: LeafInterpreter | l.universe = bounds.universe && l.relations = bounds.relations() && 
-	 * l.ints = bounds.ints() && l.lbounds = bounds.lowerBound && l.ubounds = bounds.upperBound && 
-	 * l.ibounds = bounds.intBound && 
-	 * l.factory = BooleanFactory.factory(sum(r: l.relations | #(l.ubounds[r]-l.lbounds[r]))-1, options) &&
-	 * l.vars[relations] = l.factory & BooleanVariable}
+	 * Returns an exact interpreter for the given bounds and options. If {@code incremental}  is <code>true</code>, 
+	 * then the resulting interpreter can be {@linkplain #extend(Set, Map, Map) extended} with new bindings.  
+	 * Otherwise, the interpreter will throw an exception if extension is attempted.
+	 * @return some l: LeafInterpreter | l.universe = bounds.universe && l.relations = bounds.relations() && 
+	 *          l.ints = bounds.ints() && l.lbounds = bounds.lowerBound && l.ubounds = bounds.upperBound && 
+	 *          l.ibounds = bounds.intBound && 
+	 *          l.factory = BooleanFactory.factory(sum(r: l.relations | #(l.ubounds[r]-l.lbounds[r]))-1, options) &&
+	 *          l.vars[relations] = l.factory & BooleanVariable
 	 */
-	static final LeafInterpreter exact(Bounds bounds, Options options) {
+	static final LeafInterpreter exact(Bounds bounds, Options options, boolean incremental) {
 		final Map<Relation, IntRange> vars = new LinkedHashMap<Relation,IntRange>();
-		int maxLit = 1;
-		for(Relation r : bounds.relations()) {
-			int rLits = bounds.upperBound(r).size() - bounds.lowerBound(r).size();
+		final Map<Relation, TupleSet> lowers = incremental ? new LinkedHashMap<Relation, TupleSet>(bounds.lowerBounds()) : bounds.lowerBounds();
+		final Map<Relation, TupleSet> uppers = incremental ? new LinkedHashMap<Relation, TupleSet>(bounds.upperBounds()) : bounds.upperBounds();
+		final int numVars = allocateVars(1, vars, bounds.relations(), lowers, uppers);
+		return new LeafInterpreter(bounds.universe(), lowers, uppers, bounds.intBounds(), BooleanFactory.factory(numVars, options), vars);
+	}
+	
+	/**
+	 * Returns an empty interpreter which cannot be {@linkplain #extend(Set, Map, Map) extended} with new mappings.
+	 * @return some l: LeafInterpreter | l.universe = universe && no l.relations  && 
+	 *           no l.ints && l.factory = BooleanFactory.constantFactory(options)  
+	 */
+	@SuppressWarnings("unchecked")
+	static final LeafInterpreter empty(Universe universe, Options options) {
+		return new LeafInterpreter(universe, (Map<Relation, TupleSet>)Collections.EMPTY_MAP, 
+				(SparseSequence<TupleSet>)Ints.EMPTY_SEQUENCE, options);
+	}
+	
+	/**
+	 * Populates the {@code vars} map with bindings from each relation in {@code rels} to an integer range,
+	 * which specifies the identifiers of the variables used to encode the contents of that relation.  The 
+	 * resulting integer ranges put together form a complete range that starts at {@code minVar}.
+	 * @requires lowers.universe = uppers.universe 
+	 * @requires all r: rels | lowers.get(r).tuples in uppers.get(r).tuples 
+	 * @ensures vars.map' = vars.map ++ 
+	 *          { r: rels, v: IntRange | v.size() = uppers.get(r).size() - lowers.get(r).size() && v.size() > 0 }
+	 * @ensures min(vars.map'[rels]) = minVar && max(vars.map'[rels]) = minVar + (sum r: rels | vars.map'[r].size()) - 1
+	 * @return sum r: rels | vars.map'[r].size()
+	 */
+	private static int allocateVars(int minVar, Map<Relation, IntRange> vars, Set<Relation> rels, Map<Relation, TupleSet> lowers, Map<Relation, TupleSet> uppers) {
+		int maxLit = minVar;
+		for(Relation r : rels) {
+			int rLits = uppers.get(r).size() - lowers.get(r).size();
 			if (rLits > 0) {
 				vars.put(r, Ints.range(maxLit, maxLit + rLits - 1));
 				maxLit += rLits;
 			}
 		}
-		return new LeafInterpreter(bounds.universe(), bounds.lowerBounds(), bounds.upperBounds(), 
-				bounds.intBounds(), BooleanFactory.factory(maxLit-1, options), vars);
-	}
-	
-	/**
-	 * Returns an overapproximating interpreter for the given bounds and options.
-	 * @return { l: LeafInterpreter | l.universe = bounds.universe && l.relations = bounds.relations() && 
-	 * l.ints = bounds.ints() && l.lbounds = l.ubounds = bounds.upperBound && 
-	 * l.ibounds = bounds.intBound && l.factory = BooleanFactory.constantFactory(options) && no l.vars }
-	 */
-	static final LeafInterpreter overapproximating(Bounds bounds, Options options) {
-		return new LeafInterpreter(bounds.universe(), bounds.upperBounds(), bounds.intBounds(), options);
+		return maxLit - minVar;
 	}
 	
 	/**
@@ -171,6 +203,42 @@ final class LeafInterpreter {
 			ret.put(e.getKey(), Ints.rangeSet(e.getValue()));
 		}
 		return ret;
+	}
+	
+	/**
+	 * Returns a set view of the variables assigned to the given relation, or empty set 
+	 * if no variables were assigned to the given relation.
+	 * @return this.vars[r]
+	 */
+	public final IntSet vars(Relation r) { 
+		final IntRange v = vars.get(r);
+		return v==null ? Ints.EMPTY_SET : Ints.rangeSet(v); 
+	}
+	
+	/**
+	 * Extends this interpreter with interpretations for the given relations, based on 
+	 * the specified lower and upper bound on each relation's value.  Note that this 
+	 * method may fail if the underlying boolean factory does not permit introduction 
+	 * of new variables.
+	 * @requires no rels & this.relations
+	 * @requires rels in lowers.keySet() && rels in uppers.keySet()
+	 * @requires all r: rels | let lr = lowers.get(r), ur = uppers.get(r) |
+	 *            lr.tuples in ur.tuples && lr.universe = ur.universe = this.universe
+	 * @ensures this.relations' = this.relations +  rels && 
+	 *          this.lbounds' = this.lbounds + rels<:(lowers.map) && 
+	 *          this.ubounds' = this.ubounds + rels<:(uppers.map) &&
+	 *          let newVars = this.factory.components' - this.factory.components | 
+	 *          	  newVars in BooleanVariable && 
+	 *                #newVars = (sum r: rels | uppers.get(r).size() - lowers.get(r).size()) &&
+	 *                (this.vars' - this.vars) in rels -> newVars
+	 * @return this
+	 */
+	public final void extend(Set<Relation> rels, Map<Relation, TupleSet> lowers, Map<Relation, TupleSet> uppers) { 	
+		for(Relation r : rels) {
+			this.lowers.put(r, lowers.get(r));
+			this.uppers.put(r, uppers.get(r));
+		}
+		factory.addVariables(allocateVars(factory.maxFormula()+1, vars, rels, lowers, uppers));
 	}
 	
 	/**

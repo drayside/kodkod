@@ -41,11 +41,16 @@ import kodkod.util.ints.Ints;
 
 /**
  * Partitions a universe into equivalence classes based 
- * on the bounding constraints given by a Bounds object.
- * @specfield bounds: Bounds // bounds on which the partitioning is based
+ * on the bounding constraints given by a Bounds object.  In particular, 
+ * given a {@link Bounds} object {@code b}, a {@link SymmetryDetector} computes 
+ * the coarsest partition <code>{ s0, ..., sn }</code> of <code>b.universe</code> such 
+ * that every tupleset in <code>b.lowerBound</code>, <code>b.upperBound</code>, and 
+ * <code>b.intBound</code> can be expressed as a union of cross-products of sets drawn from 
+ * <code>{ s0, ..., sn }</code>. 
+ * 
  * @author Emina Torlak
  */
-final class SymmetryDetector {
+public final class SymmetryDetector {
 	private final Bounds bounds;
 	/* invariant: representatives always holds a sequence of IntSets that partition bounds.universe */
 	private final List<IntSet> parts;
@@ -67,14 +72,23 @@ final class SymmetryDetector {
 	}
 	
 	/**
-	 * Returns a sound partitioning of bounds.universe
-	 * into symmetry classes.  Each intset in the returned
-	 * collection represents the indices of the atoms in
-	 * this.bounds.universe that belong to the same equivalence class.
-	 * @return a sound partitioning of bounds.universe
-	 * into symmetry classes
+	 * Returns the coarsest sound partition of {@code bounds.universe} into symmetry classes. 
+	 * @return some symmetries: set IntSet | 
+	 *          (symmetries.ints = { i: int | 0 <= i < bounds.universe.size() }) && 
+	 *          (all p1, p2: symmetries | some p1.ints & p2.ints => p1 = p2) &&
+	 *          (all ts: bounds.(lowerBound + upperBound + intBound)[Relation] | 
+	 *            some decomposition: set List<IntSet> | 
+	 *                 decomposition.elements[int] in symmetries &&
+	 *                 decomposition.elements.IntSet = { i: int | 0 <= i < ts.arity } &&
+	 *                 ts.tuples = { t: Tuple | some part: decomposition | all i: [0 .. ts.arity-1] | t.atomIndex(i) in part.get(i) }) && 
+	 *          (all other: set IntSet | #other > #symmetries =>
+	 *             some ts: bounds.(lowerBound + upperBound + intBound)[Relation] | 
+	 *              no decomposition: set List<IntSet> | 
+	 *                 decomposition.elements[int] in other &&
+	 *                 decomposition.elements.IntSet = { i: int | 0 <= i < ts.arity } &&
+	 *                 ts.tuples = { t: Tuple | some part: decomposition | all i: [0 .. ts.arity-1] | t.atomIndex(i) in part.get(i) })	
 	 */
-	static Set<IntSet> partition(Bounds bounds) {		
+	public static Set<IntSet> partition(Bounds bounds) {		
 		final SymmetryDetector detector = new SymmetryDetector(bounds);
 		detector.computePartitions();
 		final Set<IntSet> parts = new LinkedHashSet<IntSet>(detector.parts);

@@ -52,13 +52,6 @@ public final class ConsoleReporter implements Reporter {
 	}
 
 	/**
-	 * @see kodkod.engine.config.Reporter#flattening(kodkod.engine.bool.BooleanFormula)
-	 */
-	public void flattening(BooleanFormula circuit) {
-		System.out.println("flattening ...");
-	}
-
-	/**
 	 * {@inheritDoc}
 	 * @see kodkod.engine.config.Reporter#skolemizing(kodkod.ast.Decl, kodkod.ast.Relation, java.util.List)
 	 */
@@ -87,7 +80,7 @@ public final class ConsoleReporter implements Reporter {
 	 * @see kodkod.engine.config.Reporter#detectedSymmetries(java.util.Set)
 	 */
 	public void detectedSymmetries(Set<IntSet> parts) {
-//		System.out.println("detected symmetries: " + parts);
+		System.out.println("detected " + parts.size() + " equivalence classes of atoms ...");
 	}
 	
 	/**

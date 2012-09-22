@@ -44,6 +44,7 @@ import kodkod.engine.bool.BooleanFactory;
 import kodkod.engine.bool.BooleanMatrix;
 import kodkod.engine.bool.BooleanValue;
 import kodkod.engine.bool.Operator;
+import kodkod.engine.config.Options;
 import kodkod.engine.config.Reporter;
 import kodkod.instance.Bounds;
 import kodkod.instance.TupleFactory;
@@ -68,12 +69,14 @@ final class SymmetryBreaker {
 	private final int usize;
 	
 	/**
-	 * Constructs a new symmetry breaker for the given Bounds.
+	 * Constructs a new symmetry breaker for the given Bounds, and calls 
+	 * the given reporter's {@linkplain Reporter#detectedSymmetries(Set)} method
+	 * with the detected symmetries.
 	 * <b>Note that the constructor does not make a local copy of the given
 	 * bounds, so the caller must ensure that all modifications of the
 	 * given bounds are symmetry preserving.</b>  
-	 * @ensures this.bounds' = bounds && this.symmetries' = SymmetryDetector.partition(bounds) &&
-	 * no this.broken'
+	 * @ensures reporter.detectedSymmetries(this.symmteries')
+	 * @ensures this.bounds' = bounds && this.symmetries' = SymmetryDetector.partition(bounds) && no this.broken'
 	 **/
 	SymmetryBreaker(Bounds bounds, Reporter reporter) {
 		this.bounds = bounds;
@@ -149,12 +152,17 @@ final class SymmetryBreaker {
 		
 	/**
 	 * Generates a lex leader symmetry breaking predicate for this.symmetries 
-	 * (if any), using the specified leaf interpreter and the specified predicate length.
+	 * (if any), using the specified leaf interpreter and options.symmetryBreaking.
+	 * It also invokes options.reporter().generatingSBP() if a non-constant predicate
+	 * is generated.
 	 * @requires interpreter.relations in this.bounds.relations
+	 * @ensures options.reporter().generatingSBP() if a non-constant predicate is generated.
 	 * @return a symmetry breaking predicate for this.symmetries
 	 */
-	final BooleanValue generateSBP(LeafInterpreter interpreter, int predLength) {
+	final BooleanValue generateSBP(LeafInterpreter interpreter, Options options) {
+		final int predLength = options.symmetryBreaking();
 		if (symmetries.isEmpty() || predLength==0) return BooleanConstant.TRUE;
+		options.reporter().generatingSBP();
 		
 		final List<RelationParts> relParts = relParts();
 		final BooleanFactory factory = interpreter.factory();
@@ -192,7 +200,7 @@ final class SymmetryBreaker {
 				prevIndex = curIndex;
 			}
 		}
-		
+		symmetries.clear(); // no symmetries left to break (this is conservative)
 		return factory.accumulate(sbp);
 	}
 	

@@ -21,7 +21,15 @@
  */
 package kodkod.engine.fol2sat;
 
+import static kodkod.engine.fol2sat.FormulaFlattener.flatten;
+import static kodkod.engine.fol2sat.Skolemizer.skolemize;
+import static kodkod.util.nodes.AnnotatedNode.annotate;
+import static kodkod.util.nodes.AnnotatedNode.annotateRoots;
+import static kodkod.util.collections.Containers.setDifference;
+
+import java.util.Collections;
 import java.util.IdentityHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -44,10 +52,10 @@ import kodkod.engine.config.Options;
 import kodkod.engine.satlab.SATSolver;
 import kodkod.instance.Bounds;
 import kodkod.instance.Instance;
+import kodkod.instance.TupleSet;
+import kodkod.util.ints.IndexedEntry;
 import kodkod.util.ints.IntSet;
 import kodkod.util.nodes.AnnotatedNode;
-
-import static kodkod.util.nodes.AnnotatedNode.*;
 
 /** 
  * Translates, evaluates, and approximates {@link Node nodes} with
@@ -109,119 +117,346 @@ public final class Translator {
 	
 	/**
 	 * Translates the given formula using the specified bounds and options.
-	 * @return a Translation whose solver is a SATSolver instance initialized with the 
-	 * CNF representation of the given formula, with respect to the given bounds.  The CNF
-	 * is generated in such a way that the magnitude of the literal representing the truth
-	 * value of a given formula is strictly larger than the magnitudes of the literals representing
-	 * the truth values of the formula's descendants.  
-	 * @throws TrivialFormulaException  the given formula is reduced to a constant during translation
-	 * (i.e. the formula is trivially (un)satisfiable).
+	 * The CNF representation of the given formula and bounds  is generated so that the magnitude 
+	 * of the literal representing the truth value of a given circuit is strictly larger than the magnitudes of 
+	 * the literals representing the truth values of the circuit's descendants.   
+	 * @return some t: Translation.Whole |  t.originalFormula = formula && t.originalBounds = bounds && t.options = options
 	 * @throws NullPointerException  any of the arguments are null
 	 * @throws UnboundLeafException  the formula refers to an undeclared variable or a relation not mapped by the given bounds.
 	 * @throws HigherOrderDeclException  the formula contains a higher order declaration that cannot
 	 * be skolemized, or it can be skolemized but options.skolemize is false.
 	 */
-	public static Translation translate(Formula formula, Bounds bounds, Options options) throws TrivialFormulaException {
-		return (new Translator(formula,bounds,options)).translate();
-	}
-	
-	/*---------------------- private translation state and methods ----------------------*/
-	/**
-	 * @specfield formula: Formula
-	 * @specfield bounds: Bounds
-	 * @specfield options: Options
-	 * @specfield log: TranslationLog
-	 */
-	private final Formula formula;
-	private final Bounds bounds;
-	private final Options options;
-	
-	private TranslationLog log;
-	
-	/**
-	 * Constructs a Translator for the given formula, bounds and options.
-	 * @ensures this.formula' = formula and 
-	 * 	this.options' = options and 
-	 * 	this.bounds' = bounds.clone() and
-	 *  no this.log'
-	 */
-	private Translator(Formula formula, Bounds bounds, Options options) {
-		this.formula = formula;
-		this.bounds = bounds.clone();
-		this.options = options;
-		this.log = null;
+	public static Translation.Whole translate(Formula formula, Bounds bounds, Options options)  {
+		return (Translation.Whole) (new Translator(formula,bounds,options)).translate();
 	}
 	
 	/**
-	 * Translates this.formula with respect to this.bounds and this.options.
-	 * @return a Translation whose solver is a SATSolver instance initialized with the 
-	 * CNF representation of the given formula, with respect to the given bounds.  The CNF
-	 * is generated in such a way that the magnitude of a literal representing the truth
-	 * value of a given formula is strictly larger than the magnitudes of the literals representing
-	 * the truth values of the formula's descendants.  
-	 * @throws TrivialFormulaException  this.formula is reduced to a constant during translation
-	 * (i.e. the formula is trivially (un)satisfiable).
-	 * @throws UnboundLeafException  this.formula refers to an undeclared variable or a relation not mapped by this.bounds.
-	 * @throws HigherOrderDeclException  this.formula contains a higher order declaration that cannot
-	 * be skolemized, or it can be skolemized but this.options.skolemDepth < 0
+	 * Translates the given formula using the specified bounds and options in such a way 
+	 * that the resulting translation can be extended with additional formulas and bounds, subject to 
+	 * the same options.  We require that the options specify  an incremental SAT solver, and no translation logging.
+	 * The CNF representation of the given formula and bounds  is generated so that the magnitude 
+	 * of the literal representing the truth value of a given circuit is strictly larger than the magnitudes of 
+	 * the literals representing the truth values of the circuit's descendants.  
+	 * @requires options.solver.incremental() && options.logTranslation = 0  
+	 * @return some t: Translation.Incremental |  t.originalFormula = formula && t.originalBounds = bounds && t.options = options
+	 * @throws NullPointerException  any of the arguments are null
+	 * @throws UnboundLeafException  the formula refers to an undeclared variable or a relation not mapped by the given bounds
+	 * @throws HigherOrderDeclException  the formula contains a higher order declaration
+	 * @throws IllegalArgumentException any of the preconditions on options are violated
 	 */
-	private Translation translate() throws TrivialFormulaException  {
-		final AnnotatedNode<Formula> annotated = options.logTranslation()>0 ? annotateRoots(formula) : annotate(formula);
-		final SymmetryBreaker breaker = optimizeBounds(annotated);
-		return toBoolean(optimizeFormula(annotated, breaker), breaker);
+	public static Translation.Incremental translateIncremental(Formula formula, Bounds bounds, Options options)  {
+		checkIncrementalOptions(options);	
+		return (Translation.Incremental) (new Translator(formula, bounds, options, true)).translate();
 	}
 	
 	/**
-	 * Removes bindings for unused relations/ints from this.bounds and
-	 * returns a SymmetryBreaker for the reduced bounds.
-	 * @requires annotated.node = this.formula
-	 * @ensures this.bounds'.relations = this.formula.*children & Relations
-	 * @ensures !annotated.usesInts() => no this.bounds'.int
-	 * @return { b: SymmetryBreaker | b.bounds = this.bounds' }
+	 * Updates the given translation with {@code CNF(formula, translation.originalBounds + bounds, translation.options)}.  The 
+	 * result of the update is either a new translation instance or the given {@code translation}, modified in place.  We assume
+	 * that client did not modify any translation state between invocations to {@code translateIncremental(...)}.
+	 * 
+	 * <p>
+	 * We require {@code bounds} and {@code translation} to be consistent in the following sense:
+	 * <ol>
+	 * <li>{@code bounds} and {@code translation.bounds} share the same universe;</li>
+	 * <li>{@code bounds} must not specify any integer bounds;</li> 
+	 * <li>{@code bounds.relations} must not contain any members of {@code translation.bounds.relations} 
+	 * (which may be a superset of {@code translation.originalBounds.relations} that also includes Skolem constants); and,</li>
+	 * <li>{@code bounds} must induce a coarser set of equivalence classes on the shared universe than {@code translation.originalBounds}.</li>
+	 * </ol>
+	 * </p>
+	 * 
+	 * <p>
+	 * The behavior of this method is unspecified if a prior call to {@code translation.cnf.solve()} returned false, or 
+	 * if a prior call to this method resulted in an exception.
+	 * </p>
+	 * 
+	 * @requires translation.cnf.solve()
+	 * @requires formula.*components & Relation in (translation.bounds + bounds).relations
+	 * @requires translation.bounds.universe = bounds.universe && no bounds.intBound && no (translation.bounds.relations & bounds.relations)
+	 * @requires all s: translation.symmetries | 
+	 *            some p: {@link SymmetryDetector#partition(Bounds) partition}(bounds) |
+	 *             s.ints in p.ints       
+	 * @return some t: Translation | 
+	 *          t.originalFormula = translation.originalFormula.and(formula) && 
+	 * 	        t.originalBounds.relations = translation.originalBounds.relations + bounds.relations &&
+	 *          t.originalBounds.upperBound = translation.originalBounds.upperBound + bounds.upperBound &&
+	 *          t.originalBounds.lowerBound = translation.originalBounds.lowerBound + bounds.lowerBound &&
+	 *          t.originalBounds.intBound = translation.originalBounds.intBound 
+	 * @throws NullPointerException  any of the arguments are null
+	 * @throws UnboundLeafException  the formula refers to an undeclared variable or a relation not mapped by translation.bounds + bounds
+	 * @throws HigherOrderDeclException  the formula contains a higher order declaration
+	 * @throws IllegalArgumentException any of the other preconditions on the arguments are violated
 	 */
-	private SymmetryBreaker optimizeBounds(AnnotatedNode<Formula> annotated) {	
-		// remove bindings for unused relations/ints
-		bounds.relations().retainAll(annotated.relations());
-		if (!annotated.usesInts()) bounds.ints().clear();
-		
-		// detect symmetries
-		return new SymmetryBreaker(bounds, options.reporter());
+	public static Translation.Incremental translateIncremental(Formula formula, Bounds bounds, Translation.Incremental translation)  {
+		checkIncrementalOptions(translation.options());
+		checkIncrementalBounds(bounds, translation);		
+		if (translation.trivial())  { 
+			return translateIncrementalTrivial(formula, bounds, translation);
+		} else {
+			return translateIncrementalNonTrivial(formula, bounds, translation);
+		}	
 	}
-	
-	/**
-	 * Optimizes annotated.node by first breaking symmetries on its top-level predicates,
-	 * replacing them with the simpler formulas generated by {@linkplain SymmetryBreaker#breakMatrixSymmetries(Map, boolean) breaker.breakMatrixSymmetries(...)}, 
-	 * and skolemizing the result.
-	 * @requires annotated.node = this.formula
-	 * @requires breaker.bounds = this.bounds
-	 * @return the skolemization, up to depth this.options.skolemDepth, of annotated.node with
-	 * the broken predicates replaced with simpler constraints and the remaining predicates inlined. 
-	 */
-	private AnnotatedNode<Formula> optimizeFormula(AnnotatedNode<Formula> annotated, SymmetryBreaker breaker) {	
-		options.reporter().optimizingBoundsAndFormula();
 
-		if (options.logTranslation()==0) { // no logging
-			annotated = inlinePredicates(annotated, breaker.breakMatrixSymmetries(annotated.predicates(), true).keySet());
-			return options.skolemDepth()>=0 ? Skolemizer.skolemize(annotated, bounds, options) : annotated;
-		} else { // logging; inlining of predicates *must* happen last when logging is enabled
-			if (options.coreGranularity()==1) { 
-				annotated = FormulaFlattener.flatten(annotated, false);
+	/** 
+	 * @requires checkIncrementalBounds(bounds, transl)
+	 * @requires checkIncrementalOptions(transl.options) 
+	 * @requires transl.trivial()
+	 * @requires transl.cnf.solve()
+	 * @return see {@link #translateIncremental(Formula, Bounds, Options)}
+	 **/
+	private static Translation.Incremental translateIncrementalTrivial(Formula formula, Bounds bounds, Translation.Incremental transl) {
+		if (!transl.cnf().solve()) 
+			throw new IllegalArgumentException("Expected a satisfiable translation, given " + transl);
+		
+		transl.cnf().free(); // release the old empty solver since we are going to re-translate
+		
+		final Options tOptions = transl.options();
+		final Bounds tBounds = transl.bounds();
+		
+		// add new relation bindings to the translation bounds.  since the given bounds induce
+		// a coarser set of symmetries on the universe than transl.symmetries, adding their (disjoint) bindings to tBounds 
+		// will not change the symmetries of tBounds.  note that the ymmetries of tBounds refine transl.symmetries, and they 
+		// may be strictly finer if some of the symmetries in transl.symmetries were broken via SymmetryBreaker.breakMatrixSymmetries(...) 
+		// during the generation of transl.  in particular, any symmetries absent from tBounds are precisely those that were broken based
+		// on the total ordering and acyclic predicates in transl.originalFormula.
+		for(Relation r : bounds.relations()) {
+			tBounds.bound(r, bounds.lowerBound(r), bounds.upperBound(r));
+		}
+		
+		// re-translate the given formula with respect to tBounds.  note that we don't have to re-translate 
+		// the conjunction of transl.formula and formula since transl.formula is guaranteed to evaluate to 
+		// TRUE with respect to tBounds (since no bindings that were originally in tBounds were changed by the above loop).
+		final Translation.Incremental updated = translateIncremental(formula, tBounds, tOptions);
+		
+		// we can't return the updated translation as is, since we have to make sure that updated.symmetries is set to
+		// transl.symmetries rather than the potentially finer set of symmetries induced by tBounds. note that 
+		// the updated translation currently has updated.originalBounds = tBounds, while updated.bounds is a copy of 
+		// tBounds with possibly additional skolem relations, as well as new bounds for some relations in formula.*components 
+		// due to symmetry breaking.
+		return new Translation.Incremental(updated.bounds(), tOptions, transl.symmetries(), updated.interpreter(), updated.incrementer());
+	}
+	
+	/** 
+	 * @requires checkIncrementalBounds(bounds, transl)
+	 * @requires checkIncrementalOptions(transl.options) 
+	 * @requires !transl.trivial()
+	 * @return see {@link #translateIncremental(Formula, Bounds, Options)}
+	 **/
+	private static Translation.Incremental translateIncrementalNonTrivial(Formula formula, Bounds bounds, Translation.Incremental transl) {
+		
+		final Options tOptions = transl.options();
+		final Bounds tBounds = transl.bounds();
+		
+		// save the set of relations bound in the pre-state
+		final Set<Relation> oldRelations = new LinkedHashSet<Relation>(tBounds.relations());
+		
+		// add new relation bindings to the translation bounds.  note that skolemization (below) may also cause extra relations to be added.
+		for(Relation r : bounds.relations()) {
+			tBounds.bound(r, bounds.lowerBound(r), bounds.upperBound(r));
+		}
+		final AnnotatedNode<Formula> annotated = 
+			(transl.options().skolemDepth() < 0) ? annotate(formula) : skolemize(annotate(formula), tBounds, tOptions);
+		
+		// extend the interpreter with variable allocations for new relations, either from given bounds
+		// or those introduced by skolemization
+		final LeafInterpreter interpreter = transl.interpreter();
+		interpreter.extend(setDifference(tBounds.relations(), oldRelations), tBounds.lowerBounds(), tBounds.upperBounds());
+		
+		final BooleanValue circuit = FOL2BoolTranslator.translate(annotated, interpreter); 
+	
+		if (circuit==BooleanConstant.FALSE) {
+			// release the old solver and state, and return a fresh trivially false incremental translation.
+			transl.incrementer().solver().free();
+			return new Translation.Incremental(tBounds, tOptions, transl.symmetries(), 
+					LeafInterpreter.empty(tBounds.universe(), tOptions), 
+					Bool2CNFTranslator.translateIncremental(BooleanConstant.FALSE, tOptions.solver()));			
+		} else if (circuit==BooleanConstant.TRUE) {
+			// must add any newly allocated primary variables to the solver for interpretation to work correctly 
+			final int maxVar = interpreter.factory().maxVariable();
+			final int cnfVar = transl.cnf().numberOfVariables();
+			if (maxVar > cnfVar) {
+				transl.cnf().addVariables(maxVar-cnfVar);
 			}
-			if (options.skolemDepth()>=0) {
-				annotated = Skolemizer.skolemize(annotated, bounds, options);
+		} else {
+			// circuit is a formula; add its CNF representation to transl.incrementer.solver()			
+			Bool2CNFTranslator.translateIncremental((BooleanFormula) circuit, interpreter.factory().maxVariable(), transl.incrementer());			
+		}  
+		
+		return transl;
+	}
+	
+	/**
+	 * Checks that the given options are suitable for incremental translation.
+	 * @requires options.solver.incremental() && options.logTranslation = 0  
+	 * @throws IllegalArgumentException any of the preconditions are violated
+	 */
+	public static void checkIncrementalOptions(Options options) {
+		if (!options.solver().incremental())
+			throw new IllegalArgumentException("An incremental solver is required for incremental translation: " + options);
+		if (options.logTranslation() != 0)
+			throw new IllegalArgumentException("Translation logging must be disabled for incremental translation: " + options);
+	}
+	
+	/**
+	 * Checks that the given {@code inc} bounds are incremental with respect to the given {@code translation}.
+	 * @requires translation.bounds.universe = inc.universe && no inc.intBound && no (translation.bounds.relations & inc.relations)
+	 * @requires all s: translation.symmetries |  
+	 * 				some p: {@link SymmetryDetector#partition(Bounds) partition}(inc) | 
+	 * 				   s.elements in p.elements
+	 * @throws IllegalArgumentException any of the preconditions are violated
+	 */
+	public static void checkIncrementalBounds(Bounds inc, Translation.Incremental translation) {
+		final Bounds base = translation.bounds();
+		if (!base.universe().equals(inc.universe()))
+			incBoundErr(inc.universe(), "universe", "equal to", base.universe());
+		if (!inc.intBounds().isEmpty()) 
+			incBoundErr(inc.intBounds(), "intBound", "empty, with integer bounds fully specified by", base.intBounds());
+		if (inc.relations().isEmpty()) return;
+		final Set<Relation> baseRels = base.relations();
+		for(Relation r : inc.relations()) { 
+			if (baseRels.contains(r)) {
+				incBoundErr(inc.relations(), "relations", "disjoint from", baseRels);
+			}  
+ 		}
+		final Set<IntSet> symmetries = translation.symmetries();
+		final Set<IntSet> incSymmetries = SymmetryDetector.partition(inc);
+		EQUIV_CHECK : for(IntSet part : symmetries) {
+			for(IntSet incPart : incSymmetries) {
+				if (incPart.containsAll(part))
+					continue EQUIV_CHECK;
 			}
-			if (options.coreGranularity()>1) { 
-				annotated = FormulaFlattener.flatten(annotated, options.coreGranularity()==3);
-			}
-			return inlinePredicates(annotated, breaker.breakMatrixSymmetries(annotated.predicates(), false));
+			incBoundErr(incSymmetries, "partition", "coarser than", symmetries);
 		}
 	}
 	
 	/**
+	 * Throws an {@link IllegalArgumentException} with an error message that describes why given bounds 
+	 * cannot be used for incremental translation.  
+	 */
+	private static void incBoundErr(Object newObj, String desc, String relatedTo, Object translObj) {
+		final String newDesc = "bounds." + desc, oldDesc = "translation.originalBounds." + desc;
+		throw new IllegalArgumentException("Expected " + newDesc + " to be " + relatedTo + " " + oldDesc + 
+				" for incremental translation; given "+ newDesc + " = " + newObj + ", " + oldDesc + " = " + translObj);
+	}
+	
+	
+	/*---------------------- private translation state and methods ----------------------*/
+	/**
+	 * @specfield originalFormula: Formula
+	 * @specfield originalBounds: Bounds
+	 * @specfield bounds: Bounds
+	 * @specfield options: Options
+	 * @specfield incremental: boolean
+	 */
+	private final Formula originalFormula;
+	private final Bounds originalBounds;
+	private final Bounds bounds;
+	private final Options options;
+	private final boolean logging;
+	private final boolean incremental;
+	
+	/**
+	 * Constructs a Translator for the given formula, bounds, options and incremental flag.
+	 * If the flag is true, then the translator produces an initial {@linkplain Translation.Incremental incremental translation}.
+	 * Otherwise, the translator produces a {@linkplain Translation.Whole basic translation}.
+	 * @ensures this.originalFormula' = formula and 
+	 * 	this.options' = options and 
+	 *  this.originalBounds' = bounds and 
+	 * 	this.bounds' = bounds.clone() and
+	 *  this.incremental' = incremental 
+	 */
+	private Translator(Formula formula, Bounds bounds, Options options, boolean incremental) {
+		this.originalFormula = formula;
+		this.originalBounds = bounds;
+		this.bounds = bounds.clone();
+		this.options = options;
+		this.logging = options.logTranslation()>0;
+		this.incremental = incremental;
+	}
+	
+	/**
+	 * Constructs a non-incremental Translator for the given formula, bounds and options.
+	 * @ensures this(formula, bounds, options, false)
+	 */
+	private Translator(Formula formula, Bounds bounds, Options options) {
+		this(formula, bounds, options, false);
+	}
+	
+	/**
+	 * Translates this.originalFormula with respect to this.bounds and this.options. If this.incremental is true, 
+	 * then the returned translation is {@linkplain Translation.Incremental incremental}; otherwise the output is
+	 * a {@linkplain Translation.Whole basic} translation.
+	 * @return a {@linkplain Translation} whose solver is a SATSolver instance initialized with the 
+	 * CNF representation of the given formula, with respect to the given bounds.  The CNF
+	 * is generated in such a way that the magnitude of a literal representing the truth
+	 * value of a given formula is strictly larger than the magnitudes of the literals representing
+	 * the truth values of the formula's descendants.  
+	 * @throws UnboundLeafException  this.originalFormula refers to an undeclared variable or a relation not mapped by this.bounds.
+	 * @throws HigherOrderDeclException  this.originalFormula contains a higher order declaration that cannot
+	 * be skolemized, or it can be skolemized but this.options.skolemDepth < 0
+	 */
+	private Translation translate()   {
+		final AnnotatedNode<Formula> annotated = logging ? annotateRoots(originalFormula) : annotate(originalFormula);
+		// Remove bindings for unused relations/ints if this is not an incremental translation.  If it is
+		// an incremental translation, we have to keep all bindings since they may be used later on.
+		if (!incremental) {
+			bounds.relations().retainAll(annotated.relations());
+			if (!annotated.usesInts()) bounds.ints().clear();
+		}
+		// Detect symmetries.
+		final SymmetryBreaker breaker = new SymmetryBreaker(bounds, options.reporter());
+		// Optimize formula and bounds by using symmetry information to tighten bounds and 
+		// eliminate top-level predicates, and also by skolemizing.  Then translate the optimize
+		// formula and bounds to a circuit, augment the circuit with a symmetry breaking predicate 
+		// that eliminates any remaining symmetries, and translate everything to CNF.
+		return toBoolean(optimizeFormulaAndBounds(annotated, breaker), breaker);
+	}
+	
+	/**
+	 * <p>When logging is disabled, optimizes annotated.node by first breaking matrix symmetries on its top-level predicates,
+	 * replacing them with the simpler formulas generated by 
+	 * {@linkplain SymmetryBreaker#breakMatrixSymmetries(Map, boolean) breaker.breakMatrixSymmetries(...)}, 
+	 * and skolemizing the result, if applicable.</p>
+	 * 
+	 * <p> When logging is enabled, optimizes annotated.node by first flattening it into a set of conjuncts, 
+	 * assuming that core granularity is 1.  This involves pushing negations through quantifier-free formulas.
+	 * We then skolemize, followed by an additional layer of flattening (if this.options.coreGranularity > 1), 
+	 * possibly through quantifiers (if this.options.coreGranuarity is 3).  Predicate inlining and breaking of
+	 * matrix symmetries is performed last to  prevent any quantified formulas generated by predicate inlining 
+	 * from also being flattened (as this wouldn't be meaningful at the level of the original formula).</p> 
+	 * 
+	 * @requires SAT(annotated.node, this.bounds, this.options) iff SAT(this.originalFormula, this.originalBounds, this.options)
+	 * @requires annotated.node.*components & Relation = this.originalFormula.*components & Relation
+	 * @requires breaker.bounds = this.bounds
+	 * @ensures this.bounds.relations in this.bounds.relations' 
+	 * @ensures this.options.reporter().optimizingBoundsAndFormula()
+	 * @return some f: AnnotatedNode<Formula> | meaning(f.node, this.bounds, this.options) = meaning(this.originalFormula, this.originalBounds, this.options)
+	 */
+	private AnnotatedNode<Formula> optimizeFormulaAndBounds(AnnotatedNode<Formula> annotated, SymmetryBreaker breaker) {	
+		options.reporter().optimizingBoundsAndFormula();
+
+		if (logging) {  
+			final int coreGranularity = options.coreGranularity();
+			if (coreGranularity==1) { 
+				annotated = flatten(annotated, false);
+			}
+			if (options.skolemDepth()>=0) {
+				annotated = skolemize(annotated, bounds, options);
+			}
+			if (coreGranularity>1) { 
+				annotated = flatten(annotated, options.coreGranularity()==3);
+			}
+			return inlinePredicates(annotated, breaker.breakMatrixSymmetries(annotated.predicates(), false));		
+		} else {  			
+			annotated = inlinePredicates(annotated, breaker.breakMatrixSymmetries(annotated.predicates(), true).keySet());
+			return options.skolemDepth()>=0 ? Skolemizer.skolemize(annotated, bounds, options) : annotated;
+		}
+	}
+
+	/**
 	 * Returns an annotated formula f such that f.node is equivalent to annotated.node
 	 * with its <tt>truePreds</tt> replaced with the constant formula TRUE and the remaining
 	 * predicates replaced with equivalent constraints.
-	 * @requires this.options.logTranslation = false
 	 * @requires truePreds in annotated.predicates()[RelationnPredicate.NAME]
 	 * @requires truePreds are trivially true with respect to this.bounds
 	 * @return an annotated formula f such that f.node is equivalent to annotated.node
@@ -245,7 +480,6 @@ public final class Translator {
 	 * predicates replaced with equivalent constraints.  The annotated formula f will contain transitive source 
 	 * information for each of the subformulas of f.node.  Specifically, let t be a subformula of f.node, and
 	 * s be a descdendent of annotated.node from which t was derived.  Then, f.source[t] = annotated.source[s]. </p>
-	 * @requires this.options.logTranslation = true
 	 * @requires simplified.keySet() in annotated.predicates()[RelationPredicate.NAME]
 	 * @requires no disj p, p': simplified.keySet() | simplified.get(p) = simplifed.get(p') // this must hold in order
 	 * to maintain the invariant that each subformula of the returned formula has exactly one source
@@ -290,96 +524,41 @@ public final class Translator {
 	
 	/**
 	 * Translates the given annotated formula to a circuit, conjoins the circuit with an 
-	 * SBP generated by the given symmetry breaker, flattens the result if so specified by this.options, 
-	 * and returns its Translation to CNF.
-	 * @requires [[annotated.node]] <=> ([[this.formula]] and [[breaker.broken]])
+	 * SBP generated by the given symmetry breaker, and returns its {@linkplain Translation} to CNF.
+	 * The SBP breaks any symmetries that could not be broken during the 
+	 * {@linkplain #optimizeFormulaAndBounds(AnnotatedNode, SymmetryBreaker) formula and bounds optimization} step.
+	 * @requires SAT(annotated.node, this.bounds, this.options) iff SAT(this.originalFormula, this.originalBounds, this.options)
+	 * @requires breaker.bounds = this.bounds
 	 * @ensures this.options.logTranslation => some this.log'
-	 * @return the result of calling  {@link #generateSBP(BooleanFormula, LeafInterpreter, SymmetryBreaker)}
-	 * on the translation of annotated.node with respect to this.bounds
-	 * @throws TrivialFormulaException  the translation of annotated is a constant or can be made into
-	 * a constant by flattening 
+	 * @ensures this.options.reporter().translatingToBoolean(annotated.node(), this.bounds)
+	 * @ensures this.options.reporter().generatingSBP()
+	 * @return the translation of annotated.node with respect to this.bounds
 	 */
-	private Translation toBoolean(AnnotatedNode<Formula> annotated, SymmetryBreaker breaker) throws TrivialFormulaException {
+	private Translation toBoolean(AnnotatedNode<Formula> annotated, SymmetryBreaker breaker) {
 		
 		options.reporter().translatingToBoolean(annotated.node(), bounds);
 		
-		final LeafInterpreter interpreter = LeafInterpreter.exact(bounds, options);
+		final LeafInterpreter interpreter = LeafInterpreter.exact(bounds, options, incremental);
+		final BooleanFactory factory = interpreter.factory();
 		
-		if (options.logTranslation()>0) {
+		if (logging) {
+			assert !incremental;
 			final TranslationLogger logger = options.logTranslation()==1 ? new MemoryLogger(annotated, bounds) : new FileLogger(annotated, bounds);
 			final BooleanAccumulator circuit = FOL2BoolTranslator.translate(annotated, interpreter, logger);
-			log = logger.log();
+			final TranslationLog log = logger.log();
 			if (circuit.isShortCircuited()) {
-				throw new TrivialFormulaException(annotated.node(), bounds, circuit.op().shortCircuit(), log);
+				return trivial(circuit.op().shortCircuit(), log);
 			} else if (circuit.size()==0) { 
-				throw new TrivialFormulaException(annotated.node(), bounds, circuit.op().identity(), log);
+				return trivial(circuit.op().identity(), log);
 			}
-			return generateSBP(circuit, interpreter, breaker);
+			circuit.add(breaker.generateSBP(interpreter, options));
+			return toCNF((BooleanFormula)factory.accumulate(circuit), interpreter, log);
 		} else {
 			final BooleanValue circuit = (BooleanValue)FOL2BoolTranslator.translate(annotated, interpreter);
 			if (circuit.op()==Operator.CONST) {
-				throw new TrivialFormulaException(annotated.node(), bounds, (BooleanConstant)circuit, null);
+				return trivial((BooleanConstant)circuit, null);
 			} 
-			return generateSBP(annotated, (BooleanFormula)circuit, interpreter, breaker);
-		}
-	}
-	
-	/**
-	 * Adds to given accumulator an SBP generated using the given symmetry breaker and interpreter,
-	 * and returns the resulting circuit's translation to CNF.
-	 * @requires circuit is a translation of this.formula with respect to this.bounds
-	 * @requires interpreter is the leaf interpreter used in generating the given circuit
-	 * @requires breaker.bounds = this.bounds
-	 * @return toCNF(circuit && breaker.generateSBP(interpreter))
-	 */
-	private Translation generateSBP(BooleanAccumulator circuit, LeafInterpreter interpreter, SymmetryBreaker breaker) {
-		options.reporter().generatingSBP();
-		final BooleanFactory factory = interpreter.factory();
-		circuit.add(breaker.generateSBP(interpreter, options.symmetryBreaking())); 
-		return toCNF((BooleanFormula)factory.accumulate(circuit), factory.numberOfVariables(), interpreter.vars());
-	}
-	
-	/**
-	 * Conjoins the given circuit with an SBP generated using the given symmetry breaker and interpreter,
-	 * and returns the resulting circuit's translation to CNF.
-	 * @requires [[annotated.node]] <=> ([[this.formula]] and [[breaker.broken]])
-	 * @requires circuit is a translation of annotated.node with respect to this.bounds
-	 * @requires interpreter is the leaf interpreter used in generating the given circuit
-	 * @requires breaker.bounds = this.bounds
-	 * @return flatten(circuit && breaker.generateSBP(interpreter), interpreter)
-	 * @throws TrivialFormulaException  flattening the circuit and the predicate yields a constant
-	 */
-	private Translation generateSBP(AnnotatedNode<Formula> annotated, BooleanFormula circuit, LeafInterpreter interpreter, SymmetryBreaker breaker) 
-	throws TrivialFormulaException {
-		options.reporter().generatingSBP();
-		final BooleanFactory factory = interpreter.factory();
-		final BooleanValue sbp = breaker.generateSBP(interpreter, options.symmetryBreaking()); 
-		return flatten(annotated, (BooleanFormula)factory.and(circuit, sbp), interpreter);
-	}
-
-	/**
-	 * If this.options.flatten is true, flattens the given circuit and returns its translation to CNF.
-	 * Otherwise, simply returns the given circuit's translation to CNF.
-	 * @requires [[annotated.node]] <=> ([[this.formula]] and [[breaker.broken]])
-	 * @requires circuit is a translation of annotated.node with respect to this.bounds
-	 * @requires interpreter is the leaf interpreter used in generating the given circuit
-	 * @return if this.options.flatten then 
-	 * 	toCNF(flatten(circuit), interpreter.factory().numberOfVariables(), interpreter.vars()) else
-	 *  toCNF(circuit, interpreter.factory().numberOfVariables(), interpreter.vars())
-	 * @throws TrivialFormulaException  flattening the circuit yields a constant
-	 */
-	private Translation flatten(AnnotatedNode<Formula> annotated, BooleanFormula circuit, LeafInterpreter interpreter) throws TrivialFormulaException {	
-		final BooleanFactory factory = interpreter.factory();
-		if (options.flatten()) {
-			options.reporter().flattening(circuit);
-			final BooleanValue flatCircuit = BooleanFormulaFlattener.flatten(circuit, factory);
-			if (flatCircuit.op()==Operator.CONST) {
-				throw new TrivialFormulaException(annotated.node(), bounds, (BooleanConstant)flatCircuit, null);
-			} else {
-				return toCNF((BooleanFormula)flatCircuit, factory.numberOfVariables(), interpreter.vars());
-			}
-		} else {
-			return toCNF(circuit, factory.numberOfVariables(), interpreter.vars());
+			return toCNF((BooleanFormula)factory.and(circuit, breaker.generateSBP(interpreter, options)), interpreter, null);
 		}
 	}
 	
@@ -387,20 +566,95 @@ public final class Translator {
 	 * Translates the given circuit to CNF, adds the clauses to a SATSolver returned
 	 * by options.solver(), and returns a Translation object constructed from the solver
 	 * and the provided arguments.
-	 * @requires circuit is a translation of this.formula with respect to this.bounds
-	 * @requires primaryVars is the number of primary variables generated by translating 
-	 * this.formula and this.bounds into the given circuit
-	 * @requires varUsage maps each non-constant relation in this.bounds to the labels of 
-	 * the primary variables used to represent that relation in the given circuit
-	 * @return Translation constructed from a SAT solver initialized with the CNF translation
-	 * of the given circuit, the provided arguments, this.bounds, and this.log
+	 * @requires SAT(circuit) iff SAT(this.originalFormula, this.originalBounds, this.options)
+	 * @requires circuit.factory = interpreter.factory
+	 * @requires interpreter.universe = this.bounds.universe && interpreter.relations = this.bounds.relations() && 
+	 *           interpreter.ints = this.bounds.ints() && interpreter.lbounds = this.bounds.lowerBound && 
+	 *           this.interpreter.ubounds = bounds.upperBound && interpreter.ibounds = bounds.intBound 
+	 * @requires log.originalFormula = this.originalFormula && log.bounds = this.bounds
+	 * @ensures {@link #completeBounds()}
+	 * @ensures this.options.reporter.translatingToCNF(circuit)
+	 * @return some t: Translation | 
+	 *           t.bounds = completeBounds() && t.originalBounds = this.originalBounds &&
+	 *           t.vars = interpreter.vars &&
+	 *           t.vars[Relation].int in t.solver.variables && 
+	 *           t.solver.solve() iff SAT(this.formula, this.bounds, this.options)
 	 */
-	private Translation toCNF(BooleanFormula circuit, int primaryVars, Map<Relation,IntSet> varUsage) {	
+	private Translation toCNF(BooleanFormula circuit, LeafInterpreter interpreter, TranslationLog log) {	
 		options.reporter().translatingToCNF(circuit);
-		final SATSolver cnf = /* options.logTranslation()==0 ?
-				CompactBool2CNFTranslator.translate((BooleanFormula)circuit, options.solver(), primaryVars) :*/
-				Bool2CNFTranslator.translate((BooleanFormula)circuit, options.solver(), primaryVars);
-		return new Translation(cnf, bounds, varUsage, primaryVars, log);
+		final int maxPrimaryVar = interpreter.factory().maxVariable();
+		if (incremental) {
+			final Bool2CNFTranslator incrementer = Bool2CNFTranslator.translateIncremental(circuit, maxPrimaryVar, options.solver());
+			return new Translation.Incremental(completeBounds(), options, SymmetryDetector.partition(originalBounds), interpreter, incrementer);
+		} else {
+			final Map<Relation, IntSet> varUsage = interpreter.vars();
+			interpreter = null; // enable gc
+			final SATSolver cnf = Bool2CNFTranslator.translate((BooleanFormula)circuit, maxPrimaryVar, options.solver());
+			return new Translation.Whole(completeBounds(), options, cnf, varUsage, maxPrimaryVar, log);
+		}
 	}
 	
+	/**
+	 * Returns a whole or incremental translation, depending on the value of {@code this.incremental}, 
+	 * using the given trivial outcome, {@linkplain #completeBounds() completeBounds()}, {@code this.options}, 
+	 * and the given log.
+	 * @ensures {@link #completeBounds()}
+	 * @return some t: Translation | 
+	 *           t.bounds = completeBounds() && t.originalBounds = this.originalBounds &&
+	 *           no t.solver.variables && 
+	 *           no t.vars &&
+	 *           (outcome.booleanValue() => no t.solver.clauses else (one t.solver.clauses && no t.solver.clauses.literals))      
+	 **/
+	@SuppressWarnings("unchecked")
+	private Translation trivial(BooleanConstant outcome, TranslationLog log) {
+		if (incremental) {
+			return new Translation.Incremental(completeBounds(), options, 
+					SymmetryDetector.partition(originalBounds), 
+					LeafInterpreter.empty(bounds.universe(), options), // empty interpreter
+					Bool2CNFTranslator.translateIncremental(outcome, options.solver()));
+		} else {
+			return new Translation.Whole(completeBounds(), options, 
+					Bool2CNFTranslator.translate(outcome, options.solver()), 
+					(Map<Relation,IntSet>)Collections.EMPTY_MAP, 0, log);
+		}
+	}
+	
+	/**
+	 * Completes {@code this.bounds} using the bindings from {@code this.originalBounds} so that 
+	 * the result satisfies the {@linkplain Translation} invariants. This involves updating 
+	 * {@code this.bounds} with bindings from {@code this.originalBounds}, if any, that had been discarded 
+	 * in the {@link #translate() first step} of the translation.  The first step of a non-incremental 
+	 * translation is to discard bounds for relations that are not constrained by {@code this.originalFormula}, 
+	 * and to discard all integer bounds if {@code this.originalFormula} contains no integer expressions.  
+	 * This is sound since any instance of {@code this.originalFormula} with respect to {@code this.originalBounds} only needs to 
+	 * satisfy the lower bound constraint on each discarded relation/integer.   By updating {@code this.bounds} with 
+	 * the bindings for discarded relations/integers for which no variables were allocated, we ensure that any instance returned by 
+	 * {@linkplain Translation#interpret()} will bind those relations/integers to their lower bound, therefore satisfying 
+	 * the original problem {@code (this.originalFormula, this.originalBounds, this.options)}.
+	 * 
+	 * @requires no this.bounds.intBound or this.bounds.intBound = this.originalBounds.intBound
+	 * @ensures  this.bounds.relations' = this.bounds.relations + this.originalBounds.relations &&
+	 *           this.bounds.intBound' = this.originalBounds.intBound &&
+	 *           this.bounds.lowerBound' = this.bounds.lowerBound + (this.originalBounds.relations - this.bounds.relations)<:(this.originalBounds.lowerBound) &&
+	 *           this.bounds.upperBound' = bounds.upperBound + (this.originalBounds.relations - this.bounds.relations)<:(this.originalBounds.upperBound)
+	 * @return this.bounds
+	 */
+	private Bounds completeBounds() {
+		final Bounds optimized = this.bounds; 
+		final Bounds original = this.originalBounds;
+		if (optimized.ints().isEmpty()) {
+			for(IndexedEntry<TupleSet> entry : original.intBounds()) { 
+				optimized.boundExactly(entry.index(), entry.value());
+			}
+		} else {
+			assert optimized.intBounds().equals(original.intBounds());
+		}
+		final Set<Relation> rels = optimized.relations();
+		for(Relation r : original.relations()) {
+			if (!rels.contains(r)) {
+				optimized.bound(r, original.lowerBound(r), original.upperBound(r));
+			}
+		}
+		return optimized;
+	}
 }

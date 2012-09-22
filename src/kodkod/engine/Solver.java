@@ -21,10 +21,9 @@
  */
 package kodkod.engine;
 
+import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.NoSuchElementException;
 
 import kodkod.ast.Formula;
@@ -34,14 +33,12 @@ import kodkod.engine.fol2sat.HigherOrderDeclException;
 import kodkod.engine.fol2sat.Translation;
 import kodkod.engine.fol2sat.TranslationLog;
 import kodkod.engine.fol2sat.Translator;
-import kodkod.engine.fol2sat.TrivialFormulaException;
 import kodkod.engine.fol2sat.UnboundLeafException;
 import kodkod.engine.satlab.SATAbortedException;
 import kodkod.engine.satlab.SATMinSolver;
 import kodkod.engine.satlab.SATProver;
 import kodkod.engine.satlab.SATSolver;
 import kodkod.instance.Bounds;
-import kodkod.instance.Instance;
 import kodkod.instance.TupleSet;
 import kodkod.util.ints.IntIterator;
 import kodkod.util.ints.IntSet;
@@ -120,13 +117,16 @@ public final class Solver {
 		final long startTransl = System.currentTimeMillis();
 		try {
 			
-			final Translation translation = Translator.translate(formula, bounds, options);
+			final Translation.Whole translation = Translator.translate(formula, bounds, options);
 			final long endTransl = System.currentTimeMillis();
+
+			if (translation.trivial())
+				return trivial(translation, endTransl - startTransl);
 
 			final SATMinSolver cnf = (SATMinSolver)translation.cnf();
 			for(Relation r : bounds.relations()) {
 				IntSet vars = translation.primaryVariables(r);
-				if (vars != null) {
+				if (!vars.isEmpty()) {
 					int rcost = cost.edgeCost(r);
 					for(IntIterator iter = vars.iterator();  iter.hasNext(); ) {
 						cnf.setCost(iter.next(), rcost);
@@ -141,10 +141,7 @@ public final class Solver {
 
 			final Statistics stats = new Statistics(translation, endTransl - startTransl, endSolve - startSolve);
 			
-			return isSat ? sat(bounds, translation, stats) : unsat(translation, stats);
-		} catch (TrivialFormulaException trivial) {
-			final long endTransl = System.currentTimeMillis();
-			return trivial(bounds, trivial, endTransl - startTransl);
+			return isSat ? sat(translation, stats) : unsat(translation, stats);
 		} catch (SATAbortedException sae) {
 			throw new AbortedException(sae);
 		}
@@ -171,15 +168,16 @@ public final class Solver {
 	 * @see Options
 	 * @see Proof
 	 */
-	public Solution solve(Formula formula, Bounds bounds)
-			throws HigherOrderDeclException, UnboundLeafException, AbortedException {
+	public Solution solve(Formula formula, Bounds bounds) throws HigherOrderDeclException, UnboundLeafException, AbortedException {
 		
 		final long startTransl = System.currentTimeMillis();
 		
-		try {		
-		
-			final Translation translation = Translator.translate(formula, bounds, options);
+		try {			
+			final Translation.Whole translation = Translator.translate(formula, bounds, options);
 			final long endTransl = System.currentTimeMillis();
+			
+			if (translation.trivial())
+				return trivial(translation, endTransl - startTransl);
 
 			final SATSolver cnf = translation.cnf();
 			
@@ -189,11 +187,8 @@ public final class Solver {
 			final long endSolve = System.currentTimeMillis();
 
 			final Statistics stats = new Statistics(translation, endTransl - startTransl, endSolve - startSolve);
-			return isSat ? sat(bounds, translation, stats) : unsat(translation, stats);
+			return isSat ? sat(translation, stats) : unsat(translation, stats);
 			
-		} catch (TrivialFormulaException trivial) {
-			final long endTransl = System.currentTimeMillis();
-			return trivial(bounds, trivial, endTransl - startTransl);
 		} catch (SATAbortedException sae) {
 			throw new AbortedException(sae);
 		}
@@ -247,8 +242,8 @@ public final class Solver {
 	 * @param stats translation / solving stats
 	 * @return the result of solving a sat formula.
 	 */
-	private static Solution sat(Bounds bounds, Translation translation, Statistics stats) {
-		final Solution sol = Solution.satisfiable(stats, padInstance(translation.interpret(), bounds));
+	private static Solution sat(Translation.Whole translation, Statistics stats) {
+		final Solution sol = Solution.satisfiable(stats, translation.interpret());
 		translation.cnf().free();
 		return sol;
 	}
@@ -259,7 +254,7 @@ public final class Solver {
 	 * @param stats translation / solving stats
 	 * @return the result of solving an unsat formula.
 	 */
-	private static Solution unsat(Translation translation, Statistics stats) {
+	private static Solution unsat(Translation.Whole translation, Statistics stats) {
 		final SATSolver cnf = translation.cnf();
 		final TranslationLog log = translation.log();
 		if (cnf instanceof SATProver && log != null) {
@@ -272,30 +267,22 @@ public final class Solver {
 	}
 	
 	/**
-	 * @return the number of primary variables needed to encode the unknown tuples in the given bounds.
-	 */
-	private static int trivialPrimaries(Bounds bounds) { 
-		int prim = 0;
-		for(Relation r : bounds.relations()) { 
-			prim += bounds.upperBound(r).size() - bounds.lowerBound(r).size();
-		}
-		return prim;
-	}
-	
-	/**
 	 * Returns the result of solving a trivially (un)sat formula.
-	 * @param bounds Bounds with which solve()  was called
-	 * @param desc TrivialFormulaException thrown as the result of the formula simplifying to a constant
+	 * @param translation trivial translation produced as the result of {@code translation.formula} 
+	 * simplifying to a constant with respect to {@code translation.bounds}
 	 * @param translTime translation time
 	 * @return the result of solving a trivially (un)sat formula.
 	 */
-	private static Solution trivial(Bounds bounds, TrivialFormulaException desc, long translTime) {
-		final Statistics stats = new Statistics(trivialPrimaries(desc.bounds()), 0, 0, translTime, 0);
-		if (desc.value().booleanValue()) {
-			return Solution.triviallySatisfiable(stats, padInstance(toInstance(desc.bounds()), bounds));
+	private static Solution trivial(Translation.Whole translation, long translTime) {
+		final Statistics stats = new Statistics(0, 0, 0, translTime, 0);
+		final Solution sol;
+		if (translation.cnf().solve()) {
+			sol = Solution.triviallySatisfiable(stats, translation.interpret());
 		} else {
-			return Solution.triviallyUnsatisfiable(stats, trivialProof(desc.log()));
+			sol = Solution.triviallyUnsatisfiable(stats, trivialProof(translation.log()));
 		}
+		translation.cnf().free();
+		return sol;
 	}
 	
 	/**
@@ -308,54 +295,13 @@ public final class Solver {
 	private static Proof trivialProof(TranslationLog log) {
 		return log==null ? null : new TrivialProof(log);
 	}
-	
-	/**
-	 * "Pads" the argument instance with the mappings that occur in bounds.lowerBound
-	 * but not in the instance. 
-	 * @requires instance.relations in bounds.relations
-	 * @ensures instance.relations' = bounds.relations' &&
-	 *          instance.tuples' = bounds.lowerBound ++ instance.tuples
-	 * @return instance
-	 */
-	private static Instance padInstance(Instance instance, Bounds bounds) {
-		for (Relation r : bounds.relations()) {
-			if (!instance.contains(r)) {
-				instance.add(r, bounds.lowerBound(r));
-			}
-		}
-		for (IntIterator iter = bounds.ints().iterator(); iter.hasNext();) {
-			int i = iter.next();
-			instance.add(i, bounds.exactBound(i));
-		}
-		return instance;
-	}
-
-	/**
-	 * Creates an instance from the given Bounds.  The instance
-	 * is simply the mapping bounds.lowerBound.
-	 * @return the instance corresponding to bounds.lowerBound
-	 */
-	private static Instance toInstance(Bounds bounds) {
-		final Instance instance = new Instance(bounds.universe());
-		for (Relation r : bounds.relations()) {
-			instance.add(r, bounds.lowerBound(r));
-		}
-		for (IntIterator iter = bounds.ints().iterator(); iter.hasNext();) {
-			int i = iter.next();
-			instance.add(i, bounds.exactBound(i));
-		}
-		return instance;
-	}
-	
+		
 	/**
 	 * An iterator over all solutions of a model.
 	 * @author Emina Torlak
 	 */
 	private static final class SolutionIterator implements Iterator<Solution> {
-		private final Options options;
-		private Formula formula;
-		private Bounds bounds;
-		private Translation translation;
+		private Translation.Whole translation;
 		private long translTime;
 		private int trivial;
 		
@@ -363,10 +309,9 @@ public final class Solver {
 		 * Constructs a solution iterator for the given formula, bounds, and options.
 		 */
 		SolutionIterator(Formula formula, Bounds bounds, Options options) {
-			this.formula = formula;
-			this.bounds = bounds;
-			this.options = options;
-			this.translation = null;
+			this.translTime = System.currentTimeMillis();
+			this.translation = Translator.translate(formula, bounds, options);
+			this.translTime = System.currentTimeMillis() - translTime;
 			this.trivial = 0;
 		}
 		
@@ -374,121 +319,117 @@ public final class Solver {
 		 * Returns true if there is another solution.
 		 * @see java.util.Iterator#hasNext()
 		 */
-		public boolean hasNext() {
-			return formula != null;
-		}
-		/**
-		 * Solves translation.cnf and adds the negation of the
-		 * found model to the set of clauses.
-		 * @requires this.translation != null
-		 * @ensures this.translation.cnf is modified to eliminate
-		 * the  current solution from the set of possible solutions
-		 * @return current solution
-		 */
-		private Solution nonTrivialSolution() {
-			try {
-				final SATSolver cnf = translation.cnf();
-				options.reporter().solvingCNF(translation.numPrimaryVariables(), cnf.numberOfVariables(), cnf.numberOfClauses());
-				final long startSolve = System.currentTimeMillis();
-				final boolean isSat = cnf.solve();
-				final long endSolve = System.currentTimeMillis();
-
-				final Statistics stats = new Statistics(translation, translTime, endSolve - startSolve);
-				if (isSat) {
-					// extract the current solution; can't use the sat(..) method because it frees the sat solver
-					final Solution sol = Solution.satisfiable(stats, padInstance(translation.interpret(), bounds));
-					// add the negation of the current model to the solver
-					final int primary = translation.numPrimaryVariables();
-					final int[] notModel = new int[primary];
-					for(int i = 1; i <= primary; i++) {
-						notModel[i-1] = cnf.valueOf(i) ? -i : i;
-					}
-					cnf.addClause(notModel);
-					return sol;
-				} else {
-					formula = null; bounds = null; // unsat, no more solutions, free up some space
-					return unsat(translation, stats);
-				}
-			} catch (SATAbortedException sae) {
-				throw new AbortedException(sae);
-			}
-		}
+		public boolean hasNext() {  return translation != null; }
 		
-		/**
-		 * Packages the information from the given trivial formula exception
-		 * into a solution and returns it.  If the formula is satisfiable, 
-		 * this.formula and this.bounds are modified to eliminate the current
-		 * trivial solution from the set of possible solutions.
-		 * @requires this.translation = null
-		 * @ensures this.formula and this.bounds are modified to eliminate the current
-		 * trivial solution from the set of possible solutions.
-		 * @return current solution
-		 */
-		private Solution trivialSolution(TrivialFormulaException tfe) {
-			final Statistics stats = new Statistics(0, 0, 0, translTime, 0);
-			if (tfe.value().booleanValue()) {
-				trivial++;
-				final Bounds translBounds = tfe.bounds();
-				final Instance trivialInstance = padInstance(toInstance(translBounds), bounds);
-				final Solution sol = Solution.triviallySatisfiable(stats, trivialInstance);
-				
-				final List<Formula> changes = new LinkedList<Formula>();
-								
-				for(Map.Entry<Relation, TupleSet> entry: trivialInstance.relationTuples().entrySet()) {
-					final Relation r = entry.getKey();
-					
-					if (!translBounds.relations().contains(r)) { 
-						translBounds.bound(r, bounds.lowerBound(r), bounds.upperBound(r));
-					}
-					
-					if (translBounds.lowerBound(r)!=translBounds.upperBound(r)) { // r may change
-						if (entry.getValue().isEmpty()) { 
-							changes.add(r.some());
-						} else {
-							final Relation rmodel = Relation.nary(r.name()+"_"+trivial, r.arity());
-							translBounds.boundExactly(rmodel, entry.getValue());	
-							changes.add(r.eq(rmodel).not());
-						}
-					}
-				}
-				
-				bounds = translBounds;
-				
-				// no changes => there can be no more solutions (besides the current trivial one)
-				formula = changes.isEmpty() ? Formula.FALSE : tfe.formula().and(Formula.or(changes));
-				
-				return sol;
-			} else {
-				formula = null; bounds = null;
-				return Solution.triviallyUnsatisfiable(stats, trivialProof(tfe.log()));
-			}
-		}
 		/**
 		 * Returns the next solution if any.
 		 * @see java.util.Iterator#next()
 		 */
 		public Solution next() {
-			if (!hasNext()) throw new NoSuchElementException();
-			if (translation==null) {
-				try {
-					translTime = System.currentTimeMillis();
-					translation = Translator.translate(formula, bounds, options);
-					translTime = System.currentTimeMillis() - translTime;
-					return nonTrivialSolution();
-				} catch (TrivialFormulaException tfe) {
-					translTime = System.currentTimeMillis() - translTime;
-					return trivialSolution(tfe);
-				} 
-			} else {
-				return nonTrivialSolution();
+			if (!hasNext()) throw new NoSuchElementException();			
+			try {
+				return translation.trivial() ? nextTrivialSolution() : nextNonTrivialSolution();
+			} catch (SATAbortedException sae) {
+				translation.cnf().free();
+				throw new AbortedException(sae);
 			}
 		}
 
+		/** @throws UnsupportedOperationException */
+		public void remove() { throw new UnsupportedOperationException(); }
+		
 		/**
-		 * @see java.util.Iterator#remove()
+		 * Solves {@code translation.cnf} and adds the negation of the
+		 * found model to the set of clauses.  The latter has the 
+		 * effect of forcing the solver to come up with the next solution
+		 * or return UNSAT. If {@code this.translation.cnf.solve()} is false, 
+		 * sets {@code this.translation} to null.
+		 * @requires this.translation != null
+		 * @ensures this.translation.cnf is modified to eliminate
+		 * the  current solution from the set of possible solutions
+		 * @return current solution
 		 */
-		public void remove() {
-			throw new UnsupportedOperationException();
+		private Solution nextNonTrivialSolution() {
+			final Translation.Whole transl = translation;
+			
+			final SATSolver cnf = transl.cnf();
+			final int primaryVars = transl.numPrimaryVariables();
+			
+			transl.options().reporter().solvingCNF(primaryVars, cnf.numberOfVariables(), cnf.numberOfClauses());
+			
+			final long startSolve = System.currentTimeMillis();
+			final boolean isSat = cnf.solve();
+			final long endSolve = System.currentTimeMillis();
+
+			final Statistics stats = new Statistics(transl, translTime, endSolve - startSolve);
+			final Solution sol;
+			
+			if (isSat) {			
+				// extract the current solution; can't use the sat(..) method because it frees the sat solver
+				sol = Solution.satisfiable(stats, transl.interpret());
+				// add the negation of the current model to the solver
+				final int[] notModel = new int[primaryVars];
+				for(int i = 1; i <= primaryVars; i++) {
+					notModel[i-1] = cnf.valueOf(i) ? -i : i;
+				}
+				cnf.addClause(notModel);
+			} else {
+				sol = unsat(transl, stats); // this also frees up solver resources, if any
+				translation = null; // unsat, no more solutions
+			}
+			return sol;
+		}
+		
+		/**
+		 * Returns the trivial solution corresponding to the trivial translation stored in {@code this.translation},
+		 * and if {@code this.translation.cnf.solve()} is true, sets {@code this.translation} to a new translation 
+		 * that eliminates the current trivial solution from the set of possible solutions.  The latter has the effect 
+		 * of forcing either the translator or the solver to come up with the next solution or return UNSAT.
+		 * If {@code this.translation.cnf.solve()} is false, sets {@code this.translation} to null.
+		 * @requires this.translation != null
+		 * @ensures this.translation is modified to eliminate the current trivial solution from the set of possible solutions
+		 * @return current solution
+		 */
+		private Solution nextTrivialSolution() {
+			final Translation.Whole transl = this.translation;
+			
+			final Solution sol = trivial(transl, translTime); // this also frees up solver resources, if unsat
+			
+			if (sol.instance()==null) {
+				translation = null; // unsat, no more solutions
+			} else {
+				trivial++;
+				
+				final Bounds bounds = transl.bounds();
+				final Bounds newBounds = bounds.clone();
+				final List<Formula> changes = new ArrayList<Formula>();
+
+				for(Relation r : bounds.relations()) {
+					final TupleSet lower = bounds.lowerBound(r); 
+					
+					if (lower != bounds.upperBound(r)) { // r may change
+						if (lower.isEmpty()) { 
+							changes.add(r.some());
+						} else {
+							final Relation rmodel = Relation.nary(r.name()+"_"+trivial, r.arity());
+							newBounds.boundExactly(rmodel, lower);	
+							changes.add(r.eq(rmodel).not());
+						}
+					}
+				}
+				
+				// nothing can change => there can be no more solutions (besides the current trivial one).
+				// note that transl.formula simplifies to the constant true with respect to 
+				// transl.bounds, and that newBounds is a superset of transl.bounds.
+				// as a result, finding the next instance, if any, for transl.formula.and(Formula.or(changes)) 
+				// with respect to newBounds is equivalent to finding the next instance of Formula.or(changes) alone.
+				final Formula formula = changes.isEmpty() ? Formula.FALSE : Formula.or(changes);
+				
+				final long startTransl = System.currentTimeMillis();
+				translation = Translator.translate(formula, newBounds, transl.options());
+				translTime += System.currentTimeMillis() - startTransl;
+			} 
+			return sol;
 		}
 		
 	}

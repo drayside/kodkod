@@ -40,7 +40,6 @@ import kodkod.util.ints.IntSet;
  * <li>bounds and formula optimization (breaking of predicate symmetries, predicate inlining and skolemization)</li>
  * <li>translation to a boolean circuit</li>
  * <li>symmetry breaking predicate (SBP) generation</li>
- * <li>circuit flattening</li>
  * <li>translation to cnf</li>
  * <li>running a sat solver on the generated cnf</li>
  * </ol>
@@ -87,22 +86,17 @@ public interface Reporter {
 	 */
 	public void generatingSBP();
 
-	/**
-	 * Reports that the stage 5 of the analysis is
-	 * being performed on the given boolean formula.
-	 */
-	public void flattening(BooleanFormula circuit);
 	
 	/**
 	 * Reports that the given (optimized)
-	 * circuit is being translated to CNF (stage 6 of the analysis).
+	 * circuit is being translated to CNF (stage 5 of the analysis).
 	 */
 	public void translatingToCNF(BooleanFormula circuit);
 	
 	/**
-	 * Reports that the cnf generated in stage 7, consisting of the
+	 * Reports that the cnf generated in stage 6, consisting of the
 	 * given number of variables and clauses, is being analyzed by
-	 * a sat solver (stage 8 of the analysis).
+	 * a sat solver (stage 7 of the analysis).
 	 */
 	public void solvingCNF(int primaryVars, int vars, int clauses);
 }
