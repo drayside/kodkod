@@ -4,7 +4,7 @@
 				LRI  - Univ. Paris Sud, France
  
 Glucose sources are based on MiniSat (see below MiniSat copyrights). Permissions and copyrights of
-Glucose are exactly the same as Minisat on which it is based on. (see below).
+Glucose are exactly the same as Glucose on which it is based on. (see below).
 
 ---------------
 Copyright (c) 2003-2006, Niklas Een, Niklas Sorensson
@@ -26,8 +26,8 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 **************************************************************************************************/
 
-#ifndef Minisat_Solver_h
-#define Minisat_Solver_h
+#ifndef Glucose_Solver_h
+#define Glucose_Solver_h
 
 #include "mtl/Vec.h"
 #include "mtl/Heap.h"
@@ -38,7 +38,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "core/Constants.h"
 
 
-namespace Minisat {
+namespace Glucose {
 
 //=================================================================================================
 // Solver -- the main class:

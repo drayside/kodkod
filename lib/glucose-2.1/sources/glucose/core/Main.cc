@@ -4,7 +4,7 @@
 				LRI  - Univ. Paris Sud, France
  
 Glucose sources are based on MiniSat (see below MiniSat copyrights). Permissions and copyrights of
-Glucose are exactly the same as Minisat on which it is based on. (see below).
+Glucose are exactly the same as Glucose on which it is based on. (see below).
 
 ---------------
 
@@ -38,7 +38,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "core/Dimacs.h"
 #include "core/Solver.h"
 
-using namespace Minisat;
+using namespace Glucose;
 
 //=================================================================================================
 

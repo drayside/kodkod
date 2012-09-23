@@ -7,7 +7,7 @@
 #include <cstdio>
 #include <cstring>
 
-using namespace Minisat;
+using namespace Glucose;
 
 /*
  * Class:     kodkod_engine_satlab_Glucose

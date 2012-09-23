@@ -4,7 +4,7 @@
 				LRI  - Univ. Paris Sud, France
 
 Glucose sources are based on MiniSat (see below MiniSat copyrights). Permissions and copyrights of
-Glucose are exactly the same as Minisat on which it is based on. (see below).
+Glucose are exactly the same as Glucose on which it is based on. (see below).
 
 ---------------
 
@@ -33,7 +33,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "core/Solver.h"
 #include "core/Constants.h"
 
-using namespace Minisat;
+using namespace Glucose;
 
 //=================================================================================================
 // Options:
@@ -580,7 +580,7 @@ void Solver::analyzeFinal(Lit p, vec<Lit>& out_conflict)
 				out_conflict.push(~trail[i]);
 			}else{
 				Clause& c = ca[reason(x)];
-				//                for (int j = 1; j < c.size(); j++) Minisat (glucose 2.0) loop
+				//                for (int j = 1; j < c.size(); j++) Glucose (glucose 2.0) loop
 				// Bug in case of assumptions due to special data structures for Binary.
 				// Many thanks to Sam Bayless (sbayless@cs.ubc.ca) for discover this bug.
 				for (int j = ((c.size()==2) ? 0:1); j < c.size(); j++)
