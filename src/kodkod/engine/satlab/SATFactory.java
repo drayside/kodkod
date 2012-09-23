@@ -67,6 +67,17 @@ public abstract class SATFactory {
 	};
 	
 	/**
+	 * The factory that produces instances of Niklas E&eacute;n and Niklas S&ouml;rensson's
+	 * MiniSat solver.
+	 */
+	public static final SATFactory MiniSat = new SATFactory() {
+		public SATSolver instance() {
+			return new MiniSat();
+		}
+		public String toString() { return "MiniSat"; }
+	};
+	
+	/**
 	 * The factory the produces {@link SATProver proof logging} 
 	 * instances of the MiniSat solver.  Note that core
 	 * extraction can incur a significant time overhead during solving,
@@ -83,14 +94,14 @@ public abstract class SATFactory {
 	};
 	
 	/**
-	 * The factory that produces instances of Niklas E&eacute;n and Niklas S&ouml;rensson's
-	 * MiniSat solver.
+	 * The factory that produces instances of G. Audemard and L. Simon's 
+	 * Glucose solver.
 	 */
-	public static final SATFactory MiniSat = new SATFactory() {
+	public static final SATFactory Glucose = new SATFactory() {
 		public SATSolver instance() {
-			return new MiniSat();
+			return new Glucose();
 		}
-		public String toString() { return "MiniSat"; }
+		public String toString() { return "Glucose"; }
 	};
 	
 	/**
@@ -256,16 +267,6 @@ public abstract class SATFactory {
 	 * {@link SATProver SATProvers}.  Otherwise returns false.
 	 */
 	public boolean prover() {
-		return false;
-	}
-	
-	/**
-	 * Returns true if the solvers returned by this.instance() are 
-	 * {@link SATMinSolver SATMinSolvers}.  Otherwise returns false.
-	 * @return true if the solvers returned by this.instance() are
-	 * {@link SATMinSolver SATMinSolvers}.  Otherwise returns false.
-	 */
-	public boolean minimizer() { 
 		return false;
 	}
 	

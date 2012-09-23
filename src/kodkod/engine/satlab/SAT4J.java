@@ -252,7 +252,7 @@ final class SAT4J implements SATSolver {
 		public void set(int arg0, int arg1) 	{ throw new UnsupportedOperationException(); }
 		public void sort() 						{ throw new UnsupportedOperationException(); }
 		public void sortUnique() 				{ throw new UnsupportedOperationException(); }
-		
+		public IVecInt[] subset(int arg0) 		{ throw new UnsupportedOperationException(); }
 	}
 	
 	public static void main(String[] args) {

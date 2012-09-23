@@ -40,8 +40,8 @@ def configure(conf):
      
 def build(bld):
     bld.objects( source = bld.path.ant_glob(bld.env.LINGELING_SRC), target = 'lglib' )
-    #bld.program( source = bld.path.ant_glob(bld.env.LINGELING_MAIN), use = 'lglib', target = 'lingeling')
-    bld.program( source = bld.path.ant_glob(bld.env.PLINGELING_MAIN), use = 'lglib', target = 'plingeling')
-    bld.shlib( source = bld.path.ant_glob(bld.env.LINGELING_JNI), uselib = 'JAVA', use = 'lglib', target = 'lingeling' )
+    #bld.program( source = bld.path.ant_glob(bld.env.LINGELING_MAIN), use = 'lglib', target = 'lingeling276')
+    bld.program( source = bld.path.ant_glob(bld.env.PLINGELING_MAIN), use = 'lglib', target = 'plingeling276')
+    bld.shlib( source = bld.path.ant_glob(bld.env.LINGELING_JNI), uselib = 'JAVA', use = 'lglib', target = 'lingeling276' )
  
    

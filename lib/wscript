@@ -4,10 +4,13 @@ import os.path
 import waflib.Context
 from waflib.Build import BuildContext, CleanContext, InstallContext, UninstallContext
 
-solvers = [ 'cryptominisat-2.9.1',
+solvers = [  'cryptominisat-2.9.1',
+             'cryptominisat-2.9.5',
+             'glucose-2.1',
              'lingeling-276',
-             'minisat-2.2.0',
+             'lingeling-578f',
              'minisat-1.14',
+             'minisat-2.2.0',
              'minisat-p_v1.14' ]
 
 def options(opt):

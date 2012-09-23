@@ -18,6 +18,6 @@ def configure(conf):
     
 def build(bld):
     bld.objects( source = bld.path.ant_glob(bld.env.CORE_SRC['include'], excl=bld.env.CORE_SRC['exclude']), target = 'core' )
-    bld.shlib( source = bld.path.ant_glob(bld.env.JNI_SRC['include'], excl=bld.env.JNI_SRC['exclude']), uselib = 'JAVA', use = 'core', target = 'cryptominisat' )
+    bld.shlib( source = bld.path.ant_glob(bld.env.JNI_SRC['include'], excl=bld.env.JNI_SRC['exclude']), uselib = 'JAVA', use = 'core', target = 'cryptominisat2.9.1' )
 
    
