@@ -496,8 +496,8 @@ final class IntTree<N extends IntTree.Node<N>> implements Cloneable {
 	 * @author Emina Torlak
 	 */
 	abstract static class Node<N extends Node<N>> implements Cloneable {
-		private N parent, left, right;
-		private boolean color;
+		N parent, left, right;
+		boolean color;
 		/**
 		 * Subclasses are required to maintain the following invariant:
 		 * @invariant 	this = this.parent.left => this.key < this.parent.key &&

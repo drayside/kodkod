@@ -8,7 +8,7 @@ solvers = [  'cryptominisat-2.9.1',
              'cryptominisat-2.9.5',
              'glucose-2.1',
              'lingeling-276',
-             'lingeling-578f',
+             'lingeling-587f',
              'minisat-1.14',
              'minisat-2.2.0',
              'minisat-p_v1.14' ]

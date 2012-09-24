@@ -4,7 +4,7 @@
 import os.path
 
 APPNAME = 'kodkod'
-VERSION = '1.5'
+VERSION = '2.0'
 
 def options(opt):
     opt.recurse('src lib')

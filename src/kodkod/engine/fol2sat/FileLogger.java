@@ -93,7 +93,6 @@ final class FileLogger extends TranslationLogger {
 	
 		this.logMap = new FixedMap<Formula, Variable[]>(freeVarMap.keySet());	
 		
-		int index = 0;
 		for(Map.Entry<Formula, Variable[]> e : logMap.entrySet()) {
 			Set<Variable> vars = freeVarMap.get(e.getKey());
 			int size = vars.size();
@@ -102,7 +101,6 @@ final class FileLogger extends TranslationLogger {
 			} else {
 				e.setValue(Containers.identitySort(vars.toArray(new Variable[size])));
 			}
-			index++;
 		}
 		this.bounds = bounds.unmodifiableView();
 	}

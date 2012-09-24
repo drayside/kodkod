@@ -46,6 +46,7 @@ public final class Containers {
 	 * of this method is the same as calling Iterators.iterator(0, items.length, items).
 	 * @throws NullPointerException  items = null
 	 */
+	@SafeVarargs
 	public static final <T, E extends T> Iterator<T> iterate(final E... items) {
 		return new AscendingArrayIterator<T>(0, items.length, items);
 	}
@@ -62,6 +63,7 @@ public final class Containers {
 	 * @throws IllegalArgumentException  start < end && (start < 0 || end > items.length) ||
 	 *                                    start > end && (start >= items.length || end < -1)
 	 */
+	@SafeVarargs
 	public static final <T, E extends T> Iterator<T> iterate(int start, int end, final E... items) {
 		if (start < end)
 			return new AscendingArrayIterator<T>(start,end,items);
@@ -337,6 +339,7 @@ public final class Containers {
 		 *           start < end => end in [0..items.length] && start in [0..end], 
 		 *                          start in [0..items.length) && end in [-1..start]
 		 */
+		@SafeVarargs
 		<E extends T> ArrayIterator(int start, int end, final E... items) {
 			this.items = items;
 			this.cursor = start;

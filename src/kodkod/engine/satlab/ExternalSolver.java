@@ -203,6 +203,7 @@ final class ExternalSolver implements SATSolver {
 	/**
 	 * @see kodkod.engine.satlab.SATSolver#solve()
 	 */
+	@SuppressWarnings("resource") // suppressing spurious warning about "out" not being closed (it is, in the finally block)
 	public boolean solve() throws SATAbortedException {
 		if (sat==null) {
 			flush();
@@ -255,6 +256,7 @@ final class ExternalSolver implements SATSolver {
 			} catch (NumberFormatException e) {
 				throw new SATAbortedException("Invalid "+ executable +" output: encountered a non-integer variable token.", e);
 			} finally {
+				close(cnf);
 				close(out);
 			}
 		}

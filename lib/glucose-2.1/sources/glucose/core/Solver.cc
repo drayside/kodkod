@@ -33,8 +33,9 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "core/Solver.h"
 #include "core/Constants.h"
 
-using namespace Glucose;
+//using namespace Glucose;
 
+namespace Glucose {
 //=================================================================================================
 // Options:
 
@@ -1194,4 +1195,5 @@ void Solver::garbageCollect()
 		printf("|  Garbage collection:   %12d bytes => %12d bytes             |\n",
 				ca.size()*ClauseAllocator::Unit_Size, to.size()*ClauseAllocator::Unit_Size);
 	to.moveTo(ca);
+}
 }

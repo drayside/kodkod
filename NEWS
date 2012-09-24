@@ -5,13 +5,13 @@ Kodkod 2.0 (September 23, 2012)
 * Supports the following SAT solvers via the Java Native Interface:
 	- CryptoMiniSat 2.9.1 and 2.9.5 (library names 'cryptominisat2.9.1' and 'cryptominisat')
 	- Glucose 2.1 (library name 'glucose')
-	- Lingeling 276 and 578f (library names 'lingeling276' and 'lingeling')
+	- Lingeling 276 and 587f (library names 'lingeling276' and 'lingeling')
 	- MiniSat 1.14 and 2.2.0 (library names 'minisat1.14' and 'minisat')
 	- MiniSat-P 1.14 (library name 'minisatprover')
 
 * Supports the latest version of SAT4J (v20120709).
 
-* Supports Plingeling 276 and 578 as external libraries.  The programs are
+* Supports Plingeling 276 and 587f as external libraries.  The programs are
   statically linked and the engine communicates with them by reading/writing
   files in DIMACS format.  They are loaded automatically, by searching 
   java.library.path for 'plingeling276' and 'plingeling', respectively.
