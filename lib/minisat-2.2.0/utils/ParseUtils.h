@@ -24,6 +24,13 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include <stdlib.h>
 #include <stdio.h>
 
+#ifndef Kodkod_JNI
+#include <zlib.h>
+#else // disable zlib when compiling as a Kodkod library
+#define gzFile FILE*
+#define gzread(in, buf, size) fread(buf, 1, size, in)
+#endif
+
 namespace Minisat {
 
 //-------------------------------------------------------------------------------------------------
@@ -33,7 +40,7 @@ static const int buffer_size = 1048576;
 
 
 class StreamBuffer {
-    FILE*        in;
+    gzFile        in;
     unsigned char buf[buffer_size];
     int           pos;
     int           size;
@@ -41,10 +48,10 @@ class StreamBuffer {
     void assureLookahead() {
         if (pos >= size) {
             pos  = 0;
-            size = fread(buf, 1, sizeof(buf), in); } }
+            size = gzread(in, buf, sizeof(buf)); } }
 
 public:
-    explicit StreamBuffer(FILE* i) : in(i), pos(0), size(0) { assureLookahead(); }
+    explicit StreamBuffer(gzFile i) : in(i), pos(0), size(0) { assureLookahead(); }
 
     int  operator *  () const { return (pos >= size) ? EOF : buf[pos]; }
     void operator ++ ()       { pos++; assureLookahead(); }
