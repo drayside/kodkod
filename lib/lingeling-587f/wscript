@@ -16,6 +16,7 @@ def configure(conf):
     conf.env.INCLUDES = ['.', '..']
     conf.env.CFLAGS = ['-Wall', '-O3', '-fPIC', '-fopenmp']
     conf.env.LINKFLAGS = ['-fopenmp']
+    conf.env.LIB = ['m']
     conf.env.LINGELING_SRC = ['src/lglib.c', 'src/lglbnr.c']
     conf.env.LINGELING_MAIN = 'src/lglmain.c'
     conf.env.LINGELING_JNI = 'jni/kodkod_engine_satlab_Lingeling.c'
