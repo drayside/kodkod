@@ -261,7 +261,7 @@ public abstract class Translation {
 	 * An {@linkplain Incremental incremental} translation preserves the internal data structures used during  
 	 * translation.  This enables the translation to be updated with CNF encodings of 
 	 * additional formulas and bounds using the 
-	 * {@linkplain Translator#translateIncremental(kodkod.ast.Formula, Bounds, Translation)} method.  
+	 * {@linkplain Translator#translateIncremental(kodkod.ast.Formula, Bounds, Translation.Incremental)} method.  
 	 * 
 	 * <p>
 	 * Incremental translations are more expensive to store than {@link Whole whole} translations, and they 
@@ -278,7 +278,7 @@ public abstract class Translation {
 	 * @invariant this.symmetries = {@linkplain SymmetryDetector#partition(Bounds) partition}(this.originalBounds)	
 	 *            
 	 * @see Translator#translateIncremental(kodkod.ast.Formula, Bounds, Options)
-	 * @see Translator#translateIncremental(kodkod.ast.Formula, Bounds, Incremental)
+	 * @see Translator#translateIncremental(kodkod.ast.Formula, Bounds, Translation.Incremental)
 	 * 
 	 * @author Emina Torlak
 	 */

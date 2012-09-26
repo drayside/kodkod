@@ -37,7 +37,7 @@ import kodkod.util.ints.IntSet;
  * {@link kodkod.engine.bool.BooleanMatrix matrices}, and {@link kodkod.engine.bool.Int ints}.
  * 
  * @specfield comparisonDepth: int // the depth to which circuits should be checked for equality 
- * @specfield intEncoding: {@link Options.IntEncoding} // the encoding used for generating integers ({@link #integer(int)}
+ * @specfield intEncoding: {@link IntEncoding} // the encoding used for generating integers ({@link #integer(int)}
  * @specfield bitwidth: int // the bitwidth used for integer computations
  * @specfield components: set {@link BooleanValue}
  * @invariant {@link BooleanConstant} in components

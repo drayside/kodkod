@@ -13,14 +13,14 @@
 	-tag return
 	-tag throws
 	-tag see
-	-link &quot;http://download.oracle.com/javase/6/docs/api/&quot;
-	-link &quot;http://www.sat4j.org/r17/doc/&quot;
+	-link &quot;http://docs.oracle.com/javase/7/docs/api/&quot;
+	-link &quot;http://www.sat4j.org/maven23/org.sat4j.core/apidocs/&quot;
 	-stylesheetfile src/kodkod/util/taglet/kodkod.css 
 	-doctitle &quot;Kodkod API&quot; 
 	-windowtitle &quot;Kodkod API&quot; 
-	-bottom &quot;&lt;br&gt;&amp;copy; &lt;a href=&quot;http://people.csail.mit.edu/emina/&quot; target=&quot;_top&quot;&gt;Emina Torlak&lt;/a&gt; 2005-2011&lt;br&gt;&quot;" 
+	-bottom &quot;&lt;br&gt;&amp;copy; &lt;a href=&quot;http://people.csail.mit.edu/emina/&quot; target=&quot;_top&quot;&gt;Emina Torlak&lt;/a&gt; 2005-2012&lt;br&gt;&quot;" 
 	author="true" 
-	classpath="lib/sat4j-core-v20110329/org.sat4j.core.jar"
+	classpath="lib/sat4j-core-v20120709/org.sat4j.core.jar"
 	destdir="doc" 
 	nodeprecated="true" 
 	nodeprecatedlist="true" 
@@ -28,7 +28,8 @@
 	nonavbar="false" 
 	notree="false" 
 	packagenames="kodkod.engine.satlab,kodkod.util.collections,kodkod.instance,kodkod.util.nodes,kodkod.ast.operator,kodkod.ast.visitor,kodkod.engine.bool,kodkod.engine.ucore,kodkod.engine.fol2sat,kodkod.ast,kodkod.engine,kodkod.util.ints,kodkod.engine.config" 
-	source="1.6" 
+	source="1.7" 
+	executable="/Library/Java/JavaVirtualMachines/jdk1.7.0_07.jdk/Contents/Home/bin/javadoc"
 	sourcepath="src" 
 	splitindex="true" 
 	use="false" 

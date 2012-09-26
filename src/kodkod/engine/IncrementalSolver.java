@@ -44,7 +44,7 @@ import kodkod.instance.Universe;
  * An incremental Kodkod solver is initialized with an options instance <code>opt</code> which 
  * cannot be modified further during the lifetime of the solver instance.  If the 
  * first problem <code>(f0, b0, opt)</code> passed to the solver via the {@link #solve(Formula, Bounds) solve} method is satisfiable, 
- * the resulting {@linkplain #solution() solution} and the underlying incremental 
+ * the resulting {@linkplain Solution solution} and the underlying incremental 
  * {@linkplain SATSolver SAT solver} are saved.  When the {@linkplain #solve(Formula, Bounds) solve} 
  * method is called again with a new formula <code>f1</code> and bounds <code>b1</code>,  the translation 
  * of <code>(f1, b1, opt)</code> is added to the stored SAT solver, which is then called to 
@@ -95,7 +95,7 @@ import kodkod.instance.Universe;
  * @invariant options.solver.incremental() && options.logTranslation = 0   
  * 
  * @see SymmetryDetector
- * @see Translation.Incremental
+ * @see kodkod.engine.fol2sat.Translation.Incremental
  * @see Translator#translateIncremental(Formula, Bounds, Options)
  * @see Translator#translateIncremental(Formula, Bounds, kodkod.engine.fol2sat.Translation.Incremental)
  * 
