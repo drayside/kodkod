@@ -53,6 +53,11 @@
 			excludes="**/util/*, **/*.col, **/*.launch, **/sudoku/SudokuSolver*"/>
 	</target>
 	
+	<target name="tests">
+		<makeJar destfile="tests${version}" title="Tests" basedir="../relations.tests" 
+			includes="**tests/**/*.*"/>
+	</target>
+	
 	<macrodef name="makeJar">
 		<attribute name="destfile"/>
 		<attribute name="basedir"/>
