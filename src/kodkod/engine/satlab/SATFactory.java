@@ -250,6 +250,10 @@ public abstract class SATFactory {
 			public boolean incremental() {
 				return false;
 			}
+			
+			public String toString() {
+				return (new File(executable)).getName();
+			}
 		};
 	}
 	

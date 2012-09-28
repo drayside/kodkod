@@ -98,7 +98,7 @@ static inline int irand(double& seed, int size) {
 
 
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-#ifdef _MSC_VER
+#if defined(_MSC_VER) || defined(MINGW)
 
 #include <ctime>
 

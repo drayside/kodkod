@@ -32,7 +32,11 @@ void File::open(cchar* name, cchar* mode_)
     if (has_w)  mask |= O_TRUNC;
     if (has_x)  mask |= O_EXCL;
 
-    fd = open64(name, mask, S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH);
+	#ifdef MINGW
+	fd = open64(name, mask|O_RANDOM|O_BINARY, S_IRUSR|S_IWUSR);
+	#else
+	fd = open64(name, mask, S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH);
+	#endif
 
     if (fd != -1){
         mode   = has_r ? READ : WRITE;

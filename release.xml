@@ -48,8 +48,9 @@
 	<target name="examples">
 		<makeJar destfile="examples${version}" title="Examples" basedir="../relations.examples" 
 			includes="**examples/alloy/*.*, **examples/classicnp/*.*, **examples/tptp/*.*, 
-					  **examples/sudoku/Sudoku*, **examples/netconfig/Netconfig.*"
-			excludes="**/util/*, **/*.col, **/sudoku/SudokuSolver*"/>
+					  **examples/sudoku/Sudoku*, **examples/netconfig/Netconfig.*,
+			          **examples/xpose/*.*"
+			excludes="**/util/*, **/*.col, **/*.launch, **/sudoku/SudokuSolver*"/>
 	</target>
 	
 	<macrodef name="makeJar">

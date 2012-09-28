@@ -21,5 +21,5 @@ def build(bld):
 def dist(dst):
     dst.base_name = APPNAME + '-' + VERSION
     dst.algo      = 'zip'
-    dst.excl      = '**/.waf-1* **/*~ **/*.pyc **/*.swp **/.lock-w* **/CVS/** **/taglet/**' 
+    dst.excl      = '**/.* **/*~ **/*.pyc **/*.swp **/CVS/** **/taglet/**' 
     dst.files     = dst.path.ant_glob('LICENSE NEWS MANIFEST wscript src/** lib/**', excl=dst.excl)
