@@ -78,7 +78,7 @@ import kodkod.instance.Universe;
  * a subset of <code>b0</code>'s lower/upper bounds on <code>{ r0, ..., rn }</code>.  One can think of the bounds on 
  * <code>{ r0, ..., rn }</code> as representing sorts or types, and every relation's bounds should be 
  * expressible in terms of these types.  Note that having each atom in the universe appear in a lower/upper 
- * bound by itself (e.g., <code>b0.lowerBound[ri] = b0.upperBound[ri] = {<ai>}</code>) will trivially satisfy 
+ * bound by itself (e.g., <code>b0.lowerBound[ri] = b0.upperBound[ri] = {&lt;ai&gt;}</code>) will trivially satisfy 
  * this requirement, but it is better to group related atoms into sets to enable symmetry breaking.
  * </p>
  *  
