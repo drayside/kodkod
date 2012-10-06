@@ -204,7 +204,7 @@ public final class TupleFactory {
 	/**
 	 * Returns a tuple set that contains all tuples between <code>from</code>
 	 * and <code>to</code>, inclusive.  More formally, the returned set contains
-	 * all tuples whose indeces are in the range [from.index()..to.index()].
+	 * all tuples whose indices are in the range [from.index()..to.index()].
 	 * @return { s: TupleSet | s.universe = this.universe && s.arity = from.arity &&
 	 *                         s.tuples = {t: Tuple | t.universe = this.universe &&
 	 *                                                t.arity = s.arity &&

@@ -44,6 +44,28 @@ public abstract class SATFactory {
 	protected SATFactory() {}
 	
 	/**
+	 * Returns true iff the given factory generates solvers that 
+	 * are available for use on this system.
+	 * @return true iff the given factory generates solvers that 
+	 * are available for use on this system.
+	 */
+	public static final boolean available(SATFactory factory) {
+		SATSolver solver = null;
+		try {
+			solver = factory.instance();
+			solver.addVariables(1);
+			solver.addClause(new int[]{1});
+			return solver.solve();
+		} catch (RuntimeException|UnsatisfiedLinkError t) {	
+			return false;
+		} finally {
+			if (solver!=null) {
+				solver.free();
+			}
+		}
+	}
+	
+	/**
 	 * The factory that produces instances of the default sat4j solver.
 	 * @see org.sat4j.core.ASolverFactory#defaultSolver()
 	 */
@@ -170,16 +192,17 @@ public abstract class SATFactory {
 		if (portfolio!=null && portfolio)
 			opts.add("-p");
 		
-		return externalFactory(findStaticLibrary("plingeling"), null, opts.toArray(new String[opts.size()]));
+		final String executable = findStaticLibrary("plingeling");
+		return externalFactory(executable==null ? "plingeling" : executable, 
+				null, opts.toArray(new String[opts.size()]));
+	
 	}
 	
 	/**
 	 * Searches the {@code java.library.path} for an executable with the given name. Returns a fully 
-	 * qualified path to the first found executable.  Throws a {@link SATAbortedException} if no 
-	 * executable is found.
-	 * @return a fully qualified path to an executable with the given name 
-	 * @throws SATAbortedException no executable with the given name is found in the directories
-	 * specified by the {@code java.library.path}
+	 * qualified path to the first found executable.  Otherwise returns null.
+	 * @return a fully qualified path to an executable with the given name, or null if no executable 
+	 * is found.
 	 */
 	private static String findStaticLibrary(String name) { 
 		final String[] dirs = System.getProperty("java.library.path").split(System.getProperty("path.separator"));
@@ -190,8 +213,7 @@ public abstract class SATFactory {
 				return file.getAbsolutePath();
 		}
 		
-		throw new SATAbortedException("Could not find an executable named " + name + 
-				" on the java.library.path: " + System.getProperty("java.library.path"));
+		return null;
 	}
 	
 	/**
