@@ -151,7 +151,8 @@ public final class Universe implements Iterable<Object> {
 	 * @throws IndexOutOfBoundsException  i < 0 || i >= this.size
 	 */
 	public Object atom(int index) { 
-		if (index<0||index>=atoms.length) throw new IndexOutOfBoundsException();
+		if (index<0||index>=atoms.length) 
+			throw new IndexOutOfBoundsException("Invalid universe index: " + index);
 		return atoms[index];
 	}
 	
@@ -164,7 +165,7 @@ public final class Universe implements Iterable<Object> {
 	 */
 	public int index(Object atom) { 
 		if (indices.containsKey(atom)) return indices.get(atom);
-		else throw new IllegalArgumentException("no this.atoms." + atom);
+		else throw new IllegalArgumentException("No such atom in the universe: " + atom);
 	}
 	
 	/**
