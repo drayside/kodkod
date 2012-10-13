@@ -98,6 +98,12 @@ public final class Solver implements KodkodSolver {
 	}
 
 	/**
+	 * {@inheritDoc}
+	 * @see kodkod.engine.KodkodSolver#free()
+	 */
+	public void free() {}
+	
+	/**
 	 * Attempts to satisfy the given {@code formula} and {@code bounds} with respect to 
 	 * {@code this.options} or, optionally, prove the problem's unsatisfiability. If the method 
 	 * completes normally, the result is a  {@linkplain Solution solution} containing either an 
