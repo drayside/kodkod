@@ -14,7 +14,7 @@
 	<import file="javadoc.xml"/>
 	
 	<target name="binary">
-		<makeJar destfile="kodkod${version}" basedir="bin" includes="**/*.class" excludes="**/taglet/*"/>
+		<makeJar destfile="kodkod-${kodkod.specification.version}" basedir="bin" includes="**/*.class" excludes="**/taglet/*"/>
 	</target>
 	
 	<target name="source">
@@ -52,7 +52,14 @@
 			          **examples/xpose/*.*"
 			excludes="**/util/*, **/*.col, **/*.launch, **/sudoku/SudokuSolver*"/>
 	</target>
-	
+
+	<target name="tools">
+		<makeJar destfile="kodkod-tools-${kodkod.specification.version}" title="Tools" basedir="../relations.tools/bin" 
+			includes="**/*.class" excludes="**/*Test.*, **/*.kks"/>
+		<zip destfile="${out}/kodkod-tools-lib.zip" basedir="../relations.tools/lib" 
+			includes="*.jar"  comment="Third party Java libraries used by Kodkod Tools."/>
+	</target>
+
 	<target name="tests">
 		<makeJar destfile="tests${version}" title="Tests" basedir="../relations.tests" 
 			includes="**tests/**/*.*"/>
