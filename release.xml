@@ -55,7 +55,7 @@
 
 	<target name="tools">
 		<makeJar destfile="kodkod-tools-${kodkod.specification.version}" title="Tools" basedir="../relations.tools/bin" 
-			includes="**/*.class" excludes="**/*Test.*, **/*.kks"/>
+			includes="**/*.class" excludes="**/*Test*.*, **/*.kks"/>
 		<zip destfile="${out}/kodkod-tools-lib.zip" basedir="../relations.tools/lib" 
 			includes="*.jar"  comment="Third party Java libraries used by Kodkod Tools."/>
 	</target>
