@@ -167,8 +167,10 @@ final class CBCFactory {
 	 * @return (this.values & BooleanVariable).label 
 	 */
 	BooleanVariable variable(int label) {
-		int low = 0;
 		int high = vars.length-1;
+		if (high==0)
+			return vars[0][label-1];
+		int low = 0;
 		while (low <= high) {
 			final int mid = (low + high) >>> 1;
 			final BooleanVariable[] midVars = vars[mid];

@@ -22,7 +22,9 @@
 package kodkod.engine.fol2sat;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import kodkod.ast.BinaryExpression;
 import kodkod.ast.BinaryFormula;
@@ -42,6 +44,7 @@ import kodkod.ast.IntComparisonFormula;
 import kodkod.ast.IntConstant;
 import kodkod.ast.IntExpression;
 import kodkod.ast.IntToExprCast;
+import kodkod.ast.LeafExpression;
 import kodkod.ast.MultiplicityFormula;
 import kodkod.ast.NaryExpression;
 import kodkod.ast.NaryFormula;
@@ -197,7 +200,8 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 	private Environment<BooleanMatrix> env;
 
 	private final FOL2BoolCache cache;
-
+	private final Map<LeafExpression, BooleanMatrix> leafCache;
+	
 	/**
 	 * Constructs a new translator that will use the given translation cache
 	 * and interpreter to perform the translation.
@@ -207,6 +211,7 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 		this.interpreter = interpreter;
 		this.env = Environment.empty();
 		this.cache = cache;
+		this.leafCache = new HashMap<>(64);
 	}
 
 	/**
@@ -218,6 +223,7 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 		this.interpreter = interpreter;
 		this.env = env;
 		this.cache = cache;
+		this.leafCache = new HashMap<>(64);
 	}
 
 	/**
@@ -299,7 +305,12 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 	 * @return this.interpreter.interpret(relation)
 	 */
 	public final BooleanMatrix visit(Relation relation) {
-		return interpreter.interpret(relation);
+		BooleanMatrix ret = leafCache.get(relation);
+		if (ret==null) {
+			ret = interpreter.interpret(relation);
+			leafCache.put(relation, ret);
+		}
+		return ret;
 	}
 
 	/**
@@ -307,7 +318,12 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 	 * @return this.interpreter.interpret(constExpr).
 	 */
 	public final BooleanMatrix visit(ConstantExpression constExpr) {
-		return interpreter.interpret(constExpr);
+		BooleanMatrix ret = leafCache.get(constExpr);
+		if (ret==null) {
+			ret = interpreter.interpret(constExpr);
+			leafCache.put(constExpr, ret);
+		}
+		return ret;
 	}
 
 	/**
@@ -781,7 +797,7 @@ abstract class FOL2BoolTranslator implements ReturnVisitor<BooleanMatrix, Boolea
 	}	
 
 	/**
-	 * @return this.interpreter.factory.integer(intConst.value, this.encoding)
+	 * @return this.interpreter.factory.integer(intConst.value)
 	 */
 	public final Int visit(IntConstant intConst) {
 		return interpreter.factory().integer(intConst.value());
