@@ -12,6 +12,7 @@ def configure(conf):
     conf.check_jni_headers()
     if sys.platform == 'win32' and conf.env.CXX_NAME == 'gcc' :
         conf.env.DEFINES = ['MINGW']
+        conf.env.LINKFLAGS = ['-static-libgcc', '-static-libstdc++']
     conf.env.INCLUDES = [ '.', '..']
     conf.env.CXXFLAGS = ['-Wall', '-O3', '-fPIC' ]
     conf.env.CORE_SRC = ['core/*.C']
