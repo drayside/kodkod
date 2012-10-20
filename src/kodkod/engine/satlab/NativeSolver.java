@@ -72,7 +72,9 @@ abstract class NativeSolver implements SATSolver {
 					} catch (UnsatisfiedLinkError e1) { }
 				}
 			}
-			throw new UnsatisfiedLinkError("Could not load the library " + System.mapLibraryName(name) + " or any of its variants.");
+	
+			throw new UnsatisfiedLinkError("Could not load the library " + 
+						System.mapLibraryName(name) + " or any of its variants:" + e.getMessage());
 		}
 		
 	}
