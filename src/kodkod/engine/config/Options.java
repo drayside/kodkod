@@ -37,22 +37,29 @@ import kodkod.util.ints.Ints;
  * @specfield intEncoding: IntEncoding // encoding to use for translating int expressions
  * @specfield bitwidth: int // the bitwidth to use for integer representation / arithmetic
  * @specfield skolemDepth: int // skolemization depth
+ * @specfield nof: boolean // no overflow (detect and forbid overflows)
  * @specfield flatten: boolean // eliminate intermediate variables when possible?  default is false.
  * @specfield logTranslation: [0..2] // log translation events, default is 0 (no logging)
  * @specfield coreGranularity: [0..3] // unsat core granularity, default is 0 (only top-level conjuncts are considered)
  * @author Emina Torlak
  */
 public final class Options {
-	private Reporter reporter = new AbstractReporter(){};
+    private Reporter reporter = new AbstractReporter(){};
 	private SATFactory solver = SATFactory.DefaultSAT4J;
 	private int symmetryBreaking = 20;
 	private IntEncoding intEncoding = IntEncoding.TWOSCOMPLEMENT;
 	private int bitwidth = 4;
 	private int sharing = 3;
+	private boolean nof = false; 
 	private int skolemDepth = 0;
 	private boolean flatten = false;
 	private int logTranslation = 0;
 	private int coreGranularity = 0;
+	
+	//[AM]
+	public static boolean isDebug() {
+	    return false; //TODO: read from the environment or something
+	}
 	
 	/**
 	 * Constructs an Options object initalized with 
@@ -109,6 +116,16 @@ public final class Options {
 			throw new NullPointerException();
 		this.reporter = reporter;
 	}
+	
+	/**
+	 * Returns the noOverflow flag
+	 */
+	public boolean noOverflow() { return nof; }
+	
+	/**
+	 * Sets the noOverflow flag
+	 */
+	public void setNoOverflow(boolean noOverflow) { this.nof = noOverflow; }
 		
 	/**
 	 * @throws IllegalArgumentException - arg !in [min..max]
@@ -345,6 +362,8 @@ public final class Options {
 		b.append(flatten);
 		b.append("\n symmetryBreaking: ");
 		b.append(symmetryBreaking);
+		b.append("\n noOverflow: ");
+        b.append(nof);
 		b.append("\n skolemDepth: ");
 		b.append(skolemDepth);
 		b.append("\n logTranslation: ");
@@ -391,5 +410,5 @@ public final class Options {
 		 */
 		abstract IntRange range(int bitwidth) ;
 	}
-	
+
 }
