@@ -21,6 +21,10 @@
  */
 package kodkod.engine;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -45,6 +49,7 @@ import kodkod.instance.Instance;
 import kodkod.instance.TupleSet;
 import kodkod.util.ints.IntIterator;
 import kodkod.util.ints.IntSet;
+import kodkod.util.nodes.PrettyPrinter;
 
 
 /** 
@@ -224,13 +229,28 @@ public final class Solver {
 	 */
 	public Iterator<Solution> solveAll(final Formula formula, final Bounds bounds) 
 		throws HigherOrderDeclException, UnboundLeafException, AbortedException {
+	    
+	    if (Options.isDebug()) flushFormula(formula, bounds); //[AM] 	    
 		
 		if (!options.solver().incremental())
 			throw new IllegalArgumentException("cannot enumerate solutions without an incremental solver.");
 		
 		return new SolutionIterator(formula, bounds, options);
-		
 	}
+
+	//[AM]
+    private void flushFormula(Formula formula, Bounds bounds)  {
+        try {
+            File f = new File(System.getProperty("java.io.tmpdir"), "kk.txt");
+            OutputStream os = new BufferedOutputStream(new FileOutputStream(f));
+            os.write(PrettyPrinter.print(formula, 2).getBytes());
+            os.write("\n================\n".getBytes());
+            os.write(bounds.toString().getBytes());
+            os.flush();
+            os.close();
+        } catch (Exception e) {
+        }
+    }
 
 	/**
 	 * {@inheritDoc}
