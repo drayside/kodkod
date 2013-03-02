@@ -52,6 +52,7 @@ import kodkod.instance.TupleSet;
 public final class Evaluator {
 	private final Instance instance;
 	private final Options options;
+	private boolean wasOverflow; // [AM] was overflow detected during evaluation
 	
 	/**
 	 * Constructs a new Evaluator for the given instance, using a 
@@ -129,8 +130,13 @@ public final class Evaluator {
 	public int evaluate(IntExpression intExpr) {
 		if (intExpr == null) throw new NullPointerException("intexpression");
 		final Int sol = Translator.evaluate(intExpr, instance, options);
-//		System.out.println(sol);
+		this.wasOverflow = sol.defCond().isOverflowFlag();
 		return sol.value();
+	}
+
+	/** Returns whether overflow was detected during evaluation */ //[AM]
+	public boolean wasOverflow() { 
+	    return wasOverflow; 
 	}
 	
 	/**
