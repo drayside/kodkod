@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
+import kodkod.ast.Expression;
 import kodkod.ast.Formula;
 import kodkod.ast.Node;
 import kodkod.ast.Variable;
@@ -84,9 +85,9 @@ final class MemoryLogger extends TranslationLogger {
 	 * @see kodkod.engine.fol2sat.TranslationLogger#log(kodkod.ast.Formula, kodkod.engine.bool.BooleanValue, kodkod.engine.fol2sat.Environment)
 	 */
 	@Override
-	void log(Formula f, BooleanValue translation, Environment<BooleanMatrix> env) {
+	void log(Formula f, BooleanValue translation, Environment<BooleanMatrix, Expression> env) {
 		if (logMap.containsKey(f)) { 
-			assert env.isEmpty();
+			//assert env.isEmpty();
 			final BooleanValue old = logMap.put(f, translation);
 			if (old!=null && old!=translation) 
 				throw new IllegalArgumentException("translation of root corresponding to the formula has already been logged: " + f);

@@ -21,6 +21,7 @@
  */
 package kodkod.engine.fol2sat;
 
+import kodkod.ast.Expression;
 import kodkod.ast.Formula;
 import kodkod.engine.Solver;
 import kodkod.engine.bool.BooleanMatrix;
@@ -48,7 +49,7 @@ abstract class TranslationLogger {
 	 * @throws IllegalArgumentException - some aspect of the given translation event prevents it from being logged
 	 * @throws IllegalStateException - this log has been closed
 	 */
-	abstract void log(Formula f, BooleanValue translation, Environment<BooleanMatrix> env);
+	abstract void log(Formula f, BooleanValue translation, Environment<BooleanMatrix, Expression> env);
 	
 	/**
 	 * Closes this logger and releases associated resources.  Attempts to call {@link #log(Formula, BooleanValue, Environment)}
