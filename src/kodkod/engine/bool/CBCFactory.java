@@ -219,7 +219,7 @@ final class CBCFactory {
 	 * @ensures v in BooleanFormula - NotGate => this.values' = this.values + v, this.values' = this.values
 	 * @throws NullPointerException - any of the arguments are null
 	 */
-	@SuppressWarnings({ "unchecked", "rawtypes" }) 
+	@SuppressWarnings("unchecked") 
 	BooleanValue assemble(BooleanAccumulator acc) {
 		final int asize = acc.size();
 		final Operator.Nary op = acc.op;
@@ -230,6 +230,7 @@ final class CBCFactory {
 			final Iterator<BooleanValue> inputs = acc.iterator();
 			return assemble(op, inputs.next(), inputs.next());
 		default :
+			@SuppressWarnings("rawtypes")
 			final int hash = op.hash((Iterator)acc.iterator());
 			if (asize > cmpMax) {
 				for(Iterator<BooleanFormula> gates = opCache(op).get(hash); gates.hasNext(); ) {
