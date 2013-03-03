@@ -365,6 +365,7 @@ public final class Ints {
 			};
 		}
 		public int size() {	return range.size(); }
+		public IntSet copy() { return this; }
 		public int floor(int i) {
 			if (i<range.min())
 				throw new NoSuchElementException();
@@ -405,6 +406,7 @@ public final class Ints {
 			};
 		}
 		public int size() {	return 1; }
+		public IntSet copy() { return this; }
 		public boolean equals(Object o) {
 			if (this==o) return true;
 			else if (o instanceof IntSet) {
@@ -443,6 +445,7 @@ public final class Ints {
 		public boolean contains(int i) { return s.contains(i); }
 		public int min() { return s.min();	}
 		public int max() { return s.max();	}
+		public boolean containsAll(IntSet other) { return s.containsAll(other ); }	
 		public IntIterator iterator(final int from, final int to) { 	
 			return new IntIterator() {
 				IntIterator iter = s.iterator(from,to);
