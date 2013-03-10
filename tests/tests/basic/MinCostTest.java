@@ -5,8 +5,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.Ignore;
-
 import junit.framework.TestCase;
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
@@ -26,7 +24,6 @@ import examples.sudoku.Sudoku;
  * 
  * @author Emina Torlak
  */
-@Ignore
 public class MinCostTest extends TestCase {
 	private final int USIZE = 10;
 	private final TupleFactory factory;
