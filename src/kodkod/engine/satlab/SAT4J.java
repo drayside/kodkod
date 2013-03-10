@@ -178,6 +178,10 @@ final class SAT4J implements SATSolver {
 			}
 			return false;
 		}
+		
+        public IVecInt[] subset(int cardinal) {
+            return null;
+        }
 
 		public void copyTo(IVecInt arg0) {
 			int argLength = arg0.size();
