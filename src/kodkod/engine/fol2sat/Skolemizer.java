@@ -158,9 +158,9 @@ abstract class Skolemizer extends AbstractReplacer {
 
 		// only cache intermediate computations for expressions with no free variables
 		// and formulas with no free variables and no quantified descendents
-		final AbstractDetector fvdetect = annotated.freeVariableDetector();
-		final AbstractDetector qdetect = annotated.quantifiedFormulaDetector();
 		for(Node n: annotated.sharedNodes()) {
+		    final AbstractDetector fvdetect = annotated.freeVariableDetector();
+		    final AbstractDetector qdetect = annotated.quantifiedFormulaDetector();
 			if (!(Boolean)n.accept(fvdetect)) {
 				if (!(n instanceof Formula) || !((Boolean)n.accept(qdetect)))
 					this.cache.put(n, null);

@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
@@ -3349,6 +3350,46 @@ factory.tuple(list2));
 			}
 		}	
 	}
-	
+
+	public final void testAleks_03102013() {
+	    final int NUM = 100;
+	    // run in multiple times, because whether the bug is going to be 
+	    // exhibited depends on the ordering of items in a set (concretely, 
+	    // shared nodes in the AnnotatedNode class
+	    for (int i = 0; i < NUM; i++) {
+	        doTestAleks_03102013();
+	    }
+	}
+
+	private final void doTestAleks_03102013() {
+	    Relation r = Relation.unary("R");
+        Relation s = Relation.binary("f");
+        Variable v = Variable.unary("e");
+        Decl decl = v.oneOf(r);
+        Expression shared = v.join(s);
+        Formula expr = (shared.difference(shared)).one().forAll(decl);
+
+        Formula fin = expr.and(expr.not());
+
+        List<Object> atomlist = new LinkedList<Object>();
+        atomlist.add("R$0");
+        atomlist.add("R$1");
+        atomlist.add("R$2");
+
+        Universe universe = new Universe(atomlist);
+        TupleFactory factory = universe.factory();
+        Bounds bounds = new Bounds(universe);
+
+        bounds.bound(r, factory.allOf(1));
+        bounds.bound(s, factory.allOf(2));
+
+        Solver solver = new Solver();
+        solver.options().setSolver(SATFactory.DefaultSAT4J);
+        solver.options().setBitwidth(4);
+        solver.options().setSkolemDepth(0);   
+        solver.options().setLogTranslation(0); 
+        Solution sol = solver.solve(fin, bounds);
+        assertNull(sol.instance());
+	}
 	
 }
