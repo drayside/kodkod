@@ -14,9 +14,4 @@ public class FooTest {
   public void thisAlwaysPasses() {
 
   }
-
-  @Test
-  public void thisAlwaysFails() {
-    assertEquals("a", "b");
-  }
 }
