@@ -3,6 +3,7 @@ language: java
 script:
   - "./waf configure"
   - "./waf build"
+  - "./waf test"
   - "./waf install"
 
 jdk:

@@ -1,0 +1,42 @@
+#! /usr/bin/env python
+# encoding: utf-8
+import os.path
+import sys
+
+def options(opt):
+  opt.add_option("--junit-path", dest="junit_path", action="store", help="path to junit.jar")
+
+def configure(conf):
+    env = conf.env
+    conf.setenv('test', env)
+    conf.load('java')
+    conf.env.TEST_SOURCES = ['kodkod/moo']
+    conf.env.append_value('CLASSPATH', [ './src/kodkod','./tests/kodkod' ])
+    conf.env.JUNIT_HOME = conf.options.junit_path
+    print conf.env
+    conf.env.append_value('CLASSPATH', conf.find_file('junit.jar', [conf.env.JUNIT_HOME]))
+    conf.env.append_value('CLASSPATH', conf.find_file('hamcrest-core.jar', [conf.env.JUNIT_HOME]))
+
+def build(bld):
+    env = bld.all_envs['test']
+    bld(features  = 'javac',
+        srcdir    = env.TEST_SOURCES,
+        outdir    = 'kodkod',
+        compat    = '1.7',
+        classpath = env.CLASSPATH,
+        basedir   = 'kodkod')
+       
+def test(tst):
+    env = tst.all_envs['test']
+    cmd = []
+    cmd.extend(["java"])
+    cmd.extend(["-cp"])
+    if sys.platform == 'win32':
+      cmd.extend([";".join(env.CLASSPATH)])
+    else:
+      cmd.extend([":".join(env.CLASSPATH)])
+    cmd.extend(["org.junit.runner.JUnitCore"])
+    cmd.extend(["kodkod.moo.FooTest"])
+    ret = tst.exec_command(cmd, cwd=tst.out_dir)
+    if ret != 0:
+      tst.fatal("Tests failed")
