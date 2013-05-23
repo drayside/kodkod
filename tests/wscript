@@ -13,9 +13,8 @@ def configure(conf):
     conf.env.TEST_SOURCES = ['kodkod/moo']
     conf.env.append_value('CLASSPATH', [ './src/kodkod','./tests/kodkod' ])
     conf.env.JUNIT_HOME = conf.options.junit_path
-    print conf.env
-    conf.env.append_value('CLASSPATH', conf.find_file('junit.jar', [conf.env.JUNIT_HOME]))
-    conf.env.append_value('CLASSPATH', conf.find_file('hamcrest-core.jar', [conf.env.JUNIT_HOME]))
+    conf.env.append_value('CLASSPATH', conf.find_file('junit.jar', conf.env.JUNIT_HOME))
+    conf.env.append_value('CLASSPATH', conf.find_file('hamcrest-core.jar', conf.env.JUNIT_HOME))
 
 def build(bld):
     env = bld.all_envs['test']
