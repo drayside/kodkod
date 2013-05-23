@@ -10,7 +10,7 @@ def configure(conf):
     env = conf.env
     conf.setenv('test', env)
     conf.load('java')
-    conf.env.TEST_SOURCES = ['kodkod/moo']
+    conf.env.TEST_SOURCES = ['kodkod']
     conf.env.append_value('CLASSPATH', [ './src/kodkod','./tests/kodkod' ])
 
     if conf.options.junit_path:
@@ -38,7 +38,7 @@ def test(tst):
     else:
       cmd.extend([":".join(env.CLASSPATH)])
     cmd.extend(["org.junit.runner.JUnitCore"])
-    cmd.extend(["kodkod.moo.FooTest"])
+    cmd.extend(["kodkod.TestSuite"])
 
     ret = tst.exec_command(cmd, cwd=tst.out_dir)
 
