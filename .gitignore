@@ -2,3 +2,8 @@ deps/
 build/
 .waf*/
 .lock-waf*
+kodkod-*.zip
+kodkod.jar
+linux_*/
+darwin_*/
+windows_*/
