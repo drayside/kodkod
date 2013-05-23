@@ -27,6 +27,10 @@ def dist(dst):
 def test(tst):
     tst.recurse('tests')
 
+def all(ctx):
+    from waflib import Options
+    Options.commands = ['build', 'install', 'test', 'dist'] + Options.commands
+
 from waflib.Build import BuildContext
 class TestTask(BuildContext):
     cmd = 'test'
