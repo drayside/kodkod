@@ -12,7 +12,10 @@ def configure(conf):
     conf.load('java')
     conf.env.TEST_SOURCES = ['kodkod/moo']
     conf.env.append_value('CLASSPATH', [ './src/kodkod','./tests/kodkod' ])
-    conf.env.JUNIT_HOME = os.path.abspath(conf.options.junit_path)
+
+    if conf.options.junit_path:
+      conf.env.JUNIT_HOME = os.path.abspath(conf.options.junit_path)
+
     conf.env.append_value('CLASSPATH', conf.find_file('junit.jar', conf.env.JUNIT_HOME))
     conf.env.append_value('CLASSPATH', conf.find_file('hamcrest-core.jar', conf.env.JUNIT_HOME))
 
@@ -36,6 +39,8 @@ def test(tst):
       cmd.extend([":".join(env.CLASSPATH)])
     cmd.extend(["org.junit.runner.JUnitCore"])
     cmd.extend(["kodkod.moo.FooTest"])
+
     ret = tst.exec_command(cmd, cwd=tst.out_dir)
+
     if ret != 0:
       tst.fatal("Tests failed")
