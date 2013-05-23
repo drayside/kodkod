@@ -4,9 +4,7 @@ install:
   - "./waf deps"
 script:
   - "./waf configure"
-  - "./waf build"
-  - "./waf test"
-  - "./waf install"
+  - "./waf all"
 
 jdk:
   - oraclejdk7
