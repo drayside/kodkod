@@ -28,7 +28,7 @@ def build(bld):
         compat    = '1.7',
         classpath = env.CLASSPATH,
         basedir   = 'kodkod')
-       
+
 def test(tst):
     env = tst.all_envs['test']
     cmd = []

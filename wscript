@@ -17,17 +17,17 @@ def deps(ctx):
 def configure(conf):
     conf.env.DEPS_DIR = os.path.abspath('./deps')
     conf.recurse('src lib tests')
-     
+
 def build(bld):
     if not bld.variant:
         bld.recurse('src lib tests')
     else:
-        bld.recurse('lib')    
+        bld.recurse('lib')
 
 def dist(dst):
     dst.base_name = APPNAME + '-' + VERSION
     dst.algo      = 'zip'
-    dst.excl      = '**/.* **/*~ **/*.pyc **/*.swp **/CVS/** **/taglet/**' 
+    dst.excl      = '**/.* **/*~ **/*.pyc **/*.swp **/CVS/** **/taglet/**'
     dst.files     = dst.path.ant_glob('LICENSE NEWS MANIFEST wscript src/** lib/** tests/**', excl=dst.excl)
 
 def test(tst):
@@ -50,7 +50,7 @@ class DepsContext(Context):
 
     def add_dep(self, file, url):
         self.deps[file] = url
-    
+
     def install_deps(self, deps_dir):
         if not os.path.exists(deps_dir):
           os.makedirs(deps_dir)

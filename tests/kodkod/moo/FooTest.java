@@ -1,7 +1,5 @@
 package kodkod.moo;
 
-import static org.junit.Assert.assertEquals;
-
 import org.junit.Test;
 import org.junit.Ignore;
 import org.junit.runner.RunWith;
