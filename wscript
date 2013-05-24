@@ -28,7 +28,7 @@ def dist(dst):
     dst.base_name = APPNAME + '-' + VERSION
     dst.algo      = 'zip'
     dst.excl      = '**/.* **/*~ **/*.pyc **/*.swp **/CVS/** **/taglet/**' 
-    dst.files     = dst.path.ant_glob('LICENSE NEWS MANIFEST wscript src/** lib/**', excl=dst.excl)
+    dst.files     = dst.path.ant_glob('LICENSE NEWS MANIFEST wscript src/** lib/** tests/**', excl=dst.excl)
 
 def test(tst):
     tst.recurse('tests')
