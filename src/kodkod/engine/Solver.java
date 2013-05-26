@@ -1,4 +1,4 @@
-/* 
+/*
  * Kodkod -- Copyright (c) 2005-present, Emina Torlak
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.SortedSet;
 
 import kodkod.ast.Formula;
 import kodkod.ast.IntExpression;
@@ -42,31 +43,38 @@ import kodkod.instance.Bounds;
 import kodkod.instance.Instance;
 import kodkod.instance.TupleSet;
 
+import kodkod.multiobjective.AlloySolver;
+import kodkod.multiobjective.api.GIAStepCounter;
+import kodkod.multiobjective.api.Objective;
+import kodkod.multiobjective.api.Stats;
 
-/** 
- * A computational engine for solving relational satisfiability problems. 
- * Such a problem is described by a {@link kodkod.ast.Formula formula} in 
- * first order relational logic; finite {@link kodkod.instance.Bounds bounds} on 
- * the value of each {@link Relation relation} constrained by the formula; and 
- * a set of {@link kodkod.engine.config.Options options} specifying, among other global 
- * parameters, the length of bitvectors that describe the meaning of 
- * {@link IntExpression integer expressions} in the given formula.  The options are 
+
+/**
+ * A computational engine for solving relational satisfiability problems.
+ * Such a problem is described by a {@link kodkod.ast.Formula formula} in
+ * first order relational logic; finite {@link kodkod.instance.Bounds bounds} on
+ * the value of each {@link Relation relation} constrained by the formula; and
+ * a set of {@link kodkod.engine.config.Options options} specifying, among other global
+ * parameters, the length of bitvectors that describe the meaning of
+ * {@link IntExpression integer expressions} in the given formula.  The options are
  * usually reused between invocations to the {@linkplain #solve(Formula, Bounds) solve}
- * methods, so they are specified as a part of the {@linkplain KodkodSolver solver} state. 
+ * methods, so they are specified as a part of the {@linkplain KodkodSolver solver} state.
  *
  * <p>
- * A {@link Solver} takes as input a relational problem and produces a 
- * satisfying model or an {@link Instance instance} of it, if one exists.  It can also 
- * produce a {@link Proof proof} of unsatisfiability for problems with no models, 
- * if the {@link kodkod.engine.config.Options options} specify the use of a 
+ * A {@link Solver} takes as input a relational problem and produces a
+ * satisfying model or an {@link Instance instance} of it, if one exists.  It can also
+ * produce a {@link Proof proof} of unsatisfiability for problems with no models,
+ * if the {@link kodkod.engine.config.Options options} specify the use of a
  * {@linkplain SATProver proof logging SAT solver}.
- * </p> 
- * 
- * @specfield options: Options 
- * @author Emina Torlak 
+ * </p>
+ *
+ * @specfield options: Options
+ * @author Emina Torlak
  */
 public final class Solver implements KodkodSolver {
 	private final Options options;
+	// [TeamAmalgam] - Adding for Alloy support
+	private AlloySolver mooSolver ;
 
 	/**
 	 * Constructs a new Solver with the default options.
@@ -102,44 +110,44 @@ public final class Solver implements KodkodSolver {
 	 * @see kodkod.engine.KodkodSolver#free()
 	 */
 	public void free() {}
-	
+
 	/**
-	 * Attempts to satisfy the given {@code formula} and {@code bounds} with respect to 
-	 * {@code this.options} or, optionally, prove the problem's unsatisfiability. If the method 
-	 * completes normally, the result is a  {@linkplain Solution solution} containing either an 
-	 * {@linkplain Instance instance} of the given problem or, optionally, a {@linkplain Proof proof} of 
+	 * Attempts to satisfy the given {@code formula} and {@code bounds} with respect to
+	 * {@code this.options} or, optionally, prove the problem's unsatisfiability. If the method
+	 * completes normally, the result is a  {@linkplain Solution solution} containing either an
+	 * {@linkplain Instance instance} of the given problem or, optionally, a {@linkplain Proof proof} of
 	 * its unsatisfiability. An unsatisfiability
-	 * proof will be constructed iff {@code this.options.solver} specifies a {@linkplain SATProver} and 
+	 * proof will be constructed iff {@code this.options.solver} specifies a {@linkplain SATProver} and
 	 * {@code this.options.logTranslation > 0}.
-	 * 
-	 * @return some sol:  {@link Solution} | 
-	 *           some sol.instance() => 
-	 *            sol.instance() in MODELS(formula, bounds, this.options) else 
-	 *            UNSAT(formula, bound, this.options)  
-	 *            
+	 *
+	 * @return some sol:  {@link Solution} |
+	 *           some sol.instance() =>
+	 *            sol.instance() in MODELS(formula, bounds, this.options) else
+	 *            UNSAT(formula, bound, this.options)
+	 *
 	 * @throws NullPointerException  formula = null || bounds = null
 	 * @throws UnboundLeafException  the formula contains an undeclared variable or a relation not mapped by the given bounds
 	 * @throws HigherOrderDeclException  the formula contains a higher order declaration that cannot
 	 * be skolemized, or it can be skolemized but {@code this.options.skolemDepth} is insufficiently large
-	 * @throws AbortedException  this solving task was aborted  
+	 * @throws AbortedException  this solving task was aborted
 	 * @see Options
 	 * @see Solution
 	 * @see Instance
 	 * @see Proof
 	 */
 	public Solution solve(Formula formula, Bounds bounds) throws HigherOrderDeclException, UnboundLeafException, AbortedException {
-		
+
 		final long startTransl = System.currentTimeMillis();
-		
-		try {			
+
+		try {
 			final Translation.Whole translation = Translator.translate(formula, bounds, options);
 			final long endTransl = System.currentTimeMillis();
-			
+
 			if (translation.trivial())
 				return trivial(translation, endTransl - startTransl);
 
 			final SATSolver cnf = translation.cnf();
-			
+
 			options.reporter().solvingCNF(translation.numPrimaryVariables(), cnf.numberOfVariables(), cnf.numberOfClauses());
 			final long startSolve = System.currentTimeMillis();
 			final boolean isSat = cnf.solve();
@@ -147,12 +155,12 @@ public final class Solver implements KodkodSolver {
 
 			final Statistics stats = new Statistics(translation, endTransl - startTransl, endSolve - startSolve);
 			return isSat ? sat(translation, stats) : unsat(translation, stats);
-			
+
 		} catch (SATAbortedException sae) {
 			throw new AbortedException(sae);
 		}
 	}
-	
+
 	/**
 	 * Attempts to find all solutions to the given formula with respect to the specified bounds or
 	 * to prove the formula's unsatisfiability.
@@ -160,10 +168,10 @@ public final class Solver implements KodkodSolver {
 	 * of the first n-1 solutions is SAT or trivially SAT, and the outcome of the nth solution is UNSAT
 	 * or tirivally  UNSAT.  Note that an unsatisfiability
 	 * proof will be constructed for the last solution iff this.options specifies the use of a core extracting SATSolver.
-	 * Additionally, the CNF variables in the proof can be related back to the nodes in the given formula 
-	 * iff this.options has variable tracking enabled.  Translation logging also requires that 
-	 * there are no subnodes in the given formula that are both syntactically shared and contain free variables.  
-	 * 
+	 * Additionally, the CNF variables in the proof can be related back to the nodes in the given formula
+	 * iff this.options has variable tracking enabled.  Translation logging also requires that
+	 * there are no subnodes in the given formula that are both syntactically shared and contain free variables.
+	 *
 	 * @return an iterator over all the Solutions to the formula with respect to the given bounds
 	 * @throws NullPointerException  formula = null || bounds = null
 	 * @throws kodkod.engine.fol2sat.UnboundLeafException  the formula contains an undeclared variable or
@@ -176,15 +184,45 @@ public final class Solver implements KodkodSolver {
 	 * @see Options
 	 * @see Proof
 	 */
-	public Iterator<Solution> solveAll(final Formula formula, final Bounds bounds) 
+	public Iterator<Solution> solveAll(final Formula formula, final Bounds bounds)
 		throws HigherOrderDeclException, UnboundLeafException, AbortedException {
-		
+
 		if (!options.solver().incremental())
 			throw new IllegalArgumentException("cannot enumerate solutions without an incremental solver.");
-		
+
 		return new SolutionIterator(formula, bounds, options);
-		
+
 	}
+
+	// [TeamAmalgam] - Adding for Alloy support
+	// [s26stewa] This method returns an iterator over Kodkod solutions. If there
+	// are objectives, then the solutions come from Moolloy; otherwise,
+	// they come from the Kodkod.
+	public Iterator<Solution> solveAll(final Formula formula,
+										final Bounds bounds,
+										final SortedSet<Objective> objectives,
+										Boolean magnifyingGlass,
+										Boolean UseAdaptableMinimumImprovement)
+		throws HigherOrderDeclException, UnboundLeafException, AbortedException {
+		    if (objectives != null) {
+		    	mooSolver = new AlloySolver(formula, bounds, objectives,  magnifyingGlass, UseAdaptableMinimumImprovement);
+		    	mooSolver.run();
+
+		    	return mooSolver.solveAll();
+		    }
+		    return solveAll(formula, bounds);
+	}
+
+	// [TeamAmalgam] - Adding for Alloy support
+	public GIAStepCounter getGIACountCallsOnEachMovementToParetoFront(){
+		return this.mooSolver.getGIACountCallsOnEachMovementToParetoFront();
+	}
+
+	// [TeamAmalgam] - Adding for Alloy support
+	public Stats getStats() {
+		return this.mooSolver.getStats();
+	}
+
 
 	/**
 	 * {@inheritDoc}
@@ -193,7 +231,7 @@ public final class Solver implements KodkodSolver {
 	public String toString() {
 		return options.toString();
 	}
-	
+
 	/**
 	 * Returns the result of solving a sat formula.
 	 * @param bounds Bounds with which  solve() was called
@@ -209,7 +247,7 @@ public final class Solver implements KodkodSolver {
 
 	/**
 	 * Returns the result of solving an unsat formula.
-	 * @param translation the translation 
+	 * @param translation the translation
 	 * @param stats translation / solving stats
 	 * @return the result of solving an unsat formula.
 	 */
@@ -224,10 +262,10 @@ public final class Solver implements KodkodSolver {
 			return sol;
 		}
 	}
-	
+
 	/**
 	 * Returns the result of solving a trivially (un)sat formula.
-	 * @param translation trivial translation produced as the result of {@code translation.formula} 
+	 * @param translation trivial translation produced as the result of {@code translation.formula}
 	 * simplifying to a constant with respect to {@code translation.bounds}
 	 * @param translTime translation time
 	 * @return the result of solving a trivially (un)sat formula.
@@ -243,7 +281,7 @@ public final class Solver implements KodkodSolver {
 		translation.cnf().free();
 		return sol;
 	}
-	
+
 	/**
 	 * Returns a proof for the trivially unsatisfiable log.formula,
 	 * provided that log is non-null.  Otherwise returns null.
@@ -254,7 +292,7 @@ public final class Solver implements KodkodSolver {
 	private static Proof trivialProof(TranslationLog log) {
 		return log==null ? null : new TrivialProof(log);
 	}
-		
+
 	/**
 	 * An iterator over all solutions of a model.
 	 * @author Emina Torlak
@@ -263,7 +301,7 @@ public final class Solver implements KodkodSolver {
 		private Translation.Whole translation;
 		private long translTime;
 		private int trivial;
-		
+
 		/**
 		 * Constructs a solution iterator for the given formula, bounds, and options.
 		 */
@@ -273,19 +311,19 @@ public final class Solver implements KodkodSolver {
 			this.translTime = System.currentTimeMillis() - translTime;
 			this.trivial = 0;
 		}
-		
+
 		/**
 		 * Returns true if there is another solution.
 		 * @see java.util.Iterator#hasNext()
 		 */
 		public boolean hasNext() {  return translation != null; }
-		
+
 		/**
 		 * Returns the next solution if any.
 		 * @see java.util.Iterator#next()
 		 */
 		public Solution next() {
-			if (!hasNext()) throw new NoSuchElementException();			
+			if (!hasNext()) throw new NoSuchElementException();
 			try {
 				return translation.trivial() ? nextTrivialSolution() : nextNonTrivialSolution();
 			} catch (SATAbortedException sae) {
@@ -296,12 +334,12 @@ public final class Solver implements KodkodSolver {
 
 		/** @throws UnsupportedOperationException */
 		public void remove() { throw new UnsupportedOperationException(); }
-		
+
 		/**
 		 * Solves {@code translation.cnf} and adds the negation of the
-		 * found model to the set of clauses.  The latter has the 
+		 * found model to the set of clauses.  The latter has the
 		 * effect of forcing the solver to come up with the next solution
-		 * or return UNSAT. If {@code this.translation.cnf.solve()} is false, 
+		 * or return UNSAT. If {@code this.translation.cnf.solve()} is false,
 		 * sets {@code this.translation} to null.
 		 * @requires this.translation != null
 		 * @ensures this.translation.cnf is modified to eliminate
@@ -310,20 +348,20 @@ public final class Solver implements KodkodSolver {
 		 */
 		private Solution nextNonTrivialSolution() {
 			final Translation.Whole transl = translation;
-			
+
 			final SATSolver cnf = transl.cnf();
 			final int primaryVars = transl.numPrimaryVariables();
-			
+
 			transl.options().reporter().solvingCNF(primaryVars, cnf.numberOfVariables(), cnf.numberOfClauses());
-			
+
 			final long startSolve = System.currentTimeMillis();
 			final boolean isSat = cnf.solve();
 			final long endSolve = System.currentTimeMillis();
 
 			final Statistics stats = new Statistics(transl, translTime, endSolve - startSolve);
 			final Solution sol;
-			
-			if (isSat) {			
+
+			if (isSat) {
 				// extract the current solution; can't use the sat(..) method because it frees the sat solver
 				sol = Solution.satisfiable(stats, transl.interpret());
 				// add the negation of the current model to the solver
@@ -338,11 +376,11 @@ public final class Solver implements KodkodSolver {
 			}
 			return sol;
 		}
-		
+
 		/**
 		 * Returns the trivial solution corresponding to the trivial translation stored in {@code this.translation},
-		 * and if {@code this.translation.cnf.solve()} is true, sets {@code this.translation} to a new translation 
-		 * that eliminates the current trivial solution from the set of possible solutions.  The latter has the effect 
+		 * and if {@code this.translation.cnf.solve()} is true, sets {@code this.translation} to a new translation
+		 * that eliminates the current trivial solution from the set of possible solutions.  The latter has the effect
 		 * of forcing either the translator or the solver to come up with the next solution or return UNSAT.
 		 * If {@code this.translation.cnf.solve()} is false, sets {@code this.translation} to null.
 		 * @requires this.translation != null
@@ -351,45 +389,45 @@ public final class Solver implements KodkodSolver {
 		 */
 		private Solution nextTrivialSolution() {
 			final Translation.Whole transl = this.translation;
-			
+
 			final Solution sol = trivial(transl, translTime); // this also frees up solver resources, if unsat
-			
+
 			if (sol.instance()==null) {
 				translation = null; // unsat, no more solutions
 			} else {
 				trivial++;
-				
+
 				final Bounds bounds = transl.bounds();
 				final Bounds newBounds = bounds.clone();
 				final List<Formula> changes = new ArrayList<Formula>();
 
 				for(Relation r : bounds.relations()) {
-					final TupleSet lower = bounds.lowerBound(r); 
-					
+					final TupleSet lower = bounds.lowerBound(r);
+
 					if (lower != bounds.upperBound(r)) { // r may change
-						if (lower.isEmpty()) { 
+						if (lower.isEmpty()) {
 							changes.add(r.some());
 						} else {
 							final Relation rmodel = Relation.nary(r.name()+"_"+trivial, r.arity());
-							newBounds.boundExactly(rmodel, lower);	
+							newBounds.boundExactly(rmodel, lower);
 							changes.add(r.eq(rmodel).not());
 						}
 					}
 				}
-				
+
 				// nothing can change => there can be no more solutions (besides the current trivial one).
-				// note that transl.formula simplifies to the constant true with respect to 
+				// note that transl.formula simplifies to the constant true with respect to
 				// transl.bounds, and that newBounds is a superset of transl.bounds.
-				// as a result, finding the next instance, if any, for transl.formula.and(Formula.or(changes)) 
+				// as a result, finding the next instance, if any, for transl.formula.and(Formula.or(changes))
 				// with respect to newBounds is equivalent to finding the next instance of Formula.or(changes) alone.
 				final Formula formula = changes.isEmpty() ? Formula.FALSE : Formula.or(changes);
-				
+
 				final long startTransl = System.currentTimeMillis();
 				translation = Translator.translate(formula, newBounds, transl.options());
 				translTime += System.currentTimeMillis() - startTransl;
-			} 
+			}
 			return sol;
 		}
-		
+
 	}
 }
