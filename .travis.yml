@@ -1,9 +1,10 @@
 language: java
 
+install:
+  - "./waf deps"
 script:
   - "./waf configure"
-  - "./waf build"
-  - "./waf install"
+  - "./waf all"
 
 jdk:
   - oraclejdk7
