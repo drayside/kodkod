@@ -20,7 +20,7 @@ def configure(conf):
     conf.env.append_value('CLASSPATH', conf.find_file('junit.jar', conf.env.DEPS_DIR))
     conf.env.append_value('CLASSPATH', conf.find_file('hamcrest-core.jar', conf.env.DEPS_DIR))
 
-def build(bld):
+def test_build(bld):
     env = bld.all_envs['test']
     bld(features  = 'javac',
         srcdir    = env.TEST_SOURCES,

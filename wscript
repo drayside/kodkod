@@ -20,9 +20,12 @@ def configure(conf):
 
 def build(bld):
     if not bld.variant:
-        bld.recurse('src lib tests')
+        bld.recurse('src lib')
     else:
         bld.recurse('lib')
+
+def test_build(bld):
+    bld.recurse('tests')
 
 def dist(dst):
     dst.base_name = APPNAME + '-' + VERSION
@@ -35,9 +38,18 @@ def test(tst):
 
 def all(ctx):
     from waflib import Options
-    Options.commands = ['build', 'install', 'test', 'dist'] + Options.commands
+    Options.commands = [
+        'build',
+        'install',
+        'test_build',
+        'test',
+        'dist'] + Options.commands
 
 from waflib.Build import BuildContext
+class TestBuildContext(BuildContext):
+    cmd = 'test_build'
+    fun = 'test_build'
+
 class TestContext(BuildContext):
     cmd = 'test'
     fun = 'test'
@@ -54,7 +66,7 @@ class DepsContext(Context):
     def install_deps(self, deps_dir):
         if not os.path.exists(deps_dir):
           os.makedirs(deps_dir)
-          pass
+
         deps_dir = os.path.abspath(deps_dir)
         for file, url in self.deps.iteritems():
             download_path = os.path.join(deps_dir, file)
