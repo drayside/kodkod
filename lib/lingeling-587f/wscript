@@ -12,10 +12,10 @@ def configure(conf):
     conf.load('java')
     conf.check_jni_headers()
     
-    conf.env.DEFINES = ['NLGLOG', 'NLGLSTATS', 'NDEBUG', 'NLGLPICOSAT']
-    conf.env.INCLUDES = ['.', '..']
-    conf.env.CFLAGS = ['-Wall', '-O3', '-fPIC', '-fopenmp']
-    conf.env.LINKFLAGS = ['-fopenmp']
+    conf.env.append_value('DEFINES', ['NLGLOG', 'NLGLSTATS', 'NDEBUG', 'NLGLPICOSAT'])
+    conf.env.append_value('INCLUDES', ['.', '..'])
+    conf.env.append_value('CFLAGS', ['-Wall', '-O3', '-fPIC', '-fopenmp'])
+    conf.env.append_value('LINKFLAGS', ['-fopenmp'])
     conf.env.LIB = ['m']
     conf.env.LINGELING_SRC = ['src/lglib.c', 'src/lglbnr.c']
     conf.env.LINGELING_MAIN = 'src/lglmain.c'
