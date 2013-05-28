@@ -1,25 +1,27 @@
 /**
  * 
  */
-package kodkod.multiobjective.api;
+package kodkod.multiobjective;
 
 import java.util.concurrent.BlockingQueue;
 
 import kodkod.engine.Solution;
-import kodkod.multiobjective.Poison;
+import kodkod.multiobjective.api.MeasuredSolution;
+import kodkod.multiobjective.api.MetricPoint;
+import kodkod.multiobjective.api.SolutionNotifier;
 
-public final class BlockingQueueSolutionNotifier implements SolutionNotifier {
+public final class TranslatingBlockingQueueSolutionNotifier implements SolutionNotifier {
 	
-	private final BlockingQueue<MeasuredSolution> q;
+	private final BlockingQueue<Solution> q;
 	
-	public BlockingQueueSolutionNotifier(final BlockingQueue<MeasuredSolution> q) {
+	public TranslatingBlockingQueueSolutionNotifier(final BlockingQueue<Solution> q) {
 		this.q = q;
 	}
 	
 	@Override
 	public void tell(final MeasuredSolution s) {
 		try {
-			q.put(s);
+			q.put(s.solution);
 		} catch (final Exception e) {
 			throw new RuntimeException(e);
 		}

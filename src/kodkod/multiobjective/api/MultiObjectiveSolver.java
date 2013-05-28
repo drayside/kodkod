@@ -13,6 +13,7 @@ import kodkod.engine.Solver;
 import kodkod.engine.config.Options;
 import kodkod.engine.satlab.SATFactory;
 import kodkod.instance.Bounds;
+import kodkod.multiobjective.Poison;
 
 public abstract class MultiObjectiveSolver {
 
