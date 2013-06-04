@@ -34,7 +34,7 @@ public class MoolloyBlockingSolutionIterator implements Iterator<Solution> {
 		System.out.println("Getting Next from SolutionIterator");
 		System.out.println("Will List Solutions in Queue q");
 		for (Object tObj : q.toArray()){
-			if (!( tObj instanceof edu.mit.csail.sdg.moolloy.solver.Poison)){
+			if (!( tObj instanceof Poison)){
 				Solution sObj = (Solution) tObj;
 				System.out.println("Solution -- \n" + sObj);				
 			}

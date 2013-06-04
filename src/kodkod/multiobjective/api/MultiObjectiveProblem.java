@@ -17,7 +17,6 @@ public final class MultiObjectiveProblem {
 	}
 	
 	public MultiObjectiveProblem(final Bounds bounds, final int bitWidth, final Formula constraints, final SortedSet<Objective> objectives) {
-		super();
 		this.bounds = bounds;
 		this.bitWidth = bitWidth;
 		this.constraints = constraints;

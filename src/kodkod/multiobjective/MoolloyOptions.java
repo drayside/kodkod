@@ -14,8 +14,6 @@ public class MoolloyOptions {
 	
 	private boolean allSolutionsPerPoint = false;
 	
-	private boolean useSymmetryBreaking = false;
-	
 	private boolean UseAdaptableMinimumImprovement = true;
 	
 	public void setAllSolutionsPerPoint(boolean value) {
@@ -24,14 +22,6 @@ public class MoolloyOptions {
 	
 	public boolean getAllSolutionsPerPoint() {
 		return allSolutionsPerPoint;
-	}
-	
-	public void setUseSymmetryBreaking(boolean value) {
-		useSymmetryBreaking = value;
-	}
-	
-	public boolean getUseSymmetryBreaking() {
-		return useSymmetryBreaking;
 	}
 
 	public void setUseAdaptableMinimumImprovement(

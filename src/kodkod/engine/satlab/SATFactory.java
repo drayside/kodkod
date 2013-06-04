@@ -31,9 +31,14 @@ import org.sat4j.minisat.SolverFactory;
 /**
  * A factory for generating SATSolver instances of a given type.
  * Built-in support is provided for <a href="http://www.sat4j.org/">SAT4J solvers</a>,
- * the <a href="http://www.princeton.edu/~chaff/zchaff.html">zchaff</a> solver from Princeton,
- * and the <a href="http://www.cs.chalmers.se/Cs/Research/FormalMethods/MiniSat/">MiniSat</a> solver by
- * Niklas E&eacute;n and Niklas S&ouml;rensson.
+ * the <a href="http://www.cs.chalmers.se/Cs/Research/FormalMethods/MiniSat/">MiniSat</a> solver by
+ * Niklas E&eacute;n and Niklas S&ouml;rensson,
+ * the <a href="https://www.lri.fr/~simon/?page=glucose">Glucose</a> solver by
+ * G. Audemard and L. Simon,
+ * the <a href="http://www.msoos.org/cryptominisat2/">CryptoMiniSat</a> solver by
+ * Mate Soos,
+ * and the <a href="http://fmv.jku.at/lingeling/">Lingeling and Plingeling</a>
+ * solvers by Armin Biere
  * @author Emina Torlak
  */
 public abstract class SATFactory {

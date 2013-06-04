@@ -74,7 +74,7 @@ import kodkod.multiobjective.api.Stats;
 public final class Solver implements KodkodSolver {
 	private final Options options;
 	// [TeamAmalgam] - Adding for Alloy support
-	private AlloySolver mooSolver ;
+	private AlloySolver mooSolver;
 
 	/**
 	 * Constructs a new Solver with the default options.

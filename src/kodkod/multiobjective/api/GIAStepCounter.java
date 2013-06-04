@@ -7,17 +7,17 @@ import java.util.Iterator;
 import java.util.Vector;
 
 public class GIAStepCounter {
-	
+
 	Vector<Integer> steps;
 	int index;
-	
+
 	public GIAStepCounter() {
 		//set the Vector size to 1000
 		steps = new Vector<Integer>();
 		index = 0;
 		steps.add(index, 0);
 	}
-	
+
 	/**
 	 * Starts the counting at a the next index.
 	 * Use this method before you start discovering a new base point.
@@ -26,7 +26,7 @@ public class GIAStepCounter {
 		index++;
 		steps.add(index, 0);
 	}
-	
+
 	/**
 	 * Counts a current step.
 	 * Use this method while working your way up to the Pareto front
@@ -38,18 +38,19 @@ public class GIAStepCounter {
 		v++;
 		steps.set(index, v);
 	}
-	
+
 	public String toString() {
-		String result = "";
+		StringBuilder result = new StringBuilder("");
+
 		for(Iterator<Integer> i = steps.iterator(); i.hasNext();){
-			result += i.next() ; 
+			result.append(i.next());
 			if (i.hasNext()) {
-				result += ",";				
+				result.append(",");
 			}
 		}
-		return result;
+		return result.toString();
 	}
-	
+
 	public void writeDataFile(String filename) throws IOException {
 		Writer fw = null;
 		int point = 1;
@@ -64,7 +65,7 @@ public class GIAStepCounter {
 		finally {
 			if(fw != null)
 				fw.close();
-		}	
+		}
 	}
 
 }
