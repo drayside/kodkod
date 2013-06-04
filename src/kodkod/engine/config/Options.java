@@ -49,15 +49,11 @@ public final class Options implements Cloneable {
 	private IntEncoding intEncoding = IntEncoding.TWOSCOMPLEMENT;
 	private int bitwidth = 4;
 	private int sharing = 3;
-	// [TeamAmalgam] - Adding for Alloy support
-	private boolean nof = false;
 	private int skolemDepth = 0;
-	// [TeamAmalgam] - Adding for Alloy support
-	private boolean flatten = false;
 	private int logTranslation = 0;
 	private int coreGranularity = 0;
 	// [TeamAmalgam] - Adding for Alloy support
-	private Boolean MoolloyListAllSolutionsForParertoPoint = true;
+	private Boolean MoolloyListAllSolutionsForParetoPoint = true;
 	private Boolean MoolloyUseAdaptableMinimumImprovement = false;
 
 	/**
@@ -114,18 +110,6 @@ public final class Options implements Cloneable {
 			throw new NullPointerException();
 		this.reporter = reporter;
 	}
-
-	// [TeamAmalgam] - Adding for Alloy support
-	/**
-	 * Returns the noOverflow flag
-	 */
-	public boolean noOverflow() { return nof; }
-
-	// [TeamAmalgam] - Adding for Alloy support
-	/**
-	 * Sets the noOverflow flag
-	 */
-	public void setNoOverflow(boolean noOverflow) { this.nof = noOverflow; }
 
 	/**
 	 * @throws IllegalArgumentException  arg !in [min..max]
@@ -193,17 +177,8 @@ public final class Options implements Cloneable {
 	}
 
 	// [TeamAmalgam] - Adding for Alloy support
-	/**
-	 * Returns the value of the flattening flag, which specifies whether
-	 * to eliminate extraneous intermediate variables.  The flag is false by default.
-	 * Flattening must be off if translation logging is enabled.
-	 * @return this.flatten
-	 */
-	public boolean flatten() {
-		return flatten;
-	}
-
-	// [TeamAmalgam] - Adding for Alloy support
+	// We can't get rid of this because it gets called, even though nothing
+	// tries to read flatten'. So for our purposes, this will just be stubbed out.
 	/**
 	 * Sets the flattening option to the given value.
 	 * @ensures this.flatten' = flatten
@@ -212,7 +187,6 @@ public final class Options implements Cloneable {
 	public void setFlatten(boolean flatten) {
 		if (logTranslation>0 && flatten)
 			throw new IllegalStateException("logTranslation enabled:  flattening must be off.");
-		this.flatten = flatten;
 	}
 
 	/**
@@ -298,20 +272,20 @@ public final class Options implements Cloneable {
 	/**
 	 * Returns whether all solutions for a given Pareto point should be enumerated,
 	 * only meaningful when using Moolloy.
-	 * @return this.MoolloyListAllSolutionsForParertoPoint
+	 * @return this.MoolloyListAllSolutionsForParetoPoint
 	 */
-	public Boolean MoolloyListAllSolutionsForParertoPoint(){
-		return MoolloyListAllSolutionsForParertoPoint ;
+	public Boolean MoolloyListAllSolutionsForParetoPoint(){
+		return MoolloyListAllSolutionsForParetoPoint ;
 	}
 
 	// [TeamAmalgam] - Adding for Alloy support
 	/**
 	 * Sets whether all solutions for a given Pareto point should be enumerated,
 	 * only meaningful when using Moolloy.
-	 * @ensures this.MoolloyListAllSolutionsForParertoPoint' = MoolloyListAllSolutionsForParertoPoint
+	 * @ensures this.MoolloyListAllSolutionsForParetoPoint' = MoolloyListAllSolutionsForParetoPoint
 	 */
-	public void setMoolloyListAllSolutionsForParertoPoint(Boolean MoolloyListAllSolutionsForParertoPoint){
-		this.MoolloyListAllSolutionsForParertoPoint = MoolloyListAllSolutionsForParertoPoint;
+	public void setMoolloyListAllSolutionsForParetoPoint(Boolean MoolloyListAllSolutionsForParetoPoint){
+		this.MoolloyListAllSolutionsForParetoPoint = MoolloyListAllSolutionsForParetoPoint;
 	}
 
 	// [TeamAmalgam] - Adding for Alloy support
@@ -348,10 +322,6 @@ public final class Options implements Cloneable {
 	 */
 	public void setLogTranslation(int logTranslation) {
 		checkRange(logTranslation, 0, 2);
-		// [TeamAmalgam] - Adding for Alloy support
-		if (logTranslation>0) {
-			flatten = false;
-		}
 		this.logTranslation = logTranslation;
 	}
 
@@ -421,9 +391,6 @@ public final class Options implements Cloneable {
 		b.append(bitwidth);
 		b.append("\n sharing: ");
 		b.append(sharing);
-		// [TeamAmalgam] - Adding for Alloy support
-		b.append("\n flatten: ");
-		b.append(flatten);
 		b.append("\n symmetryBreaking: ");
 		b.append(symmetryBreaking);
 		b.append("\n skolemDepth: ");
