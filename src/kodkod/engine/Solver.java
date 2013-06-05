@@ -201,11 +201,10 @@ public final class Solver implements KodkodSolver {
 	public Iterator<Solution> solveAll(final Formula formula,
 										final Bounds bounds,
 										final SortedSet<Objective> objectives,
-										Boolean magnifyingGlass,
-										Boolean UseAdaptableMinimumImprovement)
+										Boolean magnifyingGlass)
 		throws HigherOrderDeclException, UnboundLeafException, AbortedException {
 		    if (objectives != null) {
-		    	mooSolver = new AlloySolver(formula, bounds, objectives,  magnifyingGlass, UseAdaptableMinimumImprovement);
+		    	mooSolver = new AlloySolver(formula, bounds, objectives,  magnifyingGlass);
 		    	mooSolver.run();
 
 		    	return mooSolver.solveAll();

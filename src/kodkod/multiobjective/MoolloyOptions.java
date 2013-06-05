@@ -14,23 +14,12 @@ public class MoolloyOptions {
 	
 	private boolean allSolutionsPerPoint = false;
 	
-	private boolean UseAdaptableMinimumImprovement = true;
-	
 	public void setAllSolutionsPerPoint(boolean value) {
 		allSolutionsPerPoint = value;
 	}
 	
 	public boolean getAllSolutionsPerPoint() {
 		return allSolutionsPerPoint;
-	}
-
-	public void setUseAdaptableMinimumImprovement(
-			Boolean value) {
-		UseAdaptableMinimumImprovement = value;		
-	}
-	
-	public boolean getUseAdaptableMinimumImprovement(){
-		return UseAdaptableMinimumImprovement;
 	}
 
 }

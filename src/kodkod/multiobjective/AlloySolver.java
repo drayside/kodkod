@@ -27,7 +27,7 @@ public final class AlloySolver extends Thread {
 	final GuidedImprovementAlgorithm gia;
 
 	public AlloySolver(final Formula formula, final Bounds bounds, final SortedSet<Objective> objectives, 
-			Boolean magnifyingGlass, Boolean UseAdaptableMinimumImprovement) {
+			Boolean magnifyingGlass) {
 		q = new LinkedBlockingQueue<Solution>();
 		it = new MoolloyBlockingSolutionIterator(q);
 		n = new TranslatingBlockingQueueSolutionNotifier(q);
@@ -37,12 +37,10 @@ public final class AlloySolver extends Thread {
 		notifier = new TranslatingBlockingQueueSolutionNotifier(q);
 		options = new MoolloyOptions();
 		options.setAllSolutionsPerPoint(magnifyingGlass);
-		options.setUseAdaptableMinimumImprovement(UseAdaptableMinimumImprovement);
 	}
 
 	public void run() {
 		// TODO 
-		gia.setUseAdaptableMinimumImprovement(options.getUseAdaptableMinimumImprovement());
 		gia.setSymmetryBreaking(1000);
 		gia.moosolve(problem, notifier, options.getAllSolutionsPerPoint());
 	}

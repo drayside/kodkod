@@ -23,8 +23,6 @@ public final class GuidedImprovementAlgorithm extends MultiObjectiveSolver {
 	final long startTime = System.currentTimeMillis();
 	
 	private GIAStepCounter counter;
-
-	private boolean useAdaptableMinimumImprovement = true;
 	
 	public GuidedImprovementAlgorithm(final String desc) {
 		super(desc);
@@ -73,43 +71,37 @@ public final class GuidedImprovementAlgorithm extends MultiObjectiveSolver {
 			// work up to the pareto front
 			boolean increaseMinDeltaImprovement = false;
 
-			while (isSat(s1) ||  (MinDeltaImprovement > 0 && this.useAdaptableMinimumImprovement) ){
+			while (isSat(s1) ||  (MinDeltaImprovement > 0) ){
 		
 				currentValues = MetricPoint.measure(s1, p.objectives, getOptions());
 				
 								
 				System.out.println("Found a better one. At time: " + (System.currentTimeMillis()-startTime)/1000 + ", Improving on " + currentValues.values());
 
-				if (useAdaptableMinimumImprovement){
-					if (increaseMinDeltaImprovement) {
-						// Increase MinDeltaImprovement
-						if (MinDeltaImprovement == 0){
-							MinDeltaImprovement = 1 ;						
-						} else {
-							MinDeltaImprovement = MinDeltaImprovement * 2 ;						
-						}
-						
+				if (increaseMinDeltaImprovement) {
+					// Increase MinDeltaImprovement
+					if (MinDeltaImprovement == 0) {
+						MinDeltaImprovement = 1;
 					} else {
-						//Reduce MinDeltaImprovement. 
-						MinDeltaImprovement = 0 ;
+						MinDeltaImprovement = MinDeltaImprovement * 2;
 					}
+				} else {
+					//Reduce MinDeltaImprovement.
+					MinDeltaImprovement = 0 ;
 				}
 				
-				//  when useAdaptableMinimumImprovement == false, then MinDeltaImprovement will be zero and algorithm will behave as normal.
 				final Formula improvementConstraints = currentValues.ParametrizedImprovementConstraints(MinDeltaImprovement);
 				
 				System.out.println("Improvement Constraints are " + improvementConstraints );
 				sprev = s1;
-				Boolean ImprovementConstraintsAreTight = (!useAdaptableMinimumImprovement) || (MinDeltaImprovement==0);
+				Boolean ImprovementConstraintsAreTight = (MinDeltaImprovement==0);
 				s1 =  solveOne(p.constraints.and(improvementConstraints), p.bounds,  p, improvementConstraints,  ImprovementConstraintsAreTight  );
 
-				if (useAdaptableMinimumImprovement){
-					if (!isSat(s1) &&  (MinDeltaImprovement > 0 )) {
-						s1 = sprev;
-						increaseMinDeltaImprovement = false;
-					} else if (isSat(s1)){
-						increaseMinDeltaImprovement = true;
-					}
+				if (!isSat(s1) &&  (MinDeltaImprovement > 0 )) {
+					s1 = sprev;
+					increaseMinDeltaImprovement = false;
+				} else if (isSat(s1)){
+					increaseMinDeltaImprovement = true;
 				}
 
 				//count this finding
@@ -186,11 +178,6 @@ public final class GuidedImprovementAlgorithm extends MultiObjectiveSolver {
 			// nothing found
 			return null;
 		}
-	}
-
-	public void setUseAdaptableMinimumImprovement(
-			boolean useAdaptableMinimumImprovement) {
-		this.useAdaptableMinimumImprovement  = useAdaptableMinimumImprovement;		
 	}
 	
 	public GIAStepCounter getCountCallsOnEachMovementToParetoFront(){

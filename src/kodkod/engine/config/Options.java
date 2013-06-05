@@ -54,7 +54,6 @@ public final class Options implements Cloneable {
 	private int coreGranularity = 0;
 	// [TeamAmalgam] - Adding for Alloy support
 	private Boolean MoolloyListAllSolutionsForParetoPoint = true;
-	private Boolean MoolloyUseAdaptableMinimumImprovement = false;
 
 	/**
 	 * Constructs an Options object initialized with default values.
@@ -287,30 +286,6 @@ public final class Options implements Cloneable {
 	public void setMoolloyListAllSolutionsForParetoPoint(Boolean MoolloyListAllSolutionsForParetoPoint){
 		this.MoolloyListAllSolutionsForParetoPoint = MoolloyListAllSolutionsForParetoPoint;
 	}
-
-	// [TeamAmalgam] - Adding for Alloy support
-	/**
-	 * Returns whether an adaptable minimum improvement should be used in computing GIA at ech step.
-	 * only meaningful when using Mooolloy.
-	 * @return this.MoolloyUseAdaptableMinimumImprovement
-	 */
-	public Boolean MoolloyUseAdaptableMinimumImprovement(){
-		return MoolloyUseAdaptableMinimumImprovement ;
-	}
-
-	// [TeamAmalgam] - Adding for Alloy support
-	/**
-	 * Sets whether adaptable minimum Improvement at each iteration of Moolloy GIA is used.,
-	 * only meaningful when using Mooolloy..
-	 * @ensures this.MoolloyUseAdaptableMinimumImprovement' = MoolloyUseAdaptableMinimumImprovement
-	 */
-	public void setMoolloyUseAdaptableMinimumImprovement(Boolean MoolloyUseAdaptableMinimumImprovement){
-		System.out.println("Setting Option MoolloyUseAdaptableMinimumImprovement to " + MoolloyUseAdaptableMinimumImprovement);
-		this.MoolloyUseAdaptableMinimumImprovement  = MoolloyUseAdaptableMinimumImprovement;
-	}
-
-
-
 
 	/**
 	 * Sets the translation logging level.  If the level is above 0,
