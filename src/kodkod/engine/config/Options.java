@@ -37,7 +37,6 @@ import kodkod.util.ints.Ints;
  * @specfield intEncoding: IntEncoding // encoding to use for translating int expressions
  * @specfield bitwidth: int // the bitwidth to use for integer representation / arithmetic
  * @specfield skolemDepth: int // skolemization depth
- * @specfield flatten: boolean // eliminate intermediate variables when possible?  default is false.
  * @specfield logTranslation: [0..2] // log translation events, default is 0 (no logging)
  * @specfield coreGranularity: [0..3] // unsat core granularity, default is 0 (only top-level conjuncts are considered)
  * @author Emina Torlak
@@ -64,7 +63,6 @@ public final class Options implements Cloneable {
 	 *          this.intEncoding' = BINARY
 	 *          this.bitwidth' = 4
 	 *          this.skolemDepth' = 0
-	 *          this.flatten' = false
 	 *          this.logTranslation' = 0
 	 *          this.coreGranularity' = 0
 	 */
@@ -258,8 +256,7 @@ public final class Options implements Cloneable {
 	 * means logging is not performed, 1 means only the translations of
 	 * top level formulas are logged, and 2 means all formula translations
 	 * are logged.  This is necessary for determining which formulas occur in the unsat core of an
-	 * unsatisfiable formula.  Flattening  must be off whenever
-	 * logging is enabled.  Logging is off by default, since
+	 * unsatisfiable formula.  Logging is off by default, since
 	 * it incurs a non-trivial time overhead.
 	 * @return this.logTranslation
 	 */
