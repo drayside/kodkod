@@ -64,8 +64,8 @@ public final class Stats {
 		value.addAndGet(increment);
 	}
 	
-	void addSummaryIndividualCall(StatKey satCallType, long TranslationTime, long SolvingTime, final Formula f, final Bounds b, final boolean first, MetricPoint ObjectiveValueReceived, final Formula ImprovementConstraints, final Boolean ImprovementConstraintsAreTight){
-		this.singleCallData.addLast(new IndividualStats(satCallType, TranslationTime, SolvingTime, ObjectiveValueReceived, ImprovementConstraints, ImprovementConstraintsAreTight));		
+	void addSummaryIndividualCall(StatKey satCallType, long TranslationTime, long SolvingTime, final Formula f, final Bounds b, final boolean first, MetricPoint ObjectiveValueReceived, final Formula ImprovementConstraints){
+		this.singleCallData.addLast(new IndividualStats(satCallType, TranslationTime, SolvingTime, ObjectiveValueReceived, ImprovementConstraints));
 	}
 	
 	public LinkedList<IndividualStats> getIndividualStats(){

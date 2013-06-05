@@ -56,10 +56,10 @@ public final class MetricPoint {
 	}
 
 	Formula improvementConstraints() {
-		return this.ParametrizedImprovementConstraints(0);
+		return this.ParametrizedImprovementConstraints();
 	}
 
-	Formula ParametrizedImprovementConstraints(int MinimumDelta) {
+	Formula ParametrizedImprovementConstraints() {
 		final List<Formula> disjuncts = new ArrayList<Formula>(values.size() + 1);
 
 		// every metric gets its turn to be the improver
@@ -68,10 +68,10 @@ public final class MetricPoint {
 			final Objective improver = improverEntry.getKey();
 			final List<Formula> conjuncts = new ArrayList<Formula>(values.size() + 1);
 			
-			if ( improver.prefer(improverEntry.getValue().intValue(), improverEntry.getValue().intValue() + MinimumDelta) == 1){
-				conjuncts.add(improver.betterThan(improverEntry.getValue().intValue() + MinimumDelta));				
+			if ( improver.prefer(improverEntry.getValue().intValue(), improverEntry.getValue().intValue()) == 1){
+				conjuncts.add(improver.betterThan(improverEntry.getValue().intValue()));
 			} else {
-				conjuncts.add(improver.betterThan(improverEntry.getValue().intValue() - MinimumDelta));				
+				conjuncts.add(improver.betterThan(improverEntry.getValue().intValue()));
 			}
 
 	

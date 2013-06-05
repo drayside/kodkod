@@ -101,18 +101,18 @@ public abstract class MultiObjectiveSolver {
 		n.done();
 	}
 	
-	protected Solution solveOne(final Formula f, final Bounds b, final MultiObjectiveProblem p, final Formula ImprovementConstraints, final boolean ImprovementConstraintsAreTight) {
-		return solveOne(f, b, false, p, ImprovementConstraints, ImprovementConstraintsAreTight);
+	protected Solution solveOne(final Formula f, final Bounds b, final MultiObjectiveProblem p, final Formula ImprovementConstraints) {
+		return solveOne(f, b, false, p, ImprovementConstraints);
 	}
 
 	protected Solution solveFirst(final Formula f, final Bounds b, final MultiObjectiveProblem p, final Formula ImprovementConstraints) {
-		final Solution s = solveOne(f, b, true, p, ImprovementConstraints, true);
+		final Solution s = solveOne(f, b, true, p, ImprovementConstraints);
 		stats.set(StatKey.CLAUSES, s.stats().clauses());
 		stats.set(StatKey.VARIABLES, s.stats().primaryVariables());
 		return s;
 	}
 
-	private Solution solveOne(final Formula f, final Bounds b, final boolean first, final MultiObjectiveProblem p, final Formula ImprovementConstraints, final boolean ImprovementConstraintsAreTight) {
+	private Solution solveOne(final Formula f, final Bounds b, final boolean first, final MultiObjectiveProblem p, final Formula ImprovementConstraints) {
 		final Solution soln = solver.solve(f, b);
 		if (isSat(soln)) {
 			stats.increment(StatKey.REGULAR_SAT_CALL);
@@ -126,8 +126,7 @@ public abstract class MultiObjectiveSolver {
 			
 			// Adding Individual instance.
 			MetricPoint obtainedValues = MetricPoint.measure(soln, p.objectives, getOptions());
-			this.stats.addSummaryIndividualCall(StatKey.REGULAR_SAT_CALL, soln.stats().translationTime(), soln.stats().solvingTime(), f, b, first, obtainedValues, ImprovementConstraints, ImprovementConstraintsAreTight);
-			
+			this.stats.addSummaryIndividualCall(StatKey.REGULAR_SAT_CALL, soln.stats().translationTime(), soln.stats().solvingTime(), f, b, first, obtainedValues, ImprovementConstraints);
 		} else {
 			stats.increment(StatKey.REGULAR_UNSAT_CALL);
 
@@ -137,7 +136,7 @@ public abstract class MultiObjectiveSolver {
 			stats.increment(StatKey.REGULAR_UNSAT_TIME_TRANSLATION, soln.stats().translationTime());
 			stats.increment(StatKey.REGULAR_UNSAT_TIME_SOLVING, soln.stats().solvingTime());
 
-			this.stats.addSummaryIndividualCall(StatKey.REGULAR_UNSAT_CALL, soln.stats().translationTime(), soln.stats().solvingTime(), f, b, first, null, ImprovementConstraints, ImprovementConstraintsAreTight);			
+			this.stats.addSummaryIndividualCall(StatKey.REGULAR_UNSAT_CALL, soln.stats().translationTime(), soln.stats().solvingTime(), f, b, first, null, ImprovementConstraints);
 		}
 		return soln;
 	}

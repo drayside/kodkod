@@ -67,42 +67,18 @@ public final class GuidedImprovementAlgorithm extends MultiObjectiveSolver {
 		while (isSat(s1)) {
 			MetricPoint currentValues = null; // is re-assigned around the inner loop
 			Solution sprev = null;
-			int MinDeltaImprovement = 0;
 			// work up to the pareto front
-			boolean increaseMinDeltaImprovement = false;
 
-			while (isSat(s1) ||  (MinDeltaImprovement > 0) ){
-		
+			while (isSat(s1)) {
 				currentValues = MetricPoint.measure(s1, p.objectives, getOptions());
-				
-								
-				System.out.println("Found a better one. At time: " + (System.currentTimeMillis()-startTime)/1000 + ", Improving on " + currentValues.values());
 
-				if (increaseMinDeltaImprovement) {
-					// Increase MinDeltaImprovement
-					if (MinDeltaImprovement == 0) {
-						MinDeltaImprovement = 1;
-					} else {
-						MinDeltaImprovement = MinDeltaImprovement * 2;
-					}
-				} else {
-					//Reduce MinDeltaImprovement.
-					MinDeltaImprovement = 0 ;
-				}
+				System.out.println("Found a better one. At time: " + (System.currentTimeMillis()-startTime)/1000 + ", Improving on " + currentValues.values());
 				
-				final Formula improvementConstraints = currentValues.ParametrizedImprovementConstraints(MinDeltaImprovement);
+				final Formula improvementConstraints = currentValues.ParametrizedImprovementConstraints();
 				
 				System.out.println("Improvement Constraints are " + improvementConstraints );
 				sprev = s1;
-				Boolean ImprovementConstraintsAreTight = (MinDeltaImprovement==0);
-				s1 =  solveOne(p.constraints.and(improvementConstraints), p.bounds,  p, improvementConstraints,  ImprovementConstraintsAreTight  );
-
-				if (!isSat(s1) &&  (MinDeltaImprovement > 0 )) {
-					s1 = sprev;
-					increaseMinDeltaImprovement = false;
-				} else if (isSat(s1)){
-					increaseMinDeltaImprovement = true;
-				}
+				s1 =  solveOne(p.constraints.and(improvementConstraints), p.bounds,  p, improvementConstraints);
 
 				//count this finding
 				counter.countStep();
@@ -126,7 +102,7 @@ public final class GuidedImprovementAlgorithm extends MultiObjectiveSolver {
 
 			// start looking for next base point
 			exclusionConstraints.add(currentValues.exclusionConstraint());
-			s1 = solveOne(Formula.and(exclusionConstraints), p.bounds, p, null, true);
+			s1 = solveOne(Formula.and(exclusionConstraints), p.bounds, p, null);
 			
 			//count this step but first go to new index because it's a new base point
 			counter.nextIndex();
@@ -157,7 +133,7 @@ public final class GuidedImprovementAlgorithm extends MultiObjectiveSolver {
 	
 	protected MeasuredSolution findParetoPoint(final Formula f, final Bounds b, final SortedSet<Objective> e) {
 		// base point
-		Solution s1 = solveOne(f, b, null, null, true); // re-assigned around the loop
+		Solution s1 = solveOne(f, b, null, null); // re-assigned around the loop
 		
 		// any solution that passess this loop condition will 
 		// also pass the inner loop condition and be counted there
@@ -168,7 +144,7 @@ public final class GuidedImprovementAlgorithm extends MultiObjectiveSolver {
 			currentValues = MetricPoint.measure(s1, e, getOptions());
 			final Formula improvementConstraints = currentValues.improvementConstraints();
 			sprev = s1;
-			s1 = solveOne(f.and(improvementConstraints), b, null, improvementConstraints, true);
+			s1 = solveOne(f.and(improvementConstraints), b, null, improvementConstraints);
 		}
 		
 		if (sprev != null && isSat(sprev)) {

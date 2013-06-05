@@ -9,9 +9,8 @@ public class IndividualStats {
 	
 	private MetricPoint ObjectiveValueReceived;
 	private Formula improvementConstraints;
-	private Boolean improvementConstraintsAreTight;
 	
-	public IndividualStats(StatKey SatCallType, long TranslationTime, long SolvingTime, MetricPoint ObjectiveValueReceived, Formula improvementConstraints, Boolean ImprovementConstraintsAreTight){
+	public IndividualStats(StatKey SatCallType, long TranslationTime, long SolvingTime, MetricPoint ObjectiveValueReceived, Formula improvementConstraints){
 		this.SatCallType = SatCallType;
 		this.TranslationTime = TranslationTime;
 		this.SolvingTime = SolvingTime;
@@ -19,7 +18,6 @@ public class IndividualStats {
 			this.ObjectiveValueReceived = ObjectiveValueReceived;
 		}
 		this.improvementConstraints = improvementConstraints;
-		this.improvementConstraintsAreTight = ImprovementConstraintsAreTight;
 	}
 	public boolean isRegularSatCall() { 
 		return this.SatCallType == StatKey.REGULAR_SAT_CALL;
@@ -66,8 +64,6 @@ public class IndividualStats {
 		}else{
 			CSVSummary += ",";			
 		}
-
-		CSVSummary += "," +  (this.improvementConstraintsAreTight == true ? "TightImprovementConstraints" : "BostedImprovementConstraints");
 		
 		return CSVSummary;
 	}
