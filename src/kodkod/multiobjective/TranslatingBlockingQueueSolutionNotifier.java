@@ -21,7 +21,7 @@ public final class TranslatingBlockingQueueSolutionNotifier implements SolutionN
 	@Override
 	public void tell(final MeasuredSolution s) {
 		try {
-			q.put(s.solution);
+			q.put(s.getSolution());
 		} catch (final Exception e) {
 			throw new RuntimeException(e);
 		}

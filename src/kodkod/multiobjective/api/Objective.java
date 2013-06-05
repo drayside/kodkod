@@ -9,9 +9,8 @@ import kodkod.ast.IntExpression;
 
 public abstract class Objective implements Comparable<Objective> {
 
-	public final String desc;
-	
-	public final IntExpression expr;
+	protected final String desc;
+	protected final IntExpression expr;
 	
 	private Objective(final String desc, final IntExpression expr) {
 		this.desc = desc;

@@ -12,8 +12,8 @@ import kodkod.instance.Bounds;
  * Stats for solver.  Thread safe.
  */
 public final class Stats {
-	public final String solverClassName;
-	public final String desc;
+	private final String solverClassName;
+	private final String desc;
 	
 	/**
 	 * The map itself is read only:  we mutate the values.
@@ -103,5 +103,13 @@ public final class Stats {
 		result += get(StatKey.MAGNIFIER_SAT_CALL);
 		result += get(StatKey.MAGNIFIER_UNSAT_CALL);
 		return result;
+	}
+
+	public String getSolverClassName() {
+		return solverClassName;
+	}
+
+	public String getDesc() {
+		return desc;
 	}
 }

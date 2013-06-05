@@ -17,12 +17,9 @@ import kodkod.multiobjective.Poison;
 
 public abstract class MultiObjectiveSolver {
 
-	public final String desc;
-	
+	private final String desc;
 	private final Solver solver;
-	
 	private final Stats stats;
-
 	private final ExecutorService executor;
 	
 	
@@ -228,6 +225,10 @@ public abstract class MultiObjectiveSolver {
 	
 	public Stats getStats() {
 		return stats;
+	}
+
+	public String getDesc() {
+		return desc;
 	}
 	
 }
