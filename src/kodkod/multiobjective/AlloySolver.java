@@ -19,7 +19,9 @@ public final class AlloySolver extends Thread {
 
 	private final MultiObjectiveProblem problem;
 	private final SolutionNotifier notifier;
-	private final MoolloyOptions options;
+	
+	// Find all solutions at each Pareto point
+	private final boolean allSolutionsPerPoint;
 
 	final BlockingQueue<Solution> q;
 	final MoolloyBlockingSolutionIterator it;
@@ -35,14 +37,13 @@ public final class AlloySolver extends Thread {
 		
 		problem = new MultiObjectiveProblem(bounds, formula, objectives);
 		notifier = new TranslatingBlockingQueueSolutionNotifier(q);
-		options = new MoolloyOptions();
-		options.setAllSolutionsPerPoint(magnifyingGlass);
+		allSolutionsPerPoint = magnifyingGlass;
 	}
 
 	public void run() {
 		// TODO 
 		gia.setSymmetryBreaking(1000);
-		gia.moosolve(problem, notifier, options.getAllSolutionsPerPoint());
+		gia.moosolve(problem, notifier, allSolutionsPerPoint);
 	}
 
 	// TODO: This code may need revision. Currently, user of AlloySolver should

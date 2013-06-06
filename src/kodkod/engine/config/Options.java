@@ -39,6 +39,7 @@ import kodkod.util.ints.Ints;
  * @specfield skolemDepth: int // skolemization depth
  * @specfield logTranslation: [0..2] // log translation events, default is 0 (no logging)
  * @specfield coreGranularity: [0..3] // unsat core granularity, default is 0 (only top-level conjuncts are considered)
+ * @specfield allSolutionsPerPoint: bool // whether we want all solutions per Pareto point, default is true
  * @author Emina Torlak
  */
 public final class Options implements Cloneable {
@@ -51,8 +52,7 @@ public final class Options implements Cloneable {
 	private int skolemDepth = 0;
 	private int logTranslation = 0;
 	private int coreGranularity = 0;
-	// [TeamAmalgam] - Adding for Alloy support
-	private Boolean MoolloyListAllSolutionsForParetoPoint = true;
+	private boolean allSolutionsPerPoint = true;
 
 	/**
 	 * Constructs an Options object initialized with default values.
@@ -65,6 +65,7 @@ public final class Options implements Cloneable {
 	 *          this.skolemDepth' = 0
 	 *          this.logTranslation' = 0
 	 *          this.coreGranularity' = 0
+	 *          this.allSolutionsPerPoint' = true
 	 */
 	public Options() {}
 
@@ -264,24 +265,22 @@ public final class Options implements Cloneable {
 		return logTranslation;
 	}
 
-	// [TeamAmalgam] - Adding for Alloy support
 	/**
 	 * Returns whether all solutions for a given Pareto point should be enumerated,
 	 * only meaningful when using Moolloy.
-	 * @return this.MoolloyListAllSolutionsForParetoPoint
+	 * @return this.allSolutionsPerPoint
 	 */
-	public Boolean MoolloyListAllSolutionsForParetoPoint(){
-		return MoolloyListAllSolutionsForParetoPoint ;
+	public Boolean allSolutionsPerPoint(){
+		return allSolutionsPerPoint;
 	}
 
-	// [TeamAmalgam] - Adding for Alloy support
 	/**
 	 * Sets whether all solutions for a given Pareto point should be enumerated,
 	 * only meaningful when using Moolloy.
-	 * @ensures this.MoolloyListAllSolutionsForParetoPoint' = MoolloyListAllSolutionsForParetoPoint
+	 * @ensures this.allSolutionsPerPoint' = allSolutionsPerPoint
 	 */
-	public void setMoolloyListAllSolutionsForParetoPoint(Boolean MoolloyListAllSolutionsForParetoPoint){
-		this.MoolloyListAllSolutionsForParetoPoint = MoolloyListAllSolutionsForParetoPoint;
+	public void setAllSolutionsPerPoint(boolean allSolutionsPerPoint){
+		this.allSolutionsPerPoint = allSolutionsPerPoint;
 	}
 
 	/**
@@ -338,11 +337,11 @@ public final class Options implements Cloneable {
 		c.setBitwidth(bitwidth);
 		c.setIntEncoding(intEncoding);
 		c.setSharing(sharing);
-		c.setSharing(sharing);
 		c.setSymmetryBreaking(symmetryBreaking);
 		c.setSkolemDepth(skolemDepth);
 		c.setLogTranslation(logTranslation);
 		c.setCoreGranularity(coreGranularity);
+		c.setAllSolutionsPerPoint(allSolutionsPerPoint);
 		return c;
 	}
 
@@ -371,6 +370,8 @@ public final class Options implements Cloneable {
 		b.append(logTranslation);
 		b.append("\n coreGranularity: ");
 		b.append(coreGranularity);
+		b.append("\n allSolutionsPerPoint: ");
+		b.append(allSolutionsPerPoint);
 		return b.toString();
 	}
 
