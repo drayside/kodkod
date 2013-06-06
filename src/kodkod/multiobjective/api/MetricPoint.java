@@ -59,42 +59,31 @@ public final class MetricPoint {
 		return this.ParametrizedImprovementConstraints();
 	}
 
-	Formula ParametrizedImprovementConstraints() {
-		final List<Formula> disjuncts = new ArrayList<Formula>(values.size() + 1);
+	public Formula ParametrizedImprovementConstraints() {
+		final List<Formula> conjuncts = new ArrayList<Formula>(values.size() + 1);
 
-		// every metric gets its turn to be the improver
-		for (final Map.Entry<Objective,Integer> improverEntry : values.entrySet()) {
-			System.out.println("Using metric " + improverEntry.getKey() + " as improverEntry");
-			final Objective improver = improverEntry.getKey();
-			final List<Formula> conjuncts = new ArrayList<Formula>(values.size() + 1);
-			
-			if ( improver.prefer(improverEntry.getValue().intValue(), improverEntry.getValue().intValue()) == 1){
-				conjuncts.add(improver.betterThan(improverEntry.getValue().intValue()));
-			} else {
-				conjuncts.add(improver.betterThan(improverEntry.getValue().intValue()));
-			}
-
-	
-			// every other metric needs to at least hold the line
-			for (final Map.Entry<Objective, Integer> e : values.entrySet()) {
-				final Objective o = e.getKey();
-				if (!o.equals(improver)) {
-					System.out.println("Adding Improvement Constraints");
-					final Formula f = o.betterThanOrEqual(e.getValue().intValue());
-					conjuncts.add(f);
-				}
-			}
-			
-			disjuncts.add(Formula.and(conjuncts));
+		// All of the metrics must be at least as good.
+		for (final Map.Entry<Objective,Integer> metricEntry : values.entrySet()) {
+			final Objective metric = metricEntry.getKey();
+			conjuncts.add(metric.betterThanOrEqual(metricEntry.getValue().intValue()));
 		}
-		
-		System.out.println("Possible Improvements are disjunction of ");
-		for (Formula aDisjunction : disjuncts){
-			System.out.println("\t" + aDisjunction);
-		}		
-		return Formula.or(disjuncts);
-	}
 
+		final List<Formula> improvement_disjuncts = new ArrayList<Formula>(values.size() + 1);
+
+		// At least one of the metrics must improve.
+		for (final Map.Entry<Objective,Integer> metricEntry : values.entrySet()) {
+			final Objective metric = metricEntry.getKey();
+			improvement_disjuncts.add(metric.betterThan(metricEntry.getValue().intValue()));
+		}
+		conjuncts.add(Formula.or(improvement_disjuncts));
+
+		System.out.println("Possible Improvements are conjunction of ");
+		for (Formula aConjunction : conjuncts) {
+			System.out.println("\t" + aConjunction);
+		}
+
+		return Formula.and(conjuncts);
+	}
 	
 	List<Formula> strictImprovementConstraints() {
 		// every metric needs to improve
