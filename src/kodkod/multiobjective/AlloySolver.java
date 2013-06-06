@@ -41,14 +41,11 @@ public final class AlloySolver extends Thread {
 	}
 
 	public void run() {
-		// TODO 
-		gia.setSymmetryBreaking(1000);
 		gia.moosolve(problem, notifier, allSolutionsPerPoint);
 	}
 
-	// TODO: This code may need revision. Currently, user of AlloySolver should
-	// call run() before calling solveAll(), which returns an iterator over the
-	// solutions in the BlockingQueue.
+	// Currently, the user of AlloySolver should call run() before calling solveAll(),
+	// which returns an iterator over the solutions in the BlockingQueue.
 	public Iterator<Solution> solveAll() {
 //		System.out.println("Iterator over all solutions, it has a next solution: " + it.hasNext());
 		return it;

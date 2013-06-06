@@ -30,18 +30,6 @@ public class MoolloyBlockingSolutionIterator implements Iterator<Solution> {
 
 	@Override
 	public Solution next() {
-		/*
-		System.out.println("Getting Next from SolutionIterator");
-		System.out.println("Will List Solutions in Queue q");
-		for (Object tObj : q.toArray()){
-			if (!( tObj instanceof Poison)){
-				Solution sObj = (Solution) tObj;
-				System.out.println("Solution -- \n" + sObj);				
-			}
-		}
-		System.out.println("End Listing Solutions in Queue q");		
-		*/
-		
 		try {
 			s = q.take();
 		} catch (InterruptedException e) {

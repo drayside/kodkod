@@ -3,11 +3,9 @@ package kodkod.multiobjective.api;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.SortedSet;
 
 import kodkod.ast.Formula;
 import kodkod.engine.Solution;
-import kodkod.instance.Bounds;
 
 public final class GuidedImprovementAlgorithm extends MultiObjectiveSolver {
 
