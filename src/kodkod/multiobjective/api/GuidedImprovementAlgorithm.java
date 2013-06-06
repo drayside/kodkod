@@ -36,7 +36,6 @@ public final class GuidedImprovementAlgorithm extends MultiObjectiveSolver {
 
 	@Override
 	public void moosolve(final MultiObjectiveProblem p, final SolutionNotifier n, final boolean magnifyingGlass) {
-		System.out.println("Called with Magnifier Glass = " + magnifyingGlass);		
 		// set the bit width
 		setBitWidth(p.bitWidth);
 
@@ -54,10 +53,6 @@ public final class GuidedImprovementAlgorithm extends MultiObjectiveSolver {
 
 		// first base point
 		Solution s1 = solveFirst(p.constraints, p.bounds, p, null); // re-assigned around the loop
-
-		if (isSat(s1)) {
-			System.out.println("Found base solution. At time: " + (System.currentTimeMillis()-startTime)/1000 + ", Improving on " + MetricPoint.measure(s1, p.objectives, getOptions()).values());
-		}
 		
 		//count this finding
 		counter.countStep();
@@ -67,16 +62,14 @@ public final class GuidedImprovementAlgorithm extends MultiObjectiveSolver {
 		while (isSat(s1)) {
 			MetricPoint currentValues = null; // is re-assigned around the inner loop
 			Solution sprev = null;
-			// work up to the pareto front
 
+			// work up to the pareto front
 			while (isSat(s1)) {
 				currentValues = MetricPoint.measure(s1, p.objectives, getOptions());
-
-				System.out.println("Found a better one. At time: " + (System.currentTimeMillis()-startTime)/1000 + ", Improving on " + currentValues.values());
+				System.out.println("Found a solution. At time: " + (System.currentTimeMillis()-startTime)/1000 + ", Improving on " + currentValues.values());
 				
 				final Formula improvementConstraints = currentValues.ParametrizedImprovementConstraints();
-				
-				System.out.println("Improvement Constraints are " + improvementConstraints );
+
 				sprev = s1;
 				s1 =  solveOne(p.constraints.and(improvementConstraints), p.bounds,  p, improvementConstraints);
 
@@ -84,16 +77,13 @@ public final class GuidedImprovementAlgorithm extends MultiObjectiveSolver {
 				counter.countStep();
 			}
 			foundMetricPoint();
-			System.out.println("GIA: " + currentValues.values());
+			System.out.println("Found metric point with values: " + currentValues.values());
 
 			if (!magnifyingGlass) {
 				// no magnifying glass
 				// previous solution was on the pareto front: report it
-				System.out.println("No Magnifier Glass");
 				tell(n, sprev, currentValues);
-				
 			} else {
-				System.out.println("With Magnifier Glass");
 				// magnifying glass				
 				final Collection<Formula> assignmentsConstraints = currentValues.assignmentConstraints();
 				assignmentsConstraints.add(p.constraints);
@@ -107,13 +97,9 @@ public final class GuidedImprovementAlgorithm extends MultiObjectiveSolver {
 			//count this step but first go to new index because it's a new base point
 			counter.nextIndex();
 			counter.countStep();
-
-
 		}
 
-
 		end(n);
-		
 		debugWriteStatistics();	
 	}
 
@@ -128,32 +114,6 @@ public final class GuidedImprovementAlgorithm extends MultiObjectiveSolver {
 		System.out.println("\t Total Time in Unsat Calls:  " +this.getStats().get( StatKey.REGULAR_UNSAT_TIME));		
 		System.out.println("\t Total Time in Unsat Calls Solving:  " +this.getStats().get( StatKey.REGULAR_UNSAT_TIME_SOLVING));
 		System.out.println("\t Total Time in Unsat Calls Translating:  " +this.getStats().get( StatKey.REGULAR_UNSAT_TIME_TRANSLATION));
-		
-	}
-	
-	protected MeasuredSolution findParetoPoint(final Formula f, final Bounds b, final SortedSet<Objective> e) {
-		// base point
-		Solution s1 = solveOne(f, b, null, null); // re-assigned around the loop
-		
-		// any solution that passess this loop condition will 
-		// also pass the inner loop condition and be counted there
-		MetricPoint currentValues = null; // is re-assigned around the inner loop
-		Solution sprev = null;
-		// work up to the pareto front
-		while (isSat(s1)) {
-			currentValues = MetricPoint.measure(s1, e, getOptions());
-			final Formula improvementConstraints = currentValues.improvementConstraints();
-			sprev = s1;
-			s1 = solveOne(f.and(improvementConstraints), b, null, improvementConstraints);
-		}
-		
-		if (sprev != null && isSat(sprev)) {
-			// found a pareto point
-			return new MeasuredSolution(sprev, currentValues);
-		} else {
-			// nothing found
-			return null;
-		}
 	}
 	
 	public GIAStepCounter getCountCallsOnEachMovementToParetoFront(){

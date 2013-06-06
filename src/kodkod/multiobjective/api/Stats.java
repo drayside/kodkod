@@ -55,7 +55,6 @@ public final class Stats {
 	}
 	
 	void increment(final StatKey key) {
-		System.out.println("Incrementing " + key.name());
 		increment(key, 1);
 	}
 
