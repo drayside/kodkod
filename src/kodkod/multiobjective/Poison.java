@@ -23,5 +23,10 @@ public final class Poison
 	public static boolean isPoisonPill(final Object obj) {
 		return (obj == PILL);
 	}
+
+	@Override
+	public String toString() {
+		return "Poison []";
+	}
 	
 }

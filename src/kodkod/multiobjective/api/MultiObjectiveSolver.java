@@ -230,5 +230,10 @@ public abstract class MultiObjectiveSolver {
 	public String getDesc() {
 		return desc;
 	}
+
+	@Override
+	public String toString() {
+		return "MultiObjectiveSolver [stats=" + stats + "]";
+	}
 	
 }

@@ -18,7 +18,7 @@ import kodkod.engine.Solution;
 import kodkod.engine.config.Options;
 
 public final class MetricPoint {
-	
+
 	private final SortedMap<Objective,Integer> values;
 	
 	private MetricPoint(final SortedMap<Objective,Integer> values) {
@@ -141,6 +141,11 @@ public final class MetricPoint {
 
 	public Integer getValue(final Objective o) {
 		return values.get(o);
+	}
+
+	@Override
+	public String toString() {
+		return "MetricPoint [values=" + values + "]";
 	}
 
 }
