@@ -41,7 +41,7 @@ public final class Stats {
 		// we avoid the UnmodifiableMap wrapper for performance reasons
 	}
 	
-	public boolean isValidFinalState() {
+	public boolean checkForValidFinalState() {
 		final int optimalSolnCount = data.get(StatKey.OPTIMAL_SOLNS).intValue();
 		final int metricPoints = data.get(StatKey.OPTIMAL_METRIC_POINTS).intValue();
 		final int satCalls = data.get(StatKey.REGULAR_UNSAT_CALL).intValue();

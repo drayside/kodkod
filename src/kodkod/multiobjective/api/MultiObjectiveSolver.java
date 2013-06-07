@@ -52,14 +52,16 @@ public abstract class MultiObjectiveSolver {
 		options.setSolver(SATFactory.MiniSat);
 		options.setBitwidth(32);	
 		options.setSymmetryBreaking(0);
-
-//		// uncomment this to save the CNF file
-//		final String executable = null;
-//		final String tempInput = "/tmp/moolloy.cnf";
-//		final String tempOutput = "";
-//		final String cnfOptions = "";
-//		final SATFactory cnfSolver = SATFactory.externalFactory(executable, tempInput, tempOutput, cnfOptions);
-//		options.setSolver(cnfSolver);
+	}
+	
+	public void setCNFOutputFile(final String filePath) {
+		final Options options = solver.options();
+		final String executable = null;
+		final String tempInput = filePath;
+		final String tempOutput = "";
+		final String cnfOptions = "";
+		final SATFactory cnfSolver = SATFactory.externalFactory(executable, tempInput, tempOutput, cnfOptions);
+		options.setSolver(cnfSolver);		
 	}
 	
 	public void setSymmetryBreaking(int value) {
@@ -94,7 +96,7 @@ public abstract class MultiObjectiveSolver {
 		}
 		// ok, now we're really done
 		stats.end();
-		assert stats.isValidFinalState();
+		stats.checkForValidFinalState();
 		n.done();
 	}
 	

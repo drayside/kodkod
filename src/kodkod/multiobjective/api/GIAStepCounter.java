@@ -51,12 +51,12 @@ public class GIAStepCounter {
 		return result.toString();
 	}
 
-	public void writeDataFile(String filename) throws IOException {
+	public void writeDataFile(String filePath) throws IOException {
 		Writer fw = null;
 		int point = 1;
 		try {
-			fw = new FileWriter("/home-e/estler/"+filename +".dat");
-			fw.append("# Step counting file for "+filename+"\n");
+			fw = new FileWriter(filePath);
+			fw.append("# Step counting file\n");
 			for(Iterator<Integer> i = steps.iterator(); i.hasNext();){
 				fw.append(point + " " + i.next() + "\n");
 				point++;
