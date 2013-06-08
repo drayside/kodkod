@@ -55,10 +55,6 @@ public final class MetricPoint {
 		return conjuncts;
 	}
 
-	Formula improvementConstraints() {
-		return this.ParametrizedImprovementConstraints();
-	}
-
 	public Formula ParametrizedImprovementConstraints() {
 		final List<Formula> conjuncts = new ArrayList<Formula>(values.size() + 1);
 
@@ -84,20 +80,7 @@ public final class MetricPoint {
 
 		return Formula.and(conjuncts);
 	}
-	
-	List<Formula> strictImprovementConstraints() {
-		// every metric needs to improve
-		final List<Formula> conjuncts = new ArrayList<Formula>(values.size() + 1);
-		for (final Map.Entry<Objective, Integer> e : values.entrySet()) {
-			final Objective o = e.getKey();
-			final Formula f = o.betterThan(e.getValue().intValue());
-			conjuncts.add(f);
-		}
 
-		return conjuncts;
-	}		
-
-	
 	Formula exclusionConstraint() {
 		final List<Formula> disjuncts = new ArrayList<Formula>(values.size() + 1);
 		for (final Map.Entry<Objective, Integer> e : values.entrySet()) {
@@ -137,10 +120,6 @@ public final class MetricPoint {
 			// this is better than that on at least one
 			return true;
 		}
-	}
-
-	public Integer getValue(final Objective o) {
-		return values.get(o);
 	}
 
 	@Override
