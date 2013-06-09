@@ -1,7 +1,6 @@
 package kodkod.multiobjective;
 
-import org.junit.Test;
-import org.junit.Ignore;
+import org.junit.*;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import static org.hamcrest.CoreMatchers.*;
@@ -29,10 +28,13 @@ public class SmallEndToEndTest {
 	 * This test is a translation of rooks_3_metrics_2.als
 	 */
 
-	@Test
-	public void Test() {
+	@Before
+	public void setUp() {
 		SetupExpressions();
+	}
 
+	@Test
+	public void WithSymmetryBreaking() {
 		MultiObjectiveProblem problem = new MultiObjectiveProblem(bounds, 5, x31, objectives);
 		GuidedImprovementAlgorithm gia = new GuidedImprovementAlgorithm("asdf", false);
 		gia.getOptions().setSolver(SATFactory.DefaultSAT4J);
@@ -61,6 +63,45 @@ public class SmallEndToEndTest {
 
 				// objective 1 should have value 7
 				assertThat(mp.getValue(o1), is(7));
+			}
+		};
+
+		gia.moosolve(problem, notifier, true);
+	}
+
+	@Test
+	public void WithoutSymmetryBreaking() {
+		MultiObjectiveProblem problem = new MultiObjectiveProblem(bounds, 5, x31, objectives);
+		GuidedImprovementAlgorithm gia = new GuidedImprovementAlgorithm("asdf", false);
+		gia.getOptions().setSolver(SATFactory.DefaultSAT4J);
+		gia.getOptions().setSymmetryBreaking(0);
+
+		SolutionNotifier notifier = new SolutionNotifier() {
+			List<MeasuredSolution> solutions = new Vector<MeasuredSolution>();
+
+			public void tell(final MeasuredSolution s) {
+				solutions.add(s);
+			}
+
+			public void tell(Solution s, MetricPoint values) {
+				tell(new MeasuredSolution(s, values));
+			}
+
+			public void done() {
+				// There should be 6 solutions, 1 for each permutation of rook
+				// positions.
+				assertThat(solutions.size(), is(6));
+
+				// Each solution should have the same metric values.
+				for (MeasuredSolution solution : solutions) {
+					MetricPoint mp = solution.values;
+
+					// objective 0 should have value 6
+					assertThat(mp.getValue(o0), is(6));
+
+					// objective 1 should have value 7
+					assertThat(mp.getValue(o1), is(7));
+				}
 			}
 		};
 
