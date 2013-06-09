@@ -22,7 +22,7 @@ import kodkod.engine.config.Options;
 import kodkod.multiobjective.api.*;
 
 @RunWith(JUnit4.class)
-public class SmallEndToEndTest {
+public class GIASmallEndToEndTest {
 
 	/*
 	 * This test is a translation of rooks_3_metrics_2.als
