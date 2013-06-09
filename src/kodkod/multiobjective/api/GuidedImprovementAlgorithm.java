@@ -7,7 +7,7 @@ import java.util.List;
 import kodkod.ast.Formula;
 import kodkod.engine.Solution;
 
-public final class GuidedImprovementAlgorithm extends MultiObjectiveSolver {
+public final class GuidedImprovementAlgorithm extends MultiObjectiveAlgorithm {
 
 	/*
 	 * turn on this variable to enable the step counter. It will

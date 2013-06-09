@@ -25,7 +25,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.SortedSet;
 
 import kodkod.ast.Formula;
 import kodkod.ast.IntExpression;
@@ -42,12 +41,6 @@ import kodkod.engine.satlab.SATSolver;
 import kodkod.instance.Bounds;
 import kodkod.instance.Instance;
 import kodkod.instance.TupleSet;
-
-import kodkod.multiobjective.AlloySolver;
-import kodkod.multiobjective.api.GIAStepCounter;
-import kodkod.multiobjective.api.Objective;
-import kodkod.multiobjective.api.Stats;
-
 
 /**
  * A computational engine for solving relational satisfiability problems.
@@ -73,8 +66,6 @@ import kodkod.multiobjective.api.Stats;
  */
 public final class Solver implements KodkodSolver {
 	private final Options options;
-	// [TeamAmalgam] - Adding for Alloy support
-	private AlloySolver mooSolver;
 
 	/**
 	 * Constructs a new Solver with the default options.
@@ -193,35 +184,6 @@ public final class Solver implements KodkodSolver {
 		return new SolutionIterator(formula, bounds, options);
 
 	}
-
-	// [TeamAmalgam] - Adding for Alloy support
-	// [s26stewa] This method returns an iterator over Kodkod solutions. If there
-	// are objectives, then the solutions come from Moolloy; otherwise,
-	// they come from the Kodkod.
-	public Iterator<Solution> solveAll(final Formula formula,
-										final Bounds bounds,
-										final SortedSet<Objective> objectives,
-										Boolean magnifyingGlass)
-		throws HigherOrderDeclException, UnboundLeafException, AbortedException {
-		    if (objectives != null) {
-		    	mooSolver = new AlloySolver(formula, bounds, objectives,  magnifyingGlass);
-		    	mooSolver.run();
-
-		    	return mooSolver.solveAll();
-		    }
-		    return solveAll(formula, bounds);
-	}
-
-	// [TeamAmalgam] - Adding for Alloy support
-	public GIAStepCounter getGIACountCallsOnEachMovementToParetoFront(){
-		return this.mooSolver.getGIACountCallsOnEachMovementToParetoFront();
-	}
-
-	// [TeamAmalgam] - Adding for Alloy support
-	public Stats getStats() {
-		return this.mooSolver.getStats();
-	}
-
 
 	/**
 	 * {@inheritDoc}
