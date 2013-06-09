@@ -1,4 +1,4 @@
-package kodkod.moo;
+package kodkod.multiobjective;
 
 import org.junit.Test;
 import org.junit.Ignore;
