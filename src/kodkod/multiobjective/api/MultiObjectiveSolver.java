@@ -17,11 +17,15 @@ import kodkod.multiobjective.AlloySolver;
 public final class MultiObjectiveSolver implements KodkodSolver {
 
 	AlloySolver mooSolver;
-	Solver solver;
+	final Solver kodkodSolver;
+	
+	final MultiObjectiveOptions options;
 	
 	
 	public MultiObjectiveSolver() {
-		solver = new Solver();
+		
+		options = new MultiObjectiveOptions();
+		kodkodSolver = new Solver(options.getKodkodOptions());
 	}
 	
 	public MultiObjectiveSolver(Options options) {
@@ -29,38 +33,54 @@ public final class MultiObjectiveSolver implements KodkodSolver {
 			throw new NullPointerException();
 		}
 		
-		solver = new Solver( options );
+		this.options = new MultiObjectiveOptions( options );
+		
+		kodkodSolver = new Solver( this.options.getKodkodOptions() );
 	}
 	
-	// [TeamAmalgam] - Adding for Alloy support
+	public MultiObjectiveSolver(MultiObjectiveOptions options) {
+		
+		if (options == null) {
+			throw new NullPointerException();
+		}
+		
+		this.options = options;
+		
+		kodkodSolver = new Solver( options.getKodkodOptions() );
+
+	}
+	
 	public GIAStepCounter getGIACountCallsOnEachMovementToParetoFront(){
 		return this.mooSolver.getGIACountCallsOnEachMovementToParetoFront();
 	}
 
-	// [TeamAmalgam] - Adding for Alloy support
 	public Stats getStats() {
 		return this.mooSolver.getStats();
 	}
 	
 	public Solver getKodkodSolver() {
-		return solver;
+		return kodkodSolver;
 	}
 
+	public MultiObjectiveOptions multiObjectiveOptions() {
+		return options;
+	}
+	
 	@Override
 	public Options options() {
-		return solver.options();
+		return kodkodSolver.options();
 	}
 
 	@Override
 	public Solution solve(Formula formula, Bounds bounds)
 			throws HigherOrderDeclException, UnboundLeafException,
 			AbortedException {
-		return solver.solve(formula, bounds);
+		return kodkodSolver.solve(formula, bounds);
 	}
 
 	@Override
 	public void free() {
-		solver.free();
+		kodkodSolver.free();
 	}
 	
 	public Iterator<Solution> solveAll(final Formula formula, final Bounds bounds, final SortedSet<Objective>objectives, Boolean magnifyingGlass ) 
@@ -72,7 +92,7 @@ public final class MultiObjectiveSolver implements KodkodSolver {
 			return mooSolver.solveAll();
 		}
 		else {
-			return solver.solveAll(formula, bounds);
+			return kodkodSolver.solveAll(formula, bounds);
 		}
 		
 	}

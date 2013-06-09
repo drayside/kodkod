@@ -39,7 +39,6 @@ import kodkod.util.ints.Ints;
  * @specfield skolemDepth: int // skolemization depth
  * @specfield logTranslation: [0..2] // log translation events, default is 0 (no logging)
  * @specfield coreGranularity: [0..3] // unsat core granularity, default is 0 (only top-level conjuncts are considered)
- * @specfield allSolutionsPerPoint: bool // whether we want all solutions per Pareto point, default is true
  * @author Emina Torlak
  */
 public final class Options implements Cloneable {
@@ -52,7 +51,6 @@ public final class Options implements Cloneable {
 	private int skolemDepth = 0;
 	private int logTranslation = 0;
 	private int coreGranularity = 0;
-	private boolean allSolutionsPerPoint = true;
 
 	/**
 	 * Constructs an Options object initialized with default values.
@@ -65,7 +63,6 @@ public final class Options implements Cloneable {
 	 *          this.skolemDepth' = 0
 	 *          this.logTranslation' = 0
 	 *          this.coreGranularity' = 0
-	 *          this.allSolutionsPerPoint' = true
 	 */
 	public Options() {}
 
@@ -174,19 +171,6 @@ public final class Options implements Cloneable {
 		return intEncoding.range(bitwidth);
 	}
 
-	// [TeamAmalgam] - Adding for Alloy support
-	// We can't get rid of this because it gets called, even though nothing
-	// tries to read flatten'. So for our purposes, this will just be stubbed out.
-	/**
-	 * Sets the flattening option to the given value.
-	 * @ensures this.flatten' = flatten
-	 * @throws IllegalArgumentException - this.logTranslation>0 && flatten
-	 */
-	public void setFlatten(boolean flatten) {
-		if (logTranslation>0 && flatten)
-			throw new IllegalStateException("logTranslation enabled:  flattening must be off.");
-	}
-
 	/**
 	 * Returns the 'amount' of symmetry breaking to perform.
 	 * If a non-symmetric solver is chosen for this.solver,
@@ -266,30 +250,10 @@ public final class Options implements Cloneable {
 	}
 
 	/**
-	 * Returns whether all solutions for a given Pareto point should be enumerated,
-	 * only meaningful when using Moolloy.
-	 * @return this.allSolutionsPerPoint
-	 */
-	public Boolean allSolutionsPerPoint(){
-		return allSolutionsPerPoint;
-	}
-
-	/**
-	 * Sets whether all solutions for a given Pareto point should be enumerated,
-	 * only meaningful when using Moolloy.
-	 * @ensures this.allSolutionsPerPoint' = allSolutionsPerPoint
-	 */
-	public void setAllSolutionsPerPoint(boolean allSolutionsPerPoint){
-		this.allSolutionsPerPoint = allSolutionsPerPoint;
-	}
-
-	/**
-	 * Sets the translation logging level.  If the level is above 0,
-	 * flattening is automatically disabled.
+	 * Sets the translation logging level.
 	 * @requires logTranslation in [0..2]
-	 * @ensures this.logTranslation' = logTranslation &&
-	 *          logTranslation>0 => this.flatten' = false
-	 * @throws IllegalArgumentException - logTranslation !in [0..2]
+	 * @ensures this.logTranslation' = logTranslation
+	 * @throws IllegalArgumentException logTranslation !in [0..2]
 	 */
 	public void setLogTranslation(int logTranslation) {
 		checkRange(logTranslation, 0, 2);
@@ -341,7 +305,6 @@ public final class Options implements Cloneable {
 		c.setSkolemDepth(skolemDepth);
 		c.setLogTranslation(logTranslation);
 		c.setCoreGranularity(coreGranularity);
-		c.setAllSolutionsPerPoint(allSolutionsPerPoint);
 		return c;
 	}
 
@@ -370,8 +333,6 @@ public final class Options implements Cloneable {
 		b.append(logTranslation);
 		b.append("\n coreGranularity: ");
 		b.append(coreGranularity);
-		b.append("\n allSolutionsPerPoint: ");
-		b.append(allSolutionsPerPoint);
 		return b.toString();
 	}
 
