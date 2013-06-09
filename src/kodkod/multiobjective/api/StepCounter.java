@@ -6,12 +6,12 @@ import java.io.Writer;
 import java.util.Iterator;
 import java.util.Vector;
 
-public class GIAStepCounter {
+public class StepCounter {
 
 	Vector<Integer> steps;
 	int index;
 
-	public GIAStepCounter() {
+	public StepCounter() {
 		//set the Vector size to 1000
 		steps = new Vector<Integer>();
 		index = 0;

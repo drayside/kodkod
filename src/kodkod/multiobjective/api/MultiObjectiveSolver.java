@@ -2,6 +2,8 @@ package kodkod.multiobjective.api;
 
 import java.util.Iterator;
 import java.util.SortedSet;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import kodkod.ast.Formula;
 import kodkod.engine.AbortedException;
@@ -12,11 +14,17 @@ import kodkod.engine.config.Options;
 import kodkod.engine.fol2sat.HigherOrderDeclException;
 import kodkod.engine.fol2sat.UnboundLeafException;
 import kodkod.instance.Bounds;
-import kodkod.multiobjective.AlloySolver;
+import kodkod.multiobjective.MoolloyBlockingSolutionIterator;
+import kodkod.multiobjective.TranslatingBlockingQueueSolutionNotifier;
 
 public final class MultiObjectiveSolver implements KodkodSolver {
 
-	AlloySolver mooSolver;
+	final MultiObjectiveAlgorithm algorithm;
+	final SolutionNotifier solutionNotifier;
+	final MoolloyBlockingSolutionIterator solutionIterator;
+	final BlockingQueue<Solution> solutionQueue;
+	MultiObjectiveProblem problem;
+
 	final Solver kodkodSolver;
 	
 	final MultiObjectiveOptions options;
@@ -26,36 +34,15 @@ public final class MultiObjectiveSolver implements KodkodSolver {
 		
 		options = new MultiObjectiveOptions();
 		kodkodSolver = new Solver(options.getKodkodOptions());
-	}
-	
-	public MultiObjectiveSolver(Options options) {
-		if (options == null) {
-			throw new NullPointerException();
-		}
-		
-		this.options = new MultiObjectiveOptions( options );
-		
-		kodkodSolver = new Solver( this.options.getKodkodOptions() );
-	}
-	
-	public MultiObjectiveSolver(MultiObjectiveOptions options) {
-		
-		if (options == null) {
-			throw new NullPointerException();
-		}
-		
-		this.options = options;
-		
-		kodkodSolver = new Solver( options.getKodkodOptions() );
 
+		solutionQueue = new LinkedBlockingQueue<Solution>();
+		solutionIterator = new MoolloyBlockingSolutionIterator(solutionQueue);
+		algorithm = new GuidedImprovementAlgorithm("GIA", options);
+		solutionNotifier = new TranslatingBlockingQueueSolutionNotifier(solutionQueue);
 	}
 	
-	public GIAStepCounter getGIACountCallsOnEachMovementToParetoFront(){
-		return this.mooSolver.getGIACountCallsOnEachMovementToParetoFront();
-	}
-
-	public Stats getStats() {
-		return this.mooSolver.getStats();
+	public StepCounter getCountCallsOnEachMovementToParetoFront(){
+		return algorithm.getCountCallsOnEachMovementToParetoFront();
 	}
 	
 	public Solver getKodkodSolver() {
@@ -86,15 +73,31 @@ public final class MultiObjectiveSolver implements KodkodSolver {
 	public Iterator<Solution> solveAll(final Formula formula, final Bounds bounds, final SortedSet<Objective>objectives ) 
 			throws HigherOrderDeclException, UnboundLeafException, AbortedException {
 		if (objectives != null) {
-			mooSolver = new AlloySolver(formula, bounds, objectives, options);
-			mooSolver.run();
 			
-			return mooSolver.solveAll();
+			
+			problem = new MultiObjectiveProblem(bounds, formula, objectives);
+			
+			Thread solverThread = new Thread(new Runnable() {
+				
+				public void run() {
+					
+					algorithm.moosolve(problem, solutionNotifier);
+				}
+	
+			});
+			
+			solverThread.start();
+			
+			return solutionIterator;
 		}
 		else {
 			return kodkodSolver.solveAll(formula, bounds);
 		}
 		
+	}
+	
+	public Stats getStats() {
+		return algorithm.getStats();
 	}
 	
 }

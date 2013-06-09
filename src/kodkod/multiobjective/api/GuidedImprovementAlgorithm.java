@@ -19,9 +19,7 @@ public final class GuidedImprovementAlgorithm extends MultiObjectiveAlgorithm {
 	final String filename;
 	
 	final long startTime = System.currentTimeMillis();
-	
-	private GIAStepCounter counter;
-	
+
 	public GuidedImprovementAlgorithm(final String desc, final MultiObjectiveOptions options) {
 		super(desc, options);
 		this.filename = desc.replace("$", "");
@@ -38,7 +36,7 @@ public final class GuidedImprovementAlgorithm extends MultiObjectiveAlgorithm {
 		setBitWidth(p.bitWidth);
 
 		// for the evaluation we need a step counter
-		this.counter = new GIAStepCounter();
+		this.counter = new StepCounter();
 		
 		//begin, amongst others, start the timer
 		begin();
@@ -112,10 +110,6 @@ public final class GuidedImprovementAlgorithm extends MultiObjectiveAlgorithm {
 		System.out.println("\t Total Time in Unsat Calls:  " +this.getStats().get( StatKey.REGULAR_UNSAT_TIME));		
 		System.out.println("\t Total Time in Unsat Calls Solving:  " +this.getStats().get( StatKey.REGULAR_UNSAT_TIME_SOLVING));
 		System.out.println("\t Total Time in Unsat Calls Translating:  " +this.getStats().get( StatKey.REGULAR_UNSAT_TIME_TRANSLATION));
-	}
-	
-	public GIAStepCounter getCountCallsOnEachMovementToParetoFront(){
-		return this.counter;
 	}
 
 }

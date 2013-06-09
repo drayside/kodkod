@@ -22,6 +22,8 @@ public abstract class MultiObjectiveAlgorithm {
 	private final Stats stats;
 	private final ExecutorService executor;
 	
+	protected StepCounter counter;
+	
 	protected final MultiObjectiveOptions options;
 	
 	
@@ -47,6 +49,10 @@ public abstract class MultiObjectiveAlgorithm {
 
 	public Options getOptions() {
 		return solver.options();
+	}
+	
+	public StepCounter getCountCallsOnEachMovementToParetoFront(){
+		return this.counter;
 	}
 
 	public void setCNFOutputFile(final String filePath) {
