@@ -22,18 +22,18 @@ public final class GuidedImprovementAlgorithm extends MultiObjectiveAlgorithm {
 	
 	private GIAStepCounter counter;
 	
-	public GuidedImprovementAlgorithm(final String desc) {
-		super(desc);
+	public GuidedImprovementAlgorithm(final String desc, final MultiObjectiveOptions options) {
+		super(desc, options);
 		this.filename = desc.replace("$", "");
 	}
 
-	public GuidedImprovementAlgorithm(final String desc, final boolean parallelize) {
-		super(desc, parallelize);
+	public GuidedImprovementAlgorithm(final String desc, final MultiObjectiveOptions options, final boolean parallelize) {
+		super(desc, options, parallelize);
 		this.filename = desc.replace("$", "");
 	}
 
 	@Override
-	public void moosolve(final MultiObjectiveProblem p, final SolutionNotifier n, final boolean magnifyingGlass) {
+	public void moosolve(final MultiObjectiveProblem p, final SolutionNotifier n) {
 		// set the bit width
 		setBitWidth(p.bitWidth);
 
@@ -77,7 +77,7 @@ public final class GuidedImprovementAlgorithm extends MultiObjectiveAlgorithm {
 			foundMetricPoint();
 			System.out.println("Found metric point with values: " + currentValues.values());
 
-			if (!magnifyingGlass) {
+			if (!options.allSolutionsPerPoint()) {
 				// no magnifying glass
 				// previous solution was on the pareto front: report it
 				tell(n, sprev, currentValues);

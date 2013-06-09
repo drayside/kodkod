@@ -83,10 +83,10 @@ public final class MultiObjectiveSolver implements KodkodSolver {
 		kodkodSolver.free();
 	}
 	
-	public Iterator<Solution> solveAll(final Formula formula, final Bounds bounds, final SortedSet<Objective>objectives, Boolean magnifyingGlass ) 
+	public Iterator<Solution> solveAll(final Formula formula, final Bounds bounds, final SortedSet<Objective>objectives ) 
 			throws HigherOrderDeclException, UnboundLeafException, AbortedException {
 		if (objectives != null) {
-			mooSolver = new AlloySolver(formula, bounds, objectives, magnifyingGlass);
+			mooSolver = new AlloySolver(formula, bounds, objectives, options);
 			mooSolver.run();
 			
 			return mooSolver.solveAll();

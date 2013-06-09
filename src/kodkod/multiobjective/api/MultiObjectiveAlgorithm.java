@@ -22,12 +22,14 @@ public abstract class MultiObjectiveAlgorithm {
 	private final Stats stats;
 	private final ExecutorService executor;
 	
+	protected final MultiObjectiveOptions options;
 	
-	public MultiObjectiveAlgorithm(final String desc, final boolean parallelize) {
+	
+	public MultiObjectiveAlgorithm(final String desc, final MultiObjectiveOptions options, final boolean parallelize) {
 		this.desc = desc;
-		this.solver = new Solver();
+		this.solver = new Solver(options.getKodkodOptions());
 		this.stats = new Stats(this.getClass().getName(), desc);
-		setDefaultOptions();
+		this.options = options;
 		
 		if (parallelize) {
 			// start up an ExecutorService to run tasks in other threads
@@ -39,21 +41,14 @@ public abstract class MultiObjectiveAlgorithm {
 		}
 	}
 	
-	public MultiObjectiveAlgorithm(final String desc) {
-		this(desc, false);
+	public MultiObjectiveAlgorithm(final String desc, final MultiObjectiveOptions options ) {
+		this(desc, options, false);
 	}
 
 	public Options getOptions() {
 		return solver.options();
 	}
-	
-	public void setDefaultOptions() {
-		final Options options = solver.options();
-		options.setSolver(SATFactory.MiniSat);
-		options.setBitwidth(32);	
-		options.setSymmetryBreaking(0);
-	}
-	
+
 	public void setCNFOutputFile(final String filePath) {
 		final Options options = solver.options();
 		final String executable = null;
@@ -68,7 +63,7 @@ public abstract class MultiObjectiveAlgorithm {
 		final Options options = solver.options();
 		options.setSymmetryBreaking(value);
 	}
-	
+
 	public void setBitWidth(final int bitWidth) {
 		solver.options().setBitwidth(bitWidth);
 	}
@@ -177,18 +172,10 @@ public abstract class MultiObjectiveAlgorithm {
 		n.tell(s);
 	}
 
-	
-	/**
-	 * Asynchronous solve with magnifying glass.
-	 */
-	public final void moosolve(final MultiObjectiveProblem p, final SolutionNotifier n) {
-		moosolve(p, n, true);
-	}
-
 	/**
 	 * Asynchronous solve.
 	 */
-	public abstract void moosolve(final MultiObjectiveProblem p, SolutionNotifier n, boolean magnifyingGlass);
+	public abstract void moosolve(final MultiObjectiveProblem p, SolutionNotifier n);
 
 	/**
 	 * Synchronous solve where we are not interested in the actual solutions -- just the runtime.
@@ -204,7 +191,7 @@ public abstract class MultiObjectiveAlgorithm {
 		final Thread thread = new Thread() {
 			@Override
 			public void run() {
-				moosolve(p, notifier, magnifyingGlass);
+				moosolve(p, notifier);
 			}
 		};
 		thread.start();

@@ -10,6 +10,7 @@ import kodkod.engine.Solution;
 import kodkod.instance.Bounds;
 import kodkod.multiobjective.api.GIAStepCounter;
 import kodkod.multiobjective.api.GuidedImprovementAlgorithm;
+import kodkod.multiobjective.api.MultiObjectiveOptions;
 import kodkod.multiobjective.api.MultiObjectiveProblem;
 import kodkod.multiobjective.api.Objective;
 import kodkod.multiobjective.api.SolutionNotifier;
@@ -19,9 +20,6 @@ public final class AlloySolver extends Thread {
 
 	private final MultiObjectiveProblem problem;
 	private final SolutionNotifier notifier;
-	
-	// Find all solutions at each Pareto point
-	private final boolean allSolutionsPerPoint;
 
 	final BlockingQueue<Solution> q;
 	final MoolloyBlockingSolutionIterator it;
@@ -29,19 +27,18 @@ public final class AlloySolver extends Thread {
 	final GuidedImprovementAlgorithm gia;
 
 	public AlloySolver(final Formula formula, final Bounds bounds, final SortedSet<Objective> objectives, 
-			Boolean magnifyingGlass) {
+			MultiObjectiveOptions options) {
 		q = new LinkedBlockingQueue<Solution>();
 		it = new MoolloyBlockingSolutionIterator(q);
 		n = new TranslatingBlockingQueueSolutionNotifier(q);
-		gia = new GuidedImprovementAlgorithm("GIA");
+		gia = new GuidedImprovementAlgorithm("GIA", options);
 		
 		problem = new MultiObjectiveProblem(bounds, formula, objectives);
 		notifier = new TranslatingBlockingQueueSolutionNotifier(q);
-		allSolutionsPerPoint = magnifyingGlass;
 	}
 
 	public void run() {
-		gia.moosolve(problem, notifier, allSolutionsPerPoint);
+		gia.moosolve(problem, notifier);
 	}
 
 	// Currently, the user of AlloySolver should call run() before calling solveAll(),
