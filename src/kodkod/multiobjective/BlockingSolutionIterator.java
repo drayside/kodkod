@@ -7,12 +7,12 @@ import kodkod.engine.Solution;
 /**
  * This class implements an iterator over Kodkod solutions.
  */
-public class MoolloyBlockingSolutionIterator implements Iterator<Solution> {
+public class BlockingSolutionIterator implements Iterator<Solution> {
 
 	private final BlockingQueue<Solution> queue;
 	private Solution solution = null;
 
-	public MoolloyBlockingSolutionIterator(final BlockingQueue<Solution> queue) {
+	public BlockingSolutionIterator(final BlockingQueue<Solution> queue) {
 		super();
 		this.queue = queue;
 	}

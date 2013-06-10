@@ -14,14 +14,14 @@ import kodkod.engine.config.Options;
 import kodkod.engine.fol2sat.HigherOrderDeclException;
 import kodkod.engine.fol2sat.UnboundLeafException;
 import kodkod.instance.Bounds;
-import kodkod.multiobjective.MoolloyBlockingSolutionIterator;
+import kodkod.multiobjective.BlockingSolutionIterator;
 import kodkod.multiobjective.TranslatingBlockingQueueSolutionNotifier;
 
 public final class MultiObjectiveSolver implements KodkodSolver {
 
 	final MultiObjectiveAlgorithm algorithm;
 	final SolutionNotifier solutionNotifier;
-	final MoolloyBlockingSolutionIterator solutionIterator;
+	final BlockingSolutionIterator solutionIterator;
 	final BlockingQueue<Solution> solutionQueue;
 	MultiObjectiveProblem problem;
 
@@ -33,7 +33,7 @@ public final class MultiObjectiveSolver implements KodkodSolver {
 		kodkodSolver = new Solver(options.getKodkodOptions());
 
 		solutionQueue = new LinkedBlockingQueue<Solution>();
-		solutionIterator = new MoolloyBlockingSolutionIterator(solutionQueue);
+		solutionIterator = new BlockingSolutionIterator(solutionQueue);
 		algorithm = new GuidedImprovementAlgorithm("GIA", options);
 		solutionNotifier = new TranslatingBlockingQueueSolutionNotifier(solutionQueue);
 	}
