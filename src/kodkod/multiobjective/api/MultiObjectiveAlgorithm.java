@@ -1,10 +1,8 @@
 package kodkod.multiobjective.api;
 
 import java.util.Iterator;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import kodkod.ast.Formula;
@@ -13,7 +11,6 @@ import kodkod.engine.Solver;
 import kodkod.engine.config.Options;
 import kodkod.engine.satlab.SATFactory;
 import kodkod.instance.Bounds;
-import kodkod.multiobjective.Poison;
 
 public abstract class MultiObjectiveAlgorithm {
 
@@ -23,10 +20,8 @@ public abstract class MultiObjectiveAlgorithm {
 	private final ExecutorService executor;
 	
 	protected StepCounter counter;
-	
 	protected final MultiObjectiveOptions options;
-	
-	
+
 	public MultiObjectiveAlgorithm(final String desc, final MultiObjectiveOptions options, final boolean parallelize) {
 		this.desc = desc;
 		this.solver = new Solver(options.getKodkodOptions());
@@ -182,41 +177,6 @@ public abstract class MultiObjectiveAlgorithm {
 	 * Asynchronous solve.
 	 */
 	public abstract void moosolve(final MultiObjectiveProblem p, SolutionNotifier n);
-
-	/**
-	 * Synchronous solve where we are not interested in the actual solutions -- just the runtime.
-	 */
-	public final Stats moosolve(final MultiObjectiveProblem p, final boolean magnifyingGlass) {
-		final BlockingQueue<MeasuredSolution> q = new LinkedBlockingQueue<MeasuredSolution>();
-		final SolutionNotifier notifier = new BlockingQueueSolutionNotifier(q);
-
-		// set the bit width
-		setBitWidth(p.bitWidth);
-		
-		// solve
-		final Thread thread = new Thread() {
-			@Override
-			public void run() {
-				moosolve(p, notifier);
-			}
-		};
-		thread.start();
-
-		// drain the solutions
-		Object soln = null;
-		do {
-			try {
-				soln = q.take();
-			} catch (InterruptedException e1) {
-				// just continue on ... we're just trying to drain the queue here ...
-				e1.printStackTrace();
-			}
-		} while (!Poison.PILL.equals(soln));
-
-		// all done.
-		return getStats();
-	}
-
 	
 	public Stats getStats() {
 		return stats;
@@ -230,5 +190,4 @@ public abstract class MultiObjectiveAlgorithm {
 	public String toString() {
 		return "MultiObjectiveSolver [stats=" + stats + "]";
 	}
-	
 }
