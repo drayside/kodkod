@@ -9,21 +9,21 @@ import kodkod.engine.Solution;
  */
 public class MoolloyBlockingSolutionIterator implements Iterator<Solution> {
 
-	private final BlockingQueue<Solution> q;
-	private Solution s = null;
+	private final BlockingQueue<Solution> queue;
+	private Solution solution = null;
 
-	public MoolloyBlockingSolutionIterator(final BlockingQueue<Solution> q) {
+	public MoolloyBlockingSolutionIterator(final BlockingQueue<Solution> queue) {
 		super();
-		this.q = q;
+		this.queue = queue;
 	}
 
 	@Override
 	public boolean hasNext() {
-               final Object probe = q.peek();
+               final Object probe = queue.peek();
                if (probe == null || Poison.isPoisonPill(probe) || !(probe instanceof Solution)) {
                        return false;
                } else {
-                       s = (Solution) probe;
+                       solution = (Solution) probe;
                        return true;
                }
 	}
@@ -31,11 +31,11 @@ public class MoolloyBlockingSolutionIterator implements Iterator<Solution> {
 	@Override
 	public Solution next() {
 		try {
-			s = q.take();
+			solution = queue.take();
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		final Solution n = s;
+		final Solution n = solution;
 		// Fixed the TODO, by moving "final Solution n = s;" to after the take.:
 		// TODO what to do when there are no more pareto points ?
 		return n;
@@ -45,5 +45,4 @@ public class MoolloyBlockingSolutionIterator implements Iterator<Solution> {
 	public void remove() {
 		throw new UnsupportedOperationException();
 	}
-
 }

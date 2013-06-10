@@ -12,16 +12,16 @@ import kodkod.multiobjective.api.SolutionNotifier;
 
 public final class TranslatingBlockingQueueSolutionNotifier implements SolutionNotifier {
 	
-	private final BlockingQueue<Solution> q;
+	private final BlockingQueue<Solution> queue;
 	
-	public TranslatingBlockingQueueSolutionNotifier(final BlockingQueue<Solution> q) {
-		this.q = q;
+	public TranslatingBlockingQueueSolutionNotifier(final BlockingQueue<Solution> queue) {
+		this.queue = queue;
 	}
 	
 	@Override
 	public void tell(final MeasuredSolution s) {
 		try {
-			q.put(s.getSolution());
+			queue.put(s.getSolution());
 		} catch (final Exception e) {
 			throw new RuntimeException(e);
 		}
@@ -34,8 +34,6 @@ public final class TranslatingBlockingQueueSolutionNotifier implements SolutionN
 
 	@Override
 	public void done() {
-		Poison.poison(q);
+		Poison.poison(queue);
 	}
-
-	
 }

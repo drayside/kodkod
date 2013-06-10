@@ -28,5 +28,4 @@ public final class Poison
 	public String toString() {
 		return "Poison []";
 	}
-	
 }
