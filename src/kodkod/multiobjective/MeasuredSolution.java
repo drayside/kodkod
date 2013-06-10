@@ -1,4 +1,4 @@
-package kodkod.multiobjective.api;
+package kodkod.multiobjective;
 
 import kodkod.engine.Solution;
 

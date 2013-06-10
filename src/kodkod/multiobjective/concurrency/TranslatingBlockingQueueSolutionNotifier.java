@@ -1,14 +1,13 @@
 /**
  * 
  */
-package kodkod.multiobjective;
+package kodkod.multiobjective.concurrency;
 
 import java.util.concurrent.BlockingQueue;
 
 import kodkod.engine.Solution;
-import kodkod.multiobjective.api.MeasuredSolution;
-import kodkod.multiobjective.api.MetricPoint;
-import kodkod.multiobjective.api.SolutionNotifier;
+import kodkod.multiobjective.MeasuredSolution;
+import kodkod.multiobjective.MetricPoint;
 
 public final class TranslatingBlockingQueueSolutionNotifier implements SolutionNotifier {
 	

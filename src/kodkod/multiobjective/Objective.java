@@ -1,7 +1,7 @@
 /**
  * 
  */
-package kodkod.multiobjective.api;
+package kodkod.multiobjective;
 
 import kodkod.ast.Formula;
 import kodkod.ast.IntConstant;

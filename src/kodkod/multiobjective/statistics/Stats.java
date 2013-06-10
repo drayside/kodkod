@@ -1,4 +1,4 @@
-package kodkod.multiobjective.api;
+package kodkod.multiobjective.statistics;
 
 import java.util.EnumMap;
 import java.util.LinkedList;
@@ -7,6 +7,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import kodkod.ast.Formula;
 import kodkod.instance.Bounds;
+import kodkod.multiobjective.MetricPoint;
 
 /**
  * Stats for solver.  Thread safe.
@@ -53,33 +54,33 @@ public final class Stats {
 		return true;
 	}
 	
-	void increment(final StatKey key) {
+	public void increment(final StatKey key) {
 		increment(key, 1);
 	}
 
-	void increment(final StatKey key, final long increment) {
+	public void increment(final StatKey key, final long increment) {
 		final AtomicLong value = data.get(key);
 		value.addAndGet(increment);
 	}
 	
-	void addSummaryIndividualCall(StatKey satCallType, long TranslationTime, long SolvingTime, final Formula f, final Bounds b, final boolean first, MetricPoint ObjectiveValueReceived, final Formula ImprovementConstraints){
+	public void addSummaryIndividualCall(StatKey satCallType, long TranslationTime, long SolvingTime, final Formula f, final Bounds b, final boolean first, MetricPoint ObjectiveValueReceived, final Formula ImprovementConstraints){
 		this.singleCallData.addLast(new IndividualStats(satCallType, TranslationTime, SolvingTime, ObjectiveValueReceived, ImprovementConstraints));
 	}
 	
 	public LinkedList<IndividualStats> getIndividualStats(){
 		return this.singleCallData;
 	}
-	void set(final StatKey key, final long val) {
+	public void set(final StatKey key, final long val) {
 		final AtomicLong value = data.get(key);
 		value.set(val);
 	}
 	
-	void begin() {
+	public void begin() {
 		final AtomicLong value = data.get(StatKey.BEGIN_TIME);
 		value.set(System.currentTimeMillis());
 	}
 
-	void end() {
+	public void end() {
 		final AtomicLong endTime = data.get(StatKey.END_TIME);
 		endTime.set(System.currentTimeMillis());
 		

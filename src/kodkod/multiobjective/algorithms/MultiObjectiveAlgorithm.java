@@ -1,4 +1,4 @@
-package kodkod.multiobjective.api;
+package kodkod.multiobjective.algorithms;
 
 import java.util.Iterator;
 import java.util.concurrent.ExecutorService;
@@ -11,6 +11,15 @@ import kodkod.engine.Solver;
 import kodkod.engine.config.Options;
 import kodkod.engine.satlab.SATFactory;
 import kodkod.instance.Bounds;
+import kodkod.multiobjective.MeasuredSolution;
+import kodkod.multiobjective.MetricPoint;
+import kodkod.multiobjective.MultiObjectiveOptions;
+import kodkod.multiobjective.MultiObjectiveProblem;
+import kodkod.multiobjective.concurrency.DummyExecutorService;
+import kodkod.multiobjective.concurrency.SolutionNotifier;
+import kodkod.multiobjective.statistics.StatKey;
+import kodkod.multiobjective.statistics.Stats;
+import kodkod.multiobjective.statistics.StepCounter;
 
 public abstract class MultiObjectiveAlgorithm {
 
@@ -120,7 +129,7 @@ public abstract class MultiObjectiveAlgorithm {
 			stats.increment(StatKey.REGULAR_SAT_TIME_SOLVING, soln.stats().solvingTime());
 			
 			// Adding Individual instance.
-			MetricPoint obtainedValues = MetricPoint.measure(soln, p.objectives, getOptions());
+			MetricPoint obtainedValues = MetricPoint.measure(soln, p.getObjectives(), getOptions());
 			this.stats.addSummaryIndividualCall(StatKey.REGULAR_SAT_CALL, soln.stats().translationTime(), soln.stats().solvingTime(), f, b, first, obtainedValues, ImprovementConstraints);
 		} else {
 			stats.increment(StatKey.REGULAR_UNSAT_CALL);

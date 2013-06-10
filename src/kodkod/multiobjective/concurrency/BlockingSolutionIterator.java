@@ -1,4 +1,4 @@
-package kodkod.multiobjective;
+package kodkod.multiobjective.concurrency;
 
 import java.util.Iterator;
 import java.util.concurrent.BlockingQueue;

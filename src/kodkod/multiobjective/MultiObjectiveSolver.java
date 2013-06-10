@@ -1,4 +1,4 @@
-package kodkod.multiobjective.api;
+package kodkod.multiobjective;
 
 import java.util.Iterator;
 import java.util.SortedSet;
@@ -14,8 +14,13 @@ import kodkod.engine.config.Options;
 import kodkod.engine.fol2sat.HigherOrderDeclException;
 import kodkod.engine.fol2sat.UnboundLeafException;
 import kodkod.instance.Bounds;
-import kodkod.multiobjective.BlockingSolutionIterator;
-import kodkod.multiobjective.TranslatingBlockingQueueSolutionNotifier;
+import kodkod.multiobjective.algorithms.GuidedImprovementAlgorithm;
+import kodkod.multiobjective.algorithms.MultiObjectiveAlgorithm;
+import kodkod.multiobjective.concurrency.BlockingSolutionIterator;
+import kodkod.multiobjective.concurrency.SolutionNotifier;
+import kodkod.multiobjective.concurrency.TranslatingBlockingQueueSolutionNotifier;
+import kodkod.multiobjective.statistics.Stats;
+import kodkod.multiobjective.statistics.StepCounter;
 
 public final class MultiObjectiveSolver implements KodkodSolver {
 

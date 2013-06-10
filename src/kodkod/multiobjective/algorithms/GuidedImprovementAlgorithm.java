@@ -1,4 +1,4 @@
-package kodkod.multiobjective.api;
+package kodkod.multiobjective.algorithms;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -6,6 +6,12 @@ import java.util.List;
 
 import kodkod.ast.Formula;
 import kodkod.engine.Solution;
+import kodkod.multiobjective.MetricPoint;
+import kodkod.multiobjective.MultiObjectiveOptions;
+import kodkod.multiobjective.MultiObjectiveProblem;
+import kodkod.multiobjective.concurrency.SolutionNotifier;
+import kodkod.multiobjective.statistics.StatKey;
+import kodkod.multiobjective.statistics.StepCounter;
 
 public final class GuidedImprovementAlgorithm extends MultiObjectiveAlgorithm {
 
@@ -33,7 +39,7 @@ public final class GuidedImprovementAlgorithm extends MultiObjectiveAlgorithm {
 	@Override
 	public void moosolve(final MultiObjectiveProblem p, final SolutionNotifier n) {
 		// set the bit width
-		setBitWidth(p.bitWidth);
+		setBitWidth(p.getBitWidth());
 
 		// for the evaluation we need a step counter
 		this.counter = new StepCounter();
@@ -45,10 +51,10 @@ public final class GuidedImprovementAlgorithm extends MultiObjectiveAlgorithm {
 		// the rationale is to have kodkod form bushy, rather than deep, conjunction trees
 		// used to exclude solutions dominated by known pareto-optimal points
 		final List<Formula> exclusionConstraints = new ArrayList<Formula>();
-		exclusionConstraints.add(p.constraints);
+		exclusionConstraints.add(p.getConstraints());
 
 		// first base point
-		Solution s1 = solveFirst(p.constraints, p.bounds, p, null); // re-assigned around the loop
+		Solution s1 = solveFirst(p.getConstraints(), p.getBounds(), p, null); // re-assigned around the loop
 		
 		//count this finding
 		counter.countStep();
@@ -61,13 +67,13 @@ public final class GuidedImprovementAlgorithm extends MultiObjectiveAlgorithm {
 
 			// work up to the pareto front
 			while (isSat(s1)) {
-				currentValues = MetricPoint.measure(s1, p.objectives, getOptions());
+				currentValues = MetricPoint.measure(s1, p.getObjectives(), getOptions());
 				System.out.println("Found a solution. At time: " + (System.currentTimeMillis()-startTime)/1000 + ", Improving on " + currentValues.values());
 				
 				final Formula improvementConstraints = currentValues.parametrizedImprovementConstraints();
 
 				sprev = s1;
-				s1 =  solveOne(p.constraints.and(improvementConstraints), p.bounds,  p, improvementConstraints);
+				s1 =  solveOne(p.getConstraints().and(improvementConstraints), p.getBounds(),  p, improvementConstraints);
 
 				//count this finding
 				counter.countStep();
@@ -82,13 +88,13 @@ public final class GuidedImprovementAlgorithm extends MultiObjectiveAlgorithm {
 			} else {
 				// magnifying glass				
 				final Collection<Formula> assignmentsConstraints = currentValues.assignmentConstraints();
-				assignmentsConstraints.add(p.constraints);
-				magnifier(Formula.and(assignmentsConstraints), p.bounds, currentValues, n);
+				assignmentsConstraints.add(p.getConstraints());
+				magnifier(Formula.and(assignmentsConstraints), p.getBounds(), currentValues, n);
 			}
 
 			// start looking for next base point
 			exclusionConstraints.add(currentValues.exclusionConstraint());
-			s1 = solveOne(Formula.and(exclusionConstraints), p.bounds, p, null);
+			s1 = solveOne(Formula.and(exclusionConstraints), p.getBounds(), p, null);
 			
 			//count this step but first go to new index because it's a new base point
 			counter.nextIndex();

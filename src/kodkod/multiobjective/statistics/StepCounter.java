@@ -1,4 +1,4 @@
-package kodkod.multiobjective.api;
+package kodkod.multiobjective.statistics;
 
 import java.io.FileWriter;
 import java.io.IOException;

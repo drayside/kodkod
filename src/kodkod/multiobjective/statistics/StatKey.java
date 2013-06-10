@@ -1,7 +1,7 @@
 /**
  * 
  */
-package kodkod.multiobjective.api;
+package kodkod.multiobjective.statistics;
 
 public enum StatKey {
 	REGULAR_SAT_CALL,

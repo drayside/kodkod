@@ -1,7 +1,7 @@
 /**
  * 
  */
-package kodkod.multiobjective.api;
+package kodkod.multiobjective.concurrency;
 
 import java.util.Collections;
 import java.util.List;

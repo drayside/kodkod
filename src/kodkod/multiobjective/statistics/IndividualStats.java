@@ -1,6 +1,7 @@
-package kodkod.multiobjective.api;
+package kodkod.multiobjective.statistics;
 
 import kodkod.ast.Formula;
+import kodkod.multiobjective.MetricPoint;
 
 public class IndividualStats {
 	private StatKey SatCallType;

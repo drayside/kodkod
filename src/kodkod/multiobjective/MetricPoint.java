@@ -1,7 +1,7 @@
 /**
  * 
  */
-package kodkod.multiobjective.api;
+package kodkod.multiobjective;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -43,7 +43,7 @@ public final class MetricPoint {
 		return new MetricPoint(Collections.unmodifiableSortedMap(values));
 	}
 	
-	Collection<Formula> assignmentConstraints() {
+	public Collection<Formula> assignmentConstraints() {
 		final List<Formula> conjuncts = new ArrayList<Formula>(values.size() + 1);
 		for (final Map.Entry<Objective, Integer> e : values.entrySet()) {
 			final Formula f = e.getKey().assignmentConstraint(e.getValue().intValue());
@@ -78,7 +78,7 @@ public final class MetricPoint {
 		return Formula.and(conjuncts);
 	}
 
-	Formula exclusionConstraint() {
+	public Formula exclusionConstraint() {
 		final List<Formula> disjuncts = new ArrayList<Formula>(values.size() + 1);
 		for (final Map.Entry<Objective, Integer> e : values.entrySet()) {
 			final Formula f = e.getKey().betterThan(e.getValue().intValue());
