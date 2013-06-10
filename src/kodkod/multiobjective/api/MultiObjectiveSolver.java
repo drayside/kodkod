@@ -26,12 +26,9 @@ public final class MultiObjectiveSolver implements KodkodSolver {
 	MultiObjectiveProblem problem;
 
 	final Solver kodkodSolver;
-	
 	final MultiObjectiveOptions options;
-	
-	
+
 	public MultiObjectiveSolver() {
-		
 		options = new MultiObjectiveOptions();
 		kodkodSolver = new Solver(options.getKodkodOptions());
 
@@ -73,19 +70,13 @@ public final class MultiObjectiveSolver implements KodkodSolver {
 	public Iterator<Solution> solveAll(final Formula formula, final Bounds bounds, final SortedSet<Objective>objectives ) 
 			throws HigherOrderDeclException, UnboundLeafException, AbortedException {
 		if (objectives != null) {
-			
-			
 			problem = new MultiObjectiveProblem(bounds, formula, objectives);
-			
+
 			Thread solverThread = new Thread(new Runnable() {
-				
 				public void run() {
-					
 					algorithm.moosolve(problem, solutionNotifier);
 				}
-	
 			});
-			
 			solverThread.start();
 			
 			return solutionIterator;
@@ -93,11 +84,9 @@ public final class MultiObjectiveSolver implements KodkodSolver {
 		else {
 			return kodkodSolver.solveAll(formula, bounds);
 		}
-		
 	}
 	
 	public Stats getStats() {
 		return algorithm.getStats();
 	}
-	
 }

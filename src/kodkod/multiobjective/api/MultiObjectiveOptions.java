@@ -72,6 +72,4 @@ public final class MultiObjectiveOptions implements Cloneable {
 	public void setAllSolutionsPerPoint(boolean allSolutionsPerPoint){
 		this.allSolutionsPerPoint = allSolutionsPerPoint;
 	}
-
-	
 }
