@@ -84,7 +84,6 @@ public abstract class Objective implements Comparable<Objective> {
 		return new MaxObjective(desc, expr);
 	}
 
-	
 	private static final class MinObjective extends Objective {
 		private MinObjective(final String desc, final IntExpression expr) {
 			super(desc, expr);
@@ -115,9 +114,7 @@ public abstract class Objective implements Comparable<Objective> {
 				return +1; // prefer v2
 			}
 		}
-
 	}
-
 	
 	private static final class MaxObjective extends Objective {
 		private MaxObjective(final String desc, final IntExpression expr) {
@@ -149,8 +146,5 @@ public abstract class Objective implements Comparable<Objective> {
 				return +1; // prefer v2
 			}
 		}
-
 	}
-
-
 }

@@ -5,19 +5,17 @@ import kodkod.engine.config.Options;
 public final class MultiObjectiveOptions implements Cloneable {
 	
 	final Options kodkodOptions;
-	
 	private boolean allSolutionsPerPoint = true;
 	
 	public MultiObjectiveOptions clone() {
 		final MultiObjectiveOptions c = new MultiObjectiveOptions(kodkodOptions);
 		c.setAllSolutionsPerPoint(allSolutionsPerPoint);
-		
 		return c;
 	}
 	
 	public String toString() {
 		StringBuilder b = new StringBuilder();
-		b.append("Kodkod");
+		b.append("Kodkod ");
 		b.append(kodkodOptions.toString());
 		b.append("\nMultiObjectiveOptions:");
 		b.append("\n allSolutionsPerPoint: ");
@@ -30,11 +28,9 @@ public final class MultiObjectiveOptions implements Cloneable {
 	}
 	
 	public MultiObjectiveOptions( Options options ) {
-		
 		if (options == null) {
 			throw new NullPointerException();
 		}
-		
 		kodkodOptions = options;
 	}
 

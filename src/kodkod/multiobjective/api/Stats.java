@@ -23,15 +23,15 @@ public final class Stats {
 	private final Map<StatKey,AtomicLong> data;
 	private final LinkedList<IndividualStats> singleCallData;
 	
-	
 	/* LinkedList of a summary of each iteration. */
 
 	public Stats(final String solverClassName, final String desc) {
 		this.solverClassName = solverClassName;
 		this.desc = desc;
 		
-		//initialize Vector about stats of each call to Kodkod
-		singleCallData = new LinkedList<IndividualStats>();		
+		// initialize Vector about stats of each call to Kodkod
+		singleCallData = new LinkedList<IndividualStats>();
+
 		// initialize the map
 		data = new EnumMap<StatKey, AtomicLong>(StatKey.class);
 		for (final StatKey key : StatKey.values()) {
@@ -50,7 +50,6 @@ public final class Stats {
 		assert optimalSolnCount >= metricPoints : optimalSolnCount + " <?> " + metricPoints;
 		assert optimalSolnCount <= unsatCalls;
 		assert optimalSolnCount <= satCalls;
-//		assert satCalls >= unsatCalls : satCalls + " <?> " + unsatCalls;
 		return true;
 	}
 	

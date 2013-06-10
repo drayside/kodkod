@@ -13,7 +13,7 @@ public class StepCounter {
 
 	public StepCounter() {
 		//set the Vector size to 1000
-		steps = new Vector<Integer>();
+		steps = new Vector<Integer>(1000);
 		index = 0;
 		steps.add(index, 0);
 	}

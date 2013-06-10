@@ -32,12 +32,9 @@ public final class MetricPoint {
 		}
 		return Collections.unmodifiableList(list);
 	}
-	
-	
+
 	public static MetricPoint measure(final Solution s, final SortedSet<Objective> objectives, final Options options) {
-//		System.out.println("Meausuring solution of type " + s.getClass().toString());
 		final SortedMap<Objective,Integer> values = new TreeMap<Objective,Integer>();
-//		System.out.println("Creating Evaluator with s.instance " + s.instance() + " with options " +  options);
 		final Evaluator ev = new Evaluator(s.instance(), options);
 		for (final Objective objective : objectives) {
 			final Integer value = ev.evaluate(objective.expr);
@@ -55,7 +52,7 @@ public final class MetricPoint {
 		return conjuncts;
 	}
 
-	public Formula ParametrizedImprovementConstraints() {
+	public Formula parametrizedImprovementConstraints() {
 		final List<Formula> conjuncts = new ArrayList<Formula>(values.size() + 1);
 
 		// All of the metrics must be at least as good.

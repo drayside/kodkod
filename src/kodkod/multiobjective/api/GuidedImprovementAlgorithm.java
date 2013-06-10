@@ -64,7 +64,7 @@ public final class GuidedImprovementAlgorithm extends MultiObjectiveAlgorithm {
 				currentValues = MetricPoint.measure(s1, p.objectives, getOptions());
 				System.out.println("Found a solution. At time: " + (System.currentTimeMillis()-startTime)/1000 + ", Improving on " + currentValues.values());
 				
-				final Formula improvementConstraints = currentValues.ParametrizedImprovementConstraints();
+				final Formula improvementConstraints = currentValues.parametrizedImprovementConstraints();
 
 				sprev = s1;
 				s1 =  solveOne(p.constraints.and(improvementConstraints), p.bounds,  p, improvementConstraints);
