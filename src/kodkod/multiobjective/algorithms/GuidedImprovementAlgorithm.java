@@ -32,7 +32,7 @@ public final class GuidedImprovementAlgorithm extends MultiObjectiveAlgorithm {
 	}
 	
 	@Override
-	public void moosolve(final MultiObjectiveProblem p, final SolutionNotifier n) {
+	public void multiObjectiveSolve(final MultiObjectiveProblem p, final SolutionNotifier n) {
 		// set the bit width
 		setBitWidth(p.getBitWidth());
 

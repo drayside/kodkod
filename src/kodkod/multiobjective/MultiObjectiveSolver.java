@@ -79,7 +79,7 @@ public final class MultiObjectiveSolver implements KodkodSolver {
 
 			Thread solverThread = new Thread(new Runnable() {
 				public void run() {
-					algorithm.moosolve(problem, solutionNotifier);
+					algorithm.multiObjectiveSolve(problem, solutionNotifier);
 				}
 			});
 			solverThread.start();

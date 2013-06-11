@@ -149,7 +149,7 @@ public abstract class MultiObjectiveAlgorithm {
 	/**
 	 * Asynchronous solve.
 	 */
-	public abstract void moosolve(final MultiObjectiveProblem problem, SolutionNotifier notifier);
+	public abstract void multiObjectiveSolve(final MultiObjectiveProblem problem, SolutionNotifier notifier);
 	
 	public Stats getStats() {
 		return stats;
