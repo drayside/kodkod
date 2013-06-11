@@ -6,7 +6,7 @@ import org.junit.runner.JUnitCore;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-  kodkod.multiobjective.TestSuite.class
+  kodkod.multiobjective.EndtoEnd.TestSuite.class
 })
 public class TestSuite {
 }
