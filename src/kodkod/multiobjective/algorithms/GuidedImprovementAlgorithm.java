@@ -30,12 +30,7 @@ public final class GuidedImprovementAlgorithm extends MultiObjectiveAlgorithm {
 		super(desc, options);
 		this.filename = desc.replace("$", "");
 	}
-
-	public GuidedImprovementAlgorithm(final String desc, final MultiObjectiveOptions options, final boolean parallelize) {
-		super(desc, options, parallelize);
-		this.filename = desc.replace("$", "");
-	}
-
+	
 	@Override
 	public void moosolve(final MultiObjectiveProblem p, final SolutionNotifier n) {
 		// set the bit width

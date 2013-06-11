@@ -1,10 +1,6 @@
 package kodkod.multiobjective.algorithms;
 
 import java.util.Iterator;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-
 import kodkod.ast.Formula;
 import kodkod.engine.Solution;
 import kodkod.engine.Solver;
@@ -15,7 +11,6 @@ import kodkod.multiobjective.MeasuredSolution;
 import kodkod.multiobjective.MetricPoint;
 import kodkod.multiobjective.MultiObjectiveOptions;
 import kodkod.multiobjective.MultiObjectiveProblem;
-import kodkod.multiobjective.concurrency.DummyExecutorService;
 import kodkod.multiobjective.concurrency.SolutionNotifier;
 import kodkod.multiobjective.statistics.StatKey;
 import kodkod.multiobjective.statistics.Stats;
@@ -26,29 +21,15 @@ public abstract class MultiObjectiveAlgorithm {
 	private final String desc;
 	private final Solver solver;
 	private final Stats stats;
-	private final ExecutorService executor;
 	
 	protected StepCounter counter;
 	protected final MultiObjectiveOptions options;
 
-	public MultiObjectiveAlgorithm(final String desc, final MultiObjectiveOptions options, final boolean parallelize) {
+	public MultiObjectiveAlgorithm(final String desc, final MultiObjectiveOptions options) {
 		this.desc = desc;
 		this.solver = new Solver(options.getKodkodOptions());
 		this.stats = new Stats(this.getClass().getName(), desc);
 		this.options = options;
-		
-		if (parallelize) {
-			// start up an ExecutorService to run tasks in other threads
-			final int cores = Runtime.getRuntime().availableProcessors();
-			this.executor = Executors.newFixedThreadPool(cores);	
-		} else {
-			// all in this thread
-			this.executor = new DummyExecutorService();
-		}
-	}
-	
-	public MultiObjectiveAlgorithm(final String desc, final MultiObjectiveOptions options ) {
-		this(desc, options, false);
 	}
 
 	public Options getOptions() {
@@ -78,8 +59,8 @@ public abstract class MultiObjectiveAlgorithm {
 		solver.options().setBitwidth(bitWidth);
 	}
 
-	public static boolean isSat(final Solution s) {
-		return s.outcome().equals(Solution.Outcome.SATISFIABLE) || s.outcome().equals(Solution.Outcome.TRIVIALLY_SATISFIABLE);
+	public static boolean isSat(final Solution solution) {
+		return solution.outcome().equals(Solution.Outcome.SATISFIABLE) || solution.outcome().equals(Solution.Outcome.TRIVIALLY_SATISFIABLE);
 	}
 	
 	protected void foundMetricPoint() {
@@ -90,102 +71,85 @@ public abstract class MultiObjectiveAlgorithm {
 		stats.begin();
 	}
 	
-	protected void end(final SolutionNotifier n) {
-		// first wait for asynchronous tasks to complete
-		executor.shutdown();
-		try {
-			executor.awaitTermination(30, TimeUnit.MINUTES);
-			//System.out.println("executor isTerminated for " + getClass().getSimpleName() + " : " + executor.isTerminated() + " " + stats.get(StatKey.OPTIMAL_METRIC_POINTS));
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-		// ok, now we're really done
+	protected void end(final SolutionNotifier notifier) {
 		stats.end();
 		stats.checkForValidFinalState();
-		n.done();
+		notifier.done();
 	}
 	
-	protected Solution solveOne(final Formula f, final Bounds b, final MultiObjectiveProblem p, final Formula ImprovementConstraints) {
-		return solveOne(f, b, false, p, ImprovementConstraints);
+	protected Solution solveOne(final Formula formula, final Bounds bounds, final MultiObjectiveProblem problem, final Formula improvementConstraints) {
+		return solveOne(formula, bounds, false, problem, improvementConstraints);
 	}
 
-	protected Solution solveFirst(final Formula f, final Bounds b, final MultiObjectiveProblem p, final Formula ImprovementConstraints) {
-		final Solution s = solveOne(f, b, true, p, ImprovementConstraints);
-		stats.set(StatKey.CLAUSES, s.stats().clauses());
-		stats.set(StatKey.VARIABLES, s.stats().primaryVariables());
-		return s;
+	protected Solution solveFirst(final Formula formula, final Bounds bounds, final MultiObjectiveProblem problem, final Formula improvementConstraints) {
+		final Solution solution = solveOne(formula, bounds, true, problem, improvementConstraints);
+		stats.set(StatKey.CLAUSES, solution.stats().clauses());
+		stats.set(StatKey.VARIABLES, solution.stats().primaryVariables());
+		return solution;
 	}
 
-	private Solution solveOne(final Formula f, final Bounds b, final boolean first, final MultiObjectiveProblem p, final Formula ImprovementConstraints) {
-		final Solution soln = solver.solve(f, b);
-		if (isSat(soln)) {
+	private Solution solveOne(final Formula formula, final Bounds bounds, final boolean first, final MultiObjectiveProblem problem, final Formula improvementConstraints) {
+		final Solution solution = solver.solve(formula, bounds);
+		if (isSat(solution)) {
 			stats.increment(StatKey.REGULAR_SAT_CALL);
 
-			stats.increment(StatKey.REGULAR_SAT_TIME, soln.stats().translationTime());
-			stats.increment(StatKey.REGULAR_SAT_TIME, soln.stats().solvingTime());
+			stats.increment(StatKey.REGULAR_SAT_TIME, solution.stats().translationTime());
+			stats.increment(StatKey.REGULAR_SAT_TIME, solution.stats().solvingTime());
 			
 			
-			stats.increment(StatKey.REGULAR_SAT_TIME_TRANSLATION, soln.stats().translationTime());
-			stats.increment(StatKey.REGULAR_SAT_TIME_SOLVING, soln.stats().solvingTime());
+			stats.increment(StatKey.REGULAR_SAT_TIME_TRANSLATION, solution.stats().translationTime());
+			stats.increment(StatKey.REGULAR_SAT_TIME_SOLVING, solution.stats().solvingTime());
 			
 			// Adding Individual instance.
-			MetricPoint obtainedValues = MetricPoint.measure(soln, p.getObjectives(), getOptions());
-			this.stats.addSummaryIndividualCall(StatKey.REGULAR_SAT_CALL, soln.stats().translationTime(), soln.stats().solvingTime(), f, b, first, obtainedValues, ImprovementConstraints);
+			MetricPoint obtainedValues = MetricPoint.measure(solution, problem.getObjectives(), getOptions());
+			this.stats.addSummaryIndividualCall(StatKey.REGULAR_SAT_CALL, solution.stats().translationTime(), solution.stats().solvingTime(), formula, bounds, first, obtainedValues, improvementConstraints);
 		} else {
 			stats.increment(StatKey.REGULAR_UNSAT_CALL);
 
-			stats.increment(StatKey.REGULAR_UNSAT_TIME, soln.stats().translationTime());
-			stats.increment(StatKey.REGULAR_UNSAT_TIME, soln.stats().solvingTime());
+			stats.increment(StatKey.REGULAR_UNSAT_TIME, solution.stats().translationTime());
+			stats.increment(StatKey.REGULAR_UNSAT_TIME, solution.stats().solvingTime());
 
-			stats.increment(StatKey.REGULAR_UNSAT_TIME_TRANSLATION, soln.stats().translationTime());
-			stats.increment(StatKey.REGULAR_UNSAT_TIME_SOLVING, soln.stats().solvingTime());
+			stats.increment(StatKey.REGULAR_UNSAT_TIME_TRANSLATION, solution.stats().translationTime());
+			stats.increment(StatKey.REGULAR_UNSAT_TIME_SOLVING, solution.stats().solvingTime());
 
-			this.stats.addSummaryIndividualCall(StatKey.REGULAR_UNSAT_CALL, soln.stats().translationTime(), soln.stats().solvingTime(), f, b, first, null, ImprovementConstraints);
+			this.stats.addSummaryIndividualCall(StatKey.REGULAR_UNSAT_CALL, solution.stats().translationTime(), solution.stats().solvingTime(), formula, bounds, first, null, improvementConstraints);
 		}
-		return soln;
+		return solution;
 	}
 	
-	protected void magnifier(final Formula f, final Bounds b, final MetricPoint v, final SolutionNotifier n) {
-		execute(new Runnable(){
-			@Override
-			public void run() {
-				boolean isFirst = true;
-				for (final Iterator<Solution> i = solver.solveAll(f, b); i.hasNext(); ) {
-					final Solution s = i.next();
-					if (isSat(s)) {
-						stats.increment(StatKey.MAGNIFIER_SAT_CALL);
-						tell(n, s, v);
-					} else {
-						stats.increment(StatKey.MAGNIFIER_UNSAT_CALL);
-					}
-					if (isFirst) {
-						// we only need to translate once here, so only count that once
-						isFirst = false;
-						stats.increment(StatKey.MAGNIFIER_TIME, s.stats().translationTime());
-					}
-					stats.increment(StatKey.MAGNIFIER_TIME, s.stats().solvingTime());
-				}
-			}});
-	}
-	
-	protected void execute(final Runnable r) {
-		executor.execute(r);
+	protected void magnifier(final Formula formula, final Bounds bounds, final MetricPoint metricPoint, final SolutionNotifier notifier) {
+		boolean isFirst = true;
+		for (final Iterator<Solution> i = solver.solveAll(formula, bounds); i.hasNext(); ) {
+			final Solution solution = i.next();
+			if (isSat(solution)) {
+				stats.increment(StatKey.MAGNIFIER_SAT_CALL);
+				tell(notifier, solution, metricPoint);
+			} else {
+				stats.increment(StatKey.MAGNIFIER_UNSAT_CALL);
+			}
+			if (isFirst) {
+				// we only need to translate once here, so only count that once
+				isFirst = false;
+				stats.increment(StatKey.MAGNIFIER_TIME, solution.stats().translationTime());
+			}
+			stats.increment(StatKey.MAGNIFIER_TIME, solution.stats().solvingTime());
+		}
 	}
 
-	protected void tell(final SolutionNotifier n, final Solution s, final MetricPoint v) {
+	protected void tell(final SolutionNotifier notifier, final Solution solution, final MetricPoint metricPoint) {
 		stats.increment(StatKey.OPTIMAL_SOLNS);
-		n.tell(s, v);
+		notifier.tell(solution, metricPoint);
 	}
 
-	protected void tell(final SolutionNotifier n, final MeasuredSolution s) {
+	protected void tell(final SolutionNotifier notifier, final MeasuredSolution solution) {
 		stats.increment(StatKey.OPTIMAL_SOLNS);
-		n.tell(s);
+		notifier.tell(solution);
 	}
 
 	/**
 	 * Asynchronous solve.
 	 */
-	public abstract void moosolve(final MultiObjectiveProblem p, SolutionNotifier n);
+	public abstract void moosolve(final MultiObjectiveProblem problem, SolutionNotifier notifier);
 	
 	public Stats getStats() {
 		return stats;
