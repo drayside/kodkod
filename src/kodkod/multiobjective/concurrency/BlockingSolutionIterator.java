@@ -1,6 +1,7 @@
 package kodkod.multiobjective.concurrency;
 
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 import java.util.concurrent.BlockingQueue;
 import kodkod.engine.Solution;
 
@@ -11,34 +12,85 @@ public class BlockingSolutionIterator implements Iterator<Solution> {
 
 	private final BlockingQueue<Solution> queue;
 	private Solution solution = null;
+	
+	// If we encounter a poison pill we set it to true. Nothing sets to false afterwards.
+	private boolean noMoreSolutions = false;
 
 	public BlockingSolutionIterator(final BlockingQueue<Solution> queue) {
 		super();
 		this.queue = queue;
 	}
 
+	/**
+	 * hasNext method for SolutionIterator; behaves just like an ordinary iterator for a container.
+	 */
 	@Override
 	public boolean hasNext() {
-               final Object probe = queue.peek();
-               if (probe == null || Poison.isPoisonPill(probe) || !(probe instanceof Solution)) {
-                       return false;
-               } else {
-                       solution = (Solution) probe;
-                       return true;
-               }
+        Object probe = null;
+        
+        if (noMoreSolutions){
+        	return false;
+        } else if ( solution != null ) {
+        	// Solution is assigned iff we have a real solution.
+        	// We only hit this case if we call hasNext() repeatedly without actually calling next().
+        	return true;
+        }
+        
+		try {
+			// queue.take() is a blocking call.
+			probe = queue.take();
+		} catch (InterruptedException e) {
+			// We don't handle InterruptedException
+			throw new RuntimeException("Unexpected thread interruption.");
+		}
+       
+       if (probe == null) {
+    	   throw new NullPointerException();
+       } else if (Poison.isPoisonPill(probe)) {
+    	   // We are completely done. There's no more solutions available, and it can never be reset to false.
+    	   noMoreSolutions = true;
+    	   return false;
+       } else if (!(probe instanceof Solution )) {
+    	   // We don't know what this is.
+    	   throw new RuntimeException("Expected Solution. Got " + probe.getClass().toString() + " instead.");
+       } else {
+    	   // We got a solution, so we are caching it in solution.
+    	   solution = (Solution)probe;
+    	   return true;
+       }
 	}
 
 	@Override
 	public Solution next() {
-		try {
-			solution = queue.take();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
+		if (noMoreSolutions){
+			throw new NoSuchElementException();
+		} else if( solution != null ) {
+			// We have a cached solution already becase hasNext() was previously called.
+        	// We set it back to null since we are returning the cached solution.
+			final Solution toReturn = solution;
+			solution = null;
+			return toReturn;
 		}
-		final Solution n = solution;
-		// Fixed the TODO, by moving "final Solution n = s;" to after the take.:
-		// TODO what to do when there are no more pareto points ?
-		return n;
+		
+		// hasNext() hasn't been called, so we try to take one from the queue.
+		try {
+			final Object probe = queue.take();
+			if ( probe == null ) {
+				throw new NullPointerException();
+			} else if( Poison.isPoisonPill(solution) ){
+				// We are completely done. There's no more solutions available, and it can never be reset to false.
+				noMoreSolutions = true;
+				throw new NoSuchElementException();
+			} else if (!(probe instanceof Solution )) {
+				// We don't know what this is.
+	    	   throw new RuntimeException("Expected Solution. Got " + probe.getClass().toString() + " instead.");
+		    } else {
+		    	// We got a solution, so we return it.
+		    	return (Solution)probe;
+		    }
+		} catch (InterruptedException e) {
+			throw new RuntimeException("Unexpected thread interruption.");
+		}
 	}
 
 	@Override
