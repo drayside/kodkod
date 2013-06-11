@@ -65,7 +65,7 @@ public class BlockingSolutionIterator implements Iterator<Solution> {
 		if (noMoreSolutions){
 			throw new NoSuchElementException();
 		} else if( solution != null ) {
-			// We have a cached solution already becase hasNext() was previously called.
+			// We have a cached solution already because hasNext() was previously called.
         	// We set it back to null since we are returning the cached solution.
 			final Solution toReturn = solution;
 			solution = null;
@@ -77,7 +77,7 @@ public class BlockingSolutionIterator implements Iterator<Solution> {
 			final Object probe = queue.take();
 			if ( probe == null ) {
 				throw new NullPointerException();
-			} else if( Poison.isPoisonPill(solution) ){
+			} else if( Poison.isPoisonPill(probe) ){
 				// We are completely done. There's no more solutions available, and it can never be reset to false.
 				noMoreSolutions = true;
 				throw new NoSuchElementException();
