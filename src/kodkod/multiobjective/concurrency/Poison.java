@@ -1,4 +1,4 @@
-package kodkod.multiobjective;
+package kodkod.multiobjective.concurrency;
 
 import java.util.concurrent.BlockingQueue;
 
@@ -23,5 +23,9 @@ public final class Poison
 	public static boolean isPoisonPill(final Object obj) {
 		return (obj == PILL);
 	}
-	
+
+	@Override
+	public String toString() {
+		return "Poison []";
+	}
 }

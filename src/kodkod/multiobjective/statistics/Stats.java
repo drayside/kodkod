@@ -1,4 +1,4 @@
-package kodkod.multiobjective.api;
+package kodkod.multiobjective.statistics;
 
 import java.util.EnumMap;
 import java.util.LinkedList;
@@ -7,13 +7,14 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import kodkod.ast.Formula;
 import kodkod.instance.Bounds;
+import kodkod.multiobjective.MetricPoint;
 
 /**
  * Stats for solver.  Thread safe.
  */
 public final class Stats {
-	public final String solverClassName;
-	public final String desc;
+	private final String solverClassName;
+	private final String desc;
 	
 	/**
 	 * The map itself is read only:  we mutate the values.
@@ -23,15 +24,15 @@ public final class Stats {
 	private final Map<StatKey,AtomicLong> data;
 	private final LinkedList<IndividualStats> singleCallData;
 	
-	
 	/* LinkedList of a summary of each iteration. */
 
 	public Stats(final String solverClassName, final String desc) {
 		this.solverClassName = solverClassName;
 		this.desc = desc;
 		
-		//initialize Vector about stats of each call to Kodkod
-		singleCallData = new LinkedList<IndividualStats>();		
+		// initialize Vector about stats of each call to Kodkod
+		singleCallData = new LinkedList<IndividualStats>();
+
 		// initialize the map
 		data = new EnumMap<StatKey, AtomicLong>(StatKey.class);
 		for (final StatKey key : StatKey.values()) {
@@ -41,7 +42,7 @@ public final class Stats {
 		// we avoid the UnmodifiableMap wrapper for performance reasons
 	}
 	
-	public boolean isValidFinalState() {
+	public boolean checkForValidFinalState() {
 		final int optimalSolnCount = data.get(StatKey.OPTIMAL_SOLNS).intValue();
 		final int metricPoints = data.get(StatKey.OPTIMAL_METRIC_POINTS).intValue();
 		final int satCalls = data.get(StatKey.REGULAR_UNSAT_CALL).intValue();
@@ -50,38 +51,36 @@ public final class Stats {
 		assert optimalSolnCount >= metricPoints : optimalSolnCount + " <?> " + metricPoints;
 		assert optimalSolnCount <= unsatCalls;
 		assert optimalSolnCount <= satCalls;
-//		assert satCalls >= unsatCalls : satCalls + " <?> " + unsatCalls;
 		return true;
 	}
 	
-	void increment(final StatKey key) {
-		System.out.println("Incrementing " + key.name());
+	public void increment(final StatKey key) {
 		increment(key, 1);
 	}
 
-	void increment(final StatKey key, final long increment) {
+	public void increment(final StatKey key, final long increment) {
 		final AtomicLong value = data.get(key);
 		value.addAndGet(increment);
 	}
 	
-	void addSummaryIndividualCall(StatKey satCallType, long TranslationTime, long SolvingTime, final Formula f, final Bounds b, final boolean first, MetricPoint ObjectiveValueReceived, final Formula ImprovementConstraints, final Boolean ImprovementConstraintsAreTight){
-		this.singleCallData.addLast(new IndividualStats(satCallType, TranslationTime, SolvingTime, ObjectiveValueReceived, ImprovementConstraints, ImprovementConstraintsAreTight));		
+	public void addSummaryIndividualCall(StatKey satCallType, long TranslationTime, long SolvingTime, final Formula f, final Bounds b, final boolean first, MetricPoint ObjectiveValueReceived, final Formula ImprovementConstraints){
+		this.singleCallData.addLast(new IndividualStats(satCallType, TranslationTime, SolvingTime, ObjectiveValueReceived, ImprovementConstraints));
 	}
 	
 	public LinkedList<IndividualStats> getIndividualStats(){
 		return this.singleCallData;
 	}
-	void set(final StatKey key, final long val) {
+	public void set(final StatKey key, final long val) {
 		final AtomicLong value = data.get(key);
 		value.set(val);
 	}
 	
-	void begin() {
+	public void begin() {
 		final AtomicLong value = data.get(StatKey.BEGIN_TIME);
 		value.set(System.currentTimeMillis());
 	}
 
-	void end() {
+	public void end() {
 		final AtomicLong endTime = data.get(StatKey.END_TIME);
 		endTime.set(System.currentTimeMillis());
 		
@@ -103,5 +102,64 @@ public final class Stats {
 		result += get(StatKey.MAGNIFIER_SAT_CALL);
 		result += get(StatKey.MAGNIFIER_UNSAT_CALL);
 		return result;
+	}
+
+	public String getSolverClassName() {
+		return solverClassName;
+	}
+
+	public String getDesc() {
+		return desc;
+	}
+
+	@Override
+	public String toString() {
+		return "Stats [solverClassName=" + solverClassName + ", desc=" + desc
+				+ ", data=" + data + ", singleCallData=" + singleCallData + "]";
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((data == null) ? 0 : data.hashCode());
+		result = prime * result + ((desc == null) ? 0 : desc.hashCode());
+		result = prime * result
+				+ ((singleCallData == null) ? 0 : singleCallData.hashCode());
+		result = prime * result
+				+ ((solverClassName == null) ? 0 : solverClassName.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Stats other = (Stats) obj;
+		if (data == null) {
+			if (other.data != null)
+				return false;
+		} else if (!data.equals(other.data))
+			return false;
+		if (desc == null) {
+			if (other.desc != null)
+				return false;
+		} else if (!desc.equals(other.desc))
+			return false;
+		if (singleCallData == null) {
+			if (other.singleCallData != null)
+				return false;
+		} else if (!singleCallData.equals(other.singleCallData))
+			return false;
+		if (solverClassName == null) {
+			if (other.solverClassName != null)
+				return false;
+		} else if (!solverClassName.equals(other.solverClassName))
+			return false;
+		return true;
 	}
 }

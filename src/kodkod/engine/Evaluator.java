@@ -52,8 +52,6 @@ import kodkod.instance.TupleSet;
 public final class Evaluator {
 	private final Instance instance;
 	private final Options options;
-	// [TeamAmalgam] - Adding for Alloy support
-	private boolean wasOverflow; // [AM] was overflow detected during evaluation
 
 	/**
 	 * Constructs a new Evaluator for the given instance, using a
@@ -132,16 +130,15 @@ public final class Evaluator {
 		if (intExpr == null) throw new NullPointerException("intexpression");
 		final Int sol = Translator.evaluate(intExpr, instance, options);
 //		System.out.println(sol);
-		// [TeamAmalgam] - Adding for Alloy support.
-		// We don't yet have overflow support in Kodkod, so just return false for now
-		this.wasOverflow = false; //sol.isOverflowFlag();
 		return sol.value();
 	}
 	
 	// [TeamAmalgam] - Adding for Alloy support
+	// For our purposes, we just stub this out and return false.
+	// To actually implement this requires more invasive changes.
 	/** Returns whether overflow was detected during evaluation */ //[AM]
 	public boolean wasOverflow() {
-	    return wasOverflow;
+	    return false;
 	}
 
 	/**

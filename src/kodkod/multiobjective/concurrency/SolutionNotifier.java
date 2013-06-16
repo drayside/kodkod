@@ -1,9 +1,11 @@
 /**
  * 
  */
-package kodkod.multiobjective.api;
+package kodkod.multiobjective.concurrency;
 
 import kodkod.engine.Solution;
+import kodkod.multiobjective.MeasuredSolution;
+import kodkod.multiobjective.MetricPoint;
 
 public interface SolutionNotifier {
 	public void tell(final MeasuredSolution s);

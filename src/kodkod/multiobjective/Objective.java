@@ -1,7 +1,7 @@
 /**
  * 
  */
-package kodkod.multiobjective.api;
+package kodkod.multiobjective;
 
 import kodkod.ast.Formula;
 import kodkod.ast.IntConstant;
@@ -9,9 +9,8 @@ import kodkod.ast.IntExpression;
 
 public abstract class Objective implements Comparable<Objective> {
 
-	public final String desc;
-	
-	public final IntExpression expr;
+	protected final String desc;
+	protected final IntExpression expr;
 	
 	private Objective(final String desc, final IntExpression expr) {
 		this.desc = desc;
@@ -27,6 +26,42 @@ public abstract class Objective implements Comparable<Objective> {
 		return expr.eq(IntConstant.constant(value));
 	}
 	
+	@Override
+	public String toString() {
+		return "Objective [desc=" + desc + "]";
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((desc == null) ? 0 : desc.hashCode());
+		result = prime * result + ((expr == null) ? 0 : expr.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Objective other = (Objective) obj;
+		if (desc == null) {
+			if (other.desc != null)
+				return false;
+		} else if (!desc.equals(other.desc))
+			return false;
+		if (expr == null) {
+			if (other.expr != null)
+				return false;
+		} else if (!expr.equals(other.expr))
+			return false;
+		return true;
+	}
+
 	public abstract Formula betterThan(final int value);
 
 	public abstract Formula betterThanOrEqual(final int value);
@@ -49,7 +84,6 @@ public abstract class Objective implements Comparable<Objective> {
 		return new MaxObjective(desc, expr);
 	}
 
-	
 	private static final class MinObjective extends Objective {
 		private MinObjective(final String desc, final IntExpression expr) {
 			super(desc, expr);
@@ -80,9 +114,7 @@ public abstract class Objective implements Comparable<Objective> {
 				return +1; // prefer v2
 			}
 		}
-
 	}
-
 	
 	private static final class MaxObjective extends Objective {
 		private MaxObjective(final String desc, final IntExpression expr) {
@@ -114,8 +146,5 @@ public abstract class Objective implements Comparable<Objective> {
 				return +1; // prefer v2
 			}
 		}
-
 	}
-
-
 }
