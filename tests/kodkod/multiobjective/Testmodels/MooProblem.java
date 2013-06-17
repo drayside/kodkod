@@ -4,8 +4,8 @@ import java.util.TreeSet;
 
 import kodkod.ast.Formula;
 import kodkod.instance.Bounds;
-import kodkod.multiobjective.api.MultiObjectiveProblem;
-import kodkod.multiobjective.api.Objective;
+import kodkod.multiobjective.MultiObjectiveProblem;
+import kodkod.multiobjective.Objective;
 
 public interface MooProblem {
 	

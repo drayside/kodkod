@@ -21,7 +21,9 @@ import kodkod.engine.config.Options;
 
 import kodkod.multiobjective.Testmodels.MooProblem;
 import kodkod.multiobjective.Testmodels.rooks_3_metrics_2;
-import kodkod.multiobjective.api.*;
+import kodkod.multiobjective.*;
+import kodkod.multiobjective.algorithms.*;
+import kodkod.multiobjective.concurrency.*;
 
 @RunWith(JUnit4.class)
 public class GIASmallEndToEndTest {
@@ -41,7 +43,7 @@ public class GIASmallEndToEndTest {
 	@Test
 	public void WithSymmetryBreaking() {
 		MultiObjectiveProblem problem = moo_problem.getProblem();
-		GuidedImprovementAlgorithm gia = new GuidedImprovementAlgorithm("asdf", false);
+		GuidedImprovementAlgorithm gia = new GuidedImprovementAlgorithm("asdf", new MultiObjectiveOptions());
 		gia.getOptions().setSolver(SATFactory.DefaultSAT4J);
 		gia.getOptions().setSymmetryBreaking(1000);
 
@@ -61,7 +63,7 @@ public class GIASmallEndToEndTest {
 				assertThat(solutions.size(), is(1));
 
 				MeasuredSolution solution = solutions.get(0);
-				MetricPoint mp = solution.values;
+				MetricPoint mp = solution.getValues();
 
 				// objective 0 should have value 6
 				assertThat(mp.getValue((Objective)moo_problem.getObjectives().toArray()[0]), is(6));
@@ -71,13 +73,13 @@ public class GIASmallEndToEndTest {
 			}
 		};
 
-		gia.moosolve(problem, notifier, true);
+		gia.multiObjectiveSolve(problem, notifier);
 	}
 
 	@Test
 	public void WithoutSymmetryBreaking() {
 		MultiObjectiveProblem problem = moo_problem.getProblem();
-		GuidedImprovementAlgorithm gia = new GuidedImprovementAlgorithm("asdf", false);
+		GuidedImprovementAlgorithm gia = new GuidedImprovementAlgorithm("asdf", new MultiObjectiveOptions());
 		gia.getOptions().setSolver(SATFactory.DefaultSAT4J);
 		gia.getOptions().setSymmetryBreaking(0);
 
@@ -99,7 +101,7 @@ public class GIASmallEndToEndTest {
 
 				// Each solution should have the same metric values.
 				for (MeasuredSolution solution : solutions) {
-					MetricPoint mp = solution.values;
+					MetricPoint mp = solution.getValues();
 
 					// objective 0 should have value 6
 					assertThat(mp.getValue((Objective)moo_problem.getObjectives().toArray()[0]), is(6));
@@ -110,6 +112,6 @@ public class GIASmallEndToEndTest {
 			}
 		};
 
-		gia.moosolve(problem, notifier, true);
+		gia.multiObjectiveSolve(problem, notifier);
 	}
 }

@@ -33,6 +33,10 @@ public final class MetricPoint {
 		return Collections.unmodifiableList(list);
 	}
 
+	public Integer getValue(final Objective objective) {
+		return values.get(objective);
+	}
+
 	public static MetricPoint measure(final Solution s, final SortedSet<Objective> objectives, final Options options) {
 		final SortedMap<Objective,Integer> values = new TreeMap<Objective,Integer>();
 		final Evaluator ev = new Evaluator(s.instance(), options);

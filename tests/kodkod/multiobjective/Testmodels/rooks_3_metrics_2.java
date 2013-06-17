@@ -16,8 +16,8 @@ import kodkod.instance.Bounds;
 import kodkod.instance.TupleFactory;
 import kodkod.instance.TupleSet;
 import kodkod.instance.Universe;
-import kodkod.multiobjective.api.MultiObjectiveProblem;
-import kodkod.multiobjective.api.Objective;
+import kodkod.multiobjective.MultiObjectiveProblem;
+import kodkod.multiobjective.Objective;
 
 public class rooks_3_metrics_2 implements MooProblem{
 	private	Bounds bounds;

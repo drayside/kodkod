@@ -3,7 +3,7 @@ package kodkod.multiobjective.UnitTests;
 import static org.junit.Assert.*;
 import kodkod.multiobjective.Testmodels.MooProblem;
 import kodkod.multiobjective.Testmodels.rooks_3_metrics_2;
-import kodkod.multiobjective.api.MultiObjectiveProblem;
+import kodkod.multiobjective.MultiObjectiveProblem;
 
 import org.junit.Before;
 import org.junit.Test;

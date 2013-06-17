@@ -22,7 +22,7 @@ import kodkod.engine.config.Options;
 
 import kodkod.multiobjective.Testmodels.MooProblem;
 import kodkod.multiobjective.Testmodels.rooks_3_metrics_2;
-import kodkod.multiobjective.api.*;
+import kodkod.multiobjective.*;
 
 @RunWith(JUnit4.class)
 public class SolverSmallEndToEndTest {
@@ -43,15 +43,13 @@ public class SolverSmallEndToEndTest {
 			"Once this is fixed we should ensure that this test passes.")
 	@Test
 	public void TestEndToEnd() {
-		Solver solver = new Solver();
+		MultiObjectiveSolver solver = new MultiObjectiveSolver();
 		solver.options().setSolver(SATFactory.DefaultSAT4J);
 		solver.options().setSymmetryBreaking(1000);
 
 		Iterator<Solution> solutions = solver.solveAll(moo_problem.getFormula(), 
 													   moo_problem.getBounds(),
-													   moo_problem.getObjectives(),
-													   true, /* magnifyingGlass */
-													   false /* UseAdaptableMinimumImprovement*/);
+													   moo_problem.getObjectives());
 		
 		int solutionCount = 0;
 		while (solutions.hasNext()) {
