@@ -23,10 +23,12 @@ public class GIAUnitTest {
 	@Test
 	public void testSolveFirst() {
 		GuidedImprovementAlgorithm gia = new GuidedImprovementAlgorithm("asdf", new MultiObjectiveOptions());
+		gia.setBitWidth(32);
 		gia.getOptions().setSolver(SATFactory.DefaultSAT4J);
 		gia.getOptions().setSymmetryBreaking(1000);
+		gia.getOptions().setBitwidth(problem.getBitWidth());
 		
-		Solution s = gia.solveFirst(problem.getProblem().getConstraints(), problem.getBounds(), problem.getProblem(), problem.getFormula());
+		Solution s = gia.solveFirst(problem.getProblem().getConstraints(), problem.getBounds(), problem.getProblem(), null);
 		assertTrue(s.sat());
 	}
 

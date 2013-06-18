@@ -1,12 +1,11 @@
-package kodkod;
+package kodkod.multiobjective.algorithms;
 
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
-import org.junit.runner.JUnitCore;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-  kodkod.multiobjective.TestSuite.class
+  kodkod.multiobjective.algorithms.GIAUnitTest.class
 })
 public class TestSuite {
 }

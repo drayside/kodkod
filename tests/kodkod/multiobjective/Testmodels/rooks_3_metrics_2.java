@@ -2642,7 +2642,7 @@ public class rooks_3_metrics_2 implements MooProblem{
 	}
 
 	@Override
-	public int getbidwidth() {
+	public int getBitWidth() {
 		// TODO Auto-generated method stub
 		return 5;
 	}
