@@ -84,6 +84,7 @@ public final class IncrementalGuidedImprovementAlgorithm extends MultiObjectiveA
 			}
 
 			// Find another starting point.
+			solver.free();
 			solver = IncrementalSolver.solver(getOptions());
 			exclusionConstraints.add(currentValues.exclusionConstraint());
 
