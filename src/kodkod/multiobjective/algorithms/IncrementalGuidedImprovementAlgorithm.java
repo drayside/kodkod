@@ -74,6 +74,9 @@ public final class IncrementalGuidedImprovementAlgorithm extends MultiObjectiveA
 			// We can't find anything better, so the previous solution is a pareto point.
 			foundMetricPoint();
 
+      // Free the solver's resources since we will be creating a new solver.
+			solver.free();
+
 			if (!options.allSolutionsPerPoint()) {
 				tell(notifier, previousSolution, currentValues);
 			} else {
@@ -84,7 +87,6 @@ public final class IncrementalGuidedImprovementAlgorithm extends MultiObjectiveA
 			}
 
 			// Find another starting point.
-			solver.free();
 			solver = IncrementalSolver.solver(getOptions());
 			exclusionConstraints.add(currentValues.exclusionConstraint());
 
