@@ -34,13 +34,9 @@ public class SolverSmallEndToEndTest {
 
 	@Before
 	public void setUp() {
-//		SetupExpressions();
 		moo_problem = new rooks_3_metrics_2();
 	}
 
-	@Ignore("Pre-Existing Bug" +
-			"This test currently fails because it tries to load minisat instead of SAT4J." +
-			"Once this is fixed we should ensure that this test passes.")
 	@Test
 	public void TestEndToEnd() {
 		MultiObjectiveSolver solver = new MultiObjectiveSolver();
