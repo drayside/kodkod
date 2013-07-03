@@ -117,12 +117,15 @@ public abstract class MultiObjectiveAlgorithm {
 		return solution;
 	}
 	
-	protected void magnifier(final Formula formula, final Bounds bounds, final MetricPoint metricPoint, final SolutionNotifier notifier) {
+	// Returns an int specifying the number of solutions found at the Pareto point
+	protected int magnifier(final Formula formula, final Bounds bounds, final MetricPoint metricPoint, final SolutionNotifier notifier) {
 		boolean isFirst = true;
+		int numberSolutions = 0;
 		for (final Iterator<Solution> i = solver.solveAll(formula, bounds); i.hasNext(); ) {
 			final Solution solution = i.next();
 			if (isSat(solution)) {
 				stats.increment(StatKey.MAGNIFIER_SAT_CALL);
+				numberSolutions++;
 				tell(notifier, solution, metricPoint);
 			} else {
 				stats.increment(StatKey.MAGNIFIER_UNSAT_CALL);
@@ -134,6 +137,7 @@ public abstract class MultiObjectiveAlgorithm {
 			}
 			stats.increment(StatKey.MAGNIFIER_TIME, solution.stats().solvingTime());
 		}
+		return numberSolutions;
 	}
 
 	protected void tell(final SolutionNotifier notifier, final Solution solution, final MetricPoint metricPoint) {
