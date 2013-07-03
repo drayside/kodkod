@@ -6,6 +6,7 @@ import java.util.List;
 
 import kodkod.ast.Formula;
 import kodkod.engine.Solution;
+import kodkod.instance.Bounds;
 import kodkod.multiobjective.MetricPoint;
 import kodkod.multiobjective.MultiObjectiveOptions;
 import kodkod.multiobjective.MultiObjectiveProblem;
@@ -31,7 +32,6 @@ public final class GuidedImprovementAlgorithm extends MultiObjectiveAlgorithm {
 		this.filename = desc.replace("$", "");
 	}
 	
-	@Override
 	public void multiObjectiveSolve(final MultiObjectiveProblem p, final SolutionNotifier n) {
 		// set the bit width
 		setBitWidth(p.getBitWidth());
@@ -49,7 +49,8 @@ public final class GuidedImprovementAlgorithm extends MultiObjectiveAlgorithm {
 		exclusionConstraints.add(p.getConstraints());
 
 		// first base point
-		Solution s1 = solveFirst(p.getConstraints(), p.getBounds(), p, null); // re-assigned around the loop
+		Solution s1 = solveFirst(p.getConstraints(), p, null); // re-assigned around the loop
+		solveFirstStats(s1);
 		
 		//count this finding
 		counter.countStep();
@@ -68,13 +69,13 @@ public final class GuidedImprovementAlgorithm extends MultiObjectiveAlgorithm {
 				final Formula improvementConstraints = currentValues.parametrizedImprovementConstraints();
 
 				sprev = s1;
-				s1 =  solveOne(p.getConstraints().and(improvementConstraints), p.getBounds(),  p, improvementConstraints);
+				s1 =  solveOne(p.getConstraints().and(improvementConstraints), p, improvementConstraints);
 
 				//count this finding
 				counter.countStep();
 			}
-			foundMetricPoint();
-			System.out.println("Found metric point with values: " + currentValues.values());
+			foundMetricPoint(currentValues);
+			
 
 			if (!options.allSolutionsPerPoint()) {
 				// no magnifying glass
@@ -89,7 +90,7 @@ public final class GuidedImprovementAlgorithm extends MultiObjectiveAlgorithm {
 
 			// start looking for next base point
 			exclusionConstraints.add(currentValues.exclusionConstraint());
-			s1 = solveOne(Formula.and(exclusionConstraints), p.getBounds(), p, null);
+			s1 = solveOne(Formula.and(exclusionConstraints), p, null);
 			
 			//count this step but first go to new index because it's a new base point
 			counter.nextIndex();
@@ -99,19 +100,21 @@ public final class GuidedImprovementAlgorithm extends MultiObjectiveAlgorithm {
 		end(n);
 		debugWriteStatistics();	
 	}
-
-	private void debugWriteStatistics(){
-		System.out.println("\t # Sat Call: " +  this.getStats().get(StatKey.REGULAR_SAT_CALL));
-		System.out.println("\t # Unsat Call:  " +this.getStats().get( StatKey.REGULAR_UNSAT_CALL));		
-
-		System.out.println("\t Total Time in Sat Calls: " +  this.getStats().get(StatKey.REGULAR_SAT_TIME));
-		System.out.println("\t Total Time in Sat Calls Solving: " +  this.getStats().get(StatKey.REGULAR_SAT_TIME_SOLVING));
-		System.out.println("\t Total Time in Sat Calls Translating: " +  this.getStats().get(StatKey.REGULAR_SAT_TIME_TRANSLATION));		
-
-		System.out.println("\t Total Time in Unsat Calls:  " +this.getStats().get( StatKey.REGULAR_UNSAT_TIME));		
-		System.out.println("\t Total Time in Unsat Calls Solving:  " +this.getStats().get( StatKey.REGULAR_UNSAT_TIME_SOLVING));
-		System.out.println("\t Total Time in Unsat Calls Translating:  " +this.getStats().get( StatKey.REGULAR_UNSAT_TIME_TRANSLATION));
+	
+//	protected Solution solveOne(final Formula formula, final MultiObjectiveProblem problem, final Formula improvementConstraints){
+//		return solveOne(formula, false, problem, improvementConstraints);
+//	}
+	
+	protected Solution solveFirst(final Formula formula, final MultiObjectiveProblem problem, final Formula improvementConstraints) {
+		final Solution solution = getSolver().solve(formula, problem.getBounds());
+		incrementStats(solution, problem, formula, true, improvementConstraints);
+		return solution;
 	}
-
+	
+	protected Solution solveOne(final Formula formula, final MultiObjectiveProblem problem, final Formula improvementConstraints) {
+		final Solution solution = getSolver().solve(formula, problem.getBounds());
+		incrementStats(solution, problem, formula, false, improvementConstraints);
+		return solution;
+	}
 }
 	

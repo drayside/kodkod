@@ -28,7 +28,7 @@ public class GIAUnitTest {
 		gia.getOptions().setSymmetryBreaking(1000);
 		gia.getOptions().setBitwidth(problem.getBitWidth());
 		
-		Solution s = gia.solveFirst(problem.getProblem().getConstraints(), problem.getBounds(), problem.getProblem(), null);
+		Solution s = gia.solveFirst(problem.getProblem().getConstraints(), problem.getProblem(), null);
 		assertTrue(s.sat());
 	}
 

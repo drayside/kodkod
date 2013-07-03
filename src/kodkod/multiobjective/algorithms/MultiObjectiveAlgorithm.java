@@ -31,6 +31,8 @@ public abstract class MultiObjectiveAlgorithm {
 		this.stats = new Stats(this.getClass().getName(), desc);
 		this.options = options;
 	}
+	
+	public abstract void multiObjectiveSolve(final MultiObjectiveProblem problem, SolutionNotifier notifier);
 
 	public Options getOptions() {
 		return solver.options();
@@ -40,7 +42,7 @@ public abstract class MultiObjectiveAlgorithm {
 		return this.counter;
 	}
 
-	public void setCNFOutputFile(final String filePath) {
+	protected void setCNFOutputFile(final String filePath) {
 		final Options options = solver.options();
 		final String executable = null;
 		final String tempInput = filePath;
@@ -50,12 +52,12 @@ public abstract class MultiObjectiveAlgorithm {
 		options.setSolver(cnfSolver);		
 	}
 	
-	public void setSymmetryBreaking(int value) {
+	protected void setSymmetryBreaking(int value) {
 		final Options options = solver.options();
 		options.setSymmetryBreaking(value);
 	}
 
-	public void setBitWidth(final int bitWidth) {
+	protected void setBitWidth(final int bitWidth) {
 		solver.options().setBitwidth(bitWidth);
 	}
 
@@ -63,8 +65,9 @@ public abstract class MultiObjectiveAlgorithm {
 		return solution.outcome().equals(Solution.Outcome.SATISFIABLE) || solution.outcome().equals(Solution.Outcome.TRIVIALLY_SATISFIABLE);
 	}
 	
-	protected void foundMetricPoint() {
+	protected void foundMetricPoint(MetricPoint metricpoint) {
 		stats.increment(StatKey.OPTIMAL_METRIC_POINTS);
+		System.out.println("Found metric point with values: " + metricpoint.values());
 	}
 
 	protected void begin() {
@@ -75,46 +78,6 @@ public abstract class MultiObjectiveAlgorithm {
 		stats.end();
 		stats.checkForValidFinalState();
 		notifier.done();
-	}
-	
-	protected Solution solveOne(final Formula formula, final Bounds bounds, final MultiObjectiveProblem problem, final Formula improvementConstraints) {
-		return solveOne(formula, bounds, false, problem, improvementConstraints);
-	}
-
-	protected Solution solveFirst(final Formula formula, final Bounds bounds, final MultiObjectiveProblem problem, final Formula improvementConstraints) {
-		final Solution solution = solveOne(formula, bounds, true, problem, improvementConstraints);
-		stats.set(StatKey.CLAUSES, solution.stats().clauses());
-		stats.set(StatKey.VARIABLES, solution.stats().primaryVariables());
-		return solution;
-	}
-
-	private Solution solveOne(final Formula formula, final Bounds bounds, final boolean first, final MultiObjectiveProblem problem, final Formula improvementConstraints) {
-		final Solution solution = solver.solve(formula, bounds);
-		if (isSat(solution)) {
-			stats.increment(StatKey.REGULAR_SAT_CALL);
-
-			stats.increment(StatKey.REGULAR_SAT_TIME, solution.stats().translationTime());
-			stats.increment(StatKey.REGULAR_SAT_TIME, solution.stats().solvingTime());
-			
-			
-			stats.increment(StatKey.REGULAR_SAT_TIME_TRANSLATION, solution.stats().translationTime());
-			stats.increment(StatKey.REGULAR_SAT_TIME_SOLVING, solution.stats().solvingTime());
-			
-			// Adding Individual instance.
-			MetricPoint obtainedValues = MetricPoint.measure(solution, problem.getObjectives(), getOptions());
-			this.stats.addSummaryIndividualCall(StatKey.REGULAR_SAT_CALL, solution.stats().translationTime(), solution.stats().solvingTime(), formula, bounds, first, obtainedValues, improvementConstraints);
-		} else {
-			stats.increment(StatKey.REGULAR_UNSAT_CALL);
-
-			stats.increment(StatKey.REGULAR_UNSAT_TIME, solution.stats().translationTime());
-			stats.increment(StatKey.REGULAR_UNSAT_TIME, solution.stats().solvingTime());
-
-			stats.increment(StatKey.REGULAR_UNSAT_TIME_TRANSLATION, solution.stats().translationTime());
-			stats.increment(StatKey.REGULAR_UNSAT_TIME_SOLVING, solution.stats().solvingTime());
-
-			this.stats.addSummaryIndividualCall(StatKey.REGULAR_UNSAT_CALL, solution.stats().translationTime(), solution.stats().solvingTime(), formula, bounds, first, null, improvementConstraints);
-		}
-		return solution;
 	}
 	
 	protected void magnifier(final Formula formula, final Bounds bounds, final MetricPoint metricPoint, final SolutionNotifier notifier) {
@@ -145,11 +108,6 @@ public abstract class MultiObjectiveAlgorithm {
 		stats.increment(StatKey.OPTIMAL_SOLNS);
 		notifier.tell(solution);
 	}
-
-	/**
-	 * Asynchronous solve.
-	 */
-	public abstract void multiObjectiveSolve(final MultiObjectiveProblem problem, SolutionNotifier notifier);
 	
 	public Stats getStats() {
 		return stats;
@@ -158,7 +116,63 @@ public abstract class MultiObjectiveAlgorithm {
 	public String getDesc() {
 		return desc;
 	}
+	
+	public Solver getSolver() {
+		return solver;
+	}
+	
+	/**
+	 * Method to increment Stats counters each time a solution is found
+	 * - Also adds the summary for the specific call using detailed information about the specific SAT call
+	 */
+	protected void incrementStats(final Solution solution, final MultiObjectiveProblem problem, final Formula formula, final boolean first, final Formula improvementConstraints){
+		if (isSat(solution)) {
+			getStats().increment(StatKey.REGULAR_SAT_CALL);
 
+			getStats().increment(StatKey.REGULAR_SAT_TIME, solution.stats().translationTime());
+			getStats().increment(StatKey.REGULAR_SAT_TIME, solution.stats().solvingTime());
+			
+			
+			getStats().increment(StatKey.REGULAR_SAT_TIME_TRANSLATION, solution.stats().translationTime());
+			getStats().increment(StatKey.REGULAR_SAT_TIME_SOLVING, solution.stats().solvingTime());
+			
+			// Adding Individual instance.
+			MetricPoint obtainedValues = MetricPoint.measure(solution, problem.getObjectives(), getOptions());
+			this.getStats().addSummaryIndividualCall(StatKey.REGULAR_SAT_CALL, solution.stats().translationTime(), solution.stats().solvingTime(), formula, problem.getBounds(), first, obtainedValues, improvementConstraints);
+		} else {
+			getStats().increment(StatKey.REGULAR_UNSAT_CALL);
+
+			getStats().increment(StatKey.REGULAR_UNSAT_TIME, solution.stats().translationTime());
+			getStats().increment(StatKey.REGULAR_UNSAT_TIME, solution.stats().solvingTime());
+
+			getStats().increment(StatKey.REGULAR_UNSAT_TIME_TRANSLATION, solution.stats().translationTime());
+			getStats().increment(StatKey.REGULAR_UNSAT_TIME_SOLVING, solution.stats().solvingTime());
+
+			this.getStats().addSummaryIndividualCall(StatKey.REGULAR_UNSAT_CALL, solution.stats().translationTime(), solution.stats().solvingTime(), formula, problem.getBounds(), first, null, improvementConstraints);
+		}
+	}
+	
+	protected void solveFirstStats(Solution solution){
+		getStats().set(StatKey.CLAUSES, solution.stats().clauses());
+		getStats().set(StatKey.VARIABLES, solution.stats().primaryVariables());
+	}
+	
+	/** 
+	 * Method to print debug statistics after computing the pareto front at the end of algorithm
+	 */
+	protected void debugWriteStatistics(){
+		System.out.println("\t # Sat Call: " +  this.getStats().get(StatKey.REGULAR_SAT_CALL));
+		System.out.println("\t # Unsat Call:  " +this.getStats().get( StatKey.REGULAR_UNSAT_CALL));		
+
+		System.out.println("\t Total Time in Sat Calls: " +  this.getStats().get(StatKey.REGULAR_SAT_TIME));
+		System.out.println("\t Total Time in Sat Calls Solving: " +  this.getStats().get(StatKey.REGULAR_SAT_TIME_SOLVING));
+		System.out.println("\t Total Time in Sat Calls Translating: " +  this.getStats().get(StatKey.REGULAR_SAT_TIME_TRANSLATION));		
+
+		System.out.println("\t Total Time in Unsat Calls:  " +this.getStats().get( StatKey.REGULAR_UNSAT_TIME));		
+		System.out.println("\t Total Time in Unsat Calls Solving:  " +this.getStats().get( StatKey.REGULAR_UNSAT_TIME_SOLVING));
+		System.out.println("\t Total Time in Unsat Calls Translating:  " +this.getStats().get( StatKey.REGULAR_UNSAT_TIME_TRANSLATION));
+	}
+	
 	@Override
 	public String toString() {
 		return "MultiObjectiveSolver [stats=" + stats + "]";

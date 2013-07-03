@@ -33,7 +33,6 @@ public final class IncrementalGuidedImprovementAlgorithm extends MultiObjectiveA
 		this.filename = desc.replace("$", "");
 	}
 
-	@Override
 	public void multiObjectiveSolve(final MultiObjectiveProblem problem, final SolutionNotifier notifier) {
 		// set the bit width
 		setBitWidth(problem.getBitWidth());
@@ -48,11 +47,10 @@ public final class IncrementalGuidedImprovementAlgorithm extends MultiObjectiveA
 		
 		final List<Formula> exclusionConstraints = new ArrayList<Formula>();
 		exclusionConstraints.add(problem.getConstraints());
-
-		final Bounds emptyBounds = new Bounds(problem.getBounds().universe());
-
+		
 		// Throw a dart and get a starting point.
-		Solution solution = incrementalSolveFirst(solver, Formula.and(exclusionConstraints), problem.getBounds(), problem, null);
+		Solution solution = incrementalSolveFirst(solver, Formula.and(exclusionConstraints), problem, null);
+		solveFirstStats(solution);
 
 		// While the current solution is satisfiable try to find a better one.
 		while (isSat(solution)) {
@@ -66,13 +64,13 @@ public final class IncrementalGuidedImprovementAlgorithm extends MultiObjectiveA
 				final Formula improvementConstraints = currentValues.parametrizedImprovementConstraints();
 				
 				previousSolution = solution;
-				solution = incrementalSolveOne(solver, improvementConstraints, emptyBounds, problem, improvementConstraints);
+				solution = incrementalSolveOne(solver, improvementConstraints, problem, improvementConstraints);
 
 				counter.countStep();
 			}
 
 			// We can't find anything better, so the previous solution is a pareto point.
-			foundMetricPoint();
+			foundMetricPoint(currentValues);
 
 			if (!options.allSolutionsPerPoint()) {
 				tell(notifier, previousSolution, currentValues);
@@ -87,8 +85,8 @@ public final class IncrementalGuidedImprovementAlgorithm extends MultiObjectiveA
 			solver = IncrementalSolver.solver(getOptions());
 			exclusionConstraints.add(currentValues.exclusionConstraint());
 
-			solution = incrementalSolveOne(solver, Formula.and(exclusionConstraints), problem.getBounds(), problem, null);
-
+			solution = incrementalSolveFirst(solver, Formula.and(exclusionConstraints),  problem, null);
+			
 			//count this step but first go to new index because it's a new base point
 			counter.nextIndex();
 			counter.countStep();
@@ -97,58 +95,17 @@ public final class IncrementalGuidedImprovementAlgorithm extends MultiObjectiveA
 		debugWriteStatistics();	
 	}
 
-	protected Solution incrementalSolveOne(final IncrementalSolver solver, final Formula formula, final Bounds bounds, final MultiObjectiveProblem problem, final Formula improvementConstraints) {
-		return incrementalSolveOne(solver, formula, bounds, false, problem, improvementConstraints);
-	}
 
-	protected Solution incrementalSolveFirst(final IncrementalSolver solver, final Formula formula, final Bounds bounds, final MultiObjectiveProblem problem, final Formula improvementConstraints) {
-		final Solution solution = incrementalSolveOne(solver, formula, bounds, true, problem, improvementConstraints);
-		getStats().set(StatKey.CLAUSES, solution.stats().clauses());
-		getStats().set(StatKey.VARIABLES, solution.stats().primaryVariables());
+	protected Solution incrementalSolveFirst(final IncrementalSolver solver, final Formula formula, final MultiObjectiveProblem problem, final Formula improvementConstraints) {
+		final Solution solution = solver.solve(formula, problem.getBounds());
+		incrementStats(solution, problem, formula, true, improvementConstraints);
 		return solution;
 	}
 
-	private Solution incrementalSolveOne(IncrementalSolver solver, final Formula formula, final Bounds bounds, final boolean first, final MultiObjectiveProblem problem, final Formula improvementConstraints) {
-		final Solution solution = solver.solve(formula, bounds);
-		if (isSat(solution)) {
-			getStats().increment(StatKey.REGULAR_SAT_CALL);
-
-			getStats().increment(StatKey.REGULAR_SAT_TIME, solution.stats().translationTime());
-			getStats().increment(StatKey.REGULAR_SAT_TIME, solution.stats().solvingTime());
-			
-			
-			getStats().increment(StatKey.REGULAR_SAT_TIME_TRANSLATION, solution.stats().translationTime());
-			getStats().increment(StatKey.REGULAR_SAT_TIME_SOLVING, solution.stats().solvingTime());
-			
-			// Adding Individual instance.
-			MetricPoint obtainedValues = MetricPoint.measure(solution, problem.getObjectives(), getOptions());
-			this.getStats().addSummaryIndividualCall(StatKey.REGULAR_SAT_CALL, solution.stats().translationTime(), solution.stats().solvingTime(), formula, bounds, first, obtainedValues, improvementConstraints);
-		} else {
-			getStats().increment(StatKey.REGULAR_UNSAT_CALL);
-
-			getStats().increment(StatKey.REGULAR_UNSAT_TIME, solution.stats().translationTime());
-			getStats().increment(StatKey.REGULAR_UNSAT_TIME, solution.stats().solvingTime());
-
-			getStats().increment(StatKey.REGULAR_UNSAT_TIME_TRANSLATION, solution.stats().translationTime());
-			getStats().increment(StatKey.REGULAR_UNSAT_TIME_SOLVING, solution.stats().solvingTime());
-
-			this.getStats().addSummaryIndividualCall(StatKey.REGULAR_UNSAT_CALL, solution.stats().translationTime(), solution.stats().solvingTime(), formula, bounds, first, null, improvementConstraints);
-		}
+	protected Solution incrementalSolveOne(IncrementalSolver solver, final Formula formula, final MultiObjectiveProblem problem, final Formula improvementConstraints) {
+		final Solution solution = solver.solve(formula, new Bounds(problem.getBounds().universe()));
+		incrementStats(solution, problem, formula, false, improvementConstraints);
 		return solution;
 	}
-
-	private void debugWriteStatistics(){
-		System.out.println("\t # Sat Call: " +  this.getStats().get(StatKey.REGULAR_SAT_CALL));
-		System.out.println("\t # Unsat Call:  " +this.getStats().get( StatKey.REGULAR_UNSAT_CALL));		
-
-		System.out.println("\t Total Time in Sat Calls: " +  this.getStats().get(StatKey.REGULAR_SAT_TIME));
-		System.out.println("\t Total Time in Sat Calls Solving: " +  this.getStats().get(StatKey.REGULAR_SAT_TIME_SOLVING));
-		System.out.println("\t Total Time in Sat Calls Translating: " +  this.getStats().get(StatKey.REGULAR_SAT_TIME_TRANSLATION));		
-
-		System.out.println("\t Total Time in Unsat Calls:  " +this.getStats().get( StatKey.REGULAR_UNSAT_TIME));		
-		System.out.println("\t Total Time in Unsat Calls Solving:  " +this.getStats().get( StatKey.REGULAR_UNSAT_TIME_SOLVING));
-		System.out.println("\t Total Time in Unsat Calls Translating:  " +this.getStats().get( StatKey.REGULAR_UNSAT_TIME_TRANSLATION));
-	}
-
 }
 	
