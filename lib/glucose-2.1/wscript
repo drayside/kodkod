@@ -11,10 +11,10 @@ def configure(conf):
     conf.load('java')
     conf.check_jni_headers()
     if sys.platform == 'win32' and conf.env.CXX_NAME == 'gcc' :
-        conf.env.LINKFLAGS = ['-static-libgcc', '-static-libstdc++']
-    conf.env.DEFINES = ['__STDC_LIMIT_MACROS', '__STDC_FORMAT_MACROS', 'Kodkod_JNI']
-    conf.env.INCLUDES = ['.', '..', conf.path.make_node('sources/glucose/').abspath()]
-    conf.env.CXXFLAGS = ['-Wall', '-O3', '-fPIC']
+        conf.env.append_value('LINKFLAGS', ['-static-libgcc', '-static-libstdc++'])
+    conf.env.append_value('DEFINES', ['__STDC_LIMIT_MACROS', '__STDC_FORMAT_MACROS', 'Kodkod_JNI'])
+    conf.env.append_value('INCLUDES', ['.', '..', conf.path.make_node('sources/glucose/').abspath()])
+    conf.env.append_value('CXXFLAGS', ['-Wall', '-O3', '-fPIC'])
     conf.env.UTILS_SRC = 'sources/glucose/utils/*.cc'
     conf.env.CORE_SRC = 'sources/glucose/core/Solver.cc'
     conf.env.JNI_SRC = 'jni/*.cpp'
