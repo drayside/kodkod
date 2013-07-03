@@ -74,7 +74,7 @@ public final class GuidedImprovementAlgorithm extends MultiObjectiveAlgorithm {
 				counter.countStep();
 			}
 			foundMetricPoint();
-			System.out.println("Found metric point with values: " + currentValues.values());
+			System.out.println("Found Pareto point with values: " + currentValues.values());
 
 			if (!options.allSolutionsPerPoint()) {
 				// no magnifying glass
@@ -84,7 +84,8 @@ public final class GuidedImprovementAlgorithm extends MultiObjectiveAlgorithm {
 				// magnifying glass				
 				final Collection<Formula> assignmentsConstraints = currentValues.assignmentConstraints();
 				assignmentsConstraints.add(p.getConstraints());
-				magnifier(Formula.and(assignmentsConstraints), p.getBounds(), currentValues, n);
+				int solutionsFound = magnifier(Formula.and(assignmentsConstraints), p.getBounds(), currentValues, n);
+				System.out.println("Magnifying glass found " + solutionsFound + " solution(s). At time: " + (System.currentTimeMillis()-startTime)/1000);
 			}
 
 			// start looking for next base point
@@ -111,6 +112,10 @@ public final class GuidedImprovementAlgorithm extends MultiObjectiveAlgorithm {
 		System.out.println("\t Total Time in Unsat Calls:  " +this.getStats().get( StatKey.REGULAR_UNSAT_TIME));		
 		System.out.println("\t Total Time in Unsat Calls Solving:  " +this.getStats().get( StatKey.REGULAR_UNSAT_TIME_SOLVING));
 		System.out.println("\t Total Time in Unsat Calls Translating:  " +this.getStats().get( StatKey.REGULAR_UNSAT_TIME_TRANSLATION));
+
+		System.out.println("\t # Magnifier Sat Call: " + this.getStats().get(StatKey.MAGNIFIER_SAT_CALL));
+		System.out.println("\t # Magnifier Unsat Call: " + this.getStats().get(StatKey.MAGNIFIER_UNSAT_CALL));
+		System.out.println("\t Total Time in Magnifier: " + this.getStats().get(StatKey.MAGNIFIER_TIME));
 	}
 
 }

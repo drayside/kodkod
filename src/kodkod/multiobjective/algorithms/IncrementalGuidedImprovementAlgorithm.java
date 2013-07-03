@@ -62,6 +62,7 @@ public final class IncrementalGuidedImprovementAlgorithm extends MultiObjectiveA
 			// Work our way up to the pareto front.
 			while (isSat(solution)) {
 				currentValues = MetricPoint.measure(solution, problem.getObjectives(), getOptions());
+				System.out.println("Found a solution. At time: " + (System.currentTimeMillis()-startTime)/1000 + ", Improving on " + currentValues.values());
 
 				final Formula improvementConstraints = currentValues.parametrizedImprovementConstraints();
 				
@@ -73,6 +74,7 @@ public final class IncrementalGuidedImprovementAlgorithm extends MultiObjectiveA
 
 			// We can't find anything better, so the previous solution is a pareto point.
 			foundMetricPoint();
+			System.out.println("Found Pareto point with values: " + currentValues.values());
 
       // Free the solver's resources since we will be creating a new solver.
 			solver.free();
@@ -83,7 +85,8 @@ public final class IncrementalGuidedImprovementAlgorithm extends MultiObjectiveA
 				// magnifying glass				
 				final Collection<Formula> assignmentsConstraints = currentValues.assignmentConstraints();
 				assignmentsConstraints.add(problem.getConstraints());
-				magnifier(Formula.and(assignmentsConstraints), problem.getBounds(), currentValues, notifier);
+				int solutionsFound = magnifier(Formula.and(assignmentsConstraints), problem.getBounds(), currentValues, notifier);
+				System.out.println("Magnifying glass found " + solutionsFound + " solution(s). At time: " + (System.currentTimeMillis()-startTime)/1000);
 			}
 
 			// Find another starting point.
@@ -151,6 +154,10 @@ public final class IncrementalGuidedImprovementAlgorithm extends MultiObjectiveA
 		System.out.println("\t Total Time in Unsat Calls:  " +this.getStats().get( StatKey.REGULAR_UNSAT_TIME));		
 		System.out.println("\t Total Time in Unsat Calls Solving:  " +this.getStats().get( StatKey.REGULAR_UNSAT_TIME_SOLVING));
 		System.out.println("\t Total Time in Unsat Calls Translating:  " +this.getStats().get( StatKey.REGULAR_UNSAT_TIME_TRANSLATION));
+
+		System.out.println("\t # Magnifier Sat Call: " + this.getStats().get(StatKey.MAGNIFIER_SAT_CALL));
+		System.out.println("\t # Magnifier Unsat Call: " + this.getStats().get(StatKey.MAGNIFIER_UNSAT_CALL));
+		System.out.println("\t Total Time in Magnifier: " + this.getStats().get(StatKey.MAGNIFIER_TIME));
 	}
 
 }
