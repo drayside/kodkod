@@ -3,11 +3,13 @@
 
 import os
 import os.path
+from waflib import Options
 
 APPNAME = 'kodkod'
 VERSION = '2.0'
 
 def options(opt):
+    opt.add_option('--no-solvers', dest='build_solvers', default=True, action='store_false')
     opt.recurse('src lib tests')
 
 def deps(ctx):
@@ -20,8 +22,9 @@ def configure(conf):
 
 def build(bld):
     if not bld.variant:
-        bld.recurse('src lib')
-    else:
+        bld.recurse('src')
+    print Options.options.build_solvers
+    if Options.options.build_solvers:
         bld.recurse('lib')
 
 def test_build(bld):
@@ -37,7 +40,6 @@ def test(tst):
     tst.recurse('tests')
 
 def all(ctx):
-    from waflib import Options
     Options.commands = [
         'build',
         'install',
