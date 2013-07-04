@@ -24,7 +24,6 @@ def configure(conf):
 def build(bld):
     if not bld.variant:
         bld.recurse('src')
-    print Options.options.build_solvers
     if Options.options.build_solvers:
         bld.recurse('lib')
 
