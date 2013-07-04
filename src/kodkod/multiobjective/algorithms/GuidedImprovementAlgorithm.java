@@ -3,6 +3,10 @@ package kodkod.multiobjective.algorithms;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import com.sun.org.apache.bcel.internal.generic.NEW;
 
 import kodkod.ast.Formula;
 import kodkod.engine.Solution;
@@ -25,6 +29,8 @@ public final class GuidedImprovementAlgorithm extends MultiObjectiveAlgorithm {
 	final String filename;
 	
 	final long startTime = System.currentTimeMillis();
+
+	private static final Logger logger = Logger.getLogger(GuidedImprovementAlgorithm.class.toString());
 
 	public GuidedImprovementAlgorithm(final String desc, final MultiObjectiveOptions options) {
 		super(desc, options);
@@ -63,7 +69,7 @@ public final class GuidedImprovementAlgorithm extends MultiObjectiveAlgorithm {
 			// work up to the pareto front
 			while (isSat(s1)) {
 				currentValues = MetricPoint.measure(s1, p.getObjectives(), getOptions());
-				System.out.println("Found a solution. At time: " + (System.currentTimeMillis()-startTime)/1000 + ", Improving on " + currentValues.values());
+				logger.log(Level.FINE, "Found a solution. At time: {0}, Improving on {1}", new Object[] { Integer.valueOf((int)(System.currentTimeMillis()-startTime)/1000), currentValues.values() });
 				
 				final Formula improvementConstraints = currentValues.parametrizedImprovementConstraints();
 
@@ -74,7 +80,7 @@ public final class GuidedImprovementAlgorithm extends MultiObjectiveAlgorithm {
 				counter.countStep();
 			}
 			foundMetricPoint();
-			System.out.println("Found Pareto point with values: " + currentValues.values());
+			logger.log(Level.FINE, "Found Pareto point with values: {0}", currentValues.values());
 
 			if (!options.allSolutionsPerPoint()) {
 				// no magnifying glass
@@ -85,7 +91,7 @@ public final class GuidedImprovementAlgorithm extends MultiObjectiveAlgorithm {
 				final Collection<Formula> assignmentsConstraints = currentValues.assignmentConstraints();
 				assignmentsConstraints.add(p.getConstraints());
 				int solutionsFound = magnifier(Formula.and(assignmentsConstraints), p.getBounds(), currentValues, n);
-				System.out.println("Magnifying glass found " + solutionsFound + " solution(s). At time: " + (System.currentTimeMillis()-startTime)/1000);
+				logger.log(Level.FINE, "Magnifying glass found {0} solution(s). At time: {1}", new Object[] {solutionsFound, (System.currentTimeMillis()-startTime)/1000});
 			}
 
 			// start looking for next base point
@@ -102,20 +108,20 @@ public final class GuidedImprovementAlgorithm extends MultiObjectiveAlgorithm {
 	}
 
 	private void debugWriteStatistics(){
-		System.out.println("\t # Sat Call: " +  this.getStats().get(StatKey.REGULAR_SAT_CALL));
-		System.out.println("\t # Unsat Call:  " +this.getStats().get( StatKey.REGULAR_UNSAT_CALL));		
+		logger.log(Level.FINE, "# Sat Call: {0}", this.getStats().get(StatKey.REGULAR_SAT_CALL));
+		logger.log(Level.FINE, "# Unsat Call:  {0}", this.getStats().get( StatKey.REGULAR_UNSAT_CALL));
 
-		System.out.println("\t Total Time in Sat Calls: " +  this.getStats().get(StatKey.REGULAR_SAT_TIME));
-		System.out.println("\t Total Time in Sat Calls Solving: " +  this.getStats().get(StatKey.REGULAR_SAT_TIME_SOLVING));
-		System.out.println("\t Total Time in Sat Calls Translating: " +  this.getStats().get(StatKey.REGULAR_SAT_TIME_TRANSLATION));		
+		logger.log(Level.FINE, "Total Time in Sat Calls: {0}", this.getStats().get(StatKey.REGULAR_SAT_TIME));
+		logger.log(Level.FINE, "Total Time in Sat Calls Solving: {0}", this.getStats().get(StatKey.REGULAR_SAT_TIME_SOLVING));
+		logger.log(Level.FINE, "Total Time in Sat Calls Translating: {0}", this.getStats().get(StatKey.REGULAR_SAT_TIME_TRANSLATION));
 
-		System.out.println("\t Total Time in Unsat Calls:  " +this.getStats().get( StatKey.REGULAR_UNSAT_TIME));		
-		System.out.println("\t Total Time in Unsat Calls Solving:  " +this.getStats().get( StatKey.REGULAR_UNSAT_TIME_SOLVING));
-		System.out.println("\t Total Time in Unsat Calls Translating:  " +this.getStats().get( StatKey.REGULAR_UNSAT_TIME_TRANSLATION));
+		logger.log(Level.FINE, "Total Time in Unsat Calls: {0}", this.getStats().get( StatKey.REGULAR_UNSAT_TIME));
+		logger.log(Level.FINE, "Total Time in Unsat Calls Solving: {0}", this.getStats().get( StatKey.REGULAR_UNSAT_TIME_SOLVING));
+		logger.log(Level.FINE, "Total Time in Unsat Calls Translating: {0}", this.getStats().get( StatKey.REGULAR_UNSAT_TIME_TRANSLATION));
 
-		System.out.println("\t # Magnifier Sat Call: " + this.getStats().get(StatKey.MAGNIFIER_SAT_CALL));
-		System.out.println("\t # Magnifier Unsat Call: " + this.getStats().get(StatKey.MAGNIFIER_UNSAT_CALL));
-		System.out.println("\t Total Time in Magnifier: " + this.getStats().get(StatKey.MAGNIFIER_TIME));
+		logger.log(Level.FINE, "# Magnifier Sat Call: " + this.getStats().get(StatKey.MAGNIFIER_SAT_CALL));
+		logger.log(Level.FINE, "# Magnifier Unsat Call: " + this.getStats().get(StatKey.MAGNIFIER_UNSAT_CALL));
+		logger.log(Level.FINE, "Total Time in Magnifier: " + this.getStats().get(StatKey.MAGNIFIER_TIME));
 	}
 
 }
