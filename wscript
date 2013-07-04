@@ -9,7 +9,8 @@ APPNAME = 'kodkod'
 VERSION = '2.0'
 
 def options(opt):
-    opt.add_option('--no-solvers', dest='build_solvers', default=True, action='store_false')
+    solver_options = opt.add_option_group('solver options')
+    solver_options.add_option('--no-solvers', dest='build_solvers', default=True, action='store_false', help="skips building native SAT solvers")
     opt.recurse('src lib tests')
 
 def deps(ctx):
@@ -49,15 +50,18 @@ def all(ctx):
 
 from waflib.Build import BuildContext
 class TestBuildContext(BuildContext):
+    '''builds the project's tests'''
     cmd = 'test_build'
     fun = 'test_build'
 
 class TestContext(BuildContext):
+    '''runs the project's tests'''
     cmd = 'test'
     fun = 'test'
 
 from waflib.Context import Context
 class DepsContext(Context):
+    '''downloads project dependencies'''
     cmd = 'deps'
     fun = 'deps'
     deps = {}
