@@ -65,7 +65,7 @@ public abstract class MultiObjectiveAlgorithm {
 		return solution.outcome().equals(Solution.Outcome.SATISFIABLE) || solution.outcome().equals(Solution.Outcome.TRIVIALLY_SATISFIABLE);
 	}
 	
-	protected void foundMetricPoint(MetricPoint metricpoint) {
+	protected void foundParetoPoint(MetricPoint metricpoint) {
 		stats.increment(StatKey.OPTIMAL_METRIC_POINTS);
 		System.out.println("Found metric point with values: " + metricpoint.values());
 	}

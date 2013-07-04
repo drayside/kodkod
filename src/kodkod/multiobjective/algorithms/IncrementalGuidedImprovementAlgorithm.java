@@ -49,7 +49,9 @@ public final class IncrementalGuidedImprovementAlgorithm extends MultiObjectiveA
 		exclusionConstraints.add(problem.getConstraints());
 		
 		// Throw a dart and get a starting point.
-		Solution solution = incrementalSolveFirst(solver, Formula.and(exclusionConstraints), problem, null);
+		Solution solution = solver.solve(Formula.and(exclusionConstraints), problem.getBounds());
+		
+		incrementStats(solution, problem, Formula.and(exclusionConstraints), true, null);
 		solveFirstStats(solution);
 
 		// While the current solution is satisfiable try to find a better one.
@@ -64,13 +66,14 @@ public final class IncrementalGuidedImprovementAlgorithm extends MultiObjectiveA
 				final Formula improvementConstraints = currentValues.parametrizedImprovementConstraints();
 				
 				previousSolution = solution;
-				solution = incrementalSolveOne(solver, improvementConstraints, problem, improvementConstraints);
+				solution = solver.solve(improvementConstraints, new Bounds(problem.getBounds().universe()));
+				incrementStats(solution, problem, improvementConstraints, false, improvementConstraints);
 
 				counter.countStep();
 			}
 
 			// We can't find anything better, so the previous solution is a pareto point.
-			foundMetricPoint(currentValues);
+			foundParetoPoint(currentValues);
 
 			if (!options.allSolutionsPerPoint()) {
 				tell(notifier, previousSolution, currentValues);
@@ -85,7 +88,8 @@ public final class IncrementalGuidedImprovementAlgorithm extends MultiObjectiveA
 			solver = IncrementalSolver.solver(getOptions());
 			exclusionConstraints.add(currentValues.exclusionConstraint());
 
-			solution = incrementalSolveFirst(solver, Formula.and(exclusionConstraints),  problem, null);
+			solution = solver.solve(Formula.and(exclusionConstraints), problem.getBounds());
+			incrementStats(solution, problem, Formula.and(exclusionConstraints), true, null);
 			
 			//count this step but first go to new index because it's a new base point
 			counter.nextIndex();
@@ -94,18 +98,4 @@ public final class IncrementalGuidedImprovementAlgorithm extends MultiObjectiveA
 		end(notifier);
 		debugWriteStatistics();	
 	}
-
-
-	protected Solution incrementalSolveFirst(final IncrementalSolver solver, final Formula formula, final MultiObjectiveProblem problem, final Formula improvementConstraints) {
-		final Solution solution = solver.solve(formula, problem.getBounds());
-		incrementStats(solution, problem, formula, true, improvementConstraints);
-		return solution;
-	}
-
-	protected Solution incrementalSolveOne(IncrementalSolver solver, final Formula formula, final MultiObjectiveProblem problem, final Formula improvementConstraints) {
-		final Solution solution = solver.solve(formula, new Bounds(problem.getBounds().universe()));
-		incrementStats(solution, problem, formula, false, improvementConstraints);
-		return solution;
-	}
 }
-	

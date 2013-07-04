@@ -49,7 +49,9 @@ public final class GuidedImprovementAlgorithm extends MultiObjectiveAlgorithm {
 		exclusionConstraints.add(p.getConstraints());
 
 		// first base point
-		Solution s1 = solveFirst(p.getConstraints(), p, null); // re-assigned around the loop
+		Solution s1 = getSolver().solve(p.getConstraints(), p.getBounds());
+		incrementStats(s1, p, p.getConstraints(), true, null);
+		
 		solveFirstStats(s1);
 		
 		//count this finding
@@ -69,12 +71,13 @@ public final class GuidedImprovementAlgorithm extends MultiObjectiveAlgorithm {
 				final Formula improvementConstraints = currentValues.parametrizedImprovementConstraints();
 
 				sprev = s1;
-				s1 =  solveOne(p.getConstraints().and(improvementConstraints), p, improvementConstraints);
+				s1 = getSolver().solve(p.getConstraints().and(improvementConstraints), p.getBounds());
+				incrementStats(s1, p, p.getConstraints().and(improvementConstraints), false, improvementConstraints);				
 
 				//count this finding
 				counter.countStep();
 			}
-			foundMetricPoint(currentValues);
+			foundParetoPoint(currentValues);
 			
 
 			if (!options.allSolutionsPerPoint()) {
@@ -90,7 +93,7 @@ public final class GuidedImprovementAlgorithm extends MultiObjectiveAlgorithm {
 
 			// start looking for next base point
 			exclusionConstraints.add(currentValues.exclusionConstraint());
-			s1 = solveOne(Formula.and(exclusionConstraints), p, null);
+			s1 = getSolver().solve(Formula.and(exclusionConstraints), p.getBounds());
 			
 			//count this step but first go to new index because it's a new base point
 			counter.nextIndex();
@@ -99,22 +102,6 @@ public final class GuidedImprovementAlgorithm extends MultiObjectiveAlgorithm {
 
 		end(n);
 		debugWriteStatistics();	
-	}
-	
-//	protected Solution solveOne(final Formula formula, final MultiObjectiveProblem problem, final Formula improvementConstraints){
-//		return solveOne(formula, false, problem, improvementConstraints);
-//	}
-	
-	protected Solution solveFirst(final Formula formula, final MultiObjectiveProblem problem, final Formula improvementConstraints) {
-		final Solution solution = getSolver().solve(formula, problem.getBounds());
-		incrementStats(solution, problem, formula, true, improvementConstraints);
-		return solution;
-	}
-	
-	protected Solution solveOne(final Formula formula, final MultiObjectiveProblem problem, final Formula improvementConstraints) {
-		final Solution solution = getSolver().solve(formula, problem.getBounds());
-		incrementStats(solution, problem, formula, false, improvementConstraints);
-		return solution;
 	}
 }
 	
