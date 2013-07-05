@@ -103,6 +103,8 @@ public final class IncrementalGuidedImprovementAlgorithm extends MultiObjectiveA
 			counter.nextIndex();
 			counter.countStep();
 		}
+		logger.log(Level.FINE, "All Pareto points found. At time: {0}", Integer.valueOf((int)(System.currentTimeMillis()-startTime)/1000));
+
 		end(notifier);
 		debugWriteStatistics();	
 	}
