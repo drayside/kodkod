@@ -66,7 +66,7 @@ public final class IncrementalGuidedImprovementAlgorithm extends MultiObjectiveA
 			// Work our way up to the pareto front.
 			while (isSat(solution)) {
 				currentValues = MetricPoint.measure(solution, problem.getObjectives(), getOptions());
-				logger.log(Level.FINE, "Found a solution. At time: {0}, Improving on {1}", new Object[] { (System.currentTimeMillis()-startTime)/1000,  currentValues.values() });
+				logger.log(Level.FINE, "Found a solution. At time: {0}, Improving on {1}", new Object[] { Integer.valueOf((int)((System.currentTimeMillis()-startTime)/1000)),  currentValues.values() });
 
 				final Formula improvementConstraints = currentValues.parametrizedImprovementConstraints();
 				
@@ -90,7 +90,7 @@ public final class IncrementalGuidedImprovementAlgorithm extends MultiObjectiveA
 				final Collection<Formula> assignmentsConstraints = currentValues.assignmentConstraints();
 				assignmentsConstraints.add(problem.getConstraints());
 				int solutionsFound = magnifier(Formula.and(assignmentsConstraints), problem.getBounds(), currentValues, notifier);
-				logger.log(Level.FINE, "Magnifying glass found {0} solution(s). At time: {1}", new Object[] {solutionsFound, (System.currentTimeMillis()-startTime)/1000});
+				logger.log(Level.FINE, "Magnifying glass found {0} solution(s). At time: {1}", new Object[] {Integer.valueOf(solutionsFound), Integer.valueOf((int)((System.currentTimeMillis()-startTime)/1000))});
 			}
 
 			// Find another starting point.
@@ -159,9 +159,9 @@ public final class IncrementalGuidedImprovementAlgorithm extends MultiObjectiveA
 		logger.log(Level.FINE, "Total Time in Unsat Calls Solving: {0}", this.getStats().get( StatKey.REGULAR_UNSAT_TIME_SOLVING));
 		logger.log(Level.FINE, "Total Time in Unsat Calls Translating: {0}", this.getStats().get( StatKey.REGULAR_UNSAT_TIME_TRANSLATION));
 
-		logger.log(Level.FINE, "# Magnifier Sat Call: " + this.getStats().get(StatKey.MAGNIFIER_SAT_CALL));
-		logger.log(Level.FINE, "# Magnifier Unsat Call: " + this.getStats().get(StatKey.MAGNIFIER_UNSAT_CALL));
-		logger.log(Level.FINE, "Total Time in Magnifier: " + this.getStats().get(StatKey.MAGNIFIER_TIME));
+		logger.log(Level.FINE, "# Magnifier Sat Call: {0}", this.getStats().get(StatKey.MAGNIFIER_SAT_CALL));
+		logger.log(Level.FINE, "# Magnifier Unsat Call: {0}", this.getStats().get(StatKey.MAGNIFIER_UNSAT_CALL));
+		logger.log(Level.FINE, "Total Time in Magnifier: {0}", this.getStats().get(StatKey.MAGNIFIER_TIME));
 
 	}
 

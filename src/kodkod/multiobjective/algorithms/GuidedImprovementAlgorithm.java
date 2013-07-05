@@ -6,8 +6,6 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.sun.org.apache.bcel.internal.generic.NEW;
-
 import kodkod.ast.Formula;
 import kodkod.engine.Solution;
 import kodkod.multiobjective.MetricPoint;
@@ -91,7 +89,7 @@ public final class GuidedImprovementAlgorithm extends MultiObjectiveAlgorithm {
 				final Collection<Formula> assignmentsConstraints = currentValues.assignmentConstraints();
 				assignmentsConstraints.add(p.getConstraints());
 				int solutionsFound = magnifier(Formula.and(assignmentsConstraints), p.getBounds(), currentValues, n);
-				logger.log(Level.FINE, "Magnifying glass found {0} solution(s). At time: {1}", new Object[] {solutionsFound, (System.currentTimeMillis()-startTime)/1000});
+				logger.log(Level.FINE, "Magnifying glass found {0} solution(s). At time: {1}", new Object[] {Integer.valueOf(solutionsFound), Integer.valueOf((int)((System.currentTimeMillis()-startTime)/1000))});
 			}
 
 			// start looking for next base point
@@ -119,9 +117,9 @@ public final class GuidedImprovementAlgorithm extends MultiObjectiveAlgorithm {
 		logger.log(Level.FINE, "Total Time in Unsat Calls Solving: {0}", this.getStats().get( StatKey.REGULAR_UNSAT_TIME_SOLVING));
 		logger.log(Level.FINE, "Total Time in Unsat Calls Translating: {0}", this.getStats().get( StatKey.REGULAR_UNSAT_TIME_TRANSLATION));
 
-		logger.log(Level.FINE, "# Magnifier Sat Call: " + this.getStats().get(StatKey.MAGNIFIER_SAT_CALL));
-		logger.log(Level.FINE, "# Magnifier Unsat Call: " + this.getStats().get(StatKey.MAGNIFIER_UNSAT_CALL));
-		logger.log(Level.FINE, "Total Time in Magnifier: " + this.getStats().get(StatKey.MAGNIFIER_TIME));
+		logger.log(Level.FINE, "# Magnifier Sat Call: {0}", this.getStats().get(StatKey.MAGNIFIER_SAT_CALL));
+		logger.log(Level.FINE, "# Magnifier Unsat Call: {0}", this.getStats().get(StatKey.MAGNIFIER_UNSAT_CALL));
+		logger.log(Level.FINE, "Total Time in Magnifier: {0}", this.getStats().get(StatKey.MAGNIFIER_TIME));
 	}
 
 }
