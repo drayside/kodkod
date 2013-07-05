@@ -148,21 +148,44 @@ public final class IncrementalGuidedImprovementAlgorithm extends MultiObjectiveA
 	}
 
 	private void debugWriteStatistics(){
-		logger.log(Level.FINE, "# Sat Call: {0}", this.getStats().get(StatKey.REGULAR_SAT_CALL));
-		logger.log(Level.FINE, "# Unsat Call:  {0}", this.getStats().get( StatKey.REGULAR_UNSAT_CALL));
+        StringBuilder sb = new StringBuilder("Solver statistics:\n");
+        sb.append("\t# Sat Call: ");
+        sb.append(this.getStats().get(StatKey.REGULAR_SAT_CALL));
+        sb.append("\n");
+        sb.append("\t# Unsat Call: ");
+        sb.append(this.getStats().get(StatKey.REGULAR_UNSAT_CALL));
+        sb.append("\n");
 
-		logger.log(Level.FINE, "Total Time in Sat Calls: {0}", this.getStats().get(StatKey.REGULAR_SAT_TIME));
-		logger.log(Level.FINE, "Total Time in Sat Calls Solving: {0}", this.getStats().get(StatKey.REGULAR_SAT_TIME_SOLVING));
-		logger.log(Level.FINE, "Total Time in Sat Calls Translating: {0}", this.getStats().get(StatKey.REGULAR_SAT_TIME_TRANSLATION));
+        sb.append("\t# Total Time in Sat Calls: ");
+        sb.append(this.getStats().get(StatKey.REGULAR_SAT_TIME));
+        sb.append("\n");
+        sb.append("\t# Total Time in Sat Calls Solving: ");
+        sb.append(this.getStats().get(StatKey.REGULAR_SAT_TIME_SOLVING));
+        sb.append("\n");
+        sb.append("\t# Total Time in Sat Calls Translating: ");
+        sb.append(this.getStats().get(StatKey.REGULAR_SAT_TIME_TRANSLATION));
+        sb.append("\n");
 
-		logger.log(Level.FINE, "Total Time in Unsat Calls: {0}", this.getStats().get( StatKey.REGULAR_UNSAT_TIME));
-		logger.log(Level.FINE, "Total Time in Unsat Calls Solving: {0}", this.getStats().get( StatKey.REGULAR_UNSAT_TIME_SOLVING));
-		logger.log(Level.FINE, "Total Time in Unsat Calls Translating: {0}", this.getStats().get( StatKey.REGULAR_UNSAT_TIME_TRANSLATION));
+        sb.append("\t# Total Time in Unsat Calls: ");
+        sb.append(this.getStats().get(StatKey.REGULAR_UNSAT_TIME));
+        sb.append("\n");
+        sb.append("\t# Total Time in Unsat Calls Solving: ");
+        sb.append(this.getStats().get(StatKey.REGULAR_UNSAT_TIME_SOLVING));
+        sb.append("\n");
+        sb.append("\t# Total Time in Unsat Calls Translating: ");
+        sb.append(this.getStats().get(StatKey.REGULAR_UNSAT_TIME_TRANSLATION));
+        sb.append("\n");
 
-		logger.log(Level.FINE, "# Magnifier Sat Call: {0}", this.getStats().get(StatKey.MAGNIFIER_SAT_CALL));
-		logger.log(Level.FINE, "# Magnifier Unsat Call: {0}", this.getStats().get(StatKey.MAGNIFIER_UNSAT_CALL));
-		logger.log(Level.FINE, "Total Time in Magnifier: {0}", this.getStats().get(StatKey.MAGNIFIER_TIME));
+        sb.append("\t# Magnifier Sat Call: ");
+        sb.append(this.getStats().get(StatKey.MAGNIFIER_SAT_CALL));
+        sb.append("\n");
+        sb.append("\t# Magnifier Unsat Call: ");
+        sb.append(this.getStats().get(StatKey.MAGNIFIER_UNSAT_CALL));
+        sb.append("\n");
+        sb.append("\t# Total Time in Magnifier: ");
+        sb.append(this.getStats().get(StatKey.MAGNIFIER_TIME));
 
+        logger.log(Level.FINE, sb.toString());
 	}
 
 }

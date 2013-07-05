@@ -78,10 +78,12 @@ public final class MetricPoint {
 		}
 		conjuncts.add(Formula.or(improvement_disjuncts));
 
-		logger.log(Level.FINE, "Possible Improvements are conjunction of ");
+		StringBuilder sb = new StringBuilder("Possible Improvements are conjunction of ");
 		for (Formula aConjunction : conjuncts) {
-			logger.log(Level.FINE, "\t" + aConjunction);
+			sb.append("\n\t");
+			sb.append(aConjunction);
 		}
+		logger.log(Level.FINE, sb.toString());
 
 		return Formula.and(conjuncts);
 	}
