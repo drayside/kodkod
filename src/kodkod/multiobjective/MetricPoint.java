@@ -11,6 +11,8 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import kodkod.ast.Formula;
 import kodkod.engine.Evaluator;
@@ -21,6 +23,8 @@ public final class MetricPoint {
 
 	private final SortedMap<Objective,Integer> values;
 	
+	private final static Logger logger = Logger.getLogger(MetricPoint.class.toString());
+
 	private MetricPoint(final SortedMap<Objective,Integer> values) {
 		this.values = values;
 	}
@@ -74,9 +78,9 @@ public final class MetricPoint {
 		}
 		conjuncts.add(Formula.or(improvement_disjuncts));
 
-		System.out.println("Possible Improvements are conjunction of ");
+		logger.log(Level.FINE, "Possible Improvements are conjunction of ");
 		for (Formula aConjunction : conjuncts) {
-			System.out.println("\t" + aConjunction);
+			logger.log(Level.FINE, "\t" + aConjunction);
 		}
 
 		return Formula.and(conjuncts);
