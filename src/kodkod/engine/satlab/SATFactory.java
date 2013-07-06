@@ -204,6 +204,17 @@ public abstract class SATFactory {
 	}
 
 	/**
+     * The factory that produces instances of the wrapper for Microsoft
+     * Research's Z3 solver.
+     */
+	public static final SATFactory Z3 = new SATFactory() {
+		public SATSolver instance() {
+			return new Z3();
+		}
+		public String toString() { return "Z3"; }
+	};
+
+	/**
 	 * Searches the {@code java.library.path} for an executable with the given name. Returns a fully
 	 * qualified path to the first found executable.  Otherwise returns null.
 	 * @return a fully qualified path to an executable with the given name, or null if no executable
