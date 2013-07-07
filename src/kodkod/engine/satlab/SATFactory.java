@@ -61,7 +61,7 @@ public abstract class SATFactory {
 			solver.addVariables(1);
 			solver.addClause(new int[]{1});
 			return solver.solve();
-		} catch (RuntimeException|UnsatisfiedLinkError t) {
+		} catch (RuntimeException|UnsatisfiedLinkError|NoClassDefFoundError t) {
 			return false;
 		} finally {
 			if (solver!=null) {
