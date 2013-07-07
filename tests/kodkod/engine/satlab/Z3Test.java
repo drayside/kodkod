@@ -129,13 +129,76 @@ public class Z3Test {
         // Add clause (~3).
         solver.addClause(new int[]{-3});
 
+        // Add clause (~1).
+        solver.addClause(new int[]{-1});
+
         assertThat(solver.numberOfVariables(), is(3));
-        assertThat(solver.numberOfClauses(), is(4));
+        assertThat(solver.numberOfClauses(), is(5));
 
         boolean satisfiable = solver.solve();
 
         assertTrue(satisfiable);
+
+        assertThat(solver.valueOf(1), is(false));
+        assertThat(solver.valueOf(2), is(true));
+        assertThat(solver.valueOf(3), is(false));
+
+        assertThat(solver.numberOfVariables(), is(3));
+        assertThat(solver.numberOfClauses(), is(5));
+    }
+
+    @Test
+    public void incremental3Variables() {
+        assertThat(solver.numberOfVariables(), is(0));
+        assertThat(solver.numberOfClauses(), is(0));
+
+        // Add 3 variables.
+        solver.addVariables(3);
+
+        assertThat(solver.numberOfVariables(), is(3));
+        assertThat(solver.numberOfClauses(), is(0));
+
+        // Add clause (1 or 2 or 3).
+        solver.addClause(new int[]{1, 2, 3});
+
+        assertThat(solver.numberOfVariables(), is(3));
+        assertThat(solver.numberOfClauses(), is(1));
+
+        boolean satisfiable = solver.solve();
+
+        assertTrue(satisfiable);
+
+        // Add clause (~1).
+        solver.addClause(new int[]{-1});
+
+        assertThat(solver.numberOfVariables(), is(3));
+        assertThat(solver.numberOfClauses(), is(2));
+
+        satisfiable = solver.solve();
+
+        assertTrue(satisfiable);
+
+        // Add clause (~3).
+        solver.addClause(new int[]{-3});
+
+        assertThat(solver.numberOfVariables(), is(3));
+        assertThat(solver.numberOfClauses(), is(3));
+
+        satisfiable = solver.solve();
+
+        assertTrue(satisfiable);
+        assertThat(solver.valueOf(1), is(false));
+        assertThat(solver.valueOf(2), is(true));
+        assertThat(solver.valueOf(3), is(false));
+
+        // Add clause (~2).
+        solver.addClause(new int[]{-2});
+
         assertThat(solver.numberOfVariables(), is(3));
         assertThat(solver.numberOfClauses(), is(4));
+
+        satisfiable = solver.solve();
+
+        assertFalse(satisfiable);
     }
 }
