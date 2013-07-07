@@ -105,4 +105,37 @@ public class Z3Test {
         assertThat(solver.numberOfVariables(), is(1));
         assertThat(solver.numberOfClauses(), is(2));
     }
+
+    @Test
+    public void solve3Variables() {
+        assertThat(solver.numberOfVariables(), is(0));
+        assertThat(solver.numberOfClauses(), is(0));
+
+        // Add 3 variables.
+        solver.addVariables(3);
+
+        assertThat(solver.numberOfVariables(), is(3));
+        assertThat(solver.numberOfClauses(), is(0));
+
+        // Add clause (1 or 2 or 3).
+        solver.addClause(new int[]{1, 2, 3});
+
+        // Add clause (~1 or ~2 or ~3).
+        solver.addClause(new int[]{-1, -2, -3});
+
+        // Add clause (~1 or ~2).
+        solver.addClause(new int[]{-1, -2});
+
+        // Add clause (~3).
+        solver.addClause(new int[]{-3});
+
+        assertThat(solver.numberOfVariables(), is(3));
+        assertThat(solver.numberOfClauses(), is(4));
+
+        boolean satisfiable = solver.solve();
+
+        assertTrue(satisfiable);
+        assertThat(solver.numberOfVariables(), is(3));
+        assertThat(solver.numberOfClauses(), is(4));
+    }
 }
