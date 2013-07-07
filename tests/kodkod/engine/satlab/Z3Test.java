@@ -17,7 +17,7 @@ public class Z3Test {
 
     @Before
     public void setUp() {
-        //assumeTrue(SATFactory.available(SATFactory.Z3));
+        assumeTrue(SATFactory.available(SATFactory.Z3));
         solver = SATFactory.Z3.instance();
     }
 
