@@ -57,6 +57,7 @@ public final class IncrementalGuidedImprovementAlgorithm extends MultiObjectiveA
 
 		// Throw a dart and get a starting point.
 		Solution solution = incrementalSolveFirst(solver, Formula.and(exclusionConstraints), problem.getBounds(), problem, null);
+		counter.countStep();
 
 		// While the current solution is satisfiable try to find a better one.
 		while (isSat(solution)) {
