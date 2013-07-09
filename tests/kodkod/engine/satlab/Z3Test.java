@@ -3,6 +3,7 @@ package kodkod.engine.satlab;
 import org.junit.*;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.junit.rules.ExpectedException;
 import static org.junit.Assume.*;
 import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
@@ -200,5 +201,116 @@ public class Z3Test {
         satisfiable = solver.solve();
 
         assertFalse(satisfiable);
+    }
+
+    @Test
+    public void nullClauseShouldThrowException() {
+        assertThat(solver.numberOfVariables(), is(0));
+        assertThat(solver.numberOfClauses(), is(0));
+
+        solver.addVariables(3);
+
+        try {
+            solver.addClause(null);
+
+            // Should never reach here.
+            fail();
+        } catch (NullPointerException e) {
+
+        }
+    }
+
+    @Test
+    public void illegalVariableInClauseShouldThrowException() {
+        solver.addVariables(3);
+
+        try {
+            solver.addClause(new int[] {1,2,4});
+
+            // Should never reach here.
+            fail();
+        } catch (IllegalArgumentException e) {
+
+        }
+    }
+
+    @Test
+    public void illegalNegativeVariableInClauseShouldThrowException() {
+        solver.addVariables(3);
+
+        try {
+            solver.addClause(new int[] {1,2,-4});
+
+            // Should never reach here.
+            fail();
+        } catch (IllegalArgumentException e) {
+
+        }
+    }
+
+    @Test
+    public void illegalVariableInValueOfShouldThrowException() {
+        solver.addVariables(1);
+        solver.addClause(new int[] {1});
+        solver.solve();
+        try {
+            solver.valueOf(2);
+
+            // Should never reach here.
+            fail();
+        } catch (IllegalArgumentException e) {
+
+        }
+
+        try {
+            solver.valueOf(0);
+
+            // Should never reach here.
+            fail();
+        } catch (IllegalArgumentException e) {
+
+        }
+
+        try {
+            solver.valueOf(-1);
+
+            // Should never reach here.
+            fail();
+        } catch (IllegalArgumentException e) {
+
+        }
+    }
+
+    @Test
+    public void valueOfAfterUnsatShouldThrowException() {
+        solver.addVariables(1);
+        solver.addClause(new int[] {1});
+        solver.addClause(new int[] {-1});
+        boolean result = solver.solve();
+        assertFalse(result);
+
+        try {
+            solver.valueOf(1);
+
+            // Should never reach here.
+            fail();
+        } catch (IllegalStateException e) {
+
+        }
+    }
+
+    @Test
+    public void valueOfBeforeSolveShouldThrowException() {
+        solver.addVariables(1);
+        solver.addClause(new int[] {1});
+
+        try {
+            solver.valueOf(1);
+
+            // Should never reach here.
+            fail();
+        } catch (IllegalStateException e) {
+            
+        }
     }
 }

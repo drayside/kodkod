@@ -69,6 +69,9 @@ final class Z3 implements SATSolver {
      * @see kodkod.engine.satlab.SATSolver#addClause(int[])
      */
     public boolean addClause(int[] lits) {
+        if (lits == null) {
+            throw new NullPointerException();
+        }
         try {
             BoolExpr[] literals = new BoolExpr[lits.length];
 
@@ -123,6 +126,12 @@ final class Z3 implements SATSolver {
      * @see kodkod.engine.satlab.SATSolver#valueOf(int)
      */
     public final boolean valueOf(int variable) {
+        if (variable > vars || variable <= 0) {
+            throw new IllegalArgumentException("Unknown variable: " + variable);
+        }
+        if (last_status != Status.SATISFIABLE) {
+            throw new IllegalStateException();
+        }
         try {
             Model model = solver.Model();
             Symbol sym = context.MkSymbol(variable);
