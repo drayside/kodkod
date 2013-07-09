@@ -32,6 +32,7 @@ public final class GuidedImprovementAlgorithm extends MultiObjectiveAlgorithm {
 		this.filename = desc.replace("$", "");
 	}
 	
+	@Override
 	public void multiObjectiveSolve(final MultiObjectiveProblem p, final SolutionNotifier n) {
 		// set the bit width
 		setBitWidth(p.getBitWidth());
@@ -55,7 +56,7 @@ public final class GuidedImprovementAlgorithm extends MultiObjectiveAlgorithm {
 		solveFirstStats(s1);
 		
 		//count this finding
-		counter.countStep();
+		counter.countStep();	
 		
 		// any solution that passess this loop condition will 
 		// also pass the inner loop condition and be counted there
@@ -71,8 +72,9 @@ public final class GuidedImprovementAlgorithm extends MultiObjectiveAlgorithm {
 				final Formula improvementConstraints = currentValues.parametrizedImprovementConstraints();
 
 				sprev = s1;
-				s1 = getSolver().solve(p.getConstraints().and(improvementConstraints), p.getBounds());
-				incrementStats(s1, p, p.getConstraints().and(improvementConstraints), false, improvementConstraints);				
+				Formula constraint = p.getConstraints().and(improvementConstraints);
+				s1 = getSolver().solve(constraint, p.getBounds());
+				incrementStats(s1, p, constraint, false, improvementConstraints);				
 
 				//count this finding
 				counter.countStep();
@@ -93,8 +95,10 @@ public final class GuidedImprovementAlgorithm extends MultiObjectiveAlgorithm {
 
 			// start looking for next base point
 			exclusionConstraints.add(currentValues.exclusionConstraint());
-			s1 = getSolver().solve(Formula.and(exclusionConstraints), p.getBounds());
-			
+			Formula constraint = Formula.and(exclusionConstraints);
+			s1 = getSolver().solve(constraint, p.getBounds());
+			incrementStats(s1, p, constraint, false, null);
+
 			//count this step but first go to new index because it's a new base point
 			counter.nextIndex();
 			counter.countStep();

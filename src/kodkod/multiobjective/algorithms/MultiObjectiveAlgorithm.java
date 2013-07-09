@@ -117,7 +117,7 @@ public abstract class MultiObjectiveAlgorithm {
 		return desc;
 	}
 	
-	public Solver getSolver() {
+	protected Solver getSolver() {
 		return solver;
 	}
 	

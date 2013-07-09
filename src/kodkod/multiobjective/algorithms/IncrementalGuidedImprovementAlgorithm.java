@@ -32,7 +32,8 @@ public final class IncrementalGuidedImprovementAlgorithm extends MultiObjectiveA
 		super(desc, options);
 		this.filename = desc.replace("$", "");
 	}
-
+	
+	@Override
 	public void multiObjectiveSolve(final MultiObjectiveProblem problem, final SolutionNotifier notifier) {
 		// set the bit width
 		setBitWidth(problem.getBitWidth());
@@ -49,9 +50,9 @@ public final class IncrementalGuidedImprovementAlgorithm extends MultiObjectiveA
 		exclusionConstraints.add(problem.getConstraints());
 		
 		// Throw a dart and get a starting point.
-		Solution solution = solver.solve(Formula.and(exclusionConstraints), problem.getBounds());
-		
-		incrementStats(solution, problem, Formula.and(exclusionConstraints), true, null);
+		Formula constraint = Formula.and(exclusionConstraints);
+		Solution solution = solver.solve(constraint, problem.getBounds());
+		incrementStats(solution, problem, constraint, true, null);
 		solveFirstStats(solution);
 
 		// While the current solution is satisfiable try to find a better one.
@@ -87,9 +88,10 @@ public final class IncrementalGuidedImprovementAlgorithm extends MultiObjectiveA
 			// Find another starting point.
 			solver = IncrementalSolver.solver(getOptions());
 			exclusionConstraints.add(currentValues.exclusionConstraint());
-
-			solution = solver.solve(Formula.and(exclusionConstraints), problem.getBounds());
-			incrementStats(solution, problem, Formula.and(exclusionConstraints), true, null);
+			
+			constraint = Formula.and(exclusionConstraints);
+			solution = solver.solve(constraint, problem.getBounds());
+			incrementStats(solution, problem, constraint, true, null);
 			
 			//count this step but first go to new index because it's a new base point
 			counter.nextIndex();
