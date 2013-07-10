@@ -8,12 +8,10 @@ import java.util.logging.Logger;
 
 import kodkod.ast.Formula;
 import kodkod.engine.Solution;
-import kodkod.instance.Bounds;
 import kodkod.multiobjective.MetricPoint;
 import kodkod.multiobjective.MultiObjectiveOptions;
 import kodkod.multiobjective.MultiObjectiveProblem;
 import kodkod.multiobjective.concurrency.SolutionNotifier;
-import kodkod.multiobjective.statistics.StatKey;
 import kodkod.multiobjective.statistics.StepCounter;
 
 public final class GuidedImprovementAlgorithm extends MultiObjectiveAlgorithm {
