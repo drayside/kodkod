@@ -15,10 +15,10 @@ import kodkod.multiobjective.Objective;
 import kodkod.multiobjective.concurrency.SolutionNotifier;
 import kodkod.multiobjective.statistics.StepCounter;
 
-public class BoundedGuidedImprovementAlgorithm extends MultiObjectiveAlgorithm {
+public class PartitionedGuidedImprovementAlgorithm extends MultiObjectiveAlgorithm {
 
-    public BoundedGuidedImprovementAlgorithm(String desc, MultiObjectiveOptions options) {
-        super(desc, options, Logger.getLogger(BoundedGuidedImprovementAlgorithm.class.toString()));
+    public PartitionedGuidedImprovementAlgorithm(String desc, MultiObjectiveOptions options) {
+        super(desc, options, Logger.getLogger(PartitionedGuidedImprovementAlgorithm.class.toString()));
     }
 
     @Override
