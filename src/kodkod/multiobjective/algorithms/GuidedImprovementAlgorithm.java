@@ -8,6 +8,7 @@ import java.util.logging.Logger;
 
 import kodkod.ast.Formula;
 import kodkod.engine.Solution;
+import kodkod.instance.Bounds;
 import kodkod.multiobjective.MetricPoint;
 import kodkod.multiobjective.MultiObjectiveOptions;
 import kodkod.multiobjective.MultiObjectiveProblem;
@@ -22,17 +23,9 @@ public final class GuidedImprovementAlgorithm extends MultiObjectiveAlgorithm {
 	 * count how many steps were taken from a base point to a Pareto point
 	 * and report the results in a file specified over the variable filename
 	 */
-	final boolean doEvaluation = false;
-	
-	final String filename;
-	
-	final long startTime = System.currentTimeMillis();
-
-	private static final Logger logger = Logger.getLogger(GuidedImprovementAlgorithm.class.toString());
 
 	public GuidedImprovementAlgorithm(final String desc, final MultiObjectiveOptions options) {
-		super(desc, options);
-		this.filename = desc.replace("$", "");
+		super(desc, options, Logger.getLogger(GuidedImprovementAlgorithm.class.toString()));
 	}
 	
 	@Override
@@ -53,10 +46,13 @@ public final class GuidedImprovementAlgorithm extends MultiObjectiveAlgorithm {
 		exclusionConstraints.add(p.getConstraints());
 
 		// first base point
-		Solution s1 = solveFirst(p.getConstraints(), p.getBounds(), p, null); // re-assigned around the loop
+		Solution s1 = getSolver().solve(p.getConstraints(), p.getBounds());
+		incrementStats(s1, p, p.getConstraints(), true, null);
+		
+		solveFirstStats(s1);
 		
 		//count this finding
-		counter.countStep();
+		counter.countStep();	
 		
 		// any solution that passess this loop condition will 
 		// also pass the inner loop condition and be counted there
@@ -72,13 +68,15 @@ public final class GuidedImprovementAlgorithm extends MultiObjectiveAlgorithm {
 				final Formula improvementConstraints = currentValues.parametrizedImprovementConstraints();
 
 				sprev = s1;
-				s1 =  solveOne(p.getConstraints().and(improvementConstraints), p.getBounds(),  p, improvementConstraints);
+				Formula constraint = p.getConstraints().and(improvementConstraints);
+				s1 = getSolver().solve(constraint, p.getBounds());
+				incrementStats(s1, p, constraint, false, improvementConstraints);				
 
 				//count this finding
 				counter.countStep();
 			}
-			foundMetricPoint();
-			logger.log(Level.FINE, "Found Pareto point with values: {0}", currentValues.values());
+
+			foundParetoPoint(currentValues);
 
 			if (!options.allSolutionsPerPoint()) {
 				// no magnifying glass
@@ -94,8 +92,10 @@ public final class GuidedImprovementAlgorithm extends MultiObjectiveAlgorithm {
 
 			// start looking for next base point
 			exclusionConstraints.add(currentValues.exclusionConstraint());
-			s1 = solveOne(Formula.and(exclusionConstraints), p.getBounds(), p, null);
-			
+			Formula constraint = Formula.and(exclusionConstraints);
+			s1 = getSolver().solve(constraint, p.getBounds());
+			incrementStats(s1, p, constraint, false, null);
+
 			//count this step but first go to new index because it's a new base point
 			counter.nextIndex();
 			counter.countStep();
@@ -105,47 +105,5 @@ public final class GuidedImprovementAlgorithm extends MultiObjectiveAlgorithm {
 		end(n);
 		debugWriteStatistics();	
 	}
-
-	private void debugWriteStatistics(){
-        StringBuilder sb = new StringBuilder("Solver statistics:\n");
-        sb.append("\t# Sat Call: ");
-        sb.append(this.getStats().get(StatKey.REGULAR_SAT_CALL));
-        sb.append("\n");
-        sb.append("\t# Unsat Call: ");
-        sb.append(this.getStats().get(StatKey.REGULAR_UNSAT_CALL));
-        sb.append("\n");
-
-        sb.append("\t# Total Time in Sat Calls: ");
-        sb.append(this.getStats().get(StatKey.REGULAR_SAT_TIME));
-        sb.append("\n");
-        sb.append("\t# Total Time in Sat Calls Solving: ");
-        sb.append(this.getStats().get(StatKey.REGULAR_SAT_TIME_SOLVING));
-        sb.append("\n");
-        sb.append("\t# Total Time in Sat Calls Translating: ");
-        sb.append(this.getStats().get(StatKey.REGULAR_SAT_TIME_TRANSLATION));
-        sb.append("\n");
-
-        sb.append("\t# Total Time in Unsat Calls: ");
-        sb.append(this.getStats().get(StatKey.REGULAR_UNSAT_TIME));
-        sb.append("\n");
-        sb.append("\t# Total Time in Unsat Calls Solving: ");
-        sb.append(this.getStats().get(StatKey.REGULAR_UNSAT_TIME_SOLVING));
-        sb.append("\n");
-        sb.append("\t# Total Time in Unsat Calls Translating: ");
-        sb.append(this.getStats().get(StatKey.REGULAR_UNSAT_TIME_TRANSLATION));
-        sb.append("\n");
-
-        sb.append("\t# Magnifier Sat Call: ");
-        sb.append(this.getStats().get(StatKey.MAGNIFIER_SAT_CALL));
-        sb.append("\n");
-        sb.append("\t# Magnifier Unsat Call: ");
-        sb.append(this.getStats().get(StatKey.MAGNIFIER_UNSAT_CALL));
-        sb.append("\n");
-        sb.append("\t# Total Time in Magnifier: ");
-        sb.append(this.getStats().get(StatKey.MAGNIFIER_TIME));
-
-        logger.log(Level.FINE, sb.toString());
-	}
-
 }
 	
