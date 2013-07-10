@@ -11,6 +11,7 @@ import kodkod.engine.Solution;
 import kodkod.multiobjective.MetricPoint;
 import kodkod.multiobjective.MultiObjectiveOptions;
 import kodkod.multiobjective.MultiObjectiveProblem;
+import kodkod.multiobjective.Objective;
 import kodkod.multiobjective.concurrency.SolutionNotifier;
 import kodkod.multiobjective.statistics.StatKey;
 import kodkod.multiobjective.statistics.StepCounter;
@@ -49,19 +50,51 @@ public class BoundedGuidedImprovementAlgorithm extends MultiObjectiveAlgorithm {
         final List<Formula> exclusionConstraints = new ArrayList<Formula>();
         exclusionConstraints.add(problem.getConstraints());
 
-        // TODO: Need to loop over the different metrics and optimize each one individually
-        // This is the BGIA
-        
         // Throw a dart and get a starting point
         Solution solution = solveFirst(problem.getConstraints(), problem.getBounds(), problem, null); // re-assigned around the loop
+
+        List<Formula> boundaries = new ArrayList<Formula>(problem.getObjectives().size());
+        MetricPoint currentValues = null;
+        Solution previousSolution = null;
+
+        // Push out along each of the objectives, to find the boundaries
+        for (final Objective objective : problem.getObjectives()) {
+            Formula boundaryConstraint = null;
+            logger.log(Level.FINE, "Optimizing on {0}", objective.toString());
+
+            solution = solveOne(problem.getConstraints(), problem.getBounds(), problem, null);
+
+            // Work up to the boundary of this metric
+            while (isSat(solution)) {
+                currentValues = MetricPoint.measure(solution, problem.getObjectives(), getOptions());
+                logger.log(Level.FINE, "Found a solution. At time: {0}, Improving on {1}", new Object[] { Integer.valueOf((int)(System.currentTimeMillis()-startTime)/1000), currentValues.values() });
+
+                boundaryConstraint = currentValues.objectiveImprovementConstraint(objective);
+
+                solution = solveOne(problem.getConstraints().and(boundaryConstraint), problem.getBounds(), problem, boundaryConstraint);
+            }
+            logger.log(Level.FINE, "Found boundary {0}", currentValues.boundaryConstraint(objective));
+            boundaries.add(currentValues.boundaryConstraint(objective));
+        }
+
+        StringBuilder sb = new StringBuilder("All boundaries found. At time: ");
+        sb.append(Integer.valueOf((int)(System.currentTimeMillis()-startTime)/1000));
+        sb.append(", Boundaries are conjunction of ");
+        for (Formula boundary : boundaries) {
+            sb.append("\n\t");
+            sb.append(boundary);
+        }
+        logger.log(Level.FINE, sb.toString());
+
+        Formula boundaryConstraints = Formula.and(boundaries);
+
+        // Now we can do the regular GIA, but with the boundaries as extra constraints
+        solution = solveOne(problem.getConstraints().and(boundaryConstraints), problem.getBounds(), problem, null);
 
         counter.countStep();
 
         // While the current solution is satisfiable try to find a better one
         while (isSat(solution)) {
-            MetricPoint currentValues = null;
-            Solution previousSolution = null;
-
             // Work up to the Pareto front
             while (isSat(solution)) {
                 currentValues = MetricPoint.measure(solution, problem.getObjectives(), getOptions());
@@ -70,7 +103,7 @@ public class BoundedGuidedImprovementAlgorithm extends MultiObjectiveAlgorithm {
                 final Formula improvementConstraints = currentValues.parametrizedImprovementConstraints();
 
                 previousSolution = solution;
-                solution =  solveOne(problem.getConstraints().and(improvementConstraints), problem.getBounds(),  problem, improvementConstraints);
+                solution =  solveOne(problem.getConstraints().and(boundaryConstraints).and(improvementConstraints), problem.getBounds(),  problem, improvementConstraints);
 
                 counter.countStep();
             }
@@ -91,7 +124,7 @@ public class BoundedGuidedImprovementAlgorithm extends MultiObjectiveAlgorithm {
 
             // start looking for next base point
             exclusionConstraints.add(currentValues.exclusionConstraint());
-            solution = solveOne(Formula.and(exclusionConstraints), problem.getBounds(), problem, null);
+            solution = solveOne(Formula.and(exclusionConstraints).and(boundaryConstraints), problem.getBounds(), problem, null);
 
             //count this step but first go to new index because it's a new base point
             counter.nextIndex();
