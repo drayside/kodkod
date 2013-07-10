@@ -6,19 +6,10 @@ import org.junit.runners.JUnit4;
 import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.assertThat;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.TreeSet;
 import java.util.Vector;
-import java.io.PrintWriter;
-import java.io.FileWriter;
-import kodkod.ast.*;
-import kodkod.ast.operator.*;
-import kodkod.instance.*;
 import kodkod.engine.*;
 import kodkod.engine.satlab.SATFactory;
-import kodkod.engine.config.Options;
-
 import kodkod.multiobjective.Testmodels.MooProblem;
 import kodkod.multiobjective.Testmodels.rooks_3_metrics_2;
 import kodkod.multiobjective.*;
