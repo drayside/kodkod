@@ -69,8 +69,7 @@ public class PartitionedGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
 
                 boundaryConstraint = currentValues.objectiveImprovementConstraint(objective);
 
-                constraint = problem.getConstraints().and(boundaryConstraint);
-                solution = incrementalSolver.solve(constraint, new Bounds(problem.getBounds().universe()));
+                solution = incrementalSolver.solve(boundaryConstraint, new Bounds(problem.getBounds().universe()));
                 incrementStats(solution, problem, constraint, false, null);
             }
             logger.log(Level.FINE, "Found boundary {0}", currentValues.boundaryConstraint(objective));
