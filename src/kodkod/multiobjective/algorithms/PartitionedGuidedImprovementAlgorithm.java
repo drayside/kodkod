@@ -38,20 +38,26 @@ public class PartitionedGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
         // Throw a dart and get a starting point
         Solution solution = getSolver().solve(problem.getConstraints(), problem.getBounds());
         incrementStats(solution, problem, problem.getConstraints(), true, null);
-
         solveFirstStats(solution);
 
+        MetricPoint startingValues = MetricPoint.measure(solution, problem.getObjectives(), getOptions());
         List<Formula> boundaries = new ArrayList<Formula>(problem.getObjectives().size());
-        MetricPoint currentValues = null;
+        MetricPoint currentValues = startingValues;
         Solution previousSolution = null;
+
+        logger.log(Level.FINE, "Found a starting solution. At time: {0}, with values {1}", new Object[] { Integer.valueOf((int)(System.currentTimeMillis()-startTime)/1000), startingValues.values() });
 
         // Push out along each of the objectives, to find the boundaries
         for (final Objective objective : problem.getObjectives()) {
             Formula boundaryConstraint = null;
             logger.log(Level.FINE, "Optimizing on {0}", objective.toString());
 
-            solution = getSolver().solve(problem.getConstraints(), problem.getBounds());
-            incrementStats(solution, problem, problem.getConstraints(), false, null);
+            boundaryConstraint = startingValues.objectiveImprovementConstraint(objective);
+
+            Formula constraint = problem.getConstraints().and(boundaryConstraint);
+            solution = getSolver().solve(constraint, problem.getBounds());
+            incrementStats(solution, problem, constraint, false, null);
+            logger.log(Level.FINE, "Found a solution. At time: {0}, Improving on {1}", new Object[] { Integer.valueOf((int)(System.currentTimeMillis()-startTime)/1000), currentValues.values() });
 
             // Work up to the boundary of this metric
             while (isSat(solution)) {
@@ -60,7 +66,7 @@ public class PartitionedGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
 
                 boundaryConstraint = currentValues.objectiveImprovementConstraint(objective);
 
-                Formula constraint = problem.getConstraints().and(boundaryConstraint);
+                constraint = problem.getConstraints().and(boundaryConstraint);
                 solution = getSolver().solve(constraint, problem.getBounds());
                 incrementStats(solution, problem, constraint, false, null);
             }
