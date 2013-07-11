@@ -7,7 +7,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import kodkod.ast.Formula;
+import kodkod.engine.IncrementalSolver;
 import kodkod.engine.Solution;
+import kodkod.instance.Bounds;
 import kodkod.multiobjective.MetricPoint;
 import kodkod.multiobjective.MultiObjectiveOptions;
 import kodkod.multiobjective.MultiObjectiveProblem;
@@ -49,13 +51,14 @@ public class PartitionedGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
 
         // Push out along each of the objectives, to find the boundaries
         for (final Objective objective : problem.getObjectives()) {
+            IncrementalSolver incrementalSolver = IncrementalSolver.solver(getOptions());
             Formula boundaryConstraint = null;
             logger.log(Level.FINE, "Optimizing on {0}", objective.toString());
 
             boundaryConstraint = startingValues.objectiveImprovementConstraint(objective);
 
             Formula constraint = problem.getConstraints().and(boundaryConstraint);
-            solution = getSolver().solve(constraint, problem.getBounds());
+            solution = incrementalSolver.solve(constraint, problem.getBounds());
             incrementStats(solution, problem, constraint, false, null);
             logger.log(Level.FINE, "Found a solution. At time: {0}, Improving on {1}", new Object[] { Integer.valueOf((int)(System.currentTimeMillis()-startTime)/1000), currentValues.values() });
 
@@ -67,11 +70,12 @@ public class PartitionedGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
                 boundaryConstraint = currentValues.objectiveImprovementConstraint(objective);
 
                 constraint = problem.getConstraints().and(boundaryConstraint);
-                solution = getSolver().solve(constraint, problem.getBounds());
+                solution = incrementalSolver.solve(constraint, new Bounds(problem.getBounds().universe()));
                 incrementStats(solution, problem, constraint, false, null);
             }
             logger.log(Level.FINE, "Found boundary {0}", currentValues.boundaryConstraint(objective));
             boundaries.add(currentValues.boundaryConstraint(objective));
+            incrementalSolver.free();
         }
 
         StringBuilder sb = new StringBuilder("All boundaries found. At time: ");
