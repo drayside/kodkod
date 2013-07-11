@@ -37,66 +37,22 @@ public class PartitionedGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
         final List<Formula> exclusionConstraints = new ArrayList<Formula>();
         exclusionConstraints.add(problem.getConstraints());
 
-        // Throw a dart and get a starting point
-        Solution solution = getSolver().solve(problem.getConstraints(), problem.getBounds());
-        incrementStats(solution, problem, problem.getConstraints(), true, null);
-        solveFirstStats(solution);
-
-        MetricPoint startingValues = MetricPoint.measure(solution, problem.getObjectives(), getOptions());
-        List<Formula> boundaries = new ArrayList<Formula>(problem.getObjectives().size());
-        MetricPoint currentValues = startingValues;
-        Solution previousSolution = null;
-
-        logger.log(Level.FINE, "Found a starting solution. At time: {0}, with values {1}", new Object[] { Integer.valueOf((int)(System.currentTimeMillis()-startTime)/1000), startingValues.values() });
-
-        // Push out along each of the objectives, to find the boundaries
-        for (final Objective objective : problem.getObjectives()) {
-            IncrementalSolver incrementalSolver = IncrementalSolver.solver(getOptions());
-            Formula boundaryConstraint = null;
-            logger.log(Level.FINE, "Optimizing on {0}", objective.toString());
-
-            boundaryConstraint = startingValues.objectiveImprovementConstraint(objective);
-
-            Formula constraint = problem.getConstraints().and(boundaryConstraint);
-            solution = incrementalSolver.solve(constraint, problem.getBounds());
-            incrementStats(solution, problem, constraint, false, null);
-            logger.log(Level.FINE, "Found a solution. At time: {0}, Improving on {1}", new Object[] { Integer.valueOf((int)(System.currentTimeMillis()-startTime)/1000), currentValues.values() });
-
-            // Work up to the boundary of this metric
-            while (isSat(solution)) {
-                currentValues = MetricPoint.measure(solution, problem.getObjectives(), getOptions());
-                logger.log(Level.FINE, "Found a solution. At time: {0}, Improving on {1}", new Object[] { Integer.valueOf((int)(System.currentTimeMillis()-startTime)/1000), currentValues.values() });
-
-                boundaryConstraint = currentValues.objectiveImprovementConstraint(objective);
-
-                solution = incrementalSolver.solve(boundaryConstraint, new Bounds(problem.getBounds().universe()));
-                incrementStats(solution, problem, constraint, false, null);
-            }
-            logger.log(Level.FINE, "Found boundary {0}", currentValues.boundaryConstraint(objective));
-            boundaries.add(currentValues.boundaryConstraint(objective));
-            incrementalSolver.free();
-        }
-
-        StringBuilder sb = new StringBuilder("All boundaries found. At time: ");
-        sb.append(Integer.valueOf((int)(System.currentTimeMillis()-startTime)/1000));
-        sb.append(", Boundaries are conjunction of ");
-        for (Formula boundary : boundaries) {
-            sb.append("\n\t");
-            sb.append(boundary);
-        }
-        logger.log(Level.FINE, sb.toString());
-
-        Formula boundaryConstraints = Formula.and(boundaries);
+        // Find the boundaries of the search space
+        // The first solve is done in findBoundaries() to get a starting point to push out from
+        Formula boundaryConstraints = findBoundaries(problem);
 
         // Now we can do the regular GIA, but with the boundaries as extra constraints
         Formula constraint = problem.getConstraints().and(boundaryConstraints);
-        solution = getSolver().solve(constraint, problem.getBounds());
+        Solution solution = getSolver().solve(constraint, problem.getBounds());
         incrementStats(solution, problem, constraint, false, null);
 
         counter.countStep();
 
         // While the current solution is satisfiable try to find a better one
         while (isSat(solution)) {
+            MetricPoint currentValues = null;
+            Solution previousSolution = null;
+
             // Work up to the Pareto front
             while (isSat(solution)) {
                 currentValues = MetricPoint.measure(solution, problem.getObjectives(), getOptions());
@@ -139,5 +95,57 @@ public class PartitionedGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
 
         end(notifier);
         debugWriteStatistics();
+    }
+
+    private Formula findBoundaries(MultiObjectiveProblem problem) {
+        // Throw a dart and get a starting point
+        Solution solution = getSolver().solve(problem.getConstraints(), problem.getBounds());
+        incrementStats(solution, problem, problem.getConstraints(), true, null);
+        solveFirstStats(solution);
+
+        MetricPoint startingValues = MetricPoint.measure(solution, problem.getObjectives(), getOptions());
+        MetricPoint currentValues = startingValues;
+        List<Formula> boundaries = new ArrayList<Formula>(problem.getObjectives().size());
+
+        logger.log(Level.FINE, "Found a starting solution. At time: {0}, with values {1}", new Object[] { Integer.valueOf((int)(System.currentTimeMillis()-startTime)/1000), startingValues.values() });
+
+        // Push out along each of the objectives, to find the boundaries
+        for (final Objective objective : problem.getObjectives()) {
+            IncrementalSolver incrementalSolver = IncrementalSolver.solver(getOptions());
+            Formula boundaryConstraint = null;
+            logger.log(Level.FINE, "Optimizing on {0}", objective.toString());
+
+            boundaryConstraint = startingValues.objectiveImprovementConstraint(objective);
+
+            Formula constraint = problem.getConstraints().and(boundaryConstraint);
+            solution = incrementalSolver.solve(constraint, problem.getBounds());
+            incrementStats(solution, problem, constraint, false, null);
+            logger.log(Level.FINE, "Found a solution. At time: {0}, Improving on {1}", new Object[] { Integer.valueOf((int)(System.currentTimeMillis()-startTime)/1000), currentValues.values() });
+
+            // Work up to the boundary of this metric
+            while (isSat(solution)) {
+                currentValues = MetricPoint.measure(solution, problem.getObjectives(), getOptions());
+                logger.log(Level.FINE, "Found a solution. At time: {0}, Improving on {1}", new Object[] { Integer.valueOf((int)(System.currentTimeMillis()-startTime)/1000), currentValues.values() });
+
+                boundaryConstraint = currentValues.objectiveImprovementConstraint(objective);
+
+                solution = incrementalSolver.solve(boundaryConstraint, new Bounds(problem.getBounds().universe()));
+                incrementStats(solution, problem, constraint, false, null);
+            }
+            logger.log(Level.FINE, "Found boundary {0}", currentValues.boundaryConstraint(objective));
+            boundaries.add(currentValues.boundaryConstraint(objective));
+            incrementalSolver.free();
+        }
+
+        StringBuilder sb = new StringBuilder("All boundaries found. At time: ");
+        sb.append(Integer.valueOf((int)(System.currentTimeMillis()-startTime)/1000));
+        sb.append(", Boundaries are conjunction of ");
+        for (Formula boundary : boundaries) {
+            sb.append("\n\t");
+            sb.append(boundary);
+        }
+        logger.log(Level.FINE, sb.toString());
+
+        return Formula.and(boundaries);
     }
 }
