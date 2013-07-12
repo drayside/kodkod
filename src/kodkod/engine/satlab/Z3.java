@@ -14,12 +14,13 @@ import com.microsoft.z3.Model;
 * A wrapper class that provides access to the basic functionality
 * of the Z3 solver from Microsoft Research.
 */
-final class Z3 implements SATSolver {
+final class Z3 implements CheckpointableSolver {
     private Solver solver;
     private Context context;
     
     private int vars;
     private int clauses;
+    private int checkpoints;
 
     private Status last_status;
 
@@ -33,6 +34,7 @@ final class Z3 implements SATSolver {
 
         this.vars = 0;
         this.clauses = 0;
+        this.checkpoints = 0;
         this.last_status = null;
     }
 
@@ -50,6 +52,14 @@ final class Z3 implements SATSolver {
      */
     public int numberOfClauses() {
         return clauses;
+    }
+
+    /**
+     * {@inheritDoc}
+     * @see kodkod.engine.satlab.CheckpointableSolver#numberOfCheckpoints()
+     */
+    public int numberOfCheckpoints() {
+        return checkpoints;
     }
 
     /**
@@ -149,6 +159,22 @@ final class Z3 implements SATSolver {
         } catch (Z3Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     * @see kodkod.engine.satlab.CheckpointableSolver#checkpoint()
+     */
+    public void checkpoint() {
+
+    }
+
+    /**
+     * {@inheritDoc}
+     * @see kodkod.engine.satlab.CheckpointableSolver#rollback()
+     */
+    public void rollback() {
+
     }
 
     /**

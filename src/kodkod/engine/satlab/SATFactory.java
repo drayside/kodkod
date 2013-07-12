@@ -211,6 +211,12 @@ public abstract class SATFactory {
 		public SATSolver instance() {
 			return new Z3();
 		}
+
+		@Override
+		public boolean checkpointable() {
+			return true;
+		}
+
 		public String toString() { return "Z3"; }
 	};
 
@@ -320,6 +326,16 @@ public abstract class SATFactory {
 	 */
 	public boolean incremental() {
 		return true;
+	}
+
+	/**
+	 * Returns true if the solvers returned by this.instance() are
+	 * {@link CheckpointableSolver Checkpointable}. Otherwise returns false.
+	 * @return true if the solvers returned by this.instance() are
+	 * {@link CheckpointableSolver Checkpointable}. Otherwise returns false.
+	 */
+	public boolean checkpointable() {
+		return false;
 	}
 
 }

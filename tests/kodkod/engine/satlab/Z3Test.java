@@ -9,17 +9,18 @@ import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
 
 import kodkod.engine.satlab.SATFactory;
-import kodkod.engine.satlab.SATSolver;
+import kodkod.engine.satlab.CheckpointableSolver;
 
 @RunWith(JUnit4.class)
 public class Z3Test {
 
-    SATSolver solver;
+    CheckpointableSolver solver;
 
     @Before
     public void setUp() {
         assumeTrue(SATFactory.available(SATFactory.Z3));
-        solver = SATFactory.Z3.instance();
+        assumeTrue(SATFactory.Z3.checkpointable());
+        solver = (CheckpointableSolver)SATFactory.Z3.instance();
     }
 
     @After
@@ -338,5 +339,10 @@ public class Z3Test {
         } catch (IllegalStateException e) {
 
         }
+    }
+
+    @Test
+    public void basicCheckpointing() {
+
     }
 }
