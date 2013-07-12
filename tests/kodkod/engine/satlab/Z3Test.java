@@ -204,6 +204,18 @@ public class Z3Test {
     }
 
     @Test
+    public void addingNegativeVariablesShouldThrowException() {
+        try {
+            solver.addVariables(-1);
+
+            // Should never reach here.
+            fail();
+        } catch (IllegalArgumentException e) {
+
+        }
+    }
+
+    @Test
     public void nullClauseShouldThrowException() {
         assertThat(solver.numberOfVariables(), is(0));
         assertThat(solver.numberOfClauses(), is(0));
@@ -240,6 +252,20 @@ public class Z3Test {
 
         try {
             solver.addClause(new int[] {1,2,-4});
+
+            // Should never reach here.
+            fail();
+        } catch (IllegalArgumentException e) {
+
+        }
+    }
+
+    @Test
+    public void illegalZeroVariableInClauseShouldThrowException() {
+        solver.addVariables(3);
+
+        try {
+            solver.addClause(new int[] {1,2,0});
 
             // Should never reach here.
             fail();
@@ -310,7 +336,7 @@ public class Z3Test {
             // Should never reach here.
             fail();
         } catch (IllegalStateException e) {
-            
+
         }
     }
 }
