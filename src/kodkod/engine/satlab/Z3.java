@@ -228,6 +228,7 @@ final class Z3 implements CheckpointableSolver {
      * @see kodkod.engine.satlab.SATSolver#free()
      */
     public synchronized final void free() {
+        checkpoints = null;
         solver = null;
         context.Dispose();
         context = null;
