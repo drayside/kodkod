@@ -363,12 +363,13 @@ public class Z3Test {
         assertThat(solver.numberOfCheckpoints(), is(1));
 
         solver.addClause(new int[] {-1});
+        solver.addVariables(1);
 
         result = solver.solve();
 
         assertFalse(result);
 
-        assertThat(solver.numberOfVariables(), is(1));
+        assertThat(solver.numberOfVariables(), is(2));
         assertThat(solver.numberOfClauses(), is(2));
         assertThat(solver.numberOfCheckpoints(), is(1));
 
@@ -381,5 +382,31 @@ public class Z3Test {
         result = solver.solve();
 
         assertTrue(result);
+    }
+
+    @Test
+    public void rollingbackEmptySolverShouldException() {
+        try {
+            solver.rollback();
+
+            // Shouldn't reach here.
+            fail();
+        } catch (IllegalStateException e) {
+
+        }
+    }
+
+    @Test
+    public void rollingbackMoreThanNumberOfCheckpointsShouldException() {
+        solver.checkpoint();
+        solver.checkpoint();
+
+        solver.rollback();
+        solver.rollback();
+        try {
+            solver.rollback();
+        } catch (IllegalStateException e) {
+            
+        }
     }
 }

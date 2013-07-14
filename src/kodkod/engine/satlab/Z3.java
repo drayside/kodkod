@@ -209,6 +209,9 @@ final class Z3 implements CheckpointableSolver {
      * @see kodkod.engine.satlab.CheckpointableSolver#rollback()
      */
     public void rollback() {
+        if (numberOfCheckpoints() <= 0) {
+            throw new IllegalStateException("No checkpoints to rollback to.");
+        }
         try {
             solver.Pop();
             Checkpoint checkpoint = checkpoints.pop();
