@@ -343,6 +343,43 @@ public class Z3Test {
 
     @Test
     public void basicCheckpointing() {
+        solver.addVariables(1);
+        solver.addClause(new int[] {1});
 
+        boolean result = solver.solve();
+
+        assertTrue(result);
+
+        assertTrue(solver.valueOf(1));
+        assertThat(solver.numberOfVariables(), is(1));
+        assertThat(solver.numberOfClauses(), is(1));
+        assertThat(solver.numberOfCheckpoints(), is(0));
+
+        solver.checkpoint();
+
+        assertTrue(solver.valueOf(1));
+        assertThat(solver.numberOfVariables(), is(1));
+        assertThat(solver.numberOfClauses(), is(1));
+        assertThat(solver.numberOfCheckpoints(), is(1));
+
+        solver.addClause(new int[] {-1});
+
+        result = solver.solve();
+
+        assertFalse(result);
+
+        assertThat(solver.numberOfVariables(), is(1));
+        assertThat(solver.numberOfClauses(), is(2));
+        assertThat(solver.numberOfCheckpoints(), is(1));
+
+        solver.rollback();
+
+        assertThat(solver.numberOfVariables(), is(1));
+        assertThat(solver.numberOfClauses(), is(1));
+        assertThat(solver.numberOfCheckpoints(), is(0));
+
+        result = solver.solve();
+
+        assertTrue(result);
     }
 }

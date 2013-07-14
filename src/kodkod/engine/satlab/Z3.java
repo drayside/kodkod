@@ -1,6 +1,7 @@
 package kodkod.engine.satlab;
 
 import java.lang.RuntimeException;
+import java.util.Stack;
 import com.microsoft.z3.Solver;
 import com.microsoft.z3.Context;
 import com.microsoft.z3.Z3Exception;
@@ -20,9 +21,33 @@ final class Z3 implements CheckpointableSolver {
     
     private int vars;
     private int clauses;
-    private int checkpoints;
-
     private Status last_status;
+
+    private Stack<Checkpoint> checkpoints;
+
+    private class Checkpoint {
+        private int vars;
+        private int clauses;
+        private Status status;
+
+        public Checkpoint(int vars, int clauses, Status status) {
+            this.vars = vars;
+            this.clauses = clauses;
+            this.status = status;
+        }
+
+        public int getVars() {
+            return vars;
+        }
+
+        public int getClauses() {
+            return clauses;
+        }
+
+        public Status getStatus() {
+            return status;
+        }
+    }
 
     Z3() {
         try {
@@ -34,8 +59,8 @@ final class Z3 implements CheckpointableSolver {
 
         this.vars = 0;
         this.clauses = 0;
-        this.checkpoints = 0;
         this.last_status = null;
+        checkpoints = new Stack<Checkpoint>();
     }
 
     /**
@@ -59,7 +84,11 @@ final class Z3 implements CheckpointableSolver {
      * @see kodkod.engine.satlab.CheckpointableSolver#numberOfCheckpoints()
      */
     public int numberOfCheckpoints() {
-        return checkpoints;
+        try {
+            return solver.NumScopes();
+        } catch (Z3Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -103,6 +132,7 @@ final class Z3 implements CheckpointableSolver {
             BoolExpr clause = context.MkOr(literals);
 
             solver.Assert(clause);
+
             clauses += 1;
         } catch (Z3Exception e) {
             throw new RuntimeException(e);
@@ -166,7 +196,12 @@ final class Z3 implements CheckpointableSolver {
      * @see kodkod.engine.satlab.CheckpointableSolver#checkpoint()
      */
     public void checkpoint() {
-
+        try {
+            solver.Push();
+            checkpoints.push(new Checkpoint(vars, clauses, last_status));
+        } catch (Z3Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -174,7 +209,15 @@ final class Z3 implements CheckpointableSolver {
      * @see kodkod.engine.satlab.CheckpointableSolver#rollback()
      */
     public void rollback() {
-
+        try {
+            solver.Pop();
+            Checkpoint checkpoint = checkpoints.pop();
+            this.vars = checkpoint.getVars();
+            this.clauses = checkpoint.getClauses();
+            this.last_status = checkpoint.getStatus();
+        } catch (Z3Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
