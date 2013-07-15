@@ -406,7 +406,7 @@ public class Z3Test {
         try {
             solver.rollback();
         } catch (IllegalStateException e) {
-            
+
         }
     }
 }

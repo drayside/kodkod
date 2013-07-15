@@ -10,6 +10,7 @@ import com.microsoft.z3.BoolExpr;
 import com.microsoft.z3.Symbol;
 import com.microsoft.z3.Status;
 import com.microsoft.z3.Model;
+import com.microsoft.z3.Tactic;
 
 /**
 * A wrapper class that provides access to the basic functionality
@@ -18,10 +19,12 @@ import com.microsoft.z3.Model;
 final class Z3 implements CheckpointableSolver {
     private Solver solver;
     private Context context;
-    
+    private Tactic satTactic;
+
     private int vars;
     private int clauses;
     private Status last_status;
+    private Model last_model;
 
     private Stack<Checkpoint> checkpoints;
 
@@ -29,11 +32,13 @@ final class Z3 implements CheckpointableSolver {
         private int vars;
         private int clauses;
         private Status status;
+        private Model model;
 
-        public Checkpoint(int vars, int clauses, Status status) {
+        public Checkpoint(int vars, int clauses, Status status, Model model) {
             this.vars = vars;
             this.clauses = clauses;
             this.status = status;
+            this.model = model;
         }
 
         public int getVars() {
@@ -47,12 +52,17 @@ final class Z3 implements CheckpointableSolver {
         public Status getStatus() {
             return status;
         }
+
+        public Model getModel() {
+            return model; 
+        }
     }
 
     Z3() {
         try {
             context = new Context();
-            solver = context.MkSimpleSolver();
+            satTactic = context.MkTactic("sat");
+            solver = context.MkSolver(satTactic);
         } catch (Z3Exception e) {
             throw new RuntimeException(e);
         }
@@ -60,6 +70,7 @@ final class Z3 implements CheckpointableSolver {
         this.vars = 0;
         this.clauses = 0;
         this.last_status = null;
+        this.last_model = null;
         checkpoints = new Stack<Checkpoint>();
     }
 
@@ -149,8 +160,10 @@ final class Z3 implements CheckpointableSolver {
             last_status = solver.Check();
 
             if (last_status == Status.SATISFIABLE) {
+                last_model = solver.Model();
                 return true;
             } else if (last_status == Status.UNSATISFIABLE) {
+                last_model = null;
                 return false;
             } else {
                 throw new RuntimeException("Result was UNKNOWN. " + solver.ReasonUnknown());
@@ -173,7 +186,7 @@ final class Z3 implements CheckpointableSolver {
             throw new IllegalStateException();
         }
         try {
-            Model model = solver.Model();
+            Model model = last_model;
             Symbol sym = context.MkSymbol(variable);
             BoolExpr variable_expression = context.MkBoolConst(sym);
 
@@ -198,7 +211,7 @@ final class Z3 implements CheckpointableSolver {
     public void checkpoint() {
         try {
             solver.Push();
-            checkpoints.push(new Checkpoint(vars, clauses, last_status));
+            checkpoints.push(new Checkpoint(vars, clauses, last_status, last_model));
         } catch (Z3Exception e) {
             throw new RuntimeException(e);
         }
@@ -218,6 +231,7 @@ final class Z3 implements CheckpointableSolver {
             this.vars = checkpoint.getVars();
             this.clauses = checkpoint.getClauses();
             this.last_status = checkpoint.getStatus();
+            this.last_model = checkpoint.getModel();
         } catch (Z3Exception e) {
             throw new RuntimeException(e);
         }
