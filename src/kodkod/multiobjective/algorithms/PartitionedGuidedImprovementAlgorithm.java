@@ -3,6 +3,7 @@ package kodkod.multiobjective.algorithms;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -19,8 +20,12 @@ import kodkod.multiobjective.statistics.StepCounter;
 
 public class PartitionedGuidedImprovementAlgorithm extends MultiObjectiveAlgorithm {
 
+	private ConcurrentLinkedQueue<Objective> objectives;
+
     public PartitionedGuidedImprovementAlgorithm(String desc, MultiObjectiveOptions options) {
         super(desc, options, Logger.getLogger(PartitionedGuidedImprovementAlgorithm.class.toString()));
+
+        objectives = new ConcurrentLinkedQueue<Objective>();
     }
 
     @Override
@@ -109,8 +114,11 @@ public class PartitionedGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
 
         logger.log(Level.FINE, "Found a starting solution. At time: {0}, with values {1}", new Object[] { Integer.valueOf((int)(System.currentTimeMillis()-startTime)/1000), startingValues.values() });
 
+        // Put all the objectives into a concurrent queue to feed into the threads
+        objectives.addAll(problem.getObjectives());
+
         // Push out along each of the objectives, to find the boundaries
-        for (final Objective objective : problem.getObjectives()) {
+        for (final Objective objective : objectives) {
             IncrementalSolver incrementalSolver = IncrementalSolver.solver(getOptions());
             Formula boundaryConstraint = null;
             logger.log(Level.FINE, "Optimizing on {0}", objective.toString());
