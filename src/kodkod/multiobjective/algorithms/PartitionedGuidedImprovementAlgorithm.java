@@ -3,7 +3,12 @@ package kodkod.multiobjective.algorithms;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletionService;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -20,12 +25,8 @@ import kodkod.multiobjective.statistics.StepCounter;
 
 public class PartitionedGuidedImprovementAlgorithm extends MultiObjectiveAlgorithm {
 
-	private ConcurrentLinkedQueue<Objective> objectives;
-
     public PartitionedGuidedImprovementAlgorithm(String desc, MultiObjectiveOptions options) {
         super(desc, options, Logger.getLogger(PartitionedGuidedImprovementAlgorithm.class.toString()));
-
-        objectives = new ConcurrentLinkedQueue<Objective>();
     }
 
     @Override
@@ -42,14 +43,16 @@ public class PartitionedGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
         final List<Formula> exclusionConstraints = new ArrayList<Formula>();
         exclusionConstraints.add(problem.getConstraints());
 
-        // Find the boundaries of the search space
-        // The first solve is done in findBoundaries() to get a starting point to push out from
-        Formula boundaryConstraints = findBoundaries(problem);
+        // Throw a dart and get a starting point
+        Solution solution = getSolver().solve(problem.getConstraints(), problem.getBounds());
+        incrementStats(solution, problem, problem.getConstraints(), true, null);
+        solveFirstStats(solution);
 
-        // Now we can do the regular GIA, but with the boundaries as extra constraints
-        Formula constraint = problem.getConstraints().and(boundaryConstraints);
-        Solution solution = getSolver().solve(constraint, problem.getBounds());
-        incrementStats(solution, problem, constraint, false, null);
+        MetricPoint startingValues = MetricPoint.measure(solution, problem.getObjectives(), getOptions());
+        logger.log(Level.FINE, "Found a solution. At time: {0}, with values {1}", new Object[] { Integer.valueOf((int)(System.currentTimeMillis()-startTime)/1000), startingValues.values() });
+
+        // Find the boundaries of the search space
+        Formula boundaryConstraints = findBoundaries(problem, startingValues);
 
         counter.countStep();
 
@@ -66,7 +69,7 @@ public class PartitionedGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
                 final Formula improvementConstraints = currentValues.parametrizedImprovementConstraints();
 
                 previousSolution = solution;
-                constraint = problem.getConstraints().and(boundaryConstraints).and(improvementConstraints);
+                Formula constraint = problem.getConstraints().and(boundaryConstraints).and(improvementConstraints);
                 solution = getSolver().solve(constraint, problem.getBounds());
                 incrementStats(solution, problem, constraint, false, improvementConstraints);
 
@@ -88,7 +91,7 @@ public class PartitionedGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
 
             // start looking for next base point
             exclusionConstraints.add(currentValues.exclusionConstraint());
-            constraint = Formula.and(exclusionConstraints).and(boundaryConstraints);
+            Formula constraint = Formula.and(exclusionConstraints).and(boundaryConstraints);
             solution = getSolver().solve(constraint, problem.getBounds());
             incrementStats(solution, problem, constraint, false, null);
 
@@ -102,48 +105,48 @@ public class PartitionedGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
         debugWriteStatistics();
     }
 
-    private Formula findBoundaries(MultiObjectiveProblem problem) {
-        // Throw a dart and get a starting point
-        Solution solution = getSolver().solve(problem.getConstraints(), problem.getBounds());
-        incrementStats(solution, problem, problem.getConstraints(), true, null);
-        solveFirstStats(solution);
-
-        MetricPoint startingValues = MetricPoint.measure(solution, problem.getObjectives(), getOptions());
-        MetricPoint currentValues = startingValues;
+    private Formula findBoundaries(MultiObjectiveProblem problem, MetricPoint startingValues) {
         List<Formula> boundaries = new ArrayList<Formula>(problem.getObjectives().size());
 
-        logger.log(Level.FINE, "Found a starting solution. At time: {0}, with values {1}", new Object[] { Integer.valueOf((int)(System.currentTimeMillis()-startTime)/1000), startingValues.values() });
+        // Disable MetricPoint logger temporarily
+        // Multiple threads will be calling the logger, so the output won't make sense
+        Logger metricPointLogger = Logger.getLogger(MetricPoint.class.toString());
+        Level metricPointLevel = metricPointLogger.getLevel();
+        metricPointLogger.setLevel(Level.INFO);
 
-        // Put all the objectives into a concurrent queue to feed into the threads
-        objectives.addAll(problem.getObjectives());
+        // Create a thread pool to execute the tasks
+        // Number of threads is MIN(user value, # cores, # objectives)
+        // TODO: Make "user value" configurable
+        int numObjectives = problem.getObjectives().size();
+        int numThreads = Math.min(8, Math.min(Runtime.getRuntime().availableProcessors(), numObjectives));
+        ExecutorService threadPool = Executors.newFixedThreadPool(numThreads);
+        CompletionService<Formula> ecs = new ExecutorCompletionService<Formula>(threadPool);
 
-        // Push out along each of the objectives, to find the boundaries
-        for (final Objective objective : objectives) {
-            IncrementalSolver incrementalSolver = IncrementalSolver.solver(getOptions());
-            Formula boundaryConstraint = null;
-            logger.log(Level.FINE, "Optimizing on {0}", objective.toString());
+        logger.log(Level.FINE, "Starting thread pool with {0} threads and {1} jobs", new Object[] { numThreads, numObjectives });
 
-            boundaryConstraint = startingValues.objectiveImprovementConstraint(objective);
-
-            Formula constraint = problem.getConstraints().and(boundaryConstraint);
-            solution = incrementalSolver.solve(constraint, problem.getBounds());
-            incrementStats(solution, problem, constraint, false, null);
-            logger.log(Level.FINE, "Found a solution. At time: {0}, Improving on {1}", new Object[] { Integer.valueOf((int)(System.currentTimeMillis()-startTime)/1000), currentValues.values() });
-
-            // Work up to the boundary of this metric
-            while (isSat(solution)) {
-                currentValues = MetricPoint.measure(solution, problem.getObjectives(), getOptions());
-                logger.log(Level.FINE, "Found a solution. At time: {0}, Improving on {1}", new Object[] { Integer.valueOf((int)(System.currentTimeMillis()-startTime)/1000), currentValues.values() });
-
-                boundaryConstraint = currentValues.objectiveImprovementConstraint(objective);
-
-                solution = incrementalSolver.solve(boundaryConstraint, new Bounds(problem.getBounds().universe()));
-                incrementStats(solution, problem, constraint, false, null);
-            }
-            logger.log(Level.FINE, "Found boundary {0}", currentValues.boundaryConstraint(objective));
-            boundaries.add(currentValues.boundaryConstraint(objective));
-            incrementalSolver.free();
+        // Create new BoundaryFinder tasks for each objective
+        for (final Objective objective : problem.getObjectives()) {
+            ecs.submit(new BoundaryFinder(problem, objective, startingValues));
         }
+
+        // take() returns a Future<Formula> if one exists; blocks otherwise
+        // Once we have the Formula result, add it to our list
+        for (int i = 0; i < numObjectives; i++) {
+            Formula result;
+            try {
+                result = ecs.take().get();
+            } catch (InterruptedException | ExecutionException e) {
+                e.printStackTrace();
+                throw new RuntimeException();
+            }
+            boundaries.add(result);
+        }
+
+        // Now we can shutdown the threadPool
+        threadPool.shutdown();
+
+        // Re-enable MetricPoint logging
+        metricPointLogger.setLevel(metricPointLevel);
 
         StringBuilder sb = new StringBuilder("All boundaries found. At time: ");
         sb.append(Integer.valueOf((int)(System.currentTimeMillis()-startTime)/1000));
@@ -155,5 +158,41 @@ public class PartitionedGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
         logger.log(Level.FINE, sb.toString());
 
         return Formula.and(boundaries);
+    }
+
+    // A Callable is like a Runnable, but it returns a result
+    // In this case, we want to return the Formula representing the boundary for the given objective
+    private class BoundaryFinder implements Callable<Formula> {
+
+        private final MultiObjectiveProblem problem;
+        private final Objective objective;
+        private MetricPoint currentValues;
+
+        BoundaryFinder(MultiObjectiveProblem problem, Objective objective, MetricPoint startingValues) {
+            this.problem = problem;
+            this.objective = objective;
+            this.currentValues = startingValues;
+        }
+
+        @Override
+        public Formula call() throws Exception {
+            IncrementalSolver incrementalSolver = IncrementalSolver.solver(getOptions());
+            Formula boundaryConstraint = currentValues.objectiveImprovementConstraint(objective);
+
+            Formula constraint = problem.getConstraints().and(boundaryConstraint);
+            Solution solution = incrementalSolver.solve(constraint, problem.getBounds());
+            incrementStats(solution, problem, constraint, false, null);
+
+            // Work up to the boundary of this metric
+            while (isSat(solution)) {
+                currentValues = MetricPoint.measure(solution, problem.getObjectives(), getOptions());
+                boundaryConstraint = currentValues.objectiveImprovementConstraint(objective);
+                solution = incrementalSolver.solve(boundaryConstraint, new Bounds(problem.getBounds().universe()));
+                incrementStats(solution, problem, constraint, false, null);
+            }
+            incrementalSolver.free();
+            return currentValues.boundaryConstraint(objective);
+        }
+
     }
 }
