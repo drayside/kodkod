@@ -88,6 +88,27 @@ public final class MetricPoint {
 		return Formula.and(conjuncts);
 	}
 
+	public Formula objectiveImprovementConstraint(Objective objective) {
+		if (!values.containsKey(objective)) {
+			throw new RuntimeException();
+		}
+		int value = values.get(objective).intValue();
+		Formula constraint = objective.betterThan(value);
+
+		logger.log(Level.FINE, "Improving on {0}", constraint.toString());
+
+		return constraint;
+	}
+
+	public Formula boundaryConstraint(Objective objective) {
+		if (!values.containsKey(objective)) {
+			throw new RuntimeException();
+		}
+		int value = values.get(objective).intValue();
+
+		return objective.worseThanOrEqual(value);
+	}
+
 	public Formula exclusionConstraint() {
 		final List<Formula> disjuncts = new ArrayList<Formula>(values.size() + 1);
 		for (final Map.Entry<Objective, Integer> e : values.entrySet()) {

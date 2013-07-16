@@ -7,6 +7,7 @@ import org.junit.runners.Suite;
 @Suite.SuiteClasses({
   kodkod.multiobjective.EndtoEnd.GIASmallEndToEndTest.class,
   kodkod.multiobjective.EndtoEnd.IGIASmallEndToEndTest.class,
+  kodkod.multiobjective.EndtoEnd.PartitionedGIASmallEndToEndTest.class,
   kodkod.multiobjective.EndtoEnd.SolverSmallEndToEndTest.class
 })
 public class TestSuite {

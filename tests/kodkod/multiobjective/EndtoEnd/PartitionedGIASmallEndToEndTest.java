@@ -17,10 +17,10 @@ import kodkod.multiobjective.algorithms.*;
 import kodkod.multiobjective.concurrency.*;
 
 @RunWith(JUnit4.class)
-public class GIASmallEndToEndTest {
+public class PartitionedGIASmallEndToEndTest {
 	/*Fields*/
 	private MooProblem moo_problem;
-	
+
 	/*
 	 * This test is a translation of rooks_3_metrics_2.als
 	 */
@@ -33,9 +33,9 @@ public class GIASmallEndToEndTest {
 	@Test
 	public void WithSymmetryBreaking() {
 		MultiObjectiveProblem problem = moo_problem.getProblem();
-		GuidedImprovementAlgorithm gia = new GuidedImprovementAlgorithm("asdf", new MultiObjectiveOptions());
-		gia.getOptions().setSolver(SATFactory.DefaultSAT4J);
-		gia.getOptions().setSymmetryBreaking(1000);
+		PartitionedGuidedImprovementAlgorithm pgia = new PartitionedGuidedImprovementAlgorithm("asdf", new MultiObjectiveOptions());
+		pgia.getOptions().setSolver(SATFactory.DefaultSAT4J);
+		pgia.getOptions().setSymmetryBreaking(1000);
 
 		SolutionNotifier notifier = new SolutionNotifier() {
 			List<MeasuredSolution> solutions = new Vector<MeasuredSolution>();
@@ -63,15 +63,15 @@ public class GIASmallEndToEndTest {
 			}
 		};
 
-		gia.multiObjectiveSolve(problem, notifier);
+		pgia.multiObjectiveSolve(problem, notifier);
 	}
 
 	@Test
 	public void WithoutSymmetryBreaking() {
 		MultiObjectiveProblem problem = moo_problem.getProblem();
-		GuidedImprovementAlgorithm gia = new GuidedImprovementAlgorithm("asdf", new MultiObjectiveOptions());
-		gia.getOptions().setSolver(SATFactory.DefaultSAT4J);
-		gia.getOptions().setSymmetryBreaking(0);
+		IncrementalGuidedImprovementAlgorithm igia = new IncrementalGuidedImprovementAlgorithm("asdf", new MultiObjectiveOptions());
+		igia.getOptions().setSolver(SATFactory.DefaultSAT4J);
+		igia.getOptions().setSymmetryBreaking(0);
 
 		SolutionNotifier notifier = new SolutionNotifier() {
 			List<MeasuredSolution> solutions = new Vector<MeasuredSolution>();
@@ -102,6 +102,6 @@ public class GIASmallEndToEndTest {
 			}
 		};
 
-		gia.multiObjectiveSolve(problem, notifier);
+		igia.multiObjectiveSolve(problem, notifier);
 	}
 }

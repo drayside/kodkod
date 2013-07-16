@@ -67,7 +67,9 @@ public abstract class Objective implements Comparable<Objective> {
 	public abstract Formula betterThanOrEqual(final int value);
 
 	public abstract Formula worseThan(final int value);
-	
+
+	public abstract Formula worseThanOrEqual(final int value);
+
 	/**
 	 * Indicates which, if either, value is preferred by this metric.
 	 * @param d1
@@ -105,6 +107,11 @@ public abstract class Objective implements Comparable<Objective> {
 		}
 
 		@Override
+		public Formula worseThanOrEqual(int value) {
+			return expr.gte(IntConstant.constant(value));
+		}
+
+		@Override
 		public int prefer(final int v1, final int v2) {
 			if (v1 == v2) {
 				return 0;
@@ -134,6 +141,11 @@ public abstract class Objective implements Comparable<Objective> {
 		@Override
 		public Formula worseThan(final int value) {
 			return expr.lt(IntConstant.constant(value));
+		}
+
+		@Override
+		public Formula worseThanOrEqual(final int value) {
+			return expr.lte(IntConstant.constant(value));
 		}
 
 		@Override

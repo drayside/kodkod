@@ -18,12 +18,6 @@ import kodkod.multiobjective.statistics.StepCounter;
 
 public final class IncrementalGuidedImprovementAlgorithm extends MultiObjectiveAlgorithm {
 
-	/*
-	 * turn on this variable to enable the step counter. It will
-	 * count how many steps were taken from a base point to a Pareto point
-	 * and report the results in a file specified over the variable filename
-	 */
-
 	public IncrementalGuidedImprovementAlgorithm(final String desc, final MultiObjectiveOptions options) {
 		super(desc, options, Logger.getLogger(IncrementalGuidedImprovementAlgorithm.class.toString()));
 	}
@@ -93,7 +87,7 @@ public final class IncrementalGuidedImprovementAlgorithm extends MultiObjectiveA
 			
 			constraint = Formula.and(exclusionConstraints);
 			solution = solver.solve(constraint, problem.getBounds());
-			incrementStats(solution, problem, constraint, true, null);
+			incrementStats(solution, problem, constraint, false, null);
 			
 			//count this step but first go to new index because it's a new base point
 			counter.nextIndex();
