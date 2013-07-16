@@ -53,7 +53,15 @@ public class PartitionedGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
 
         // Find the boundaries of the search space
         Formula boundaryConstraints = findBoundaries(problem, startingValues);
+        exclusionConstraints.add(boundaryConstraints);
 
+        IncrementalSolver solver = IncrementalSolver.solver(getOptions());
+
+        // Restart the search with an IncrementalSolver
+        // We want the boundaries and problem constraints in the solver, before incrementally adding improvement constraints
+        Formula constraint = Formula.and(exclusionConstraints);
+        solution = solver.solve(constraint, problem.getBounds());
+        incrementStats(solution, problem, constraint, false, constraint);
         counter.countStep();
 
         // While the current solution is satisfiable try to find a better one
@@ -69,13 +77,15 @@ public class PartitionedGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
                 final Formula improvementConstraints = currentValues.parametrizedImprovementConstraints();
 
                 previousSolution = solution;
-                Formula constraint = problem.getConstraints().and(boundaryConstraints).and(improvementConstraints);
-                solution = getSolver().solve(constraint, problem.getBounds());
-                incrementStats(solution, problem, constraint, false, improvementConstraints);
+                solution = solver.solve(improvementConstraints, new Bounds(problem.getBounds().universe()));
+                incrementStats(solution, problem, improvementConstraints, false, improvementConstraints);
 
                 counter.countStep();
             }
             foundParetoPoint(currentValues);
+
+            // Free the solver's resources since we will be creating a new solver
+            solver.free();
 
             if (!options.allSolutionsPerPoint()) {
                 // no magnifying glass
@@ -89,10 +99,12 @@ public class PartitionedGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
                 logger.log(Level.FINE, "Magnifying glass found {0} solution(s). At time: {1}", new Object[] {Integer.valueOf(solutionsFound), Integer.valueOf((int)((System.currentTimeMillis()-startTime)/1000))});
             }
 
-            // start looking for next base point
+            // Find another starting point
+            solver = IncrementalSolver.solver(getOptions());
             exclusionConstraints.add(currentValues.exclusionConstraint());
-            Formula constraint = Formula.and(exclusionConstraints).and(boundaryConstraints);
-            solution = getSolver().solve(constraint, problem.getBounds());
+
+            constraint = Formula.and(exclusionConstraints);
+            solution = solver.solve(constraint, problem.getBounds());
             incrementStats(solution, problem, constraint, false, null);
 
             //count this step but first go to new index because it's a new base point
