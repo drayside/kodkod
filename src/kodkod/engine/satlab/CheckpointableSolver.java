@@ -10,7 +10,7 @@ package kodkod.engine.satlab;
  * @invariant all c: clauses | all lit: c.literals | lit in variables || -lit in variables
  * @invariant all c: clauses | all disj i,j: c.literals | abs(i) != abs(j)
  */
-interface CheckpointableSolver extends SATSolver {
+public interface CheckpointableSolver extends SATSolver {
 
     /**
      * Creates a checkpoint at the solver's current state and pushes it onto
