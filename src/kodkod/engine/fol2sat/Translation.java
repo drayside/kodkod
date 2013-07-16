@@ -23,6 +23,7 @@ package kodkod.engine.fol2sat;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.Stack;
 
 import kodkod.ast.Relation;
 import kodkod.engine.bool.BooleanConstant;
@@ -356,6 +357,99 @@ public abstract class Translation {
 		@Override
 		public int numPrimaryVariables() { return interpreter.factory().numberOfVariables(); }
 		
+	}
+
+	public static final class Checkpointed extends Translation {
+		/**
+		 * @invariant this.interpreter.universe = this.bounds.universe && 
+		 *            this.interpreter.relations in this.bounds.relations &&
+		 *            this.interpreter.intBound = this.bounds.ibounds && 
+		 *            this.interpreter.lowerBound in this.bounds.lbounds &&
+		 *            this.interpreter.upperBound in this.bounds.ubounds &&
+		 *            this.interpreter.vars = this.vars.label
+		 **/
+		private final LeafInterpreter interpreter;
+		/**
+		 * @invariant this.incrementer.solver = this.solver
+		 * @invariant this.incrementer.factory = this.interpreter.factory
+		 */
+		private final Bool2CNFTranslator incrementer;
+		private final Set<IntSet> symmetries;
+
+		private final Stack<Bounds> boundsCheckpoints;
+		
+		/**
+		 * Creates an Incremental translation using the given bounds, options, symmetries of the original bounds, 
+		 * translator and interpreter.  This constructor assumes that the symmetries induced by {@code bounds} refine 
+		 * the {@code originalSymmetries}, which were obtained from the original problem bounds.
+		 * @requires options.logTranslation = 0 && options.solver.incremental()
+		 * @requires translator.solver was constructed by calling options.solver.instance()
+		 * @requires all s : SymmetryDetector.partition(bounds) | some p : originalSymmetries | s.ints in p.ints
+		 * @ensures this.bounds' = bounds && this.options' = options  && this.symmetries' = originalSymmetries &&
+		 *         this.incrementer' = incrementer  && this.interpreter' = interpreter
+		 */
+		Checkpointed(Bounds bounds, Options options, Set<IntSet> originalSymmetries, LeafInterpreter interpreter, Bool2CNFTranslator translator) {
+			super(bounds, options);
+			this.interpreter = interpreter;
+			this.incrementer = translator;
+			this.symmetries = originalSymmetries;
+
+			this.boundsCheckpoints = new Stack<Bounds>();
+		}
+		
+		/**
+		 * Returns the symmetries induced by the original bounds.
+		 * @return this.symmetries
+		 */
+		Set<IntSet> symmetries() { return symmetries; }
+		
+		/**
+		 * Returns this.interpreter.
+		 * @return this.interpreter
+		 */
+		LeafInterpreter interpreter() { return interpreter; }
+		
+		/**
+		 * Returns this.incrementer.
+		 * @return this.incrementer.
+		 */
+		Bool2CNFTranslator incrementer() { return incrementer; }
+		
+		/**
+		 * {@inheritDoc}
+		 * @see kodkod.engine.fol2sat.Translation#cnf()
+		 */
+		public final SATSolver cnf() { return incrementer.solver(); }
+		
+		/**
+		 * {@inheritDoc}
+		 * @see kodkod.engine.fol2sat.Translation#primaryVariables(kodkod.ast.Relation)
+		 */
+		@Override
+		public IntSet primaryVariables(Relation relation) { 
+			return interpreter.vars(relation); 
+		}
+
+		/**
+		 * {@inheritDoc}
+		 * @see kodkod.engine.fol2sat.Translation#numPrimaryVariables()
+		 */
+		@Override
+		public int numPrimaryVariables() { return interpreter.factory().numberOfVariables(); }
+
+		public void checkpoint() {
+			incrementer.checkpoint();
+			boundsCheckpoints.push(bounds().clone());
+		}
+
+		public void rollback() {
+			incrementer.rollback();
+			Bounds checkpointBounds = boundsCheckpoints.pop();
+
+			bounds().relations().retainAll(checkpointBounds.relations());
+			bounds().ints().addAll(checkpointBounds.ints());
+			bounds().ints().retainAll(checkpointBounds.ints());
+		}
 	}
 
 	
