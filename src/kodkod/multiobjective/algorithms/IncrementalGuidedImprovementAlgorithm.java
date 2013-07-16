@@ -87,7 +87,7 @@ public final class IncrementalGuidedImprovementAlgorithm extends MultiObjectiveA
 			
 			constraint = Formula.and(exclusionConstraints);
 			solution = solver.solve(constraint, problem.getBounds());
-			incrementStats(solution, problem, constraint, true, null);
+			incrementStats(solution, problem, constraint, false, null);
 			
 			//count this step but first go to new index because it's a new base point
 			counter.nextIndex();
