@@ -61,7 +61,7 @@ public abstract class SATFactory {
 			solver.addVariables(1);
 			solver.addClause(new int[]{1});
 			return solver.solve();
-		} catch (RuntimeException|UnsatisfiedLinkError t) {
+		} catch (RuntimeException|UnsatisfiedLinkError|NoClassDefFoundError t) {
 			return false;
 		} finally {
 			if (solver!=null) {
@@ -202,6 +202,17 @@ public abstract class SATFactory {
 				null, opts.toArray(new String[opts.size()]));
 
 	}
+
+	/**
+     * The factory that produces instances of the wrapper for Microsoft
+     * Research's Z3 solver.
+     */
+	public static final SATFactory Z3 = new SATFactory() {
+		public SATSolver instance() {
+			return new Z3();
+		}
+		public String toString() { return "Z3"; }
+	};
 
 	/**
 	 * Searches the {@code java.library.path} for an executable with the given name. Returns a fully
