@@ -5,6 +5,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assume.*;
 
 import java.util.Iterator;
 import kodkod.engine.*;
@@ -23,13 +24,14 @@ public class SolverSmallEndToEndTest {
 
 	@Before
 	public void setUp() {
+		assumeTrue(SATFactory.available(SATFactory.Z3));
 		moo_problem = new rooks_3_metrics_2();
 	}
 
 	@Test
 	public void TestEndToEnd() {
 		MultiObjectiveSolver solver = new MultiObjectiveSolver();
-		solver.options().setSolver(SATFactory.DefaultSAT4J);
+		solver.options().setSolver(SATFactory.Z3);
 		solver.options().setSymmetryBreaking(1000);
 
 		Iterator<Solution> solutions = solver.solveAll(moo_problem.getFormula(), 
