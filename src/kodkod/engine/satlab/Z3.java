@@ -190,7 +190,7 @@ final class Z3 implements CheckpointableSolver {
             Symbol sym = context.MkSymbol(variable);
             BoolExpr variable_expression = context.MkBoolConst(sym);
 
-            Expr value_expression = model.ConstInterp(variable_expression);
+            Expr value_expression = model.Eval(variable_expression, true);
 
             if (value_expression.IsTrue()) {
                 return true;
