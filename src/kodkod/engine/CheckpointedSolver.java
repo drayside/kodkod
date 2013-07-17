@@ -122,6 +122,8 @@ public final class CheckpointedSolver implements KodkodSolver {
 	private CheckpointedSolver(Options options) { 
 		this.options = options;
 		this.outcome = null;
+		this.outcomeCheckpoints = new Stack<Boolean>();
+		this.translationCheckpoints = new Stack<Translation.Checkpointed>();
 	}
 	
 	/**
@@ -211,8 +213,8 @@ public final class CheckpointedSolver implements KodkodSolver {
 			outcome = Boolean.TRUE;
 		} else {
 			outcome = Boolean.FALSE;
-			free();
 		}
+
 		return solution;
 	}
 
@@ -243,7 +245,6 @@ public final class CheckpointedSolver implements KodkodSolver {
 	}
 	
 	public void checkpoint() {
-		System.out.println("Checkpointing");
 		if (translation != null) {
 			translation.checkpoint();
 		}
@@ -253,7 +254,6 @@ public final class CheckpointedSolver implements KodkodSolver {
 	}
 
 	public void rollback() {
-		System.out.println("Rolling back");
 		translation = translationCheckpoints.pop();
 		if (translation != null) {
 			translation.rollback();

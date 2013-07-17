@@ -447,7 +447,6 @@ public abstract class Translation {
 			Bounds checkpointBounds = boundsCheckpoints.pop();
 
 			bounds().relations().retainAll(checkpointBounds.relations());
-			bounds().ints().addAll(checkpointBounds.ints());
 			bounds().ints().retainAll(checkpointBounds.ints());
 		}
 	}

@@ -8,6 +8,7 @@ import org.junit.runners.Suite;
   kodkod.multiobjective.EndtoEnd.GIASmallEndToEndTest.class,
   kodkod.multiobjective.EndtoEnd.IGIASmallEndToEndTest.class,
   kodkod.multiobjective.EndtoEnd.PGIASmallEndToEndTest.class,
+  kodkod.multiobjective.EndtoEnd.CGIASmallEndToEndTest.class,
   kodkod.multiobjective.EndtoEnd.SolverSmallEndToEndTest.class
 })
 public class TestSuite {
