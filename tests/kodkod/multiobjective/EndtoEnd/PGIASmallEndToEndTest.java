@@ -17,7 +17,7 @@ import kodkod.multiobjective.algorithms.*;
 import kodkod.multiobjective.concurrency.*;
 
 @RunWith(JUnit4.class)
-public class PartitionedGIASmallEndToEndTest {
+public class PGIASmallEndToEndTest {
 	/*Fields*/
 	private MooProblem moo_problem;
 
@@ -69,9 +69,9 @@ public class PartitionedGIASmallEndToEndTest {
 	@Test
 	public void WithoutSymmetryBreaking() {
 		MultiObjectiveProblem problem = moo_problem.getProblem();
-		IncrementalGuidedImprovementAlgorithm igia = new IncrementalGuidedImprovementAlgorithm("asdf", new MultiObjectiveOptions());
-		igia.getOptions().setSolver(SATFactory.DefaultSAT4J);
-		igia.getOptions().setSymmetryBreaking(0);
+		PartitionedGuidedImprovementAlgorithm pgia = new PartitionedGuidedImprovementAlgorithm("asdf", new MultiObjectiveOptions());
+		pgia.getOptions().setSolver(SATFactory.DefaultSAT4J);
+		pgia.getOptions().setSymmetryBreaking(0);
 
 		SolutionNotifier notifier = new SolutionNotifier() {
 			List<MeasuredSolution> solutions = new Vector<MeasuredSolution>();
@@ -102,6 +102,6 @@ public class PartitionedGIASmallEndToEndTest {
 			}
 		};
 
-		igia.multiObjectiveSolve(problem, notifier);
+		pgia.multiObjectiveSolve(problem, notifier);
 	}
 }
