@@ -28,14 +28,14 @@ import java.util.Stack;
  * @author Emina Torlak
  */
 final class MiniSat extends NativeSolver implements CheckpointableSolver {
-  Stack<Long> solverCheckpoints;
+    Stack<Long> solverCheckpoints;
 
 	/**
 	 * Constructs a new MiniSAT wrapper.
 	 */
 	public MiniSat() {
 		super(make());
-    solverCheckpoints = new Stack<Long>();
+        solverCheckpoints = new Stack<Long>();
 	}
 	
 	static {
@@ -57,12 +57,12 @@ final class MiniSat extends NativeSolver implements CheckpointableSolver {
 	 */
 	private static native long make();
 
-  /**
-   * Returns a pointer to a copy of a MiniSAT instance.
-   * @return a pointer to a copy of a MiniSAT instance.
-   */
-  private static native long make_copy(long original);
-	
+    /**
+    * Returns a pointer to a copy of a MiniSAT instance.
+    * @return a pointer to a copy of a MiniSAT instance.
+    */
+    private static native long make_copy(long original);
+
 	/**
 	 * {@inheritDoc}
 	 * @see kodkod.engine.satlab.NativeSolver#free(long)
@@ -93,21 +93,17 @@ final class MiniSat extends NativeSolver implements CheckpointableSolver {
 	 */
 	native boolean valueOf(long peer, int literal);
 
-  public void checkpoint() {
-    long copy = make_copy(this.peer());
-    System.out.println("Checkpointing, made copy at " + copy);
-    solverCheckpoints.push(this.peer());
-    this.setPeer(copy);
-  }
+    public void checkpoint() {
+        long copy = make_copy(this.peer());
+        solverCheckpoints.push(this.peer());
+        this.setPeer(copy);
+    }
 
-  public void rollback() {
-    long newPeer = solverCheckpoints.pop();
-    System.out.println("Rollingback, new peer is at " + newPeer);
-    System.out.println("Freeing peer at " + this.peer());
-    free(this.peer());
-    this.setPeer(newPeer);
-    System.out.println("Finished Rollback, peer is at " + this.peer());
-  }
+    public void rollback() {
+        long newPeer = solverCheckpoints.pop();
+        free(this.peer());
+        this.setPeer(newPeer);
+    }
 
   public int numberOfCheckpoints() {
     return solverCheckpoints.size();
