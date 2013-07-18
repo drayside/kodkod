@@ -53,6 +53,12 @@ final class MiniSat extends NativeSolver {
 	 * @return a pointer to an instance of minisat.
 	 */
 	private static native long make();
+
+  /**
+   * Returns a pointer to a copy of a MiniSAT instance.
+   * @return a pointer to a copy of a MiniSAT instance.
+   */
+  private static native long make_copy(long original);
 	
 	/**
 	 * {@inheritDoc}

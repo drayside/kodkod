@@ -39,6 +39,7 @@ public:
     // Constructor/Destructor:
     //
     Solver();
+    Solver(Solver&);
     virtual ~Solver();
 
     // Problem specification:

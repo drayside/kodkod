@@ -200,7 +200,7 @@ class ClauseAllocator : public RegionAllocator<uint32_t>
 
     ClauseAllocator(uint32_t start_cap) : RegionAllocator<uint32_t>(start_cap), extra_clause_field(false){}
     ClauseAllocator() : extra_clause_field(false){}
-
+    ClauseAllocator(ClauseAllocator& original) : extra_clause_field(original.extra_clause_field), RegionAllocator<uint32_t>(original) {}
     void moveTo(ClauseAllocator& to){
         to.extra_clause_field = extra_clause_field;
         RegionAllocator<uint32_t>::moveTo(to); }

@@ -98,6 +98,85 @@ Solver::Solver() :
   , asynch_interrupt   (false)
 {}
 
+Solver::Solver(Solver& original) :
+    verbosity         (original.verbosity)
+  , var_decay         (original.var_decay)
+  , clause_decay      (original.clause_decay)
+  , random_var_freq   (original.random_var_freq)
+  , random_seed       (original.random_seed)
+  , luby_restart      (original.luby_restart)
+  , ccmin_mode        (original.ccmin_mode)
+  , phase_saving      (original.phase_saving)
+  , rnd_pol           (original.rnd_pol)
+  , rnd_init_act      (original.rnd_init_act)
+  , garbage_frac      (original.garbage_frac)
+  , restart_first     (original.restart_first)
+  , restart_inc       (original.restart_inc)
+  , learntsize_factor (original.learntsize_factor)
+  , learntsize_adjust_start_confl (original.learntsize_adjust_start_confl)
+  , learntsize_adjust_inc         (original.learntsize_adjust_inc)
+  , solves            (original.solves)
+  , starts            (original.starts)
+  , decisions         (original.decisions)
+  , rnd_decisions     (original.rnd_decisions)
+  , propagations      (original.propagations)
+  , conflicts         (original.conflicts)
+  , dec_vars          (original.dec_vars)
+  , clauses_literals  (original.clauses_literals)
+  , learnts_literals  (original.learnts_literals)
+  , max_literals      (original.max_literals)
+  , tot_literals      (original.tot_literals)
+  , ok                (original.ok)
+  , cla_inc           (original.cla_inc)
+  , var_inc           (original.var_inc)
+  , watches           (WatcherDeleted(ca))
+  , qhead             (original.qhead)
+  , simpDB_assigns    (original.simpDB_assigns)
+  , simpDB_props      (original.simpDB_props)
+  , order_heap        (VarOrderLt(activity))
+  , progress_estimate (original.progress_estimate)
+  , remove_satisfied  (original.remove_satisfied)
+  , conflict_budget   (original.conflict_budget)
+  , propagation_budget(original.propagation_budget)
+  , asynch_interrupt  (original.asynch_interrupt)
+  , ca                (original.ca)
+{
+    // Copy model vector
+    original.model.copyTo(model);
+
+    // Copy conflict vector
+    original.conflict.copyTo(conflict);
+
+    // Copy clauses vector
+    original.clauses.copyTo(clauses);
+
+    // Copy learnts vector
+    original.learnts.copyTo(learnts);
+
+    // Copy activity vector
+    original.activity.copyTo(activity);
+
+    // Copy assigns vector
+    original.assigns.copyTo(assigns);
+
+    // Copy polarity vector
+    original.polarity.copyTo(polarity);
+
+    // Copy trail vector
+    original.trail.copyTo(trail);
+
+    // Copy trail_lim vector
+    original.trail_lim.copyTo(trail_lim);
+
+    // Copy vardata vector
+    original.vardata.copyTo(vardata);
+
+    // Copy order_heap Heap
+    for (int index = 0; index < original.order_heap.size(); index += 1) {
+        order_heap.insert(original.order_heap[index]);
+    }
+}
+
 
 Solver::~Solver()
 {
