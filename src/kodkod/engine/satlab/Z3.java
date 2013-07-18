@@ -2,6 +2,7 @@ package kodkod.engine.satlab;
 
 import java.lang.RuntimeException;
 import java.util.Stack;
+import java.util.HashMap;
 import com.microsoft.z3.Solver;
 import com.microsoft.z3.Context;
 import com.microsoft.z3.Z3Exception;
@@ -26,6 +27,7 @@ final class Z3 implements CheckpointableSolver {
     private Status last_status;
     private Model last_model;
 
+    private HashMap<Integer, BoolExpr> expressionCache;
     private Stack<Checkpoint> checkpoints;
 
     private class Checkpoint {
@@ -59,9 +61,11 @@ final class Z3 implements CheckpointableSolver {
     }
 
     Z3() {
+        expressionCache = new HashMap<Integer, BoolExpr>();
         try {
             context = new Context();
-            satTactic = context.MkTactic("sat");
+            satTactic = context.ParAndThen(context.MkTactic("sat-preprocess"),
+                                           context.MkTactic("sat"));
             solver = context.MkSolver(satTactic);
         } catch (Z3Exception e) {
             throw new RuntimeException(e);
@@ -130,14 +134,7 @@ final class Z3 implements CheckpointableSolver {
                 if (lit == 0 || lit > vars) {
                     throw new IllegalArgumentException("Illegal variable: " + lit);
                 }
-                Symbol sym = context.MkSymbol(lit);
-                BoolExpr expr = context.MkBoolConst(sym);
-                boolean negated = (lits[i] < 0);
-                if (negated) {
-                    literals[i] = context.MkNot(expr);
-                } else {
-                    literals[i] = expr;
-                }
+                literals[i] = getExpressionForLiteral(lits[i]);
             }
 
             BoolExpr clause = context.MkOr(literals);
@@ -187,8 +184,7 @@ final class Z3 implements CheckpointableSolver {
         }
         try {
             Model model = last_model;
-            Symbol sym = context.MkSymbol(variable);
-            BoolExpr variable_expression = context.MkBoolConst(sym);
+            BoolExpr variable_expression = getExpressionForLiteral(variable);
 
             Expr value_expression = model.Eval(variable_expression, true);
 
@@ -246,5 +242,24 @@ final class Z3 implements CheckpointableSolver {
         solver = null;
         context.Dispose();
         context = null;
+    }
+
+    private BoolExpr getExpressionForLiteral(int literal) throws Z3Exception {
+      if (literal == 0) {
+        throw new IllegalArgumentException("Parameter must be nonzero.");
+      }
+
+      BoolExpr expr = expressionCache.get(literal);
+      if (expr == null) {
+        if (literal > 0) {
+          Symbol sym = context.MkSymbol(literal);
+          expr = context.MkBoolConst(sym);
+        } else {
+          expr = context.MkNot(getExpressionForLiteral(-1 * literal)); 
+        }
+        expressionCache.put(literal, expr);
+      }
+
+      return expr;
     }
 }
