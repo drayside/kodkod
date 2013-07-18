@@ -23,6 +23,8 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "mtl/Sort.h"
 #include "core/Solver.h"
 
+#include <iostream>
+
 using namespace Minisat;
 
 //=================================================================================================
@@ -98,7 +100,7 @@ Solver::Solver() :
   , asynch_interrupt   (false)
 {}
 
-Solver::Solver(Solver& original) :
+Solver::Solver(const Solver& original) :
     verbosity         (original.verbosity)
   , var_decay         (original.var_decay)
   , clause_decay      (original.clause_decay)
@@ -113,6 +115,7 @@ Solver::Solver(Solver& original) :
   , restart_first     (original.restart_first)
   , restart_inc       (original.restart_inc)
   , learntsize_factor (original.learntsize_factor)
+  , learntsize_inc    (original.learntsize_inc)
   , learntsize_adjust_start_confl (original.learntsize_adjust_start_confl)
   , learntsize_adjust_inc         (original.learntsize_adjust_inc)
   , solves            (original.solves)
@@ -129,52 +132,78 @@ Solver::Solver(Solver& original) :
   , ok                (original.ok)
   , cla_inc           (original.cla_inc)
   , var_inc           (original.var_inc)
-  , watches           (WatcherDeleted(ca))
+  , watches           (original.watches, WatcherDeleted(ca))
   , qhead             (original.qhead)
   , simpDB_assigns    (original.simpDB_assigns)
   , simpDB_props      (original.simpDB_props)
   , order_heap        (VarOrderLt(activity))
   , progress_estimate (original.progress_estimate)
   , remove_satisfied  (original.remove_satisfied)
+  , ca                (original.ca)
+  , max_learnts       (original.max_learnts)
+  , learntsize_adjust_confl (original.learntsize_adjust_confl)
+  , learntsize_adjust_cnt (original.learntsize_adjust_cnt)
   , conflict_budget   (original.conflict_budget)
   , propagation_budget(original.propagation_budget)
   , asynch_interrupt  (original.asynch_interrupt)
-  , ca                (original.ca)
 {
+    std::cerr << "Copying Model Vector" << std::endl;
     // Copy model vector
     original.model.copyTo(model);
 
+    std::cerr << "Copying Conflict Vector" << std::endl;
     // Copy conflict vector
     original.conflict.copyTo(conflict);
 
+    std::cerr << "Copying Clauses Vector" << std::endl;
     // Copy clauses vector
     original.clauses.copyTo(clauses);
 
+    std::cerr << "Copying Learnts Vector" << std::endl;
     // Copy learnts vector
     original.learnts.copyTo(learnts);
 
+    std::cerr << "Copying Activity Vector" << std::endl;
     // Copy activity vector
     original.activity.copyTo(activity);
 
+    std::cerr << "Copying Assigns Vector" << std::endl;
     // Copy assigns vector
     original.assigns.copyTo(assigns);
 
+    std::cerr << "Copying Polarity Vector" << std::endl;
     // Copy polarity vector
     original.polarity.copyTo(polarity);
 
+    std::cerr << "Copying Trail Vector" << std::endl;
     // Copy trail vector
     original.trail.copyTo(trail);
 
+    std::cerr << "Copying Trail Lim Vector" << std::endl;
     // Copy trail_lim vector
     original.trail_lim.copyTo(trail_lim);
 
+    std::cerr << "Copying Vardata Vector" << std::endl;
     // Copy vardata vector
     original.vardata.copyTo(vardata);
 
+    std::cerr << "Copying Order Heap" << std::endl;
     // Copy order_heap Heap
     for (int index = 0; index < original.order_heap.size(); index += 1) {
         order_heap.insert(original.order_heap[index]);
     }
+
+    std::cerr << "Copying seen vector" << std::endl;
+    original.seen.copyTo(seen);
+
+    std::cerr << "Copying analyze_stack vector" << std::endl;
+    original.analyze_stack.copyTo(analyze_stack);
+
+    std::cerr << "Copying analyze_toclear vector" << std::endl;
+    original.analyze_toclear.copyTo(analyze_toclear);
+
+    std::cerr << "Copying add_tmp vector" << std::endl;
+    original.add_tmp.copyTo(add_tmp);
 }
 
 

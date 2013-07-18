@@ -101,6 +101,9 @@ public abstract class SATFactory {
 		public SATSolver instance() {
 			return new MiniSat();
 		}
+    public boolean checkpointable() {
+      return true;
+    }
 		public String toString() { return "MiniSat"; }
 	};
 

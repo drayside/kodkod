@@ -200,7 +200,7 @@ class ClauseAllocator : public RegionAllocator<uint32_t>
 
     ClauseAllocator(uint32_t start_cap) : RegionAllocator<uint32_t>(start_cap), extra_clause_field(false){}
     ClauseAllocator() : extra_clause_field(false){}
-    ClauseAllocator(ClauseAllocator& original) : extra_clause_field(original.extra_clause_field), RegionAllocator<uint32_t>(original) {}
+    ClauseAllocator(const ClauseAllocator& original) : extra_clause_field(original.extra_clause_field), RegionAllocator<uint32_t>(original) {}
     void moveTo(ClauseAllocator& to){
         to.extra_clause_field = extra_clause_field;
         RegionAllocator<uint32_t>::moveTo(to); }
@@ -262,7 +262,7 @@ class OccLists
 
  public:
     OccLists(const Deleted& d) : deleted(d) {}
-    
+    OccLists(const OccLists<Idx, Vec, Deleted>&, const Deleted& d); 
     void  init      (const Idx& idx){ occs.growTo(toInt(idx)+1); dirty.growTo(toInt(idx)+1, 0); }
     // Vec&  operator[](const Idx& idx){ return occs[toInt(idx)]; }
     Vec&  operator[](const Idx& idx){ return occs[toInt(idx)]; }
@@ -283,6 +283,21 @@ class OccLists
         dirties.clear(free);
     }
 };
+
+template<class Idx, class Vec, class Deleted>
+OccLists<Idx,Vec,Deleted>::OccLists(const OccLists<Idx, Vec, Deleted>& original, const Deleted& d) :
+    deleted(d)
+{
+    for (int i = 0; i < original.occs.size(); i++) {
+        occs.push();
+        for (int j = 0; j < original.occs[i].size(); j++) {
+            occs[i].push(original.occs[i][j]);
+        }
+    }
+
+    original.dirty.copyTo(dirty);
+    original.dirties.copyTo(dirties);
+}
 
 
 template<class Idx, class Vec, class Deleted>

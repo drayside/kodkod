@@ -39,7 +39,7 @@ public:
     // Constructor/Destructor:
     //
     Solver();
-    Solver(Solver&);
+    Solver(const Solver&);
     virtual ~Solver();
 
     // Problem specification:

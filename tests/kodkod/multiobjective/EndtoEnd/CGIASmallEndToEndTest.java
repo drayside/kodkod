@@ -38,7 +38,7 @@ public class CGIASmallEndToEndTest {
 	@Before
 	public void setUp() {
 		// Need to have Z3 available since Z3 is the only checkpointed solver.
-		assumeTrue(SATFactory.available(SATFactory.Z3));
+		assumeTrue(SATFactory.available(SATFactory.MiniSat));
 		moo_problem = new rooks_3_metrics_2();
 	}
 
@@ -46,7 +46,7 @@ public class CGIASmallEndToEndTest {
 	public void WithSymmetryBreaking() {
 		MultiObjectiveProblem problem = moo_problem.getProblem();
 		CheckpointedGuidedImprovementAlgorithm igia = new CheckpointedGuidedImprovementAlgorithm("asdf", new MultiObjectiveOptions());
-		igia.getOptions().setSolver(SATFactory.Z3);
+		igia.getOptions().setSolver(SATFactory.MiniSat);
 		igia.getOptions().setSymmetryBreaking(1000);
 
 		SolutionNotifier notifier = new SolutionNotifier() {
@@ -82,7 +82,7 @@ public class CGIASmallEndToEndTest {
 	public void WithoutSymmetryBreaking() {
 		MultiObjectiveProblem problem = moo_problem.getProblem();
 		CheckpointedGuidedImprovementAlgorithm igia = new CheckpointedGuidedImprovementAlgorithm("asdf", new MultiObjectiveOptions());
-		igia.getOptions().setSolver(SATFactory.Z3);
+		igia.getOptions().setSolver(SATFactory.MiniSat);
 		igia.getOptions().setSymmetryBreaking(0);
 
 		SolutionNotifier notifier = new SolutionNotifier() {

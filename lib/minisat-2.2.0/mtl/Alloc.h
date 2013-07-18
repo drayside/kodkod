@@ -46,7 +46,7 @@ class RegionAllocator
     enum { Unit_Size = sizeof(uint32_t) };
 
     explicit RegionAllocator(uint32_t start_cap = 1024*1024) : memory(NULL), sz(0), cap(0), wasted_(0){ capacity(start_cap); }
-    RegionAllocator(RegionAllocator<T>&);
+    RegionAllocator(const RegionAllocator<T>&);
     ~RegionAllocator()
     {
         if (memory != NULL)
@@ -84,17 +84,19 @@ class RegionAllocator
 };
 
 template<class T>
-RegionAllocator<T>::RegionAllocator(RegionAllocator<T>& original) :
+RegionAllocator<T>::RegionAllocator(const RegionAllocator<T>& original) :
     memory (NULL)
-  , sz     (original.sz)
-  , cap    (original.cap)
-  , wasted_(original.wasted_)
+  , sz     (0)
+  , cap    (0)
+  , wasted_(0)
 {
-    memory = (T*)xrealloc(memory, sizeof(T)*cap);
+    capacity(original.cap);
     
     for(int index = 0; index < cap; index += 1) {
         memory[index] = original.memory[index];
     }
+    sz = original.sz;
+    wasted_ = original.wasted_;
 }
 
 template<class T>

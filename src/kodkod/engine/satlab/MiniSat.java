@@ -21,18 +21,21 @@
  */
 package kodkod.engine.satlab;
 
+import java.util.Stack;
 
 /**
  * Java wrapper for the MiniSat solver by Niklas E&eacute;n and Niklas S&ouml;rensson.
  * @author Emina Torlak
  */
-final class MiniSat extends NativeSolver {
-	
+final class MiniSat extends NativeSolver implements CheckpointableSolver {
+  Stack<Long> solverCheckpoints;
+
 	/**
 	 * Constructs a new MiniSAT wrapper.
 	 */
 	public MiniSat() {
 		super(make());
+    solverCheckpoints = new Stack<Long>();
 	}
 	
 	static {
@@ -89,4 +92,32 @@ final class MiniSat extends NativeSolver {
 	 * @see kodkod.engine.satlab.NativeSolver#valueOf(long, int)
 	 */
 	native boolean valueOf(long peer, int literal);
+
+  public void checkpoint() {
+    long copy = make_copy(this.peer());
+    System.out.println("Checkpointing, made copy at " + copy);
+    solverCheckpoints.push(this.peer());
+    this.setPeer(copy);
+  }
+
+  public void rollback() {
+    long newPeer = solverCheckpoints.pop();
+    System.out.println("Rollingback, new peer is at " + newPeer);
+    System.out.println("Freeing peer at " + this.peer());
+    free(this.peer());
+    this.setPeer(newPeer);
+    System.out.println("Finished Rollback, peer is at " + this.peer());
+  }
+
+  public int numberOfCheckpoints() {
+    return solverCheckpoints.size();
+  }
+
+  @Override
+  public synchronized void free() {
+    super.free();
+    while (solverCheckpoints.size() > 0) {
+      free(solverCheckpoints.pop());
+    } 
+  }
 }

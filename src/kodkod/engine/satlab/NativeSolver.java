@@ -144,6 +144,8 @@ abstract class NativeSolver implements SATSolver {
 	 * @return a pointer to the C++ peer class (the native instance wrapped by this object).
 	 */
 	final long peer() { return peer; }
+
+  final void setPeer(long peer) { this.peer = peer; }
 	
 	/**
 	 * Returns the current sat of the solver.
@@ -191,7 +193,7 @@ abstract class NativeSolver implements SATSolver {
 	 * {@inheritDoc}
 	 * @see kodkod.engine.satlab.SATSolver#free()
 	 */
-	public synchronized final void free() {
+	public synchronized void free() {
 		if (peer!=0) {
 //			System.out.println("freeing " + peer + " " + getClass());
 			free(peer);
