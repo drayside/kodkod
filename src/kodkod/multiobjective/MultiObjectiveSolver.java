@@ -16,6 +16,7 @@ import kodkod.engine.fol2sat.UnboundLeafException;
 import kodkod.instance.Bounds;
 import kodkod.multiobjective.algorithms.IncrementalGuidedImprovementAlgorithm;
 import kodkod.multiobjective.algorithms.MultiObjectiveAlgorithm;
+import kodkod.multiobjective.algorithms.OverlappingGuidedImprovementAlgorithm;
 import kodkod.multiobjective.concurrency.BlockingSolutionIterator;
 import kodkod.multiobjective.concurrency.SolutionNotifier;
 import kodkod.multiobjective.concurrency.TranslatingBlockingQueueSolutionNotifier;
@@ -39,7 +40,7 @@ public final class MultiObjectiveSolver implements KodkodSolver {
 
 		solutionQueue = new LinkedBlockingQueue<Solution>();
 		solutionIterator = new BlockingSolutionIterator(solutionQueue);
-		algorithm = new IncrementalGuidedImprovementAlgorithm("IGIA", options);
+		algorithm = new OverlappingGuidedImprovementAlgorithm("OGIA", options);
 		solutionNotifier = new TranslatingBlockingQueueSolutionNotifier(solutionQueue);
 	}
 	
