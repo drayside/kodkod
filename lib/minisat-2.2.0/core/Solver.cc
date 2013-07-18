@@ -23,8 +23,6 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "mtl/Sort.h"
 #include "core/Solver.h"
 
-#include <iostream>
-
 using namespace Minisat;
 
 //=================================================================================================
@@ -139,7 +137,6 @@ Solver::Solver(const Solver& original) :
   , order_heap        (VarOrderLt(activity))
   , progress_estimate (original.progress_estimate)
   , remove_satisfied  (original.remove_satisfied)
-  , ca                (original.ca)
   , max_learnts       (original.max_learnts)
   , learntsize_adjust_confl (original.learntsize_adjust_confl)
   , learntsize_adjust_cnt (original.learntsize_adjust_cnt)
@@ -147,62 +144,52 @@ Solver::Solver(const Solver& original) :
   , propagation_budget(original.propagation_budget)
   , asynch_interrupt  (original.asynch_interrupt)
 {
-    std::cerr << "Copying Model Vector" << std::endl;
+    original.ca.copyTo(ca);
+
     // Copy model vector
     original.model.copyTo(model);
 
-    std::cerr << "Copying Conflict Vector" << std::endl;
     // Copy conflict vector
     original.conflict.copyTo(conflict);
 
-    std::cerr << "Copying Clauses Vector" << std::endl;
     // Copy clauses vector
     original.clauses.copyTo(clauses);
 
-    std::cerr << "Copying Learnts Vector" << std::endl;
     // Copy learnts vector
     original.learnts.copyTo(learnts);
 
-    std::cerr << "Copying Activity Vector" << std::endl;
     // Copy activity vector
     original.activity.copyTo(activity);
 
-    std::cerr << "Copying Assigns Vector" << std::endl;
     // Copy assigns vector
     original.assigns.copyTo(assigns);
 
-    std::cerr << "Copying Polarity Vector" << std::endl;
     // Copy polarity vector
     original.polarity.copyTo(polarity);
 
-    std::cerr << "Copying Trail Vector" << std::endl;
+    // Copy decision vector
+    original.decision.copyTo(decision);
+    
     // Copy trail vector
     original.trail.copyTo(trail);
 
-    std::cerr << "Copying Trail Lim Vector" << std::endl;
     // Copy trail_lim vector
     original.trail_lim.copyTo(trail_lim);
 
-    std::cerr << "Copying Vardata Vector" << std::endl;
     // Copy vardata vector
     original.vardata.copyTo(vardata);
 
-    std::cerr << "Copying Order Heap" << std::endl;
     // Copy order_heap Heap
     for (int index = 0; index < original.order_heap.size(); index += 1) {
         order_heap.insert(original.order_heap[index]);
     }
 
-    std::cerr << "Copying seen vector" << std::endl;
     original.seen.copyTo(seen);
 
-    std::cerr << "Copying analyze_stack vector" << std::endl;
     original.analyze_stack.copyTo(analyze_stack);
 
-    std::cerr << "Copying analyze_toclear vector" << std::endl;
     original.analyze_toclear.copyTo(analyze_toclear);
 
-    std::cerr << "Copying add_tmp vector" << std::endl;
     original.add_tmp.copyTo(add_tmp);
 }
 
@@ -269,11 +256,13 @@ bool Solver::addClause_(vec<Lit>& ps)
 
 void Solver::attachClause(CRef cr) {
     const Clause& c = ca[cr];
+
     assert(c.size() > 1);
     watches[~c[0]].push(Watcher(cr, c[1]));
     watches[~c[1]].push(Watcher(cr, c[0]));
     if (c.learnt()) learnts_literals += c.size();
-    else            clauses_literals += c.size(); }
+    else            clauses_literals += c.size();
+}
 
 
 void Solver::detachClause(CRef cr, bool strict) {

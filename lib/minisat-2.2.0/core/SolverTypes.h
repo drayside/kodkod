@@ -23,6 +23,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #define Minisat_SolverTypes_h
 
 #include <assert.h>
+#include <iostream>
 
 #include "mtl/IntTypes.h"
 #include "mtl/Alg.h"
@@ -200,11 +201,15 @@ class ClauseAllocator : public RegionAllocator<uint32_t>
 
     ClauseAllocator(uint32_t start_cap) : RegionAllocator<uint32_t>(start_cap), extra_clause_field(false){}
     ClauseAllocator() : extra_clause_field(false){}
-    ClauseAllocator(const ClauseAllocator& original) : extra_clause_field(original.extra_clause_field), RegionAllocator<uint32_t>(original) {}
     void moveTo(ClauseAllocator& to){
         to.extra_clause_field = extra_clause_field;
         RegionAllocator<uint32_t>::moveTo(to); }
 
+    void copyTo(ClauseAllocator& to) const {
+        to.extra_clause_field = extra_clause_field;
+        RegionAllocator<uint32_t>::copyTo(to);
+    }
+    
     template<class Lits>
     CRef alloc(const Lits& ps, bool learnt = false)
     {
@@ -290,11 +295,10 @@ OccLists<Idx,Vec,Deleted>::OccLists(const OccLists<Idx, Vec, Deleted>& original,
 {
     for (int i = 0; i < original.occs.size(); i++) {
         occs.push();
-        for (int j = 0; j < original.occs[i].size(); j++) {
-            occs[i].push(original.occs[i][j]);
-        }
+        Vec& copyVector = occs[i];
+        const Vec& originalVector = original.occs[i];
+        originalVector.copyTo(copyVector);
     }
-
     original.dirty.copyTo(dirty);
     original.dirties.copyTo(dirties);
 }
