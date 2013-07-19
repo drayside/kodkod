@@ -94,12 +94,14 @@ final class MiniSat extends NativeSolver implements CheckpointableSolver {
 	native boolean valueOf(long peer, int literal);
 
     public void checkpoint() {
+        checkpoint_status();
         long copy = make_copy(this.peer());
         solverCheckpoints.push(this.peer());
         this.setPeer(copy);
     }
 
     public void rollback() {
+        rollback_status();
         long newPeer = solverCheckpoints.pop();
         free(this.peer());
         this.setPeer(newPeer);

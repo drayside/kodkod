@@ -22,9 +22,7 @@
 package kodkod.engine.satlab;
 
 import java.io.File;
-
-
-
+import java.util.Stack;
 
 /**
  * A skeleton implementation of a wrapper for a sat solver
@@ -39,7 +37,11 @@ abstract class NativeSolver implements SATSolver {
 	private long peer;
 	private Boolean sat;
 	private int clauses, vars;
-	
+
+  private Stack<Integer> clauseCheckpoints;
+  private Stack<Integer> varsCheckpoints;
+  private Stack<Boolean> satCheckpoints;
+
 	/**
 	 * Constructs a new wrapper for the given 
 	 * instance of the native solver.
@@ -48,6 +50,10 @@ abstract class NativeSolver implements SATSolver {
 		this.peer = peer;
 		this.clauses = this.vars = 0;
 		this.sat = null;
+
+    this.clauseCheckpoints = new Stack<Integer>();
+    this.varsCheckpoints = new Stack<Integer>();
+    this.satCheckpoints = new Stack<Boolean>();
 //		System.out.println("created " + peer);
 	}
 	
@@ -209,6 +215,18 @@ abstract class NativeSolver implements SATSolver {
 		super.finalize();
 		free();
 	}
+
+  protected final void checkpoint_status() {
+    this.clauseCheckpoints.push(clauses);
+    this.varsCheckpoints.push(vars);
+    this.satCheckpoints.push(sat);
+  }
+
+  protected final void rollback_status() {
+    this.clauses = this.clauseCheckpoints.pop();
+    this.vars = this.varsCheckpoints.pop();
+    this.sat = this.satCheckpoints.pop();
+  }
 	
 	/**
 	 * Releases the resources associated with
