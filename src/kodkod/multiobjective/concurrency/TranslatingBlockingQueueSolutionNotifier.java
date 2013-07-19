@@ -31,8 +31,23 @@ public final class TranslatingBlockingQueueSolutionNotifier implements SolutionN
 		tell(new MeasuredSolution(s, values));
 	}
 
+  @Override
+  public void exception(Throwable e) {
+    exceptionQueue(this.queue, e);
+  }
+
 	@Override
 	public void done() {
 		Poison.poison(queue);
 	}
+
+  @SuppressWarnings({ "unchecked", "rawtypes"})
+  private static void exceptionQueue(BlockingQueue<? extends Object> q, Throwable e) {
+    final BlockingQueue q2 = q;
+    try {
+      q2.put((Object)e);
+    } catch (InterruptedException except) {
+      throw new RuntimeException(except);
+    }
+  }
 }
