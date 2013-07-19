@@ -14,7 +14,7 @@ def configure(conf):
         conf.env.append_value('LINKFLAGS', ['-static-libgcc', '-static-libstdc++'])
     conf.env.append_value('DEFINES', ['__STDC_LIMIT_MACROS', '__STDC_FORMAT_MACROS', 'Kodkod_JNI'])
     conf.env.append_value('INCLUDES', ['.', '..', conf.path.abspath()])
-    conf.env.append_value('CXXFLAGS', ['-Wall', '-O3', '-fPIC', '-g'])
+    conf.env.append_value('CXXFLAGS', ['-Wall', '-O3', '-fPIC'])
     conf.env.UTILS_SRC = 'utils/*.cc'
     conf.env.CORE_SRC = 'core/Solver.cc'
     conf.env.JNI_SRC = 'jni/*.cpp'
