@@ -30,27 +30,27 @@ public class OverlappingGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
     public OverlappingGuidedImprovementAlgorithm(String desc, MultiObjectiveOptions options) {
         super(desc, options, Logger.getLogger(IncrementalGuidedImprovementAlgorithm.class.toString()));
 
-        magnifyingGlassSolvers = new LinkedList<Solver>();
-        magnifyingGlassSolvers.add(getSolver());
+        magnifyingGlassSolverPool = new LinkedList<Solver>();
+        magnifyingGlassSolverPool.add(getSolver());
         paretoPointDeduplicator = new SolutionDeduplicator();
     }
 
-    private final Queue<Solver> magnifyingGlassSolvers;
+    private final Queue<Solver> magnifyingGlassSolverPool;
     private final SolutionDeduplicator paretoPointDeduplicator;
 
     private Solver GetMagnifyingGlassSolver() {
-        synchronized (magnifyingGlassSolvers) {
-            if( magnifyingGlassSolvers.size() == 0 ) {
+        synchronized (magnifyingGlassSolverPool) {
+            if( magnifyingGlassSolverPool.size() == 0 ) {
                 return new Solver(options.getKodkodOptions());
             } else {
-                return magnifyingGlassSolvers.remove();
+                return magnifyingGlassSolverPool.remove();
             }
         }
     }
 
     private void PutBackMagnifyingGlassSolver(Solver solver) {
-        synchronized (magnifyingGlassSolvers) {
-            magnifyingGlassSolvers.add(solver);
+        synchronized (magnifyingGlassSolverPool) {
+            magnifyingGlassSolverPool.add(solver);
         }
     }
 
@@ -160,7 +160,7 @@ public class OverlappingGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
                     solution = solver.solve(improvementConstraints, new Bounds(problem.getBounds().universe()));
                     incrementStats(solution, problem, improvementConstraints, false, improvementConstraints);
 
-                    counter.countStep();
+                    //counter.countStep();
                 }
 
                 // We can't find anything better, so the previous solution is a pareto point.
@@ -190,8 +190,8 @@ public class OverlappingGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
                 incrementStats(solution, problem, constraint, false, null);
 
                 //count this step but first go to new index because it's a new base point
-                counter.nextIndex();
-                counter.countStep();
+                //counter.nextIndex();
+                //counter.countStep();
             }
         }
 
