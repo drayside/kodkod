@@ -28,7 +28,7 @@ JNIEXPORT jlong JNICALL Java_kodkod_engine_satlab_MiniSat_make
 
   Solver* solver = new Solver();
   solver->rnd_init_act = true;
-  solver->random_seed = (solver - (Solver*)(0));
+  solver->random_seed = (unsigned int)(solver - (Solver*)(0));
 
   return ((jlong) solver);
 }

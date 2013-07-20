@@ -1,30 +1,37 @@
 package kodkod.multiobjective.concurrency;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import kodkod.multiobjective.algorithms.GuidedImprovementAlgorithm;
+import kodkod.ast.Formula;
+import kodkod.multiobjective.MetricPoint;
 
 public class SolutionDeduplicator {
-    private final List<List<Integer>> acceptedSolutions;
+    private final ConcurrentHashMap<List<Integer>,Integer> acceptedSolutions;
+    private Formula globalExclusionConstraint;
     protected final Logger logger;
 
     public SolutionDeduplicator() {
         logger = Logger.getLogger(SolutionDeduplicator.class.toString());
-        acceptedSolutions = new ArrayList<List<Integer>>();
+        acceptedSolutions = new ConcurrentHashMap<List<Integer>,Integer>();
+        globalExclusionConstraint = Formula.constant(true);
     }
 
-    public synchronized boolean pushNewSolution(List<Integer> solution) {
-        for( List<Integer> acceptedSolution : acceptedSolutions ) {
-            if(solution.equals(acceptedSolution)) {
-                logger.log(Level.FINE, "Received a duplicate solution");
-                return false;
+    public boolean pushNewSolution(MetricPoint solution) {
+        if(acceptedSolutions.put(solution.values(), new Integer(1)) != null) {
+            logger.log(Level.FINE, "Received a duplicate solution");
+            return false;
+        } else {
+            synchronized (this) {
+                globalExclusionConstraint = globalExclusionConstraint.and(solution.exclusionConstraint());
             }
+            return true;
         }
+    }
 
-        acceptedSolutions.add(solution);
-        return true;
+    public Formula getGlobalExclusionConstraint() {
+        return globalExclusionConstraint;
     }
 }

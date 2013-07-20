@@ -22,7 +22,7 @@ import kodkod.multiobjective.statistics.StepCounter;
 public abstract class MultiObjectiveAlgorithm {
 
 	private final String desc;
-	private final Solver solver;
+	private final Solver internalSolver;
 	private final Stats stats;
 
 	protected final long startTime;
@@ -33,7 +33,7 @@ public abstract class MultiObjectiveAlgorithm {
 	public MultiObjectiveAlgorithm(final String desc, final MultiObjectiveOptions options, Logger logger) {
 		this.logger = logger;
 		this.desc = desc;
-		this.solver = new Solver(options.getKodkodOptions());
+		this.internalSolver = new Solver(options.getKodkodOptions());
 		this.stats = new Stats(this.getClass().getName(), desc);
 		this.options = options;
 		this.startTime = System.currentTimeMillis();
@@ -42,7 +42,7 @@ public abstract class MultiObjectiveAlgorithm {
 	public abstract void multiObjectiveSolve(final MultiObjectiveProblem problem, SolutionNotifier notifier);
 
 	public Options getOptions() {
-		return solver.options();
+		return internalSolver.options();
 	}
 
 	public StepCounter getCountCallsOnEachMovementToParetoFront(){
@@ -50,7 +50,7 @@ public abstract class MultiObjectiveAlgorithm {
 	}
 
 	protected void setCNFOutputFile(final String filePath) {
-		final Options options = solver.options();
+		final Options options = internalSolver.options();
 		final String executable = null;
 		final String tempInput = filePath;
 		final String tempOutput = "";
@@ -60,12 +60,12 @@ public abstract class MultiObjectiveAlgorithm {
 	}
 
 	protected void setSymmetryBreaking(int value) {
-		final Options options = solver.options();
+		final Options options = internalSolver.options();
 		options.setSymmetryBreaking(value);
 	}
 
 	protected void setBitWidth(final int bitWidth) {
-		solver.options().setBitwidth(bitWidth);
+		internalSolver.options().setBitwidth(bitWidth);
 	}
 
 	public static boolean isSat(final Solution solution) {
@@ -88,7 +88,7 @@ public abstract class MultiObjectiveAlgorithm {
 	}
 
 	protected int magnifier(final Formula formula, final Bounds bounds, final MetricPoint metricPoint, final SolutionNotifier notifier) {
-	    return magnifier(formula, bounds, metricPoint, notifier, solver);
+	    return magnifier(formula, bounds, metricPoint, notifier, internalSolver);
 	}
 
 	// Returns an int specifying the number of solutions found at the Pareto point
@@ -133,7 +133,7 @@ public abstract class MultiObjectiveAlgorithm {
 	}
 
 	protected Solver getSolver() {
-		return solver;
+		return internalSolver;
 	}
 
 	/**

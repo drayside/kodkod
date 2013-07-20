@@ -33,9 +33,9 @@ public class OGIASmallEndToEndTest {
 	@Test
 	public void WithSymmetryBreaking() {
 		MultiObjectiveProblem problem = moo_problem.getProblem();
-		OverlappingGuidedImprovementAlgorithm pgia = new OverlappingGuidedImprovementAlgorithm("asdf", new MultiObjectiveOptions());
-		pgia.getOptions().setSolver(SATFactory.DefaultSAT4J);
-		pgia.getOptions().setSymmetryBreaking(1000);
+		OverlappingGuidedImprovementAlgorithm ogia = new OverlappingGuidedImprovementAlgorithm("asdf", new MultiObjectiveOptions());
+		ogia.getOptions().setSolver(SATFactory.DefaultSAT4J);
+		ogia.getOptions().setSymmetryBreaking(1000);
 
 		SolutionNotifier notifier = new SolutionNotifier() {
 			List<MeasuredSolution> solutions = new Vector<MeasuredSolution>();
@@ -63,7 +63,7 @@ public class OGIASmallEndToEndTest {
 			}
 		};
 
-		pgia.multiObjectiveSolve(problem, notifier);
+		ogia.multiObjectiveSolve(problem, notifier);
 	}
 
 	@Test
