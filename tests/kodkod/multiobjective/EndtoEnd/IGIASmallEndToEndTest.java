@@ -48,6 +48,10 @@ public class IGIASmallEndToEndTest {
 				tell(new MeasuredSolution(s, values));
 			}
 
+      public void exception(Throwable e) {
+        throw new RuntimeException(e);
+      }
+
 			public void done() {
 				// There should be a single solution.
 				assertThat(solutions.size(), is(1));
@@ -83,6 +87,10 @@ public class IGIASmallEndToEndTest {
 			public void tell(Solution s, MetricPoint values) {
 				tell(new MeasuredSolution(s, values));
 			}
+
+      public void exception(Throwable e) {
+        throw new RuntimeException(e);
+      }
 
 			public void done() {
 				// There should be 6 solutions, 1 for each permutation of rook
