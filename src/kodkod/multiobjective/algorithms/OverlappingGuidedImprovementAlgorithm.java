@@ -28,13 +28,15 @@ public class OverlappingGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
 
     private final Queue<Solver> magnifyingGlassSolverPool;
     private final SolutionDeduplicator paretoPointDeduplicator;
+    private Formula initialPointConstraint;
 
     public OverlappingGuidedImprovementAlgorithm(String desc, MultiObjectiveOptions options) {
-        super(desc, options, Logger.getLogger(IncrementalGuidedImprovementAlgorithm.class.toString()));
+        super(desc, options, Logger.getLogger(OverlappingGuidedImprovementAlgorithm.class.toString()));
 
         magnifyingGlassSolverPool = new ConcurrentLinkedQueue<Solver>();
         magnifyingGlassSolverPool.add(getSolver());
         paretoPointDeduplicator = new SolutionDeduplicator();
+        initialPointConstraint = Formula.constant(true);
     }
 
     private Solver getMagnifyingGlassSolver() {
@@ -47,6 +49,39 @@ public class OverlappingGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
 
     private void putBackMagnifyingGlassSolver(Solver solver) {
         magnifyingGlassSolverPool.add(solver);
+    }
+
+    public class TwoValuePair< V, W > {
+        public final V v;
+        public final W w;
+
+        public TwoValuePair( V v, W w ) {
+            this.v = v;
+            this.w = w;
+        }
+    }
+
+    /*
+     * Creates a new instance of incremental solver and returns a unique starting point. This method is NOT thread-safe.
+     */
+    private TwoValuePair<IncrementalSolver, Solution> getNewStartingPoint(final MultiObjectiveProblem problem) {
+        IncrementalSolver solver = IncrementalSolver.solver(getOptions());
+        final List<Formula> problemExclusionConstraints = new ArrayList<Formula>();
+        problemExclusionConstraints.add(problem.getConstraints());
+        Formula problemExclusionConstraint = Formula.and(problemExclusionConstraints);
+
+        // Throw a dart and get a starting point.
+        Solution solution = solver.solve(problemExclusionConstraint.and(initialPointConstraint), problem.getBounds());
+
+        incrementStats(solution, problem, problemExclusionConstraint, true, null);
+        solveFirstStats(solution);
+
+        if( !isSat(solution) ) {
+            return null;
+        } else {
+            initialPointConstraint = initialPointConstraint.and(MetricPoint.measure(solution, problem.getObjectives(), getOptions()).exclusionConstraint());
+            return new TwoValuePair<IncrementalSolver, Solution>(solver, solution);
+        }
     }
 
     @Override
@@ -65,7 +100,12 @@ public class OverlappingGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
         final ConcurrentLinkedQueue<Future<?>> waitQueue = new ConcurrentLinkedQueue<Future<?>>();
 
         for( int i=0; i<numberOfThreads; i++ ) {
-            waitQueue.add( executorService.submit( new SolverSubtask(problem, notifier, executorService, waitQueue) ) );
+            TwoValuePair<IncrementalSolver, Solution> tvp = getNewStartingPoint(problem);
+
+            if( tvp == null )
+                break;
+
+            waitQueue.add( executorService.submit( new SolverSubtask( tvp.v, problem, tvp.w, notifier, executorService, waitQueue) ) );
         }
 
         try {
@@ -85,6 +125,8 @@ public class OverlappingGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
         logger.log(Level.FINE, "All Pareto points found. At time: {0}", Integer.valueOf((int)(System.currentTimeMillis()-startTime)/1000));
 
         executorService.shutdown();
+
+
         end(notifier);
         debugWriteStatistics();
     }
@@ -119,32 +161,34 @@ public class OverlappingGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
         private final SolutionNotifier notifier;
         private final ExecutorService executorService;
         private final Queue<Future<?>> waitQueue;
+        private final Solution initialSolution;
+        private IncrementalSolver solver;
 
-        SolverSubtask(final MultiObjectiveProblem problem, final SolutionNotifier notifier, final ExecutorService executorService, final Queue<Future<?>> waitQueue) {
+        SolverSubtask(final IncrementalSolver solver, final MultiObjectiveProblem problem, final Solution initialSolution, final SolutionNotifier notifier, final ExecutorService executorService, final Queue<Future<?>> waitQueue) {
             this.problem = problem;
             this.notifier = notifier;
             this.executorService = executorService;
             this.waitQueue = waitQueue;
+            this.initialSolution = initialSolution;
+            this.solver = solver;
         }
 
         @Override
         public void run() {
-            IncrementalSolver solver = IncrementalSolver.solver(getOptions());
-
             final List<Formula> problemExclusionConstraints = new ArrayList<Formula>();
             problemExclusionConstraints.add(problem.getConstraints());
             final Formula problemExclusionConstraint = Formula.and(problemExclusionConstraints);
 
-            // Throw a dart and get a starting point.
-            Solution solution = solver.solve(problemExclusionConstraint, problem.getBounds());
-
-            incrementStats(solution, problem, problemExclusionConstraint, true, null);
-            solveFirstStats(solution);
+            // Use the solution that has been passed in.
+            Solution solution = initialSolution;
 
             // While the current solution is satisfiable try to find a better one.
             while (isSat(solution)) {
                 MetricPoint currentValues = null;
                 Solution previousSolution = null;
+
+                // Temporary step counting for parallel GIAs.
+                int step = 0;
 
                 // Work our way up to the pareto front.
                 while (isSat(solution)) {
@@ -156,8 +200,7 @@ public class OverlappingGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
                     previousSolution = solution;
                     solution = solver.solve(improvementConstraints, new Bounds(problem.getBounds().universe()));
                     incrementStats(solution, problem, improvementConstraints, false, improvementConstraints);
-
-                    //counter.countStep();
+                    step++;
                 }
 
                 // We can't find anything better, so the previous solution is a pareto point.
@@ -167,26 +210,31 @@ public class OverlappingGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
                 solver.free();
 
                 if( paretoPointDeduplicator.pushNewSolution(currentValues)) {
+
+                    // Temporary step counting for parallel GIAs.
+                    logger.log(Level.FINE, "Found a unique pareto point after stepping {0} times: {1}", new Object[] { Integer.valueOf(step), currentValues.values() });
+
                     if (!options.allSolutionsPerPoint()) {
                         tell(notifier, previousSolution, currentValues);
                     } else {
                         // magnifying glass
                         final Collection<Formula> assignmentsConstraints = currentValues.assignmentConstraints();
                         assignmentsConstraints.add(problem.getConstraints());
+                        // The values in currentValues will now be shared with its MagnifyingGlassSubtask. Therefore, these values should not be modified after this point.
                         waitQueue.add( executorService.submit(new MagnifyingGlassSubtask(Formula.and(assignmentsConstraints), problem.getBounds(), currentValues, notifier)));
-                        // the values in currentValues MUST NOT BE MODIFIED after this point.
                     }
+                } else {
+                    // Temporary step counting for parallel GIAs.
+                    logger.log(Level.FINE, "Found a duplicate pareto point after stepping {0} times: {1}", new Object[] { Integer.valueOf(step), currentValues.values() });
                 }
+
+
 
                 // Find another starting point.
                 solver = IncrementalSolver.solver(getOptions());
                 Formula exclusionConstraints = Formula.and(paretoPointDeduplicator.getGlobalExclusionConstraint(),problemExclusionConstraint);
                 solution = solver.solve(exclusionConstraints, problem.getBounds());
                 incrementStats(solution, problem, exclusionConstraints, false, null);
-
-                //count this step but first go to new index because it's a new base point
-                //counter.nextIndex();
-                //counter.countStep();
             }
         }
 
