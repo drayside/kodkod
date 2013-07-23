@@ -24,74 +24,74 @@ import kodkod.multiobjective.statistics.StepCounter;
 
 public final class MultiObjectiveSolver implements KodkodSolver {
 
-	final MultiObjectiveAlgorithm algorithm;
-	final SolutionNotifier solutionNotifier;
-	final BlockingSolutionIterator solutionIterator;
-	final BlockingQueue<Solution> solutionQueue;
-	MultiObjectiveProblem problem;
+    final MultiObjectiveAlgorithm algorithm;
+    final SolutionNotifier solutionNotifier;
+    final BlockingSolutionIterator solutionIterator;
+    final BlockingQueue<Solution> solutionQueue;
+    MultiObjectiveProblem problem;
 
-	final Solver kodkodSolver;
-	final MultiObjectiveOptions options;
+    final Solver kodkodSolver;
+    final MultiObjectiveOptions options;
 
-	public MultiObjectiveSolver() {
-		options = new MultiObjectiveOptions();
-		kodkodSolver = new Solver(options.getKodkodOptions());
+    public MultiObjectiveSolver() {
+        options = new MultiObjectiveOptions();
+        kodkodSolver = new Solver(options.getKodkodOptions());
 
-		solutionQueue = new LinkedBlockingQueue<Solution>();
-		solutionIterator = new BlockingSolutionIterator(solutionQueue);
-		algorithm = new PartitionedGuidedImprovementAlgorithm("PGIA", options);
-		solutionNotifier = new TranslatingBlockingQueueSolutionNotifier(solutionQueue);
-	}
-	
-	public StepCounter getCountCallsOnEachMovementToParetoFront(){
-		return algorithm.getCountCallsOnEachMovementToParetoFront();
-	}
-	
-	public Solver getKodkodSolver() {
-		return kodkodSolver;
-	}
+        solutionQueue = new LinkedBlockingQueue<Solution>();
+        solutionIterator = new BlockingSolutionIterator(solutionQueue);
+        algorithm = new PartitionedGuidedImprovementAlgorithm("PGIA", options);
+        solutionNotifier = new TranslatingBlockingQueueSolutionNotifier(solutionQueue);
+    }
 
-	public MultiObjectiveOptions multiObjectiveOptions() {
-		return options;
-	}
-	
-	@Override
-	public Options options() {
-		return kodkodSolver.options();
-	}
+    public StepCounter getCountCallsOnEachMovementToParetoFront(){
+        return algorithm.getCountCallsOnEachMovementToParetoFront();
+    }
 
-	@Override
-	public Solution solve(Formula formula, Bounds bounds)
-			throws HigherOrderDeclException, UnboundLeafException,
-			AbortedException {
-		return kodkodSolver.solve(formula, bounds);
-	}
+    public Solver getKodkodSolver() {
+        return kodkodSolver;
+    }
 
-	@Override
-	public void free() {
-		kodkodSolver.free();
-	}
-	
-	public Iterator<Solution> solveAll(final Formula formula, final Bounds bounds, final SortedSet<Objective>objectives ) 
-			throws HigherOrderDeclException, UnboundLeafException, AbortedException {
-		if (objectives != null) {
-			problem = new MultiObjectiveProblem(bounds, formula, objectives);
+    public MultiObjectiveOptions multiObjectiveOptions() {
+        return options;
+    }
 
-			Thread solverThread = new Thread(new Runnable() {
-				public void run() {
-					algorithm.multiObjectiveSolve(problem, solutionNotifier);
-				}
-			});
-			solverThread.start();
-			
-			return solutionIterator;
-		}
-		else {
-			return kodkodSolver.solveAll(formula, bounds);
-		}
-	}
-	
-	public Stats getStats() {
-		return algorithm.getStats();
-	}
+    @Override
+    public Options options() {
+        return kodkodSolver.options();
+    }
+
+    @Override
+    public Solution solve(Formula formula, Bounds bounds)
+            throws HigherOrderDeclException, UnboundLeafException,
+            AbortedException {
+        return kodkodSolver.solve(formula, bounds);
+    }
+
+    @Override
+    public void free() {
+        kodkodSolver.free();
+    }
+
+    public Iterator<Solution> solveAll(final Formula formula, final Bounds bounds, final SortedSet<Objective>objectives )
+            throws HigherOrderDeclException, UnboundLeafException, AbortedException {
+        if (objectives != null) {
+            problem = new MultiObjectiveProblem(bounds, formula, objectives);
+
+            Thread solverThread = new Thread(new Runnable() {
+                public void run() {
+                    algorithm.multiObjectiveSolve(problem, solutionNotifier);
+                }
+            });
+            solverThread.start();
+
+            return solutionIterator;
+        }
+        else {
+            return kodkodSolver.solveAll(formula, bounds);
+        }
+    }
+
+    public Stats getStats() {
+        return algorithm.getStats();
+    }
 }
