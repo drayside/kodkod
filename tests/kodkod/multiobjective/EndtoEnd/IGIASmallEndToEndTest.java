@@ -48,9 +48,9 @@ public class IGIASmallEndToEndTest {
 				tell(new MeasuredSolution(s, values));
 			}
 
-      public void exception(Throwable e) {
-        throw new RuntimeException(e);
-      }
+	      	public void exception(Throwable e) {
+	        	throw new RuntimeException(e);
+	      	}
 
 			public void done() {
 				// There should be a single solution.

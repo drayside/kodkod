@@ -60,6 +60,10 @@ public class CGIASmallEndToEndTest {
 				tell(new MeasuredSolution(s, values));
 			}
 
+			public void exception(Throwable e) {
+				throw new RuntimeException(e);
+			}
+
 			public void done() {
 				// There should be a single solution.
 				assertThat(solutions.size(), is(1));
@@ -94,6 +98,10 @@ public class CGIASmallEndToEndTest {
 
 			public void tell(Solution s, MetricPoint values) {
 				tell(new MeasuredSolution(s, values));
+			}
+
+			public void exception(Throwable e) {
+				throw new RuntimeException(e);
 			}
 
 			public void done() {
