@@ -33,7 +33,7 @@ public final class CheckpointedGuidedImprovementAlgorithm extends MultiObjective
 	private static final Logger logger = Logger.getLogger(CheckpointedGuidedImprovementAlgorithm.class.toString());
 
 	public CheckpointedGuidedImprovementAlgorithm(final String desc, final MultiObjectiveOptions options) {
-		super(desc, options);
+		super(desc, options, logger);
 		this.filename = desc.replace("$", "");
 	}
 
@@ -79,7 +79,7 @@ public final class CheckpointedGuidedImprovementAlgorithm extends MultiObjective
 			}
 
 			// We can't find anything better, so the previous solution is a pareto point.
-			foundMetricPoint();
+			foundParetoPoint(currentValues);
 			logger.log(Level.FINE, "Found Pareto point with values: {0}", currentValues.values());
 
 			if (!options.allSolutionsPerPoint()) {
@@ -148,24 +148,6 @@ public final class CheckpointedGuidedImprovementAlgorithm extends MultiObjective
 			this.getStats().addSummaryIndividualCall(StatKey.REGULAR_UNSAT_CALL, solution.stats().translationTime(), solution.stats().solvingTime(), formula, bounds, first, null, improvementConstraints);
 		}
 		return solution;
-	}
-
-	private void debugWriteStatistics(){
-		logger.log(Level.FINE, "# Sat Call: {0}", this.getStats().get(StatKey.REGULAR_SAT_CALL));
-		logger.log(Level.FINE, "# Unsat Call:  {0}", this.getStats().get( StatKey.REGULAR_UNSAT_CALL));
-
-		logger.log(Level.FINE, "Total Time in Sat Calls: {0}", this.getStats().get(StatKey.REGULAR_SAT_TIME));
-		logger.log(Level.FINE, "Total Time in Sat Calls Solving: {0}", this.getStats().get(StatKey.REGULAR_SAT_TIME_SOLVING));
-		logger.log(Level.FINE, "Total Time in Sat Calls Translating: {0}", this.getStats().get(StatKey.REGULAR_SAT_TIME_TRANSLATION));
-
-		logger.log(Level.FINE, "Total Time in Unsat Calls: {0}", this.getStats().get( StatKey.REGULAR_UNSAT_TIME));
-		logger.log(Level.FINE, "Total Time in Unsat Calls Solving: {0}", this.getStats().get( StatKey.REGULAR_UNSAT_TIME_SOLVING));
-		logger.log(Level.FINE, "Total Time in Unsat Calls Translating: {0}", this.getStats().get( StatKey.REGULAR_UNSAT_TIME_TRANSLATION));
-
-		logger.log(Level.FINE, "# Magnifier Sat Call: {0}", this.getStats().get(StatKey.MAGNIFIER_SAT_CALL));
-		logger.log(Level.FINE, "# Magnifier Unsat Call: {0}", this.getStats().get(StatKey.MAGNIFIER_UNSAT_CALL));
-		logger.log(Level.FINE, "Total Time in Magnifier: {0}", this.getStats().get(StatKey.MAGNIFIER_TIME));
-
 	}
 
 }
