@@ -23,7 +23,7 @@ public final class IncrementalGuidedImprovementAlgorithm extends MultiObjectiveA
 	}
 	
 	@Override
-	public void multiObjectiveSolve(final MultiObjectiveProblem problem, final SolutionNotifier notifier) {
+	protected void multiObjectiveSolveImpl(final MultiObjectiveProblem problem, final SolutionNotifier notifier) {
 		// set the bit width
 		setBitWidth(problem.getBitWidth());
 

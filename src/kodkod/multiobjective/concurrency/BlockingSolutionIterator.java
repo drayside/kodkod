@@ -50,6 +50,8 @@ public class BlockingSolutionIterator implements Iterator<Solution> {
     	   // We are completely done. There's no more solutions available, and it can never be reset to false.
     	   noMoreSolutions = true;
     	   return false;
+       } else if (probe instanceof Throwable) {
+         throw new RuntimeException((Throwable)(probe));
        } else if (!(probe instanceof Solution )) {
     	   // We don't know what this is.
     	   throw new RuntimeException("Expected Solution. Got " + probe.getClass().toString() + " instead.");
@@ -81,6 +83,8 @@ public class BlockingSolutionIterator implements Iterator<Solution> {
 				// We are completely done. There's no more solutions available, and it can never be reset to false.
 				noMoreSolutions = true;
 				throw new NoSuchElementException();
+      } else if (probe instanceof Throwable) {
+        throw new RuntimeException((Throwable)probe);
 			} else if (!(probe instanceof Solution )) {
 				// We don't know what this is.
 	    	   throw new RuntimeException("Expected Solution. Got " + probe.getClass().toString() + " instead.");

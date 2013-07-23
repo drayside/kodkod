@@ -30,7 +30,7 @@ public class PartitionedGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
     }
 
     @Override
-    public void multiObjectiveSolve(MultiObjectiveProblem problem, SolutionNotifier notifier) {
+    public void multiObjectiveSolveImpl(MultiObjectiveProblem problem, SolutionNotifier notifier) {
         // set the bit width
         setBitWidth(problem.getBitWidth());
 
