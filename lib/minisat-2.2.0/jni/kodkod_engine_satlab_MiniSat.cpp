@@ -18,6 +18,7 @@
 
 using namespace Minisat;
 
+
 /*
  * Class:     kodkod_engine_satlab_MiniSat
  * Method:    make
@@ -25,11 +26,7 @@ using namespace Minisat;
  */
 JNIEXPORT jlong JNICALL Java_kodkod_engine_satlab_MiniSat_make
   (JNIEnv *, jclass) {
-
   Solver* solver = new Solver();
-  solver->rnd_init_act = true;
-  solver->random_seed = (unsigned int)(solver - (Solver*)(0));
-
   return ((jlong) solver);
 }
 

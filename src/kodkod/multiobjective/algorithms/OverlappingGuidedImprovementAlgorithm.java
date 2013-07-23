@@ -51,20 +51,20 @@ public class OverlappingGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
         magnifyingGlassSolverPool.add(solver);
     }
 
-    public class TwoValuePair< V, W > {
-        public final V v;
-        public final W w;
+    private class SolverSolutionPair {
+        public final IncrementalSolver solver;
+        public final Solution solution;
 
-        public TwoValuePair( V v, W w ) {
-            this.v = v;
-            this.w = w;
+        public SolverSolutionPair( IncrementalSolver solver, Solution solution ) {
+            this.solver = solver;
+            this.solution = solution;
         }
     }
 
     /*
      * Creates a new instance of incremental solver and returns a unique starting point. This method is NOT thread-safe.
      */
-    private TwoValuePair<IncrementalSolver, Solution> getNewStartingPoint(final MultiObjectiveProblem problem) {
+    private SolverSolutionPair getNewStartingPoint(final MultiObjectiveProblem problem) {
         IncrementalSolver solver = IncrementalSolver.solver(getOptions());
         final List<Formula> problemExclusionConstraints = new ArrayList<Formula>();
         problemExclusionConstraints.add(problem.getConstraints());
@@ -80,7 +80,7 @@ public class OverlappingGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
             return null;
         } else {
             initialPointConstraint = initialPointConstraint.and(MetricPoint.measure(solution, problem.getObjectives(), getOptions()).exclusionConstraint());
-            return new TwoValuePair<IncrementalSolver, Solution>(solver, solution);
+            return new SolverSolutionPair(solver, solution);
         }
     }
 
@@ -100,12 +100,13 @@ public class OverlappingGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
         final ConcurrentLinkedQueue<Future<?>> waitQueue = new ConcurrentLinkedQueue<Future<?>>();
 
         for( int i=0; i<numberOfThreads; i++ ) {
-            TwoValuePair<IncrementalSolver, Solution> tvp = getNewStartingPoint(problem);
+            SolverSolutionPair solverSolutionPair = getNewStartingPoint(problem);
 
-            if( tvp == null )
+            if( solverSolutionPair == null ) {
                 break;
+            }
 
-            waitQueue.add( executorService.submit( new SolverSubtask( tvp.v, problem, tvp.w, notifier, executorService, waitQueue) ) );
+            waitQueue.add( executorService.submit( new SolverSubtask( solverSolutionPair.solver, problem, solverSolutionPair.solution, notifier, executorService, waitQueue) ) );
         }
 
         try {
