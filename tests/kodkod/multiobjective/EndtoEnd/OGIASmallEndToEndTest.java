@@ -47,6 +47,10 @@ public class OGIASmallEndToEndTest {
 			public void tell(Solution s, MetricPoint values) {
 				tell(new MeasuredSolution(s, values));
 			}
+ 
+      public void exception(Throwable e) {
+        throw new RuntimeException(e);
+      }
 
 			public void done() {
 				// There should be a single solution.
@@ -83,6 +87,10 @@ public class OGIASmallEndToEndTest {
 			public void tell(Solution s, MetricPoint values) {
 				tell(new MeasuredSolution(s, values));
 			}
+ 
+      public void exception(Throwable e) {
+        throw new RuntimeException(e);
+      }
 
 			public void done() {
 				// There should be 6 solutions, 1 for each permutation of rook

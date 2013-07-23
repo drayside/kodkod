@@ -37,11 +37,19 @@ public abstract class MultiObjectiveAlgorithm {
 		this.stats = new Stats(this.getClass().getName(), desc);
 		this.options = options;
 		this.startTime = System.currentTimeMillis();
-	}
+	}	
+ 
+  protected abstract void multiObjectiveSolveImpl(final MultiObjectiveProblem proble, SolutionNotifier notifier);
 
-	public abstract void multiObjectiveSolve(final MultiObjectiveProblem problem, SolutionNotifier notifier);
+	public final void multiObjectiveSolve(final MultiObjectiveProblem problem, SolutionNotifier notifier) {
+    try {
+      multiObjectiveSolveImpl(problem, notifier);
+    } catch (Throwable e) {
+      notifier.exception(e);
+    }
+  }
 
-	public Options getOptions() {
+  public Options getOptions() {
 		return internalSolver.options();
 	}
 

@@ -85,7 +85,7 @@ public class OverlappingGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
     }
 
     @Override
-    public void multiObjectiveSolve(final MultiObjectiveProblem problem, final SolutionNotifier notifier) {
+    public void multiObjectiveSolveImpl(final MultiObjectiveProblem problem, final SolutionNotifier notifier) {
 
         // set the bit width
         setBitWidth(problem.getBitWidth());
