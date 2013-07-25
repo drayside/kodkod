@@ -147,19 +147,12 @@ public class PartitionedGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
             // Submit starting tasks (the ones without dependencies) to the thread pool
             // Starting tasks are mapped to the ints with exactly one 0 bit
             // So iterate over the bitset and clear one bit at a time
-            StringBuilder sb = new StringBuilder("Submitted initial tasks ");
             for (int bitIndex = 0; bitIndex < numObjectives; bitIndex++) {
                 BitSet bitSet = BitSet.valueOf(new long[] { maxMapping });
                 bitSet.clear(bitIndex);
                 int taskIndex = (int) bitSet.toLongArray()[0];
-                sb.append(taskIndex);
-                sb.append(" (");
-                sb.append(Integer.toBinaryString(taskIndex));
-                sb.append("), ");
                 futures.add(threadPool.submit(tasks.get(taskIndex)));
             }
-            sb.append("to thread pool");
-            logger.log(Level.FINE, sb.toString());
 
             // Wait for all tasks to complete before shutting down the pool
             try {
@@ -209,10 +202,6 @@ public class PartitionedGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
             this.threadPool = threadPool;
             this.doneSignal = doneSignal;
             this.exclusionConstraints.addAll(exclusionConstraints);
-        }
-
-        public int getID() {
-            return taskID;
         }
 
         // Each task is represented by a binary string
@@ -267,17 +256,14 @@ public class PartitionedGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
             // If the parentDoneStatus map has no false values, then all dependencies are done
             // If this task has not been submitted, then submit it
             if (!parentDoneStatus.containsValue(false) && !submitted) {
-                logger.log(Level.FINE, "Scheduling task {0}.", getID());
                 threadPool.submit(this);
                 submitted = true;
-            } else {
-                logger.log(Level.FINE, "Task {0} is not yet ready, or has already been submitted.", getID());
             }
         }
 
         @Override
         public void run() {
-            logger.log(Level.FINE, "Entering partition {0}. At time: {1}", new Object[] { taskID, Integer.valueOf((int)((System.currentTimeMillis()-startTime)/1000)) });
+            logger.log(Level.FINE, "Starting Task {0}. At time: {1}", new Object[] { taskID, Integer.valueOf((int)((System.currentTimeMillis()-startTime)/1000)) });
             started = true;
 
             // Run the regular algorithm within this partition
@@ -285,11 +271,6 @@ public class PartitionedGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
             Formula constraint = Formula.and(exclusionConstraints).and(partitionConstraints);
             Solution solution = solver.solve(constraint, problem.getBounds());
             incrementStats(solution, problem, constraint, false, constraint);
-
-            // Unsat means nothing in this partition, so we're done
-            if (!isSat(solution)) {
-                logger.log(Level.FINE, "No solutions found in partition {0}. At time: {1}", new Object[] { taskID, Integer.valueOf((int)((System.currentTimeMillis()-startTime)/1000)) });
-            }
 
             // Work up to the Pareto front
             MetricPoint currentValues = null;
@@ -327,7 +308,7 @@ public class PartitionedGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
                 incrementStats(solution, problem, constraint, false, null);
             }
 
-            logger.log(Level.FINE, "Task {0} has completed. At time: {1}", new Object[] { taskID, Integer.valueOf((int)((System.currentTimeMillis()-startTime)/1000)) });
+            logger.log(Level.FINE, "Finishing Task {0}. At time: {1}", new Object[] { taskID, Integer.valueOf((int)((System.currentTimeMillis()-startTime)/1000)) });
 
             // Done searching in this partition, so pass this dependency to children and notify them
             // Child will schedule itself if it's done
