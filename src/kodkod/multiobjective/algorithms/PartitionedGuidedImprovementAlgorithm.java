@@ -125,9 +125,9 @@ public class PartitionedGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
 
             // Now we can split the search space based on the Pareto point and create new tasks
             // For n metrics, we want all combinations of m_i <= M_i and m_i >= M_i where M_i is the current value
-            // To iterate over this, we map the bits of a bitset to the different combinations of metrics
+            // To iterate over this, we map the bit_i of a bitset to metric_i
+            // Note that bit_0 is the least significant bit
             // We skip 0 (the partition that is already dominated) and 2^n - 1 (the partition where we didn't find any solutions)
-            // TODO: Figure out endian-ness of BitSet
             int numObjectives = problem.getObjectives().size();
             int maxMapping = (int) Math.pow(2, numObjectives) - 1;
             for (int mapping = 1; mapping < maxMapping; mapping++) {
@@ -302,7 +302,7 @@ public class PartitionedGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
                 futures.add(threadPool.submit(this));
                 submitted = true;
             } else {
-                logger.log(Level.FINE, "Task {0} is not yet ready.", getID());
+                logger.log(Level.FINE, "Task {0} is not yet ready, or has already been submitted.", getID());
             }
 
             return;

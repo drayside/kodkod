@@ -121,6 +121,7 @@ public final class MetricPoint {
     }
 
     // The BitSet is a mapping of bits to constraints
+    // obj_0 is the first objective, but bit_0 is the least significant bit
     // Let bit_i represent obj_i
     // Then if bit_i is 0, we have the constraint "metric_i <  val_i"
     //  and if bit_i is 1, we have the constraint "metric_i >= val_i"
@@ -130,7 +131,7 @@ public final class MetricPoint {
         Set<Objective> objectives = values.keySet();
         int bitIndex = 0;
 
-        // Since objectives is a SortedMap, iterating over the keys is deterministic
+        // values is a SortedMap so the iterator for values.keySet() = objectives returns keys in ascending order
         for (final Objective objective : objectives) {
             int value = values.get(objective).intValue();
             if (set.get(bitIndex)) {
