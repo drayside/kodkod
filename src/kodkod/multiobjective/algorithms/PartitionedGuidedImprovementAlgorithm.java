@@ -111,14 +111,14 @@ public class PartitionedGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
             // Create the thread pool
             // Number of threads is MIN(user value, # cores)
             // TODO: Make "user value" configurable
-            BlockingQueue<Future<Formula>> futures = new LinkedBlockingQueue<Future<Formula>>();
+            BlockingQueue<Future<?>> futures = new LinkedBlockingQueue<Future<?>>();
             int poolSize = Math.min(8,  Runtime.getRuntime().availableProcessors());
             ExecutorService threadPool = Executors.newFixedThreadPool(poolSize);
             logger.log(Level.FINE, "Starting a thread pool with {0} threads", new Object[] { poolSize });
 
             // Create all the tasks up front, adding them to an array
             logger.log(Level.FINE, "Partitioning the problem space");
-            List<PartitionedSearcher> tasks = new ArrayList<PartitionedSearcher>();
+            List<PartitionSearcherTask> tasks = new ArrayList<PartitionSearcherTask>();
             // Task at index 0 doesn't exist; it's in an excluded region
             // We only add null so all the tasks are added at the right index
             tasks.add(null);
@@ -132,12 +132,12 @@ public class PartitionedGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
             int maxMapping = (int) Math.pow(2, numObjectives) - 1;
             for (int mapping = 1; mapping < maxMapping; mapping++) {
                 BitSet bitSet = BitSet.valueOf(new long[] { mapping });
-                tasks.add(new PartitionedSearcher(mapping, problem, exclusionConstraints, currentValues.partitionConstraints(bitSet), notifier, threadPool, futures));
+                tasks.add(new PartitionSearcherTask(mapping, problem, exclusionConstraints, currentValues.partitionConstraints(bitSet), notifier, threadPool, futures));
             }
 
             // Link up the dependencies
             for (int mapping = 1; mapping < maxMapping; mapping++) {
-                PartitionedSearcher task = tasks.get(mapping);
+                PartitionSearcherTask task = tasks.get(mapping);
                 task.linkDependencies(tasks);
             }
 
@@ -184,23 +184,23 @@ public class PartitionedGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
         logger.log(Level.FINE, "Task {0}: Found Pareto point with values: {1}", new Object[] { taskID, metricpoint.values() });
     }
 
-    private class PartitionedSearcher implements Callable<Formula> {
+    private class PartitionSearcherTask implements Runnable {
 
         private final int taskID;
         private final MultiObjectiveProblem problem;
         private Formula partitionConstraints;
         private final SolutionNotifier notifier;
         private final ExecutorService threadPool;
-        private final BlockingQueue<Future<Formula>> futures;
+        private final BlockingQueue<Future<?>> futures;
 
         private Set<Formula> exclusionConstraints = new HashSet<Formula>();
-        private List<PartitionedSearcher> children = new ArrayList<PartitionedSearcher>();
+        private List<PartitionSearcherTask> children = new ArrayList<PartitionSearcherTask>();
         private Map<Integer,Boolean> parentDoneStatus = new HashMap<Integer,Boolean>();
 
         private boolean started = false;
         private boolean submitted = false;
 
-        public PartitionedSearcher(int taskID, MultiObjectiveProblem problem, List<Formula> exclusionConstraints, Formula partitionConstraints, SolutionNotifier notifier, ExecutorService threadPool, BlockingQueue<Future<Formula>> futures) {
+        public PartitionSearcherTask(int taskID, MultiObjectiveProblem problem, List<Formula> exclusionConstraints, Formula partitionConstraints, SolutionNotifier notifier, ExecutorService threadPool, BlockingQueue<Future<?>> futures) {
             this.taskID = taskID;
             this.problem = problem;
             this.partitionConstraints = partitionConstraints;
@@ -218,7 +218,7 @@ public class PartitionedGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
         // "Adjacent" tasks have only one bit changed
         // If the adjacent task has one more 1 than this task, then it's a parent (this task depends on it)
         // If the adjacent task has one more 0 than this task, then it's a child (depends on this task)
-        public void linkDependencies(List<PartitionedSearcher> tasks) {
+        public void linkDependencies(List<PartitionSearcherTask> tasks) {
             if (started) {
                 throw new IllegalStateException("Cannot link dependencies after task has already started.");
             }
@@ -304,12 +304,10 @@ public class PartitionedGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
             } else {
                 logger.log(Level.FINE, "Task {0} is not yet ready, or has already been submitted.", getID());
             }
-
-            return;
         }
 
         @Override
-        public Formula call() {
+        public void run() {
             logger.log(Level.FINE, "Entering partition {0}. At time: {1}", new Object[] { taskID, Integer.valueOf((int)((System.currentTimeMillis()-startTime)/1000)) });
             started = true;
 
@@ -364,11 +362,9 @@ public class PartitionedGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
 
             // Done searching in this partition, so pass this dependency to children and notify them
             // Child will schedule itself if it's done
-            for (PartitionedSearcher child : children) {
+            for (PartitionSearcherTask child : children) {
                 child.notifyDone(taskID, exclusionConstraints);
             }
-
-            return Formula.and(exclusionConstraints);
         }
     }
 
