@@ -11,6 +11,7 @@ import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionService;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
@@ -128,11 +129,13 @@ public class PartitionedGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
             // To iterate over this, we map the bit_i of a bitset to metric_i
             // Note that bit_0 is the least significant bit
             // We skip 0 (the partition that is already dominated) and 2^n - 1 (the partition where we didn't find any solutions)
+            // Give each task a CountDownLatch so this thread can wait until all 2^n - 2 tasks have completed
             int numObjectives = problem.getObjectives().size();
             int maxMapping = (int) Math.pow(2, numObjectives) - 1;
+            CountDownLatch doneSignal = new CountDownLatch(maxMapping - 1);
             for (int mapping = 1; mapping < maxMapping; mapping++) {
                 BitSet bitSet = BitSet.valueOf(new long[] { mapping });
-                tasks.add(new PartitionSearcherTask(mapping, problem, exclusionConstraints, currentValues.partitionConstraints(bitSet), notifier, threadPool, futures));
+                tasks.add(new PartitionSearcherTask(mapping, problem, exclusionConstraints, currentValues.partitionConstraints(bitSet), notifier, threadPool, doneSignal));
             }
 
             // Link up the dependencies
@@ -158,14 +161,12 @@ public class PartitionedGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
             sb.append("to thread pool");
             logger.log(Level.FINE, sb.toString());
 
-            // Wait for all tasks to complete by blocking on the queue and the futures
-            for (int mapping = 1; mapping < maxMapping; mapping++) {
-                try {
-                    futures.take().get();
-                } catch (InterruptedException | ExecutionException e) {
-                    e.printStackTrace();
-                    throw new RuntimeException(e);
-                }
+            // Wait for all tasks to complete before shutting down the pool
+            try {
+                doneSignal.await();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+                throw new RuntimeException(e);
             }
             threadPool.shutdown();
         }
@@ -191,7 +192,7 @@ public class PartitionedGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
         private Formula partitionConstraints;
         private final SolutionNotifier notifier;
         private final ExecutorService threadPool;
-        private final BlockingQueue<Future<?>> futures;
+        private final CountDownLatch doneSignal;
 
         private Set<Formula> exclusionConstraints = new HashSet<Formula>();
         private List<PartitionSearcherTask> children = new ArrayList<PartitionSearcherTask>();
@@ -200,13 +201,13 @@ public class PartitionedGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
         private boolean started = false;
         private boolean submitted = false;
 
-        public PartitionSearcherTask(int taskID, MultiObjectiveProblem problem, List<Formula> exclusionConstraints, Formula partitionConstraints, SolutionNotifier notifier, ExecutorService threadPool, BlockingQueue<Future<?>> futures) {
+        public PartitionSearcherTask(int taskID, MultiObjectiveProblem problem, List<Formula> exclusionConstraints, Formula partitionConstraints, SolutionNotifier notifier, ExecutorService threadPool, CountDownLatch doneSignal) {
             this.taskID = taskID;
             this.problem = problem;
             this.partitionConstraints = partitionConstraints;
             this.notifier = notifier;
             this.threadPool = threadPool;
-            this.futures = futures;
+            this.doneSignal = doneSignal;
             this.exclusionConstraints.addAll(exclusionConstraints);
         }
 
@@ -299,7 +300,7 @@ public class PartitionedGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
             // If this task has not been submitted, then submit it
             if (!parentDoneStatus.containsValue(false) && !submitted) {
                 logger.log(Level.FINE, "Scheduling task {0}.", getID());
-                futures.add(threadPool.submit(this));
+                threadPool.submit(this);
                 submitted = true;
             } else {
                 logger.log(Level.FINE, "Task {0} is not yet ready, or has already been submitted.", getID());
@@ -365,6 +366,9 @@ public class PartitionedGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
             for (PartitionSearcherTask child : children) {
                 child.notifyDone(taskID, exclusionConstraints);
             }
+
+            // Signal that this task has completed
+            doneSignal.countDown();
         }
     }
 
@@ -400,7 +404,7 @@ public class PartitionedGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
                 result = ecs.take().get();
             } catch (InterruptedException | ExecutionException e) {
                 e.printStackTrace();
-                throw new RuntimeException();
+                throw new RuntimeException(e);
             }
             boundaries.add(result);
         }
