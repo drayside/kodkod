@@ -225,63 +225,31 @@ public class PartitionedGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
             }
 
             int numObjectives = problem.getObjectives().size();
-            StringBuilder sb;
 
-            // Initialize parent done status to false
-            sb = new StringBuilder("Parents of task ");
-            sb.append(taskID);
-            sb.append(" (");
-            sb.append(Integer.toBinaryString(taskID));
-            sb.append(")");
-            sb.append(" are: ");
+            // Iterate over adjacent tasks
             for (int bitIndex = 0; bitIndex < numObjectives; bitIndex++) {
-                BitSet parent = BitSet.valueOf(new long[] { taskID });
-                // If this bit is a 0, set it to 1; otherwise skip over it
-                if (!parent.get(bitIndex)) {
-                    parent.set(bitIndex);
+                BitSet neighbour = BitSet.valueOf(new long[] { taskID });
 
-                    // Skip over task if all bits are set (= 2^n - 1) since that task doesn't exist
-                    if (parent.cardinality() == numObjectives) {
+                // If this current bit is a 1, set it to a 0 to get the child
+                // If this current bit is a 0, set it to a 1 to get the parent
+                if (neighbour.get(bitIndex)) {
+                    neighbour.clear(bitIndex);
+                    // Skip over task of all bits are cleared (neighbour = 0) since that task doesn't exist
+                    if (neighbour.cardinality() == 0) {
                         continue;
                     }
-
-                    int parentIndex = (int) parent.toLongArray()[0];
-                    parentDoneStatus.put(parentIndex, false);
-                    sb.append(parentIndex);
-                    sb.append(" (");
-                    sb.append(Integer.toBinaryString(parentIndex));
-                    sb.append("), ");
-                }
-            }
-            logger.log(Level.FINE, sb.toString());
-
-            // Add the children
-            sb = new StringBuilder("Children of task ");
-            sb.append(taskID);
-            sb.append(" (");
-            sb.append(Integer.toBinaryString(taskID));
-            sb.append(")");
-            sb.append(" are: ");
-            for (int bitIndex = 0; bitIndex < numObjectives; bitIndex++) {
-                BitSet child = BitSet.valueOf(new long[] { taskID });
-                // If this bit is a 1, clear it to 0; otherwise skip over it
-                if (child.get(bitIndex)) {
-                    child.clear(bitIndex);
-
-                    // Skip over task of all bits are cleared (= 0) since that task doesn't exist
-                    if (child.cardinality() == 0) {
-                        continue;
-                    }
-
-                    int childIndex = (int) child.toLongArray()[0];
+                    int childIndex = (int) neighbour.toLongArray()[0];
                     children.add(tasks.get(childIndex));
-                    sb.append(childIndex);
-                    sb.append(" (");
-                    sb.append(Integer.toBinaryString(childIndex));
-                    sb.append("), ");
+                } else {
+                    neighbour.set(bitIndex);
+                    // Skip over task if all bits are set (neighbour = 2^n - 1) since that task doesn't exist
+                    if (neighbour.cardinality() == numObjectives) {
+                        continue;
+                    }
+                    int parentIndex = (int) neighbour.toLongArray()[0];
+                    parentDoneStatus.put(parentIndex, false);
                 }
             }
-            logger.log(Level.FINE, sb.toString());
         }
 
         // Called by this task's dependencies when the dependency has completed
