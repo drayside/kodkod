@@ -22,17 +22,8 @@ public final class CheckpointedGuidedImprovementAlgorithm extends MultiObjective
 	 * count how many steps were taken from a base point to a Pareto point
 	 * and report the results in a file specified over the variable filename
 	 */
-	final boolean doEvaluation = false;
-	
-	final String filename;
-	
-	final long startTime = System.currentTimeMillis();
-
-	private static final Logger logger = Logger.getLogger(CheckpointedGuidedImprovementAlgorithm.class.toString());
-
 	public CheckpointedGuidedImprovementAlgorithm(final String desc, final MultiObjectiveOptions options) {
-		super(desc, options, logger);
-		this.filename = desc.replace("$", "");
+		super(desc, options, Logger.getLogger(CheckpointedGuidedImprovementAlgorithm.class.toString()));
 	}
 
 	@Override
@@ -51,7 +42,10 @@ public final class CheckpointedGuidedImprovementAlgorithm extends MultiObjective
 		final Bounds emptyBounds = new Bounds(problem.getBounds().universe());
 
 		// Throw a dart and get a starting point.
-		Solution solution = incrementalSolveFirst(solver, problem.getConstraints(), problem.getBounds(), problem, null);
+		Solution solution = solver.solve(problem.getConstraints(), problem.getBounds());
+
+		incrementStats(solution, problem, problem.getConstraints(), true, null);
+		solveFirstStats(solution);
 		solver.checkpoint();
 
 		int stepsToFront = 1;
@@ -68,7 +62,8 @@ public final class CheckpointedGuidedImprovementAlgorithm extends MultiObjective
 				final Formula improvementConstraints = currentValues.parametrizedImprovementConstraints();
 				
 				previousSolution = solution;
-				solution = incrementalSolveOne(solver, improvementConstraints, emptyBounds, problem, improvementConstraints);
+				solution = solver.solve(improvementConstraints, emptyBounds);
+				incrementStats(solution, problem, improvementConstraints, false, improvementConstraints);
 				solver.checkpoint();
 				
 				stepsToFront += 1;
@@ -96,9 +91,10 @@ public final class CheckpointedGuidedImprovementAlgorithm extends MultiObjective
 			}
 
 			// Find another starting point.
-			solution = incrementalSolveOne(solver, currentValues.exclusionConstraint(), emptyBounds, problem, null);
+			solution = solver.solve(currentValues.exclusionConstraint(), emptyBounds);
+			incrementStats(solution, problem, currentValues.exclusionConstraint(), false, null);
 			solver.checkpoint();
-      stepsToFront += 1;
+			stepsToFront += 1;
 
 			//count this step but first go to new index because it's a new base point
 			counter.nextIndex();
@@ -107,46 +103,5 @@ public final class CheckpointedGuidedImprovementAlgorithm extends MultiObjective
 		end(notifier);
 		debugWriteStatistics();	
 	}
-
-	protected Solution incrementalSolveOne(final CheckpointedSolver solver, final Formula formula, final Bounds bounds, final MultiObjectiveProblem problem, final Formula improvementConstraints) {
-		return incrementalSolveOne(solver, formula, bounds, false, problem, improvementConstraints);
-	}
-
-	protected Solution incrementalSolveFirst(final CheckpointedSolver solver, final Formula formula, final Bounds bounds, final MultiObjectiveProblem problem, final Formula improvementConstraints) {
-		final Solution solution = incrementalSolveOne(solver, formula, bounds, true, problem, improvementConstraints);
-		getStats().set(StatKey.CLAUSES, solution.stats().clauses());
-		getStats().set(StatKey.VARIABLES, solution.stats().primaryVariables());
-		return solution;
-	}
-
-	private Solution incrementalSolveOne(CheckpointedSolver solver, final Formula formula, final Bounds bounds, final boolean first, final MultiObjectiveProblem problem, final Formula improvementConstraints) {
-		final Solution solution = solver.solve(formula, bounds);
-		if (isSat(solution)) {
-			getStats().increment(StatKey.REGULAR_SAT_CALL);
-
-			getStats().increment(StatKey.REGULAR_SAT_TIME, solution.stats().translationTime());
-			getStats().increment(StatKey.REGULAR_SAT_TIME, solution.stats().solvingTime());
-			
-			
-			getStats().increment(StatKey.REGULAR_SAT_TIME_TRANSLATION, solution.stats().translationTime());
-			getStats().increment(StatKey.REGULAR_SAT_TIME_SOLVING, solution.stats().solvingTime());
-			
-			// Adding Individual instance.
-			MetricPoint obtainedValues = MetricPoint.measure(solution, problem.getObjectives(), getOptions());
-			this.getStats().addSummaryIndividualCall(StatKey.REGULAR_SAT_CALL, solution.stats().translationTime(), solution.stats().solvingTime(), formula, bounds, first, obtainedValues, improvementConstraints);
-		} else {
-			getStats().increment(StatKey.REGULAR_UNSAT_CALL);
-
-			getStats().increment(StatKey.REGULAR_UNSAT_TIME, solution.stats().translationTime());
-			getStats().increment(StatKey.REGULAR_UNSAT_TIME, solution.stats().solvingTime());
-
-			getStats().increment(StatKey.REGULAR_UNSAT_TIME_TRANSLATION, solution.stats().translationTime());
-			getStats().increment(StatKey.REGULAR_UNSAT_TIME_SOLVING, solution.stats().solvingTime());
-
-			this.getStats().addSummaryIndividualCall(StatKey.REGULAR_UNSAT_CALL, solution.stats().translationTime(), solution.stats().solvingTime(), formula, bounds, first, null, improvementConstraints);
-		}
-		return solution;
-	}
-
 }
 	
