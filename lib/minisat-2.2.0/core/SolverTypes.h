@@ -23,7 +23,6 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #define Minisat_SolverTypes_h
 
 #include <assert.h>
-#include <iostream>
 
 #include "mtl/IntTypes.h"
 #include "mtl/Alg.h"
@@ -201,6 +200,7 @@ class ClauseAllocator : public RegionAllocator<uint32_t>
 
     ClauseAllocator(uint32_t start_cap) : RegionAllocator<uint32_t>(start_cap), extra_clause_field(false){}
     ClauseAllocator() : extra_clause_field(false){}
+
     void moveTo(ClauseAllocator& to){
         to.extra_clause_field = extra_clause_field;
         RegionAllocator<uint32_t>::moveTo(to); }

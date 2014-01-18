@@ -339,48 +339,18 @@ public final class Translator {
 				" for incremental translation; given "+ newDesc + " = " + newObj + ", " + oldDesc + " = " + translObj);
 	}
 
+	/**
+	 * Translates the given formula, with the following bounds and options to yield a new checkpointed translation.
+	 * @see #translateIncremental(Formula, Bounds, Options)
+	 */
 	public static Translation.Checkpointed translateCheckpointed(Formula formula, Bounds bounds, Options options)  {
 		checkCheckpointedOptions(options);	
 		return (Translation.Checkpointed) (new Translator(formula, bounds, options, true, true)).translate();
 	}
 
 	/**
-	 * Updates the given translation with {@code CNF(formula, translation.originalBounds + bounds, translation.options)}.  The 
-	 * result of the update is either a new translation instance or the given {@code translation}, modified in place.  We assume
-	 * that client did not modify any translation state between invocations to {@code translateIncremental(...)}.
-	 * 
-	 * <p>
-	 * We require {@code bounds} and {@code translation} to be consistent in the following sense:
-	 * <ol>
-	 * <li>{@code bounds} and {@code translation.bounds} share the same universe;</li>
-	 * <li>{@code bounds} must not specify any integer bounds;</li> 
-	 * <li>{@code bounds.relations} must not contain any members of {@code translation.bounds.relations} 
-	 * (which may be a superset of {@code translation.originalBounds.relations} that also includes Skolem constants); and,</li>
-	 * <li>{@code bounds} must induce a coarser set of equivalence classes on the shared universe than {@code translation.originalBounds}.</li>
-	 * </ol>
-	 * </p>
-	 * 
-	 * <p>
-	 * The behavior of this method is unspecified if a prior call to {@code translation.cnf.solve()} returned false, or 
-	 * if a prior call to this method resulted in an exception.
-	 * </p>
-	 * 
-	 * @requires translation.cnf.solve()
-	 * @requires formula.*components & Relation in (translation.bounds + bounds).relations
-	 * @requires translation.bounds.universe = bounds.universe && no bounds.intBound && no (translation.bounds.relations & bounds.relations)
-	 * @requires all s: translation.symmetries | 
-	 *            some p: {@link SymmetryDetector#partition(Bounds) partition}(bounds) |
-	 *             s.ints in p.ints       
-	 * @return some t: Translation | 
-	 *          t.originalFormula = translation.originalFormula.and(formula) && 
-	 * 	        t.originalBounds.relations = translation.originalBounds.relations + bounds.relations &&
-	 *          t.originalBounds.upperBound = translation.originalBounds.upperBound + bounds.upperBound &&
-	 *          t.originalBounds.lowerBound = translation.originalBounds.lowerBound + bounds.lowerBound &&
-	 *          t.originalBounds.intBound = translation.originalBounds.intBound 
-	 * @throws NullPointerException  any of the arguments are null
-	 * @throws UnboundLeafException  the formula refers to an undeclared variable or a relation not mapped by translation.bounds + bounds
-	 * @throws HigherOrderDeclException  the formula contains a higher order declaration
-	 * @throws IllegalArgumentException any of the other preconditions on the arguments are violated
+	 * Updates the given translation with the additional formula constraints and stricter bounds.
+	 * @see #translateIncremental(Formula, Bounds, Translation.Incremental)
 	 */
 	public static Translation.Checkpointed translateCheckpointed(Formula formula, Bounds bounds, Translation.Checkpointed translation)  {
 		checkCheckpointedOptions(translation.options());
@@ -393,16 +363,19 @@ public final class Translator {
 	}
 
 	/** 
-	 * @requires checkIncrementalBounds(bounds, transl)
-	 * @requires checkIncrementalOptions(transl.options) 
+	 * @requires checkCheckpointedBounds(bounds, transl)
+	 * @requires checkCheckpointedOptions(transl.options) 
 	 * @requires transl.trivial()
 	 * @requires transl.cnf.solve()
-	 * @return see {@link #translateIncremental(Formula, Bounds, Options)}
+	 * @return see {@link #translateCheckpointed(Formula, Bounds, Options)}
 	 **/
 	private static Translation.Checkpointed translateCheckpointedTrivial(Formula formula, Bounds bounds, Translation.Checkpointed transl) {
 		if (!transl.cnf().solve()) 
 			throw new IllegalArgumentException("Expected a satisfiable translation, given " + transl);
 		
+		// Note that unlike the incremetal translation we do not free the old
+		// cnf as that could destroy our checkpoints.
+
 		final Options tOptions = transl.options();
 		final Bounds tBounds = transl.bounds();
 		
@@ -430,10 +403,10 @@ public final class Translator {
 	}
 	
 	/** 
-	 * @requires checkIncrementalBounds(bounds, transl)
-	 * @requires checkIncrementalOptions(transl.options) 
+	 * @requires checkCheckpointedBounds(bounds, transl)
+	 * @requires checkCheckpointedOptions(transl.options) 
 	 * @requires !transl.trivial()
-	 * @return see {@link #translateIncremental(Formula, Bounds, Options)}
+	 * @return see {@link #translateCheckpointed(Formula, Bounds, Options)}
 	 **/
 	private static Translation.Checkpointed translateCheckpointedNonTrivial(Formula formula, Bounds bounds, Translation.Checkpointed transl) {
 		
@@ -477,6 +450,11 @@ public final class Translator {
 		return transl;
 	}
 
+	/**
+	 * Checks that the Options are valid for a Checkpointed translation.
+	 * The requirements are the same as those for an incremental translation
+	 * but the solver must be checkpointable.
+	 */
 	public static void checkCheckpointedOptions(Options options) {
 		if (!options.solver().checkpointable()) {
 			throw new IllegalArgumentException("A checkpointable solver is required for checkpointed translation: " + options);
@@ -484,6 +462,10 @@ public final class Translator {
 		checkIncrementalOptions(options);
 	}	
 
+	/**
+	 * Checks tht the given bounds are valid for a Checkpointed translation.
+	 * Same requirements as those for an incremental translation.
+	 */
 	private static void checkCheckpointedBounds(Bounds inc, Translation.Checkpointed translation) {
 		final Bounds base = translation.bounds();
 		if (!base.universe().equals(inc.universe()))

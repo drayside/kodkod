@@ -242,6 +242,7 @@ final class Z3 implements CheckpointableSolver {
         solver = null;
         context.Dispose();
         context = null;
+        expressionCache = null;
     }
 
     private BoolExpr getExpressionForLiteral(int literal) throws Z3Exception {
@@ -255,7 +256,7 @@ final class Z3 implements CheckpointableSolver {
           Symbol sym = context.MkSymbol(literal);
           expr = context.MkBoolConst(sym);
         } else {
-          expr = context.MkNot(getExpressionForLiteral(-1 * literal)); 
+          expr = context.MkNot(getExpressionForLiteral(-literal)); 
         }
         expressionCache.put(literal, expr);
       }

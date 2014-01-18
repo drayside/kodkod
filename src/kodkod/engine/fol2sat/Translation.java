@@ -359,6 +359,9 @@ public abstract class Translation {
 		
 	}
 
+	/**
+	 * An incremental translation with checkpointing functionality.
+	 */
 	public static final class Checkpointed extends Translation {
 		/**
 		 * @invariant this.interpreter.universe = this.bounds.universe && 
@@ -379,7 +382,7 @@ public abstract class Translation {
 		private final Stack<Bounds> boundsCheckpoints;
 		
 		/**
-		 * Creates an Incremental translation using the given bounds, options, symmetries of the original bounds, 
+		 * Creates an Checkpointed translation using the given bounds, options, symmetries of the original bounds, 
 		 * translator and interpreter.  This constructor assumes that the symmetries induced by {@code bounds} refine 
 		 * the {@code originalSymmetries}, which were obtained from the original problem bounds.
 		 * @requires options.logTranslation = 0 && options.solver.incremental()
@@ -437,11 +440,18 @@ public abstract class Translation {
 		@Override
 		public int numPrimaryVariables() { return interpreter.factory().numberOfVariables(); }
 
+		/**
+		 * Pushes the current translation state onto the checkpoint stack.
+		 */
 		public void checkpoint() {
 			incrementer.checkpoint();
 			boundsCheckpoints.push(bounds().clone());
 		}
 
+		/**
+		 * Pops a checkpoint off of the checkpoint stack and restores
+		 * that checkpoints translation state.
+		 */
 		public void rollback() {
 			incrementer.rollback();
 			Bounds checkpointBounds = boundsCheckpoints.pop();

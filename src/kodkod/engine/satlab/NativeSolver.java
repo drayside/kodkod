@@ -38,9 +38,9 @@ abstract class NativeSolver implements SATSolver {
 	private Boolean sat;
 	private int clauses, vars;
 
-  private Stack<Integer> clauseCheckpoints;
-  private Stack<Integer> varsCheckpoints;
-  private Stack<Boolean> satCheckpoints;
+  	private Stack<Integer> clauseCheckpoints;
+  	private Stack<Integer> varsCheckpoints;
+  	private Stack<Boolean> satCheckpoints;
 
 	/**
 	 * Constructs a new wrapper for the given 
@@ -51,9 +51,9 @@ abstract class NativeSolver implements SATSolver {
 		this.clauses = this.vars = 0;
 		this.sat = null;
 
-    this.clauseCheckpoints = new Stack<Integer>();
-    this.varsCheckpoints = new Stack<Integer>();
-    this.satCheckpoints = new Stack<Boolean>();
+    	this.clauseCheckpoints = new Stack<Integer>();
+    	this.varsCheckpoints = new Stack<Integer>();
+    	this.satCheckpoints = new Stack<Boolean>();
 //		System.out.println("created " + peer);
 	}
 	
@@ -151,7 +151,10 @@ abstract class NativeSolver implements SATSolver {
 	 */
 	final long peer() { return peer; }
 
-  final void setPeer(long peer) { this.peer = peer; }
+	/**
+	 * Sets the pointer to the C++ peer class.
+	 */
+  	final void setPeer(long peer) { this.peer = peer; }
 	
 	/**
 	 * Returns the current sat of the solver.
@@ -216,17 +219,17 @@ abstract class NativeSolver implements SATSolver {
 		free();
 	}
 
-  protected final void checkpoint_status() {
-    this.clauseCheckpoints.push(clauses);
-    this.varsCheckpoints.push(vars);
-    this.satCheckpoints.push(sat);
-  }
+	protected final void checkpoint_status() {
+	  	this.clauseCheckpoints.push(clauses);
+	  	this.varsCheckpoints.push(vars);
+	  	this.satCheckpoints.push(sat);
+	}
 
-  protected final void rollback_status() {
-    this.clauses = this.clauseCheckpoints.pop();
-    this.vars = this.varsCheckpoints.pop();
-    this.sat = this.satCheckpoints.pop();
-  }
+	protected final void rollback_status() {
+	    this.clauses = this.clauseCheckpoints.pop();
+	    this.vars = this.varsCheckpoints.pop();
+	    this.sat = this.satCheckpoints.pop();
+	}
 	
 	/**
 	 * Releases the resources associated with

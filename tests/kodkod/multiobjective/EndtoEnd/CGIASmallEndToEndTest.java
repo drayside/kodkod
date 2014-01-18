@@ -37,7 +37,7 @@ public class CGIASmallEndToEndTest {
 
 	@Before
 	public void setUp() {
-		// Need to have Z3 available since Z3 is the only checkpointed solver.
+		// Need to have MiniSat available for checkpointed solving.
 		assumeTrue(SATFactory.available(SATFactory.MiniSat));
 		moo_problem = new rooks_3_metrics_2();
 	}
@@ -45,9 +45,9 @@ public class CGIASmallEndToEndTest {
 	@Test
 	public void WithSymmetryBreaking() {
 		MultiObjectiveProblem problem = moo_problem.getProblem();
-		CheckpointedGuidedImprovementAlgorithm igia = new CheckpointedGuidedImprovementAlgorithm("asdf", new MultiObjectiveOptions());
-		igia.getOptions().setSolver(SATFactory.MiniSat);
-		igia.getOptions().setSymmetryBreaking(1000);
+		CheckpointedGuidedImprovementAlgorithm cgia = new CheckpointedGuidedImprovementAlgorithm("asdf", new MultiObjectiveOptions());
+		cgia.getOptions().setSolver(SATFactory.MiniSat);
+		cgia.getOptions().setSymmetryBreaking(1000);
 
 		SolutionNotifier notifier = new SolutionNotifier() {
 			List<MeasuredSolution> solutions = new Vector<MeasuredSolution>();
@@ -79,15 +79,15 @@ public class CGIASmallEndToEndTest {
 			}
 		};
 
-		igia.multiObjectiveSolve(problem, notifier);
+		cgia.multiObjectiveSolve(problem, notifier);
 	}
 
 	@Test
 	public void WithoutSymmetryBreaking() {
 		MultiObjectiveProblem problem = moo_problem.getProblem();
-		CheckpointedGuidedImprovementAlgorithm igia = new CheckpointedGuidedImprovementAlgorithm("asdf", new MultiObjectiveOptions());
-		igia.getOptions().setSolver(SATFactory.MiniSat);
-		igia.getOptions().setSymmetryBreaking(0);
+		CheckpointedGuidedImprovementAlgorithm cgia = new CheckpointedGuidedImprovementAlgorithm("asdf", new MultiObjectiveOptions());
+		cgia.getOptions().setSolver(SATFactory.MiniSat);
+		cgia.getOptions().setSymmetryBreaking(0);
 
 		SolutionNotifier notifier = new SolutionNotifier() {
 			List<MeasuredSolution> solutions = new Vector<MeasuredSolution>();
@@ -122,6 +122,6 @@ public class CGIASmallEndToEndTest {
 			}
 		};
 
-		igia.multiObjectiveSolve(problem, notifier);
+		cgia.multiObjectiveSolve(problem, notifier);
 	}
 }

@@ -405,8 +405,10 @@ public class Z3Test {
         solver.rollback();
         try {
             solver.rollback();
-        } catch (IllegalStateException e) {
 
+            // Shouldn't reach here.
+            fail();
+        } catch (IllegalStateException e) {
         }
     }
 }

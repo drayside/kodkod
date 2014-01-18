@@ -99,6 +99,7 @@ Solver::Solver() :
 {}
 
 Solver::Solver(const Solver& original) :
+  // Mode of operation
     verbosity         (original.verbosity)
   , var_decay         (original.var_decay)
   , clause_decay      (original.clause_decay)
@@ -116,6 +117,8 @@ Solver::Solver(const Solver& original) :
   , learntsize_inc    (original.learntsize_inc)
   , learntsize_adjust_start_confl (original.learntsize_adjust_start_confl)
   , learntsize_adjust_inc         (original.learntsize_adjust_inc)
+
+  // Statistics
   , solves            (original.solves)
   , starts            (original.starts)
   , decisions         (original.decisions)
@@ -127,6 +130,8 @@ Solver::Solver(const Solver& original) :
   , learnts_literals  (original.learnts_literals)
   , max_literals      (original.max_literals)
   , tot_literals      (original.tot_literals)
+
+  // Solver State
   , ok                (original.ok)
   , cla_inc           (original.cla_inc)
   , var_inc           (original.var_inc)
@@ -137,59 +142,44 @@ Solver::Solver(const Solver& original) :
   , order_heap        (VarOrderLt(activity))
   , progress_estimate (original.progress_estimate)
   , remove_satisfied  (original.remove_satisfied)
+
+  // Temporaries
   , max_learnts       (original.max_learnts)
   , learntsize_adjust_confl (original.learntsize_adjust_confl)
   , learntsize_adjust_cnt (original.learntsize_adjust_cnt)
+
+  // Resource Constraints
   , conflict_budget   (original.conflict_budget)
   , propagation_budget(original.propagation_budget)
   , asynch_interrupt  (original.asynch_interrupt)
 {
-    original.ca.copyTo(ca);
-
-    // Copy model vector
+    // Extra results
     original.model.copyTo(model);
-
-    // Copy conflict vector
     original.conflict.copyTo(conflict);
 
-    // Copy clauses vector
+    // Solver State
     original.clauses.copyTo(clauses);
-
-    // Copy learnts vector
     original.learnts.copyTo(learnts);
-
-    // Copy activity vector
     original.activity.copyTo(activity);
-
-    // Copy assigns vector
     original.assigns.copyTo(assigns);
-
-    // Copy polarity vector
     original.polarity.copyTo(polarity);
-
-    // Copy decision vector
     original.decision.copyTo(decision);
-    
-    // Copy trail vector
     original.trail.copyTo(trail);
-
-    // Copy trail_lim vector
     original.trail_lim.copyTo(trail_lim);
-
-    // Copy vardata vector
     original.vardata.copyTo(vardata);
+    original.assumptions.copyTo(assumptions);
 
     // Copy order_heap Heap
     for (int index = 0; index < original.order_heap.size(); index += 1) {
         order_heap.insert(original.order_heap[index]);
     }
 
+    original.ca.copyTo(ca);
+
+    // Temporaries
     original.seen.copyTo(seen);
-
     original.analyze_stack.copyTo(analyze_stack);
-
     original.analyze_toclear.copyTo(analyze_toclear);
-
     original.add_tmp.copyTo(add_tmp);
 }
 
