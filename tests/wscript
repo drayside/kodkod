@@ -1,0 +1,62 @@
+#! /usr/bin/env python
+# encoding: utf-8
+import os.path
+import sys
+from os.path import abspath
+
+def options(opt):
+  pass
+
+def deps(ctx):
+  ctx.add_dep("junit.jar", "http://search.maven.org/remotecontent?filepath=junit/junit/4.11/junit-4.11.jar")
+  ctx.add_dep("hamcrest-core.jar", "http://search.maven.org/remotecontent?filepath=org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar")
+
+def configure(conf):
+    conf.load('java')
+    conf.load('compiler_cxx')
+    conf.env.TEST_SOURCES = ['kodkod']
+    conf.env.append_value('CLASSPATH', [ './src/kodkod','./tests/kodkod' ])
+
+    conf.env.append_value('CLASSPATH', conf.find_file('junit.jar', conf.env.DEPS_DIR))
+    conf.env.append_value('CLASSPATH', conf.find_file('hamcrest-core.jar', conf.env.DEPS_DIR))
+    conf.env.append_value('CLASSPATH', [conf.path.parent.ant_glob('**/org.sat4j.core.jar')[0].abspath()])
+
+    conf.env.append_value('LD_LIBRARY_PATH', abspath('./' + satlib(conf)))
+
+
+def test_build(bld):
+    env = bld.all_envs['test']
+    bld(features  = 'javac',
+        srcdir    = env.TEST_SOURCES,
+        outdir    = 'kodkod',
+        compat    = '1.7',
+        classpath = env.CLASSPATH,
+        basedir   = 'kodkod')
+
+def test(tst):
+    env = tst.all_envs['test']
+    cmd = []
+    cmd.extend(["java"])
+    cmd.extend(["-cp"])
+    if sys.platform == 'win32':
+      cmd.extend([";".join(env.CLASSPATH)])
+    else:
+      cmd.extend([":".join(env.CLASSPATH)])
+    cmd.extend(["org.junit.runner.JUnitCore"])
+    cmd.extend(["kodkod.TestSuite"])
+    
+    print os.environ
+    command_env = {}
+    command_env.update(os.environ)
+    command_env.update({"LD_LIBRARY_PATH": env.LD_LIBRARY_PATH[0]})
+    ret = tst.exec_command(cmd, cwd=tst.out_dir, env=command_env)
+
+    if ret != 0:
+      tst.fatal("Tests failed")
+
+# Returns the directory containing the sat libraries.
+def satlib(bld):
+    if sys.platform == 'win32':
+        return "win_" + bld.env.DEST_CPU
+    else:
+        return bld.env.DEST_OS + "_" + bld.env.DEST_CPU
