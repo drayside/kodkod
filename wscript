@@ -3,6 +3,7 @@
 
 import os
 import os.path
+import sys
 from waflib import Options
 
 APPNAME = 'kodkod'
@@ -19,7 +20,10 @@ def deps(ctx):
 
 def configure(conf):
     conf.env.DEPS_DIR = os.path.abspath('./deps')
-    conf.recurse('src lib tests')
+    conf.recurse('src lib')
+    
+    conf.setenv('test', conf.env)
+    conf.recurse('tests')
 
 def build(bld):
     if not bld.variant:
@@ -46,6 +50,8 @@ def all(ctx):
         'test_build',
         'test',
         'dist'] + Options.commands
+
+
 
 from waflib.Build import BuildContext
 class TestBuildContext(BuildContext):
