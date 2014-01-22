@@ -59,21 +59,6 @@ public class PartitionedGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
         Level metricPointLevel = metricPointLogger.getLevel();
         metricPointLogger.setLevel(Level.INFO);
 
-        // Skip boundary finding if there's only one objective
-        if (problem.getObjectives().size() > 1) {
-            // Throw a dart and get a starting point
-            Solution solution = getSolver().solve(problem.getConstraints(), problem.getBounds());
-            incrementStats(solution, problem, problem.getConstraints(), true, null);
-            solveFirstStats(solution);
-
-            MetricPoint startingValues = MetricPoint.measure(solution, problem.getObjectives(), getOptions());
-            logger.log(Level.FINE, "Found a solution. At time: {0}, with values {1}", new Object[] { Integer.valueOf((int)(System.currentTimeMillis()-startTime)/1000), startingValues.values() });
-
-            // Find the boundaries of the search space
-            Formula boundaryConstraints = findBoundaries(problem, startingValues);
-            exclusionConstraints.add(boundaryConstraints);
-        }
-
         // Work up to a single Pareto point
         // If there is only one objective, this is the only Pareto point
         // For more objectives, we use this Pareto point to split the search space
@@ -112,8 +97,7 @@ public class PartitionedGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
             // Create the thread pool
             // Number of threads is MIN(user value, # cores)
             // TODO: Make "user value" configurable
-            BlockingQueue<Future<?>> futures = new LinkedBlockingQueue<Future<?>>();
-            int poolSize = Math.min(8,  Runtime.getRuntime().availableProcessors());
+            int poolSize = Math.min(8, Runtime.getRuntime().availableProcessors());
             ExecutorService threadPool = Executors.newFixedThreadPool(poolSize);
             logger.log(Level.FINE, "Starting a thread pool with {0} threads", new Object[] { poolSize });
 
@@ -151,7 +135,7 @@ public class PartitionedGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
                 BitSet bitSet = BitSet.valueOf(new long[] { maxMapping });
                 bitSet.clear(bitIndex);
                 int taskIndex = (int) bitSet.toLongArray()[0];
-                futures.add(threadPool.submit(tasks.get(taskIndex)));
+                threadPool.submit(tasks.get(taskIndex));
             }
 
             // Wait for all tasks to complete before shutting down the pool
@@ -258,6 +242,10 @@ public class PartitionedGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
             if (!parentDoneStatus.containsValue(false) && !submitted) {
                 threadPool.submit(this);
                 submitted = true;
+            } else if (!parentDoneStatus.containsValue(false) && submitted) {
+                // If we reach this point, it means the task has been submitted before it was notified
+                // by a parent, which shouldn't be possible
+                throw new RuntimeException("Task has already been submitted.");
             }
         }
 
@@ -319,96 +307,5 @@ public class PartitionedGuidedImprovementAlgorithm extends MultiObjectiveAlgorit
             // Signal that this task has completed
             doneSignal.countDown();
         }
-    }
-
-    private Formula findBoundaries(MultiObjectiveProblem problem, MetricPoint startingValues) {
-        List<Formula> boundaries = new ArrayList<Formula>(problem.getObjectives().size());
-
-        // Disable MetricPoint logger temporarily
-        // Multiple threads will be calling the logger, so the output won't make sense
-        Logger metricPointLogger = Logger.getLogger(MetricPoint.class.toString());
-        Level metricPointLevel = metricPointLogger.getLevel();
-        metricPointLogger.setLevel(Level.INFO);
-
-        // Create a thread pool to execute the tasks
-        // Number of threads is MIN(user value, # cores, # objectives)
-        // TODO: Make "user value" configurable
-        int numObjectives = problem.getObjectives().size();
-        int numThreads = Math.min(8, Math.min(Runtime.getRuntime().availableProcessors(), numObjectives));
-        ExecutorService threadPool = Executors.newFixedThreadPool(numThreads);
-        CompletionService<Formula> ecs = new ExecutorCompletionService<Formula>(threadPool);
-
-        logger.log(Level.FINE, "Starting thread pool with {0} threads and {1} jobs", new Object[] { numThreads, numObjectives });
-
-        // Create new BoundaryFinder tasks for each objective
-        for (final Objective objective : problem.getObjectives()) {
-            ecs.submit(new BoundaryFinder(problem, objective, startingValues));
-        }
-
-        // take() returns a Future<Formula> if one exists; blocks otherwise
-        // Once we have the Formula result, add it to our list
-        for (int i = 0; i < numObjectives; i++) {
-            Formula result;
-            try {
-                result = ecs.take().get();
-            } catch (InterruptedException | ExecutionException e) {
-                e.printStackTrace();
-                throw new RuntimeException(e);
-            }
-            boundaries.add(result);
-        }
-
-        // Now we can shutdown the threadPool
-        threadPool.shutdown();
-
-        // Re-enable MetricPoint logging
-        metricPointLogger.setLevel(metricPointLevel);
-
-        StringBuilder sb = new StringBuilder("All boundaries found. At time: ");
-        sb.append(Integer.valueOf((int)(System.currentTimeMillis()-startTime)/1000));
-        sb.append(", Boundaries are conjunction of ");
-        for (Formula boundary : boundaries) {
-            sb.append("\n\t");
-            sb.append(boundary);
-        }
-        logger.log(Level.FINE, sb.toString());
-
-        return Formula.and(boundaries);
-    }
-
-    // A Callable is like a Runnable, but it returns a result
-    // In this case, we want to return the Formula representing the boundary for the given objective
-    private class BoundaryFinder implements Callable<Formula> {
-
-        private final MultiObjectiveProblem problem;
-        private final Objective objective;
-        private MetricPoint currentValues;
-
-        BoundaryFinder(MultiObjectiveProblem problem, Objective objective, MetricPoint startingValues) {
-            this.problem = problem;
-            this.objective = objective;
-            this.currentValues = startingValues;
-        }
-
-        @Override
-        public Formula call() throws Exception {
-            IncrementalSolver incrementalSolver = IncrementalSolver.solver(getOptions());
-            Formula boundaryConstraint = currentValues.objectiveImprovementConstraint(objective);
-
-            Formula constraint = problem.getConstraints().and(boundaryConstraint);
-            Solution solution = incrementalSolver.solve(constraint, problem.getBounds());
-            incrementStats(solution, problem, constraint, false, null);
-
-            // Work up to the boundary of this metric
-            while (isSat(solution)) {
-                currentValues = MetricPoint.measure(solution, problem.getObjectives(), getOptions());
-                boundaryConstraint = currentValues.objectiveImprovementConstraint(objective);
-                solution = incrementalSolver.solve(boundaryConstraint, new Bounds(problem.getBounds().universe()));
-                incrementStats(solution, problem, constraint, false, null);
-            }
-            incrementalSolver.free();
-            return currentValues.boundaryConstraint(objective);
-        }
-
     }
 }
