@@ -83,9 +83,8 @@ class RegionAllocator
         if (to.memory != NULL) ::free(to.memory);
         to.memory = NULL;
         to.memory = (T*)xrealloc(to.memory, sizeof(T)*cap);
-        for (int i = 0; i < cap; i++) {
-            to.memory[i] = memory[i];
-        }
+        memcpy(to.memory, memory, sizeof(T) * cap);
+
         to.sz = sz;
         to.cap = cap;
         to.wasted_ = wasted_;

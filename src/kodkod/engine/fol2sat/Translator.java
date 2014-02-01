@@ -463,7 +463,7 @@ public final class Translator {
 	}	
 
 	/**
-	 * Checks tht the given bounds are valid for a Checkpointed translation.
+	 * Checks that the given bounds are valid for a Checkpointed translation.
 	 * Same requirements as those for an incremental translation.
 	 */
 	private static void checkCheckpointedBounds(Bounds inc, Translation.Checkpointed translation) {

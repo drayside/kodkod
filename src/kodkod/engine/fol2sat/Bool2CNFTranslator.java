@@ -343,7 +343,7 @@ abstract class Bool2CNFTranslator implements BooleanVisitor<int[], Object> {
 
 		// Make the visited set equal to the checkpointed set without changing its identity.
 		visited.clear();
-		visited.retainAll(checkpointVisitedSet);
+		visited.addAll(checkpointVisitedSet);
 
 		checkpoints -= 1;
 	}

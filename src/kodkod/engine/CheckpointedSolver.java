@@ -47,7 +47,7 @@ import java.util.Stack;
  * @specfield formulas: set {@link Formula}
  * @invariant formulas.*components & Relation in bounds.relations
  * @invariant some formulas iff some bounds 
- * @invariant options.solver.() && options.logTranslation = 0   
+ * @invariant options.solver() && options.logTranslation = 0   
  * 
  * @see IncrementalSolver
  * @see SymmetryDetector
