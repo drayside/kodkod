@@ -20,10 +20,7 @@ def deps(ctx):
 
 def configure(conf):
     conf.env.DEPS_DIR = os.path.abspath('./deps')
-    conf.recurse('src lib')
-    
-    conf.setenv('test', conf.env)
-    conf.recurse('tests')
+    conf.recurse('src lib tests')
 
 def build(bld):
     if not bld.variant:

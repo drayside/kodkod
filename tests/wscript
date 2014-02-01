@@ -12,6 +12,8 @@ def deps(ctx):
   ctx.add_dep("hamcrest-core.jar", "http://search.maven.org/remotecontent?filepath=org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar")
 
 def configure(conf):
+    env = conf.env
+    conf.setenv('test', env)
     conf.load('java')
     conf.load('compiler_cxx')
     conf.env.TEST_SOURCES = ['kodkod']
@@ -45,7 +47,6 @@ def test(tst):
     cmd.extend(["org.junit.runner.JUnitCore"])
     cmd.extend(["kodkod.TestSuite"])
     
-    print os.environ
     command_env = {}
     command_env.update(os.environ)
     command_env.update({"LD_LIBRARY_PATH": env.LD_LIBRARY_PATH[0]})
