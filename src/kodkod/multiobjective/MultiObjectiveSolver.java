@@ -24,7 +24,7 @@ import kodkod.multiobjective.statistics.StepCounter;
 
 public final class MultiObjectiveSolver implements KodkodSolver {
 
-	final MultiObjectiveAlgorithm algorithm;
+	MultiObjectiveAlgorithm algorithm;
 	final SolutionNotifier solutionNotifier;
 	final BlockingSolutionIterator solutionIterator;
 	final BlockingQueue<Solution> solutionQueue;
@@ -36,10 +36,9 @@ public final class MultiObjectiveSolver implements KodkodSolver {
 	public MultiObjectiveSolver() {
 		options = new MultiObjectiveOptions();
 		kodkodSolver = new Solver(options.getKodkodOptions());
-
+		algorithm = new IncrementalGuidedImprovementAlgorithm("IGIA", options);
 		solutionQueue = new LinkedBlockingQueue<Solution>();
 		solutionIterator = new BlockingSolutionIterator(solutionQueue);
-		algorithm = new IncrementalGuidedImprovementAlgorithm("IGIA", options);
 		solutionNotifier = new TranslatingBlockingQueueSolutionNotifier(solutionQueue);
 	}
 	
@@ -93,5 +92,9 @@ public final class MultiObjectiveSolver implements KodkodSolver {
 	
 	public Stats getStats() {
 		return algorithm.getStats();
+	}
+	
+	public void setAlgorithm(MultiObjectiveAlgorithm algorithm){
+		this.algorithm = algorithm;
 	}
 }
