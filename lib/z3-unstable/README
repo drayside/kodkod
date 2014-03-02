@@ -1,0 +1,2 @@
+Usage of the Z3 solver requires libz3java and libz3 to be in java.library.path.
+See http://research.microsoft.com/en-us/um/people/leonardo/blog/2012/12/10/z3-for-java.html for more information about using Z3 with Java.

@@ -17,6 +17,14 @@ JNIEXPORT jlong JNICALL Java_kodkod_engine_satlab_MiniSat_make
 
 /*
  * Class:     kodkod_engine_satlab_MiniSat
+ * Method:    make_copy
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL Java_kodkod_engine_satlab_MiniSat_make_1copy
+  (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     kodkod_engine_satlab_MiniSat
  * Method:    free
  * Signature: (J)V
  */
