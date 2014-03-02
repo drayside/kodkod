@@ -48,7 +48,6 @@ public final class CheckpointedGuidedImprovementAlgorithm extends MultiObjective
 		solveFirstStats(solution);
 		solver.checkpoint();
 
-		int stepsToFront = 1;
 		// While the current solution is satisfiable try to find a better one.
 		while (isSat(solution)) {
 			MetricPoint currentValues = null;
@@ -64,9 +63,6 @@ public final class CheckpointedGuidedImprovementAlgorithm extends MultiObjective
 				previousSolution = solution;
 				solution = solver.solve(improvementConstraints, emptyBounds);
 				incrementStats(solution, problem, improvementConstraints, false, improvementConstraints);
-				solver.checkpoint();
-				
-				stepsToFront += 1;
 
 				counter.countStep();
 			}
@@ -85,16 +81,11 @@ public final class CheckpointedGuidedImprovementAlgorithm extends MultiObjective
 				logger.log(Level.FINE, "Magnifying glass found {0} solution(s). At time: {1}", new Object[] {Integer.valueOf(solutionsFound), Integer.valueOf((int)((System.currentTimeMillis()-startTime)/1000))});
 			}
 
-			while (stepsToFront > 0) {
-				solver.rollback();
-				stepsToFront -= 1;
-			}
+			solver.rollback();
 
 			// Find another starting point.
 			solution = solver.solve(currentValues.exclusionConstraint(), emptyBounds);
 			incrementStats(solution, problem, currentValues.exclusionConstraint(), false, null);
-			solver.checkpoint();
-			stepsToFront += 1;
 
 			//count this step but first go to new index because it's a new base point
 			counter.nextIndex();
