@@ -14,6 +14,7 @@ import kodkod.engine.config.Options;
 import kodkod.engine.fol2sat.HigherOrderDeclException;
 import kodkod.engine.fol2sat.UnboundLeafException;
 import kodkod.instance.Bounds;
+import kodkod.multiobjective.algorithms.IncrementalGuidedImprovementAlgorithm;
 import kodkod.multiobjective.algorithms.PartitionedGuidedImprovementAlgorithm;
 import kodkod.multiobjective.algorithms.MultiObjectiveAlgorithm;
 import kodkod.multiobjective.concurrency.BlockingSolutionIterator;
@@ -24,7 +25,7 @@ import kodkod.multiobjective.statistics.StepCounter;
 
 public final class MultiObjectiveSolver implements KodkodSolver {
 
-	final MultiObjectiveAlgorithm algorithm;
+	MultiObjectiveAlgorithm algorithm;
 	final SolutionNotifier solutionNotifier;
 	final BlockingSolutionIterator solutionIterator;
 	final BlockingQueue<Solution> solutionQueue;
@@ -36,10 +37,9 @@ public final class MultiObjectiveSolver implements KodkodSolver {
 	public MultiObjectiveSolver() {
 		options = new MultiObjectiveOptions();
 		kodkodSolver = new Solver(options.getKodkodOptions());
-
+		algorithm = new IncrementalGuidedImprovementAlgorithm("IGIA", options);
 		solutionQueue = new LinkedBlockingQueue<Solution>();
 		solutionIterator = new BlockingSolutionIterator(solutionQueue);
-		algorithm = new PartitionedGuidedImprovementAlgorithm("PGIA", options);
 		solutionNotifier = new TranslatingBlockingQueueSolutionNotifier(solutionQueue);
 	}
 	
@@ -93,5 +93,9 @@ public final class MultiObjectiveSolver implements KodkodSolver {
 	
 	public Stats getStats() {
 		return algorithm.getStats();
+	}
+	
+	public void setAlgorithm(MultiObjectiveAlgorithm algorithm){
+		this.algorithm = algorithm;
 	}
 }
