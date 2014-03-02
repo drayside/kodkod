@@ -1,27 +1,31 @@
 package kodkod.multiobjective.algorithms;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import kodkod.ast.Formula;
 import kodkod.engine.Solution;
-import kodkod.engine.IncrementalSolver;
+import kodkod.engine.CheckpointedSolver;
 import kodkod.instance.Bounds;
 import kodkod.multiobjective.MetricPoint;
 import kodkod.multiobjective.MultiObjectiveOptions;
 import kodkod.multiobjective.MultiObjectiveProblem;
 import kodkod.multiobjective.concurrency.SolutionNotifier;
+import kodkod.multiobjective.statistics.StatKey;
 import kodkod.multiobjective.statistics.StepCounter;
 
-public final class IncrementalGuidedImprovementAlgorithm extends MultiObjectiveAlgorithm {
+public final class CheckpointedGuidedImprovementAlgorithm extends MultiObjectiveAlgorithm {
 
-	public IncrementalGuidedImprovementAlgorithm(final String desc, final MultiObjectiveOptions options) {
-		super(desc, options, Logger.getLogger(IncrementalGuidedImprovementAlgorithm.class.toString()));
+	/*
+	 * turn on this variable to enable the step counter. It will
+	 * count how many steps were taken from a base point to a Pareto point
+	 * and report the results in a file specified over the variable filename
+	 */
+	public CheckpointedGuidedImprovementAlgorithm(final String desc, final MultiObjectiveOptions options) {
+		super(desc, options, Logger.getLogger(CheckpointedGuidedImprovementAlgorithm.class.toString()));
 	}
-	
+
 	@Override
 	protected void multiObjectiveSolveImpl(final MultiObjectiveProblem problem, final SolutionNotifier notifier) {
 		// set the bit width
@@ -30,22 +34,21 @@ public final class IncrementalGuidedImprovementAlgorithm extends MultiObjectiveA
 		// for the evaluation we need a step counter
 		this.counter = new StepCounter();
 
-		IncrementalSolver solver = IncrementalSolver.solver(getOptions());
+		CheckpointedSolver solver = CheckpointedSolver.solver(getOptions());
 
 		//begin, amongst others, start the timer
 		begin();
-		
-		final List<Formula> exclusionConstraints = new ArrayList<Formula>();
-		exclusionConstraints.add(problem.getConstraints());
-		
-		// Throw a dart and get a starting point.
-		Formula constraint = Formula.and(exclusionConstraints);
-		Solution solution = solver.solve(constraint, problem.getBounds());
-		
-		incrementStats(solution, problem, constraint, true, null);
-		solveFirstStats(solution);
-		counter.countStep();
 
+		final Bounds emptyBounds = new Bounds(problem.getBounds().universe());
+
+		// Throw a dart and get a starting point.
+		Solution solution = solver.solve(problem.getConstraints(), problem.getBounds());
+
+		incrementStats(solution, problem, problem.getConstraints(), true, null);
+		solveFirstStats(solution);
+		solver.checkpoint();
+
+		int stepsToFront = 1;
 		// While the current solution is satisfiable try to find a better one.
 		while (isSat(solution)) {
 			MetricPoint currentValues = null;
@@ -59,17 +62,18 @@ public final class IncrementalGuidedImprovementAlgorithm extends MultiObjectiveA
 				final Formula improvementConstraints = currentValues.parametrizedImprovementConstraints();
 				
 				previousSolution = solution;
-				solution = solver.solve(improvementConstraints, new Bounds(problem.getBounds().universe()));
+				solution = solver.solve(improvementConstraints, emptyBounds);
 				incrementStats(solution, problem, improvementConstraints, false, improvementConstraints);
+				solver.checkpoint();
+				
+				stepsToFront += 1;
 
 				counter.countStep();
 			}
 
 			// We can't find anything better, so the previous solution is a pareto point.
 			foundParetoPoint(currentValues);
-
-      // Free the solver's resources since we will be creating a new solver.
-			solver.free();
+			logger.log(Level.FINE, "Found Pareto point with values: {0}", currentValues.values());
 
 			if (!options.allSolutionsPerPoint()) {
 				tell(notifier, previousSolution, currentValues);
@@ -81,22 +85,23 @@ public final class IncrementalGuidedImprovementAlgorithm extends MultiObjectiveA
 				logger.log(Level.FINE, "Magnifying glass found {0} solution(s). At time: {1}", new Object[] {Integer.valueOf(solutionsFound), Integer.valueOf((int)((System.currentTimeMillis()-startTime)/1000))});
 			}
 
+			while (stepsToFront > 0) {
+				solver.rollback();
+				stepsToFront -= 1;
+			}
+
 			// Find another starting point.
-			solver = IncrementalSolver.solver(getOptions());
-			exclusionConstraints.add(currentValues.exclusionConstraint());
-			
-			constraint = Formula.and(exclusionConstraints);
-			solution = solver.solve(constraint, problem.getBounds());
-			incrementStats(solution, problem, constraint, false, null);
-			
+			solution = solver.solve(currentValues.exclusionConstraint(), emptyBounds);
+			incrementStats(solution, problem, currentValues.exclusionConstraint(), false, null);
+			solver.checkpoint();
+			stepsToFront += 1;
+
 			//count this step but first go to new index because it's a new base point
 			counter.nextIndex();
 			counter.countStep();
 		}
-		logger.log(Level.FINE, "All Pareto points found. At time: {0}", Integer.valueOf((int)(System.currentTimeMillis()-startTime)/1000));
-
 		end(notifier);
 		debugWriteStatistics();	
 	}
 }
-
+	

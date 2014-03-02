@@ -4,12 +4,22 @@ import org.junit.*;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.*;
+import static org.junit.Assume.*;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.TreeSet;
 import java.util.Vector;
+import java.io.PrintWriter;
+import java.io.FileWriter;
+import kodkod.ast.*;
+import kodkod.ast.operator.*;
+import kodkod.instance.*;
 import kodkod.engine.*;
 import kodkod.engine.satlab.SATFactory;
+import kodkod.engine.config.Options;
+
 import kodkod.multiobjective.Testmodels.MooProblem;
 import kodkod.multiobjective.Testmodels.rooks_3_metrics_2;
 import kodkod.multiobjective.*;
@@ -17,25 +27,27 @@ import kodkod.multiobjective.algorithms.*;
 import kodkod.multiobjective.concurrency.*;
 
 @RunWith(JUnit4.class)
-public class PartitionedGIASmallEndToEndTest {
+public class CGIASmallEndToEndTest {
 	/*Fields*/
 	private MooProblem moo_problem;
-
+	
 	/*
 	 * This test is a translation of rooks_3_metrics_2.als
 	 */
 
 	@Before
 	public void setUp() {
+		// Need to have MiniSat available for checkpointed solving.
+		assumeTrue(SATFactory.available(SATFactory.MiniSat));
 		moo_problem = new rooks_3_metrics_2();
 	}
 
 	@Test
 	public void WithSymmetryBreaking() {
 		MultiObjectiveProblem problem = moo_problem.getProblem();
-		PartitionedGuidedImprovementAlgorithm pgia = new PartitionedGuidedImprovementAlgorithm("asdf", new MultiObjectiveOptions());
-		pgia.getOptions().setSolver(SATFactory.DefaultSAT4J);
-		pgia.getOptions().setSymmetryBreaking(1000);
+		CheckpointedGuidedImprovementAlgorithm cgia = new CheckpointedGuidedImprovementAlgorithm("asdf", new MultiObjectiveOptions());
+		cgia.getOptions().setSolver(SATFactory.MiniSat);
+		cgia.getOptions().setSymmetryBreaking(1000);
 
 		SolutionNotifier notifier = new SolutionNotifier() {
 			List<MeasuredSolution> solutions = new Vector<MeasuredSolution>();
@@ -46,6 +58,10 @@ public class PartitionedGIASmallEndToEndTest {
 
 			public void tell(Solution s, MetricPoint values) {
 				tell(new MeasuredSolution(s, values));
+			}
+
+			public void exception(Throwable e) {
+				throw new RuntimeException(e);
 			}
 
 			public void done() {
@@ -63,15 +79,15 @@ public class PartitionedGIASmallEndToEndTest {
 			}
 		};
 
-		pgia.multiObjectiveSolve(problem, notifier);
+		cgia.multiObjectiveSolve(problem, notifier);
 	}
 
 	@Test
 	public void WithoutSymmetryBreaking() {
 		MultiObjectiveProblem problem = moo_problem.getProblem();
-		IncrementalGuidedImprovementAlgorithm igia = new IncrementalGuidedImprovementAlgorithm("asdf", new MultiObjectiveOptions());
-		igia.getOptions().setSolver(SATFactory.DefaultSAT4J);
-		igia.getOptions().setSymmetryBreaking(0);
+		CheckpointedGuidedImprovementAlgorithm cgia = new CheckpointedGuidedImprovementAlgorithm("asdf", new MultiObjectiveOptions());
+		cgia.getOptions().setSolver(SATFactory.MiniSat);
+		cgia.getOptions().setSymmetryBreaking(0);
 
 		SolutionNotifier notifier = new SolutionNotifier() {
 			List<MeasuredSolution> solutions = new Vector<MeasuredSolution>();
@@ -82,6 +98,10 @@ public class PartitionedGIASmallEndToEndTest {
 
 			public void tell(Solution s, MetricPoint values) {
 				tell(new MeasuredSolution(s, values));
+			}
+
+			public void exception(Throwable e) {
+				throw new RuntimeException(e);
 			}
 
 			public void done() {
@@ -102,6 +122,6 @@ public class PartitionedGIASmallEndToEndTest {
 			}
 		};
 
-		igia.multiObjectiveSolve(problem, notifier);
+		cgia.multiObjectiveSolve(problem, notifier);
 	}
 }

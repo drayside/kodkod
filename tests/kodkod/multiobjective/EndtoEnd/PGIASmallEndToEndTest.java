@@ -17,10 +17,10 @@ import kodkod.multiobjective.algorithms.*;
 import kodkod.multiobjective.concurrency.*;
 
 @RunWith(JUnit4.class)
-public class IGIASmallEndToEndTest {
+public class PGIASmallEndToEndTest {
 	/*Fields*/
 	private MooProblem moo_problem;
-	
+
 	/*
 	 * This test is a translation of rooks_3_metrics_2.als
 	 */
@@ -33,9 +33,9 @@ public class IGIASmallEndToEndTest {
 	@Test
 	public void WithSymmetryBreaking() {
 		MultiObjectiveProblem problem = moo_problem.getProblem();
-		IncrementalGuidedImprovementAlgorithm igia = new IncrementalGuidedImprovementAlgorithm("asdf", new MultiObjectiveOptions());
-		igia.getOptions().setSolver(SATFactory.DefaultSAT4J);
-		igia.getOptions().setSymmetryBreaking(1000);
+		PartitionedGuidedImprovementAlgorithm pgia = new PartitionedGuidedImprovementAlgorithm("asdf", new MultiObjectiveOptions());
+		pgia.getOptions().setSolver(SATFactory.DefaultSAT4J);
+		pgia.getOptions().setSymmetryBreaking(1000);
 
 		SolutionNotifier notifier = new SolutionNotifier() {
 			List<MeasuredSolution> solutions = new Vector<MeasuredSolution>();
@@ -48,9 +48,9 @@ public class IGIASmallEndToEndTest {
 				tell(new MeasuredSolution(s, values));
 			}
 
-	      	public void exception(Throwable e) {
-	        	throw new RuntimeException(e);
-	      	}
+      public void exception(Throwable e) {
+        throw new RuntimeException(e);
+      }
 
 			public void done() {
 				// There should be a single solution.
@@ -67,15 +67,15 @@ public class IGIASmallEndToEndTest {
 			}
 		};
 
-		igia.multiObjectiveSolve(problem, notifier);
+		pgia.multiObjectiveSolve(problem, notifier);
 	}
 
 	@Test
 	public void WithoutSymmetryBreaking() {
 		MultiObjectiveProblem problem = moo_problem.getProblem();
-		IncrementalGuidedImprovementAlgorithm igia = new IncrementalGuidedImprovementAlgorithm("asdf", new MultiObjectiveOptions());
-		igia.getOptions().setSolver(SATFactory.DefaultSAT4J);
-		igia.getOptions().setSymmetryBreaking(0);
+		PartitionedGuidedImprovementAlgorithm pgia = new PartitionedGuidedImprovementAlgorithm("asdf", new MultiObjectiveOptions());
+		pgia.getOptions().setSolver(SATFactory.DefaultSAT4J);
+		pgia.getOptions().setSymmetryBreaking(0);
 
 		SolutionNotifier notifier = new SolutionNotifier() {
 			List<MeasuredSolution> solutions = new Vector<MeasuredSolution>();
@@ -110,6 +110,6 @@ public class IGIASmallEndToEndTest {
 			}
 		};
 
-		igia.multiObjectiveSolve(problem, notifier);
+		pgia.multiObjectiveSolve(problem, notifier);
 	}
 }

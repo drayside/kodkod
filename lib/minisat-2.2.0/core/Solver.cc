@@ -98,6 +98,91 @@ Solver::Solver() :
   , asynch_interrupt   (false)
 {}
 
+Solver::Solver(const Solver& original) :
+  // Mode of operation
+    verbosity         (original.verbosity)
+  , var_decay         (original.var_decay)
+  , clause_decay      (original.clause_decay)
+  , random_var_freq   (original.random_var_freq)
+  , random_seed       (original.random_seed)
+  , luby_restart      (original.luby_restart)
+  , ccmin_mode        (original.ccmin_mode)
+  , phase_saving      (original.phase_saving)
+  , rnd_pol           (original.rnd_pol)
+  , rnd_init_act      (original.rnd_init_act)
+  , garbage_frac      (original.garbage_frac)
+  , restart_first     (original.restart_first)
+  , restart_inc       (original.restart_inc)
+  , learntsize_factor (original.learntsize_factor)
+  , learntsize_inc    (original.learntsize_inc)
+  , learntsize_adjust_start_confl (original.learntsize_adjust_start_confl)
+  , learntsize_adjust_inc         (original.learntsize_adjust_inc)
+
+  // Statistics
+  , solves            (original.solves)
+  , starts            (original.starts)
+  , decisions         (original.decisions)
+  , rnd_decisions     (original.rnd_decisions)
+  , propagations      (original.propagations)
+  , conflicts         (original.conflicts)
+  , dec_vars          (original.dec_vars)
+  , clauses_literals  (original.clauses_literals)
+  , learnts_literals  (original.learnts_literals)
+  , max_literals      (original.max_literals)
+  , tot_literals      (original.tot_literals)
+
+  // Solver State
+  , ok                (original.ok)
+  , cla_inc           (original.cla_inc)
+  , var_inc           (original.var_inc)
+  , watches           (original.watches, WatcherDeleted(ca))
+  , qhead             (original.qhead)
+  , simpDB_assigns    (original.simpDB_assigns)
+  , simpDB_props      (original.simpDB_props)
+  , order_heap        (VarOrderLt(activity))
+  , progress_estimate (original.progress_estimate)
+  , remove_satisfied  (original.remove_satisfied)
+
+  // Temporaries
+  , max_learnts       (original.max_learnts)
+  , learntsize_adjust_confl (original.learntsize_adjust_confl)
+  , learntsize_adjust_cnt (original.learntsize_adjust_cnt)
+
+  // Resource Constraints
+  , conflict_budget   (original.conflict_budget)
+  , propagation_budget(original.propagation_budget)
+  , asynch_interrupt  (original.asynch_interrupt)
+{
+    // Extra results
+    original.model.copyTo(model);
+    original.conflict.copyTo(conflict);
+
+    // Solver State
+    original.clauses.copyTo(clauses);
+    original.learnts.copyTo(learnts);
+    original.activity.copyTo(activity);
+    original.assigns.copyTo(assigns);
+    original.polarity.copyTo(polarity);
+    original.decision.copyTo(decision);
+    original.trail.copyTo(trail);
+    original.trail_lim.copyTo(trail_lim);
+    original.vardata.copyTo(vardata);
+    original.assumptions.copyTo(assumptions);
+
+    // Copy order_heap Heap
+    for (int index = 0; index < original.order_heap.size(); index += 1) {
+        order_heap.insert(original.order_heap[index]);
+    }
+
+    original.ca.copyTo(ca);
+
+    // Temporaries
+    original.seen.copyTo(seen);
+    original.analyze_stack.copyTo(analyze_stack);
+    original.analyze_toclear.copyTo(analyze_toclear);
+    original.add_tmp.copyTo(add_tmp);
+}
+
 
 Solver::~Solver()
 {
@@ -161,11 +246,13 @@ bool Solver::addClause_(vec<Lit>& ps)
 
 void Solver::attachClause(CRef cr) {
     const Clause& c = ca[cr];
+
     assert(c.size() > 1);
     watches[~c[0]].push(Watcher(cr, c[1]));
     watches[~c[1]].push(Watcher(cr, c[0]));
     if (c.learnt()) learnts_literals += c.size();
-    else            clauses_literals += c.size(); }
+    else            clauses_literals += c.size();
+}
 
 
 void Solver::detachClause(CRef cr, bool strict) {

@@ -22,9 +22,9 @@ import kodkod.multiobjective.statistics.StepCounter;
 public abstract class MultiObjectiveAlgorithm {
 
 	private final String desc;
-	private final Solver solver;
+	private final Solver internalSolver;
 	private final Stats stats;
-	
+
 	protected final long startTime;
 	protected final Logger logger;
 	protected StepCounter counter;
@@ -33,45 +33,53 @@ public abstract class MultiObjectiveAlgorithm {
 	public MultiObjectiveAlgorithm(final String desc, final MultiObjectiveOptions options, Logger logger) {
 		this.logger = logger;
 		this.desc = desc;
-		this.solver = new Solver(options.getKodkodOptions());
+		this.internalSolver = new Solver(options.getKodkodOptions());
 		this.stats = new Stats(this.getClass().getName(), desc);
 		this.options = options;
 		this.startTime = System.currentTimeMillis();
-	}
-	
-	public abstract void multiObjectiveSolve(final MultiObjectiveProblem problem, SolutionNotifier notifier);
+	}	
+ 
+  protected abstract void multiObjectiveSolveImpl(final MultiObjectiveProblem proble, SolutionNotifier notifier);
 
-	public Options getOptions() {
-		return solver.options();
+	public final void multiObjectiveSolve(final MultiObjectiveProblem problem, SolutionNotifier notifier) {
+    try {
+      multiObjectiveSolveImpl(problem, notifier);
+    } catch (Throwable e) {
+      notifier.exception(e);
+    }
+  }
+
+  public Options getOptions() {
+		return internalSolver.options();
 	}
-	
+
 	public StepCounter getCountCallsOnEachMovementToParetoFront(){
 		return this.counter;
 	}
 
 	protected void setCNFOutputFile(final String filePath) {
-		final Options options = solver.options();
+		final Options options = internalSolver.options();
 		final String executable = null;
 		final String tempInput = filePath;
 		final String tempOutput = "";
 		final String cnfOptions = "";
 		final SATFactory cnfSolver = SATFactory.externalFactory(executable, tempInput, tempOutput, cnfOptions);
-		options.setSolver(cnfSolver);		
+		options.setSolver(cnfSolver);
 	}
-	
+
 	protected void setSymmetryBreaking(int value) {
-		final Options options = solver.options();
+		final Options options = internalSolver.options();
 		options.setSymmetryBreaking(value);
 	}
 
 	protected void setBitWidth(final int bitWidth) {
-		solver.options().setBitwidth(bitWidth);
+		internalSolver.options().setBitwidth(bitWidth);
 	}
 
 	public static boolean isSat(final Solution solution) {
 		return solution.outcome().equals(Solution.Outcome.SATISFIABLE) || solution.outcome().equals(Solution.Outcome.TRIVIALLY_SATISFIABLE);
 	}
-	
+
 	protected void foundParetoPoint(MetricPoint metricpoint) {
 		stats.increment(StatKey.OPTIMAL_METRIC_POINTS);
 		logger.log(Level.FINE, "Found Pareto point with values: {0}", metricpoint.values());
@@ -80,15 +88,19 @@ public abstract class MultiObjectiveAlgorithm {
 	protected void begin() {
 		stats.begin();
 	}
-	
+
 	protected void end(final SolutionNotifier notifier) {
 		stats.end();
 		stats.checkForValidFinalState();
 		notifier.done();
 	}
-	
-	// Returns an int specifying the number of solutions found at the Pareto point
+
 	protected int magnifier(final Formula formula, final Bounds bounds, final MetricPoint metricPoint, final SolutionNotifier notifier) {
+	    return magnifier(formula, bounds, metricPoint, notifier, internalSolver);
+	}
+
+	// Returns an int specifying the number of solutions found at the Pareto point
+	protected int magnifier(final Formula formula, final Bounds bounds, final MetricPoint metricPoint, final SolutionNotifier notifier, final Solver solver) {
 		boolean isFirst = true;
 		int numberSolutions = 0;
 		for (final Iterator<Solution> i = solver.solveAll(formula, bounds); i.hasNext(); ) {
@@ -119,7 +131,7 @@ public abstract class MultiObjectiveAlgorithm {
 		stats.increment(StatKey.OPTIMAL_SOLNS);
 		notifier.tell(solution);
 	}
-	
+
 	public Stats getStats() {
 		return stats;
 	}
@@ -127,11 +139,11 @@ public abstract class MultiObjectiveAlgorithm {
 	public String getDesc() {
 		return desc;
 	}
-	
+
 	protected Solver getSolver() {
-		return solver;
+		return internalSolver;
 	}
-	
+
 	/**
 	 * Method to increment Stats counters each time a solution is found
 	 * - Also adds the summary for the specific call using detailed information about the specific SAT call
@@ -142,11 +154,11 @@ public abstract class MultiObjectiveAlgorithm {
 
 			getStats().increment(StatKey.REGULAR_SAT_TIME, solution.stats().translationTime());
 			getStats().increment(StatKey.REGULAR_SAT_TIME, solution.stats().solvingTime());
-			
-			
+
+
 			getStats().increment(StatKey.REGULAR_SAT_TIME_TRANSLATION, solution.stats().translationTime());
 			getStats().increment(StatKey.REGULAR_SAT_TIME_SOLVING, solution.stats().solvingTime());
-			
+
 			// Adding Individual instance.
 			MetricPoint obtainedValues = MetricPoint.measure(solution, problem.getObjectives(), getOptions());
 			this.getStats().addSummaryIndividualCall(StatKey.REGULAR_SAT_CALL, solution.stats().translationTime(), solution.stats().solvingTime(), formula, problem.getBounds(), first, obtainedValues, improvementConstraints);
@@ -162,13 +174,13 @@ public abstract class MultiObjectiveAlgorithm {
 			this.getStats().addSummaryIndividualCall(StatKey.REGULAR_UNSAT_CALL, solution.stats().translationTime(), solution.stats().solvingTime(), formula, problem.getBounds(), first, null, improvementConstraints);
 		}
 	}
-	
+
 	protected void solveFirstStats(Solution solution){
 		getStats().set(StatKey.CLAUSES, solution.stats().clauses());
 		getStats().set(StatKey.VARIABLES, solution.stats().primaryVariables());
 	}
-	
-	/** 
+
+	/**
 	 * Method to print debug statistics after computing the pareto front at the end of algorithm
 	 */
 	protected void debugWriteStatistics(){

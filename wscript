@@ -3,6 +3,7 @@
 
 import os
 import os.path
+import sys
 from waflib import Options
 
 APPNAME = 'kodkod'
@@ -46,6 +47,8 @@ def all(ctx):
         'test_build',
         'test',
         'dist'] + Options.commands
+
+
 
 from waflib.Build import BuildContext
 class TestBuildContext(BuildContext):
