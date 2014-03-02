@@ -39,6 +39,7 @@ public:
     // Constructor/Destructor:
     //
     Solver();
+    Solver(const Solver&);
     virtual ~Solver();
 
     // Problem specification:
@@ -149,6 +150,7 @@ protected:
         CRef cref;
         Lit  blocker;
         Watcher(CRef cr, Lit p) : cref(cr), blocker(p) {}
+        Watcher() {}
         bool operator==(const Watcher& w) const { return cref == w.cref; }
         bool operator!=(const Watcher& w) const { return cref != w.cref; }
     };

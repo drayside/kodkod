@@ -338,7 +338,157 @@ public final class Translator {
 		throw new IllegalArgumentException("Expected " + newDesc + " to be " + relatedTo + " " + oldDesc + 
 				" for incremental translation; given "+ newDesc + " = " + newObj + ", " + oldDesc + " = " + translObj);
 	}
+
+	/**
+	 * Translates the given formula, with the following bounds and options to yield a new checkpointed translation.
+	 * @see #translateIncremental(Formula, Bounds, Options)
+	 */
+	public static Translation.Checkpointed translateCheckpointed(Formula formula, Bounds bounds, Options options)  {
+		checkCheckpointedOptions(options);	
+		return (Translation.Checkpointed) (new Translator(formula, bounds, options, true, true)).translate();
+	}
+
+	/**
+	 * Updates the given translation with the additional formula constraints and stricter bounds.
+	 * @see #translateIncremental(Formula, Bounds, Translation.Incremental)
+	 */
+	public static Translation.Checkpointed translateCheckpointed(Formula formula, Bounds bounds, Translation.Checkpointed translation)  {
+		checkCheckpointedOptions(translation.options());
+		checkCheckpointedBounds(bounds, translation);		
+		if (translation.trivial())  { 
+			return translateCheckpointedTrivial(formula, bounds, translation);
+		} else {
+			return translateCheckpointedNonTrivial(formula, bounds, translation);
+		}	
+	}
+
+	/** 
+	 * @requires checkCheckpointedBounds(bounds, transl)
+	 * @requires checkCheckpointedOptions(transl.options) 
+	 * @requires transl.trivial()
+	 * @requires transl.cnf.solve()
+	 * @return see {@link #translateCheckpointed(Formula, Bounds, Options)}
+	 **/
+	private static Translation.Checkpointed translateCheckpointedTrivial(Formula formula, Bounds bounds, Translation.Checkpointed transl) {
+		if (!transl.cnf().solve()) 
+			throw new IllegalArgumentException("Expected a satisfiable translation, given " + transl);
+		
+		// Note that unlike the incremetal translation we do not free the old
+		// cnf as that could destroy our checkpoints.
+
+		final Options tOptions = transl.options();
+		final Bounds tBounds = transl.bounds();
+		
+		// add new relation bindings to the translation bounds.  since the given bounds induce
+		// a coarser set of symmetries on the universe than transl.symmetries, adding their (disjoint) bindings to tBounds 
+		// will not change the symmetries of tBounds.  note that the ymmetries of tBounds refine transl.symmetries, and they 
+		// may be strictly finer if some of the symmetries in transl.symmetries were broken via SymmetryBreaker.breakMatrixSymmetries(...) 
+		// during the generation of transl.  in particular, any symmetries absent from tBounds are precisely those that were broken based
+		// on the total ordering and acyclic predicates in transl.originalFormula.
+		for(Relation r : bounds.relations()) {
+			tBounds.bound(r, bounds.lowerBound(r), bounds.upperBound(r));
+		}
+		
+		// re-translate the given formula with respect to tBounds.  note that we don't have to re-translate 
+		// the conjunction of transl.formula and formula since transl.formula is guaranteed to evaluate to 
+		// TRUE with respect to tBounds (since no bindings that were originally in tBounds were changed by the above loop).
+		final Translation.Checkpointed updated = translateCheckpointed(formula, tBounds, tOptions);
+		
+		// we can't return the updated translation as is, since we have to make sure that updated.symmetries is set to
+		// transl.symmetries rather than the potentially finer set of symmetries induced by tBounds. note that 
+		// the updated translation currently has updated.originalBounds = tBounds, while updated.bounds is a copy of 
+		// tBounds with possibly additional skolem relations, as well as new bounds for some relations in formula.*components 
+		// due to symmetry breaking.
+		return new Translation.Checkpointed(updated.bounds(), tOptions, transl.symmetries(), updated.interpreter(), updated.incrementer());
+	}
 	
+	/** 
+	 * @requires checkCheckpointedBounds(bounds, transl)
+	 * @requires checkCheckpointedOptions(transl.options) 
+	 * @requires !transl.trivial()
+	 * @return see {@link #translateCheckpointed(Formula, Bounds, Options)}
+	 **/
+	private static Translation.Checkpointed translateCheckpointedNonTrivial(Formula formula, Bounds bounds, Translation.Checkpointed transl) {
+		
+		final Options tOptions = transl.options();
+		final Bounds tBounds = transl.bounds();
+		
+		// save the set of relations bound in the pre-state
+		final Set<Relation> oldRelations = new LinkedHashSet<Relation>(tBounds.relations());
+		
+		// add new relation bindings to the translation bounds.  note that skolemization (below) may also cause extra relations to be added.
+		for(Relation r : bounds.relations()) {
+			tBounds.bound(r, bounds.lowerBound(r), bounds.upperBound(r));
+		}
+		final AnnotatedNode<Formula> annotated = 
+			(transl.options().skolemDepth() < 0) ? annotate(formula) : skolemize(annotate(formula), tBounds, tOptions);
+		
+		// extend the interpreter with variable allocations for new relations, either from given bounds
+		// or those introduced by skolemization
+		final LeafInterpreter interpreter = transl.interpreter();
+		interpreter.extend(setDifference(tBounds.relations(), oldRelations), tBounds.lowerBounds(), tBounds.upperBounds());
+		
+		final BooleanValue circuit = FOL2BoolTranslator.translate(annotated, interpreter); 
+	
+		if (circuit==BooleanConstant.FALSE) {
+			// return a fresh trivially false incremental translation.
+			return new Translation.Checkpointed(tBounds, tOptions, transl.symmetries(), 
+					LeafInterpreter.empty(tBounds.universe(), tOptions), 
+					Bool2CNFTranslator.translateIncremental(BooleanConstant.FALSE, tOptions.solver()));			
+		} else if (circuit==BooleanConstant.TRUE) {
+			// must add any newly allocated primary variables to the solver for interpretation to work correctly 
+			final int maxVar = interpreter.factory().maxVariable();
+			final int cnfVar = transl.cnf().numberOfVariables();
+			if (maxVar > cnfVar) {
+				transl.cnf().addVariables(maxVar-cnfVar);
+			}
+		} else {
+			// circuit is a formula; add its CNF representation to transl.incrementer.solver()			
+			Bool2CNFTranslator.translateIncremental((BooleanFormula) circuit, interpreter.factory().maxVariable(), transl.incrementer());
+		}  
+		
+		return transl;
+	}
+
+	/**
+	 * Checks that the Options are valid for a Checkpointed translation.
+	 * The requirements are the same as those for an incremental translation
+	 * but the solver must be checkpointable.
+	 */
+	public static void checkCheckpointedOptions(Options options) {
+		if (!options.solver().checkpointable()) {
+			throw new IllegalArgumentException("A checkpointable solver is required for checkpointed translation: " + options);
+		}
+		checkIncrementalOptions(options);
+	}	
+
+	/**
+	 * Checks that the given bounds are valid for a Checkpointed translation.
+	 * Same requirements as those for an incremental translation.
+	 */
+	private static void checkCheckpointedBounds(Bounds inc, Translation.Checkpointed translation) {
+		final Bounds base = translation.bounds();
+		if (!base.universe().equals(inc.universe()))
+			incBoundErr(inc.universe(), "universe", "equal to", base.universe());
+		if (!inc.intBounds().isEmpty()) 
+			incBoundErr(inc.intBounds(), "intBound", "empty, with integer bounds fully specified by", base.intBounds());
+		if (inc.relations().isEmpty()) return;
+		final Set<Relation> baseRels = base.relations();
+		for(Relation r : inc.relations()) { 
+			if (baseRels.contains(r)) {
+				incBoundErr(inc.relations(), "relations", "disjoint from", baseRels);
+			}  
+ 		}
+		final Set<IntSet> symmetries = translation.symmetries();
+		final Set<IntSet> incSymmetries = SymmetryDetector.partition(inc);
+		EQUIV_CHECK : for(IntSet part : symmetries) {
+			for(IntSet incPart : incSymmetries) {
+				if (incPart.containsAll(part))
+					continue EQUIV_CHECK;
+			}
+			incBoundErr(incSymmetries, "partition", "coarser than", symmetries);
+		}
+	}
 	
 	/*---------------------- private translation state and methods ----------------------*/
 	/**
@@ -354,7 +504,22 @@ public final class Translator {
 	private final Options options;
 	private final boolean logging;
 	private final boolean incremental;
-	
+	private final boolean checkpointed;
+
+	private Translator(Formula formula, Bounds bounds, Options options, boolean incremental, boolean checkpointed) {
+		if (checkpointed && !incremental) {
+			throw new IllegalArgumentException("Checkpointing requires incremental.");
+		}
+
+		this.originalFormula = formula;
+		this.originalBounds = bounds;
+		this.bounds = bounds.clone();
+		this.options = options;
+		this.logging = options.logTranslation() > 0;
+		this.incremental = incremental;
+		this.checkpointed = checkpointed;
+	}
+
 	/**
 	 * Constructs a Translator for the given formula, bounds, options and incremental flag.
 	 * If the flag is true, then the translator produces an initial {@linkplain Translation.Incremental incremental translation}.
@@ -366,12 +531,7 @@ public final class Translator {
 	 *  this.incremental' = incremental 
 	 */
 	private Translator(Formula formula, Bounds bounds, Options options, boolean incremental) {
-		this.originalFormula = formula;
-		this.originalBounds = bounds;
-		this.bounds = bounds.clone();
-		this.options = options;
-		this.logging = options.logTranslation()>0;
-		this.incremental = incremental;
+		this(formula, bounds, options, true, false);
 	}
 	
 	/**
@@ -379,7 +539,7 @@ public final class Translator {
 	 * @ensures this(formula, bounds, options, false)
 	 */
 	private Translator(Formula formula, Bounds bounds, Options options) {
-		this(formula, bounds, options, false);
+		this(formula, bounds, options, false, false);
 	}
 	
 	/**
@@ -585,7 +745,11 @@ public final class Translator {
 		final int maxPrimaryVar = interpreter.factory().maxVariable();
 		if (incremental) {
 			final Bool2CNFTranslator incrementer = Bool2CNFTranslator.translateIncremental(circuit, maxPrimaryVar, options.solver());
-			return new Translation.Incremental(completeBounds(), options, SymmetryDetector.partition(originalBounds), interpreter, incrementer);
+			if (checkpointed) {
+				return new Translation.Checkpointed(completeBounds(), options, SymmetryDetector.partition(originalBounds), interpreter, incrementer);
+			} else {
+				return new Translation.Incremental(completeBounds(), options, SymmetryDetector.partition(originalBounds), interpreter, incrementer);
+			}
 		} else {
 			final Map<Relation, IntSet> varUsage = interpreter.vars();
 			interpreter = null; // enable gc
@@ -608,10 +772,17 @@ public final class Translator {
 	@SuppressWarnings("unchecked")
 	private Translation trivial(BooleanConstant outcome, TranslationLog log) {
 		if (incremental) {
-			return new Translation.Incremental(completeBounds(), options, 
-					SymmetryDetector.partition(originalBounds), 
-					LeafInterpreter.empty(bounds.universe(), options), // empty interpreter
-					Bool2CNFTranslator.translateIncremental(outcome, options.solver()));
+			if (checkpointed) {
+				return new Translation.Checkpointed(completeBounds(), options, 
+						SymmetryDetector.partition(originalBounds), 
+						LeafInterpreter.empty(bounds.universe(), options), // empty interpreter
+						Bool2CNFTranslator.translateIncremental(outcome, options.solver()));
+			} else {
+				return new Translation.Incremental(completeBounds(), options, 
+						SymmetryDetector.partition(originalBounds), 
+						LeafInterpreter.empty(bounds.universe(), options), // empty interpreter
+						Bool2CNFTranslator.translateIncremental(outcome, options.solver()));
+			}
 		} else {
 			return new Translation.Whole(completeBounds(), options, 
 					Bool2CNFTranslator.translate(outcome, options.solver()), 

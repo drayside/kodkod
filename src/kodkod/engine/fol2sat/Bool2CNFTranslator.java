@@ -33,8 +33,10 @@ import kodkod.engine.bool.NotGate;
 import kodkod.engine.bool.Operator;
 import kodkod.engine.satlab.SATFactory;
 import kodkod.engine.satlab.SATSolver;
+import kodkod.engine.satlab.CheckpointableSolver;
 import kodkod.util.ints.IntSet;
 import kodkod.util.ints.IntTreeSet;
+import java.util.Stack;
 
 /**
  * Transforms a boolean circuit into a formula in conjunctive
@@ -144,6 +146,9 @@ abstract class Bool2CNFTranslator implements BooleanVisitor<int[], Object> {
 	private final int[] binaryClause = new int[2];
 	private final int[] ternaryClause = new int[3];
 	
+	private int checkpoints;
+	private final Stack<IntSet> visitedCheckpoints;
+
 	/**
 	 * Constructs a translator for the given circuit.
 	 * @requires no solver.variables && solver.clauses
@@ -152,6 +157,7 @@ abstract class Bool2CNFTranslator implements BooleanVisitor<int[], Object> {
 	private Bool2CNFTranslator(SATSolver solver) {
 		this.solver = solver;
 		this.visited = new IntTreeSet();
+		this.visitedCheckpoints = new Stack<IntSet>();
 	}
 
 	/**
@@ -307,6 +313,39 @@ abstract class Bool2CNFTranslator implements BooleanVisitor<int[], Object> {
 	 */
 	public final int[] visit(BooleanVariable variable, Object arg) {
 		return clause(variable.label());
+	}
+
+	public final void checkpoint() {
+		CheckpointableSolver checkpointableSolver = (CheckpointableSolver) solver;
+		IntSet clonedVisitedSet;
+		try {
+			clonedVisitedSet = (IntSet)visited.clone();
+		} catch (CloneNotSupportedException e) {
+			// This cannot occur since the IntTreeSet supports cloning.
+			throw new RuntimeException(e);
+		}
+
+		checkpointableSolver.checkpoint();
+		visitedCheckpoints.push(clonedVisitedSet);
+
+		checkpoints += 1;
+	}
+
+	public final void rollback() {
+		CheckpointableSolver checkpointableSolver = (CheckpointableSolver) solver;
+		
+		if (checkpoints <= 0) {
+			throw new IllegalStateException("No checkpoint available to rollback to.");
+		}	
+
+		checkpointableSolver.rollback();
+		IntSet checkpointVisitedSet = visitedCheckpoints.pop();
+
+		// Make the visited set equal to the checkpointed set without changing its identity.
+		visited.clear();
+		visited.addAll(checkpointVisitedSet);
+
+		checkpoints -= 1;
 	}
 
 	/**

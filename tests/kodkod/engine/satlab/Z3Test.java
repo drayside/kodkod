@@ -9,17 +9,18 @@ import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
 
 import kodkod.engine.satlab.SATFactory;
-import kodkod.engine.satlab.SATSolver;
+import kodkod.engine.satlab.CheckpointableSolver;
 
 @RunWith(JUnit4.class)
 public class Z3Test {
 
-    SATSolver solver;
+    CheckpointableSolver solver;
 
     @Before
     public void setUp() {
         assumeTrue(SATFactory.available(SATFactory.Z3));
-        solver = SATFactory.Z3.instance();
+        assumeTrue(SATFactory.Z3.checkpointable());
+        solver = (CheckpointableSolver)SATFactory.Z3.instance();
     }
 
     @After
@@ -337,6 +338,77 @@ public class Z3Test {
             fail();
         } catch (IllegalStateException e) {
 
+        }
+    }
+
+    @Test
+    public void basicCheckpointing() {
+        solver.addVariables(1);
+        solver.addClause(new int[] {1});
+
+        boolean result = solver.solve();
+
+        assertTrue(result);
+
+        assertTrue(solver.valueOf(1));
+        assertThat(solver.numberOfVariables(), is(1));
+        assertThat(solver.numberOfClauses(), is(1));
+        assertThat(solver.numberOfCheckpoints(), is(0));
+
+        solver.checkpoint();
+
+        assertTrue(solver.valueOf(1));
+        assertThat(solver.numberOfVariables(), is(1));
+        assertThat(solver.numberOfClauses(), is(1));
+        assertThat(solver.numberOfCheckpoints(), is(1));
+
+        solver.addClause(new int[] {-1});
+        solver.addVariables(1);
+
+        result = solver.solve();
+
+        assertFalse(result);
+
+        assertThat(solver.numberOfVariables(), is(2));
+        assertThat(solver.numberOfClauses(), is(2));
+        assertThat(solver.numberOfCheckpoints(), is(1));
+
+        solver.rollback();
+
+        assertThat(solver.numberOfVariables(), is(1));
+        assertThat(solver.numberOfClauses(), is(1));
+        assertThat(solver.numberOfCheckpoints(), is(0));
+
+        result = solver.solve();
+
+        assertTrue(result);
+    }
+
+    @Test
+    public void rollingbackEmptySolverShouldException() {
+        try {
+            solver.rollback();
+
+            // Shouldn't reach here.
+            fail();
+        } catch (IllegalStateException e) {
+
+        }
+    }
+
+    @Test
+    public void rollingbackMoreThanNumberOfCheckpointsShouldException() {
+        solver.checkpoint();
+        solver.checkpoint();
+
+        solver.rollback();
+        solver.rollback();
+        try {
+            solver.rollback();
+
+            // Shouldn't reach here.
+            fail();
+        } catch (IllegalStateException e) {
         }
     }
 }
